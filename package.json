@@ -1,9 +1,19 @@
 {
-  "dependencies": {
-    "@supabase/supabase-js": "^2.98.0",
-    "@tanstack/react-query": "^5.90.21",
-    "axios": "^1.13.6",
-    "clsx": "^2.1.1",
-    "zustand": "^5.0.11"
+  "name": "greenplus",
+  "private": true,
+  "workspaces": [
+    "web-admin",
+    "web-client"
+  ],
+  "scripts": {
+    "dev:admin": "npm run dev --workspace web-admin",
+    "dev:client": "npm run dev --workspace web-client",
+    "build": "npm run build --workspace web-admin && npm run build --workspace web-client",
+    "lint": "npm run lint --workspace web-admin && npm run lint --workspace web-client",
+    "start:admin": "npm run start --workspace web-admin",
+    "start:client": "npm run start --workspace web-client"
+  },
+  "devDependencies": {
+    "dotenv": "^16.6.1"
   }
 }
