@@ -1,19 +1,24 @@
 {
   "name": "greenplus",
   "private": true,
+  "packageManager": "npm@10.5.0",
   "workspaces": [
     "web-admin",
-    "web-client"
+    "web-client",
+    "supabase-playground"
   ],
   "scripts": {
-    "dev:admin": "npm run dev --workspace web-admin",
-    "dev:client": "npm run dev --workspace web-client",
-    "build": "npm run build --workspace web-admin && npm run build --workspace web-client",
-    "lint": "npm run lint --workspace web-admin && npm run lint --workspace web-client",
-    "start:admin": "npm run start --workspace web-admin",
-    "start:client": "npm run start --workspace web-client"
+    "dev": "turbo dev --ui=tui",
+    "dev:admin": "turbo dev --filter=web-admin",
+    "dev:client": "turbo dev --filter=web-client",
+    "build": "turbo build",
+    "lint": "turbo lint"
   },
   "devDependencies": {
-    "dotenv": "^16.6.1"
+    "dotenv": "^16.6.1",
+    "turbo": "^2.8.19"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.2"
   }
 }
