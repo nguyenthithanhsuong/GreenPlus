@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { allOperations } from "@/lib/supabaseExamples";
+import { getRelationshipsForTable } from "../lib/databaseRelationships";
 
 interface OperationField {
   name: string;
@@ -75,6 +76,7 @@ export default function SupabasePlayground() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedRelationships, setExpandedRelationships] = useState(false);
 
   const categories = Object.keys(allOperations);
   const currentOps = allOperations[selectedCategory as keyof typeof allOperations] || {};
@@ -108,7 +110,7 @@ export default function SupabasePlayground() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">🧪 Supabase GreenPlus Playground</h1>
+          <h1 className="text-4xl font-bold mb-2">Supabase GreenPlus Playground</h1>
           <p className="text-slate-400">Test all Supabase operations with live data</p>
         </div>
 
@@ -117,7 +119,7 @@ export default function SupabasePlayground() {
           <div className="lg:col-span-1">
             <div className="sticky top-4 space-y-4">
               <div>
-                <h3 className="font-bold text-lg mb-3 text-emerald-400">📚 Categories</h3>
+                <h3 className="font-bold text-lg mb-3 text-emerald-400">Categories</h3>
                 <div className="space-y-2">
                   {categories.map(cat => (
                     <button
@@ -145,6 +147,78 @@ export default function SupabasePlayground() {
 
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
+            {/* Relationships Panel */}
+            <div className="bg-slate-700 rounded-lg p-4 border border-blue-800/50">
+              <button
+                onClick={() => setExpandedRelationships(!expandedRelationships)}
+                className="w-full text-left px-3 py-2 rounded bg-blue-900/40 border border-blue-700 text-blue-200 font-semibold text-sm hover:bg-blue-900/60 transition"
+              >
+                Relationships for: {selectedCategory}
+              </button>
+
+              {expandedRelationships && (
+                <div className="mt-3 bg-slate-800 rounded p-3 text-xs space-y-2 max-h-72 overflow-y-auto">
+                  {(() => {
+                    const tableRels = getRelationshipsForTable(selectedCategory);
+                    if (!tableRels) {
+                      return <p className="text-slate-400">No relationships found for {selectedCategory}</p>;
+                    }
+
+                    return (
+                      <>
+                        <div className="border-b border-slate-600 pb-2">
+                          <p className="text-slate-300 font-semibold">{tableRels.category}</p>
+                          <p className="text-slate-400">{tableRels.table}</p>
+                        </div>
+
+                        {tableRels.outgoing.length > 0 && (
+                          <div>
+                            <p className="text-amber-300 font-semibold">References</p>
+                            {tableRels.outgoing.map((rel: any, idx: number) => (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  setSelectedCategory(rel.targetTable);
+                                  const ops = allOperations[rel.targetTable as keyof typeof allOperations];
+                                  if (ops) setSelectedOperation(Object.keys(ops)[0]);
+                                  setInputs({});
+                                  setResult(null);
+                                }}
+                                className="block w-full text-left px-2 py-1 rounded text-amber-200 hover:bg-amber-900/30 transition mt-1"
+                              >
+                                {rel.targetTable}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {tableRels.incoming.length > 0 && (
+                          <div className="pt-2 border-t border-slate-700">
+                            <p className="text-emerald-300 font-semibold">Referenced By</p>
+                            {tableRels.incoming.map((rel: any, idx: number) => (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  setSelectedCategory(rel.targetTable);
+                                  const ops = allOperations[rel.targetTable as keyof typeof allOperations];
+                                  if (ops) setSelectedOperation(Object.keys(ops)[0]);
+                                  setInputs({});
+                                  setResult(null);
+                                }}
+                                className="block w-full text-left px-2 py-1 rounded text-emerald-200 hover:bg-emerald-900/30 transition mt-1"
+                              >
+                                {rel.targetTable}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+
             {/* Operations List */}
             <div className="bg-slate-700 rounded-lg p-6">
               <h2 className="text-2xl font-bold mb-4 text-emerald-400">{selectedCategory}</h2>
