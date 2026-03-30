@@ -1,8 +1,9 @@
 import { AppError } from "../../core/errors";
+import { CartAuditObserver, CartSubject } from "./observers/cart.observer";
 import { CartRepository, CartRow, CartItemWithProductRow } from "./cart.repository";
+import { createCartItemState } from "./states/cart-item.state";
+import { createCartNoteValidationStrategy } from "./strategies/cart-note.strategy";
 import { CartItemView, CartView } from "./cart.types";
-
-const NOTE_PROHIBITED_REGEX = /[<>$`]/;
 
 function readRelValue<T = string>(
   rel: Record<string, unknown> | Record<string, unknown>[] | null,
@@ -26,6 +27,12 @@ function readRelValue<T = string>(
 
 export class CartService {
   private readonly repository = new CartRepository();
+  private readonly noteValidator = createCartNoteValidationStrategy();
+  private readonly subject = new CartSubject();
+
+  constructor() {
+    this.subject.attach(new CartAuditObserver());
+  }
 
   private async getOrCreateCart(userId: string): Promise<CartRow> {
     if (!userId) {
@@ -107,6 +114,15 @@ export class CartService {
   }
 
   private validateQuantity(quantity: number, availableStock: number): void {
+    const state = createCartItemState(quantity);
+    if (!state.canApplyQuantity(quantity, availableStock)) {
+      if (quantity <= 0) {
+        throw new AppError("MSG1: quantity must be greater than 0", 400);
+      }
+
+      throw new AppError("MSG2: quantity exceeds available stock", 400);
+    }
+
     if (quantity <= 0) {
       throw new AppError("MSG1: quantity must be greater than 0", 400);
     }
@@ -117,13 +133,7 @@ export class CartService {
   }
 
   validateNote(note: string): void {
-    if (note.length > 255) {
-      throw new AppError("MSG1: note must not exceed 255 characters", 400);
-    }
-
-    if (NOTE_PROHIBITED_REGEX.test(note)) {
-      throw new AppError("MSG2: note contains prohibited characters", 400);
-    }
+    this.noteValidator.validate(note);
   }
 
   async getCartByUser(userId: string): Promise<CartView> {
@@ -186,6 +196,12 @@ export class CartService {
           productId,
           quantity,
         });
+
+        this.subject.notify({
+          userId,
+          event: "item_added",
+          changedAt: new Date().toISOString(),
+        });
       } catch (error) {
         throw new AppError(error instanceof Error ? error.message : "Failed to insert cart item", 500);
       }
@@ -198,6 +214,12 @@ export class CartService {
 
     try {
       await this.repository.updateCartItemQuantity(existingItem.cart_item_id, nextQuantity);
+
+      this.subject.notify({
+        userId,
+        event: "item_quantity_updated",
+        changedAt: new Date().toISOString(),
+      });
     } catch (error) {
       throw new AppError(error instanceof Error ? error.message : "Failed to update cart quantity", 500);
     }
@@ -225,6 +247,12 @@ export class CartService {
 
     try {
       await this.repository.updateCartItemQuantity(existingItem.cart_item_id, quantity);
+
+      this.subject.notify({
+        userId,
+        event: "item_quantity_updated",
+        changedAt: new Date().toISOString(),
+      });
     } catch (error) {
       throw new AppError(error instanceof Error ? error.message : "Failed to update cart quantity", 500);
     }
@@ -237,6 +265,12 @@ export class CartService {
 
     try {
       await this.repository.deleteCartItemByProduct(cart.cart_id, productId);
+
+      this.subject.notify({
+        userId,
+        event: "item_removed",
+        changedAt: new Date().toISOString(),
+      });
     } catch (error) {
       throw new AppError(error instanceof Error ? error.message : "Failed to remove cart item", 500);
     }
@@ -279,6 +313,12 @@ export class CartService {
 
     try {
       await this.repository.updateCartItemNote(existingItem.cart_item_id, nextNote);
+
+      this.subject.notify({
+        userId,
+        event: "note_updated",
+        changedAt: new Date().toISOString(),
+      });
     } catch (error) {
       throw new AppError(error instanceof Error ? error.message : "Failed to update note", 500);
     }

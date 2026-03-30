@@ -1,21 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-function createSupabaseAnonClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  }
-
-  return createClient(url, anonKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
+import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
+import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
 
 export async function POST(request: Request) {
   try {
@@ -24,33 +9,19 @@ export async function POST(request: Request) {
       password?: string;
     };
 
-    const email = body.email?.trim().toLowerCase() ?? "";
-    const password = body.password ?? "";
-
-    if (!email || !password) {
-      return NextResponse.json({ error: "email and password are required" }, { status: 400 });
-    }
-
-    const supabase = createSupabaseAnonClient();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const data = await authFacade.signIn({
+      email: body.email ?? "",
+      password: body.password ?? "",
     });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
     return NextResponse.json(
-      {
-        session: data.session,
-        user: data.user,
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
+      { error: toErrorMessage(error) },
       { status: 500 }
     );
   }

@@ -151,6 +151,12 @@ export default function BackendProductsTestPage() {
           </p>
           <p className="mt-1 text-xs text-slate-500">Route: /backend/products</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <a href="/backend/cart" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Cart Test</a>
+            <a href="/backend/orders" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Orders Test</a>
+            <a href="/backend/categories" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Categories Test</a>
+            <a href="/backend/register" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Register Test</a>
+            <a href="/backend/signin" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Sign In Test</a>
+            <a href="/backend/profile" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Profile Test</a>
             <a href="/backend/products/auth" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Auth and Account Test</a>
             <a href="/backend/products/qr" className="rounded bg-slate-200 px-2 py-1 text-slate-800">QR Origin Test</a>
             <a href="/backend/products/cart" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Cart and Notes Test</a>

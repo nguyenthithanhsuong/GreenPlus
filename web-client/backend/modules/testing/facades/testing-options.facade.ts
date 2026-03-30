@@ -1,5 +1,6 @@
 import {
   BatchOption,
+  CategoryOption,
   ProductOption,
   TestingOptionsRepository,
   UserOption,
@@ -7,6 +8,7 @@ import {
 
 export type BackendTestingOptions = {
   users: UserOption[];
+  categories: CategoryOption[];
   products: ProductOption[];
   batches: BatchOption[];
 };
@@ -16,13 +18,14 @@ export class TestingOptionsFacade {
   private readonly repository = new TestingOptionsRepository();
 
   async getAllOptions(): Promise<BackendTestingOptions> {
-    const [users, products, batches] = await Promise.all([
+    const [users, categories, products, batches] = await Promise.all([
       this.repository.listUsers(),
+      this.repository.listCategories(),
       this.repository.listProducts(),
       this.repository.listBatches(),
     ]);
 
-    return { users, products, batches };
+    return { users, categories, products, batches };
   }
 }
 

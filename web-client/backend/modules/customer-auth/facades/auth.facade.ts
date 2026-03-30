@@ -1,7 +1,9 @@
 import { randomUUID } from "crypto";
 import { AppError } from "../../../core/errors";
 import { isUsingServiceRoleKey } from "../../../core/supabase";
+import { AuthAuditObserver, AuthSubject } from "../observers/auth.observer";
 import { AuthRepository } from "../auth.repository";
+import { createAccountState } from "../states/account.state";
 import {
   ChangePasswordInput,
   RegisterInput,
@@ -22,14 +24,18 @@ const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
 export class AuthFacade {
   private readonly repository: AuthRepository;
   private readonly hasher: PasswordHasherStrategy;
+  private readonly authSubject: AuthSubject;
 
   constructor() {
     this.repository = new AuthRepository();
     this.hasher = new Pbkdf2HasherStrategy();
+    this.authSubject = new AuthSubject();
+    this.authSubject.attach(new AuthAuditObserver());
   }
 
   private ensureActiveStatus(status: UserStatus): void {
-    if (status !== "active") {
+    const accountState = createAccountState(status);
+    if (!accountState.canSignIn()) {
       throw new AppError("MSG6: account is not active", 400);
     }
   }
@@ -72,6 +78,12 @@ export class AuthFacade {
       name: input.name.trim(),
       email: input.email.trim().toLowerCase(),
       passwordHash,
+    });
+
+    await this.authSubject.notify({
+      type: "register_succeeded",
+      userId: user.user_id,
+      email: user.email,
     });
 
     return {
@@ -134,6 +146,12 @@ export class AuthFacade {
       login_time: new Date().toISOString(),
     };
 
+    await this.authSubject.notify({
+      type: "sign_in_succeeded",
+      userId: user.user_id,
+      email: user.email,
+    });
+
     return {
       session,
       user: {
@@ -148,6 +166,10 @@ export class AuthFacade {
   }
 
   async getProfile(userId: string) {
+    if (userId.trim().length === 0) {
+      throw new AppError("userId is required", 400);
+    }
+
     const user = await this.repository.findUserById(userId);
     if (!user) {
       throw new AppError("User not found", 404);
@@ -164,6 +186,10 @@ export class AuthFacade {
   }
 
   async updateProfile(input: UpdateProfileInput) {
+    if (input.userId.trim().length === 0) {
+      throw new AppError("userId is required", 400);
+    }
+
     if (input.name.trim().length === 0) {
       throw new AppError("MSG1: name is required", 400);
     }
@@ -183,6 +209,11 @@ export class AuthFacade {
       address: (input.address ?? "").trim(),
     });
 
+    await this.authSubject.notify({
+      type: "profile_updated",
+      userId: updated.user_id,
+    });
+
     return {
       user_id: updated.user_id,
       name: updated.name,
@@ -194,6 +225,10 @@ export class AuthFacade {
   }
 
   async changePassword(input: ChangePasswordInput): Promise<{ updated: true }> {
+    if (input.userId.trim().length === 0) {
+      throw new AppError("userId is required", 400);
+    }
+
     if (input.currentPassword.length === 0) {
       throw new AppError("MSG4: current password is required", 400);
     }
@@ -211,13 +246,21 @@ export class AuthFacade {
       throw new AppError("User not found", 404);
     }
 
-    const isCurrentPasswordCorrect = await this.hasher.compare(input.currentPassword, user.password);
+    const isCurrentPasswordCorrect = this.isPbkdf2Hash(user.password)
+      ? await this.hasher.compare(input.currentPassword, user.password)
+      : input.currentPassword === user.password;
+
     if (!isCurrentPasswordCorrect) {
       throw new AppError("MSG7: current password is incorrect", 400);
     }
 
     const newPasswordHash = await this.hasher.hash(input.newPassword);
     await this.repository.updatePassword(input.userId, newPasswordHash);
+
+    await this.authSubject.notify({
+      type: "password_changed",
+      userId: input.userId,
+    });
 
     return { updated: true };
   }

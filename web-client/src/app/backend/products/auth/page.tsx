@@ -7,10 +7,12 @@ const BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY = "backend-testing-access-token";
 
 type SignInResult = {
   session: {
-    access_token: string;
+    session_id?: string;
+    access_token?: string;
   } | null;
   user: {
-    id: string;
+    id?: string;
+    user_id?: string;
     email?: string;
   } | null;
 };
@@ -68,8 +70,8 @@ export default function BackendAuthTestPage() {
       setResult(data);
       if (path === "/api/auth/sign-in") {
         const signInData = data as SignInResult;
-        const userId = signInData.user?.id;
-        const accessToken = signInData.session?.access_token;
+        const userId = signInData.user?.user_id ?? signInData.user?.id;
+        const accessToken = signInData.session?.access_token ?? signInData.session?.session_id;
         if (userId) {
           window.localStorage.setItem(BACKEND_TEST_USER_STORAGE_KEY, userId);
           setActiveUserId(userId);
@@ -87,13 +89,13 @@ export default function BackendAuthTestPage() {
     }
   };
 
-  const requireAccessToken = (): string => {
-    const accessToken = window.localStorage.getItem(BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY)?.trim() ?? "";
-    if (!accessToken) {
-      throw new Error("Please sign in first to get access token");
+  const requireUserId = (): string => {
+    const userId = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    if (!userId) {
+      throw new Error("Please sign in first to get user id");
     }
 
-    return accessToken;
+    return userId;
   };
 
   return (
@@ -156,8 +158,8 @@ export default function BackendAuthTestPage() {
             <button
               onClick={() => {
                 try {
-                  const accessToken = requireAccessToken();
-                  void run(`/api/account/profile?accessToken=${encodeURIComponent(accessToken)}`, "GET");
+                  const userId = requireUserId();
+                  void run(`/api/account/profile?userId=${encodeURIComponent(userId)}`, "GET");
                 } catch (err) {
                   setError(err instanceof Error ? err.message : "Missing user");
                 }
@@ -170,9 +172,9 @@ export default function BackendAuthTestPage() {
             <button
               onClick={() => {
                 try {
-                  const accessToken = requireAccessToken();
+                  const userId = requireUserId();
                   void run("/api/account/profile", "PUT", {
-                    accessToken,
+                    userId,
                     name: profileName,
                     phone: profilePhone,
                     address: profileAddress,
@@ -199,9 +201,9 @@ export default function BackendAuthTestPage() {
           <button
             onClick={() => {
               try {
-                const accessToken = requireAccessToken();
+                const userId = requireUserId();
                 void run("/api/account/change-password", "PUT", {
-                  accessToken,
+                  userId,
                   currentPassword,
                   newPassword,
                   confirmPassword,

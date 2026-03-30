@@ -11,6 +11,11 @@ export type ProductOption = {
   name: string;
 };
 
+export type CategoryOption = {
+  category_id: string;
+  name: string;
+};
+
 export type BatchOption = {
   batch_id: string;
   product_id: string;
@@ -49,6 +54,23 @@ export class TestingOptionsRepository {
 
     return ((data ?? []) as ProductOption[]).map((row) => ({
       product_id: String(row.product_id),
+      name: String(row.name ?? "Unknown"),
+    }));
+  }
+
+  async listCategories(limit = 200): Promise<CategoryOption[]> {
+    const { data, error } = await supabaseServer
+      .from("categories")
+      .select("category_id,name")
+      .order("name", { ascending: true })
+      .limit(limit);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return ((data ?? []) as CategoryOption[]).map((row) => ({
+      category_id: String(row.category_id),
       name: String(row.name ?? "Unknown"),
     }));
   }
