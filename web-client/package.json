@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@greenplus/supabase-shared": "0.1.0",
+    "@sentry/nextjs": "^10.46.0",
     "@supabase/supabase-js": "^2.98.0",
     "@tanstack/react-query": "^5.90.21",
     "axios": "^1.13.6",

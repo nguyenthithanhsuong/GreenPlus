@@ -1,0 +1,39 @@
+services:
+  web-client:
+    build:
+      context: .
+      dockerfile: web-client/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    expose:
+      - "3000"
+
+  web-admin:
+    build:
+      context: .
+      dockerfile: web-admin/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    expose:
+      - "3001"
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - web-client
+      - web-admin
+    ports:
+      - "8080:80"
+      - "8081:81"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro

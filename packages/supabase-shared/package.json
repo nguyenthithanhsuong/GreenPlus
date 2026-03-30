@@ -1,0 +1,16 @@
+{
+  "name": "@greenplus/supabase-shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./supabaseClient": "./src/supabaseClient.ts",
+    "./databaseRelationships": "./src/databaseRelationships.ts",
+    "./crudPresets": "./src/crudPresets.ts",
+    "./accessPolicy": "./src/accessPolicy.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.2"
+  }
+}
