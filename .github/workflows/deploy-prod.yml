@@ -1,0 +1,82 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push images for production
+        run: |
+          VERSION=${{ github.ref_name }}-${{ github.sha }}
+          
+          docker buildx build \
+            --file web-client/Dockerfile \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web-client:latest \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web-client:$VERSION \
+            --push \
+            .
+          
+          docker buildx build \
+            --file web-admin/Dockerfile \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web-admin:latest \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web-admin:$VERSION \
+            --push \
+            .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}-${{ github.sha }}
+          body: |
+            Production deployment
+            - web-client: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web-client:${{ github.ref_name }}-${{ github.sha }}
+            - web-admin: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web-admin:${{ github.ref_name }}-${{ github.sha }}
+
+      - name: Deploy to production environment
+        run: |
+          echo "Deploying to production..."
+          # TODO: Add your deployment commands here
+          # Example: 
+          # - Update docker-compose.yml with new image tags
+          # - Run docker-compose pull && docker-compose up -d
+          # - Or trigger your deployment pipeline (AWS CodeDeploy, Kubernetes, etc.)
+          # 
+          # WARNING: Be careful with production deployments!
+          # Consider adding approval steps in GitHub environments
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests..."
+          # TODO: Add health checks and smoke tests
+          # Example: curl https://your-production-url.com/health
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Production deployment complete"
+          # TODO: Add Slack/email notification to team

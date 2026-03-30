@@ -3,21 +3,16 @@
 import { useEffect, useState } from "react";
 
 const BACKEND_TEST_USER_STORAGE_KEY = "backend-testing-user-id";
+const BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY = "backend-testing-access-token";
 
 type SignInResult = {
   session: {
-    session_id: string;
-    user_id: string;
-    login_time: string;
-  };
+    access_token: string;
+  } | null;
   user: {
-    user_id: string;
-    name: string;
-    email: string;
-    phone: string | null;
-    address: string | null;
-    status: string;
-  };
+    id: string;
+    email?: string;
+  } | null;
 };
 
 export default function BackendAuthTestPage() {
@@ -41,10 +36,13 @@ export default function BackendAuthTestPage() {
   const [result, setResult] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const [activeUserId, setActiveUserId] = useState("");
+  const [activeAccessToken, setActiveAccessToken] = useState("");
 
   useEffect(() => {
     const current = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const accessToken = window.localStorage.getItem(BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY)?.trim() ?? "";
     setActiveUserId(current);
+    setActiveAccessToken(accessToken);
   }, []);
 
   const run = async (path: string, method: string, body?: Record<string, unknown>) => {
@@ -70,10 +68,15 @@ export default function BackendAuthTestPage() {
       setResult(data);
       if (path === "/api/auth/sign-in") {
         const signInData = data as SignInResult;
-        const userId = signInData.user?.user_id;
+        const userId = signInData.user?.id;
+        const accessToken = signInData.session?.access_token;
         if (userId) {
           window.localStorage.setItem(BACKEND_TEST_USER_STORAGE_KEY, userId);
           setActiveUserId(userId);
+        }
+        if (accessToken) {
+          window.localStorage.setItem(BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY, accessToken);
+          setActiveAccessToken(accessToken);
         }
       }
     } catch (requestError) {
@@ -84,13 +87,13 @@ export default function BackendAuthTestPage() {
     }
   };
 
-  const requireUserId = (): string => {
-    const userId = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
-    if (!userId) {
-      throw new Error("Please sign in first or set test user in top-right corner");
+  const requireAccessToken = (): string => {
+    const accessToken = window.localStorage.getItem(BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY)?.trim() ?? "";
+    if (!accessToken) {
+      throw new Error("Please sign in first to get access token");
     }
 
-    return userId;
+    return accessToken;
   };
 
   return (
@@ -99,6 +102,7 @@ export default function BackendAuthTestPage() {
         <h1 className="text-2xl font-bold text-slate-900">Backend Test: Customer Auth and Account</h1>
         <p className="text-sm text-slate-600">Tests use case Register, Sign In, and Manage Customer Account.</p>
         <p className="text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
+        <p className="text-xs text-slate-500">Access token: {activeAccessToken ? "available" : "not set"}</p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <h2 className="mb-2 text-sm font-semibold text-slate-800">Register</h2>
@@ -152,8 +156,8 @@ export default function BackendAuthTestPage() {
             <button
               onClick={() => {
                 try {
-                  const userId = requireUserId();
-                  void run(`/api/account/profile?userId=${encodeURIComponent(userId)}`, "GET");
+                  const accessToken = requireAccessToken();
+                  void run(`/api/account/profile?accessToken=${encodeURIComponent(accessToken)}`, "GET");
                 } catch (err) {
                   setError(err instanceof Error ? err.message : "Missing user");
                 }
@@ -166,9 +170,9 @@ export default function BackendAuthTestPage() {
             <button
               onClick={() => {
                 try {
-                  const userId = requireUserId();
+                  const accessToken = requireAccessToken();
                   void run("/api/account/profile", "PUT", {
-                    userId,
+                    accessToken,
                     name: profileName,
                     phone: profilePhone,
                     address: profileAddress,
@@ -195,9 +199,9 @@ export default function BackendAuthTestPage() {
           <button
             onClick={() => {
               try {
-                const userId = requireUserId();
+                const accessToken = requireAccessToken();
                 void run("/api/account/change-password", "PUT", {
-                  userId,
+                  accessToken,
                   currentPassword,
                   newPassword,
                   confirmPassword,

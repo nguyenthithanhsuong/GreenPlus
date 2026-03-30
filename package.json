@@ -13,7 +13,8 @@
     "dev:admin": "turbo build --filter=web-admin && turbo dev --filter=web-admin",
     "dev:client": "turbo build --filter=web-client && turbo dev --filter=web-client",
     "build": "turbo build",
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+    "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
     "dotenv": "^16.6.1",

@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useEffect } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
 
 type EndpointCheck = {
   id: string;
@@ -18,6 +21,14 @@ type CheckResult = {
   durationMs: number;
   summary: string;
   data: unknown;
+};
+
+type RealtimeEvent = {
+  id: string;
+  table: "orders" | "order_tracking" | "inventory";
+  eventType: string;
+  timestamp: string;
+  payload: unknown;
 };
 
 const endpointChecks: EndpointCheck[] = [
@@ -77,6 +88,56 @@ function statusClass(ok: boolean): string {
 export default function BackendHealthPage() {
   const [results, setResults] = useState<Record<string, CheckResult>>({});
   const [running, setRunning] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState("CONNECTING");
+  const [realtimeEvents, setRealtimeEvents] = useState<RealtimeEvent[]>([]);
+
+  useEffect(() => {
+    const appendEvent = (table: RealtimeEvent["table"], payload: unknown, eventType: string) => {
+      setRealtimeEvents((prev) =>
+        [
+          {
+            id: `${Date.now()}-${table}`,
+            table,
+            eventType,
+            timestamp: new Date().toISOString(),
+            payload,
+          },
+          ...prev,
+        ].slice(0, 30)
+      );
+    };
+
+    const channel = supabase
+      .channel("admin-runtime-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        (payload) => {
+          appendEvent("orders", payload, payload.eventType);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "order_tracking" },
+        (payload) => {
+          appendEvent("order_tracking", payload, payload.eventType);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "inventory" },
+        (payload) => {
+          appendEvent("inventory", payload, payload.eventType);
+        }
+      )
+      .subscribe((status) => {
+        setRealtimeStatus(status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const totals = useMemo(() => {
     const list = Object.values(results);
@@ -158,6 +219,11 @@ export default function BackendHealthPage() {
           <p className="mt-2 text-sm text-slate-600">
             Test all API routes and show success/failure with response details.
           </p>
+          <div className="mt-2">
+            <Link href="/backend/storage" className="text-sm font-medium text-blue-700 hover:underline">
+              Open Storage Upload Test
+            </Link>
+          </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
@@ -180,6 +246,37 @@ export default function BackendHealthPage() {
             </span>
           </div>
         </div>
+
+        <section className="mb-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">Realtime Monitor</h2>
+            <span className="rounded bg-slate-200 px-2 py-1 text-xs font-medium text-slate-800">
+              status: {realtimeStatus}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-slate-600">
+            Subscribed tables: orders, order_tracking, inventory.
+          </p>
+
+          {realtimeEvents.length === 0 && (
+            <p className="mt-3 text-sm text-slate-500">No realtime events yet.</p>
+          )}
+
+          {realtimeEvents.length > 0 && (
+            <div className="mt-4 space-y-3">
+              {realtimeEvents.map((evt) => (
+                <article key={evt.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                    {evt.table} | {evt.eventType} | {evt.timestamp}
+                  </p>
+                  <pre className="mt-2 overflow-x-auto rounded bg-slate-950 p-2 text-xs text-slate-100">
+                    {JSON.stringify(evt.payload, null, 2)}
+                  </pre>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section className="space-y-4">
           {endpointChecks.map((check) => {

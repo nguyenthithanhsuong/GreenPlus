@@ -1,23 +1,28 @@
-import { UserRepository } from "./user.repository";
+import { createAnonSupabaseClient } from "../../core/supabase";
+
+type VerifiedUser = {
+  id: string;
+  email: string | null;
+  role: string;
+};
 
 export class AuthService {
-  constructor(private readonly userRepository: UserRepository) {}
-
-  async signIn(email: string, password: string): Promise<{ token: string }> {
-    const user = await this.userRepository.findByEmail(email);
-    
-    if (!user) {
-      throw new Error("Email doesn't exist");
+  async verifySession(accessToken: string): Promise<VerifiedUser> {
+    if (!accessToken.trim()) {
+      throw new Error("accessToken is required");
     }
 
-    if (!password) {
-      throw new Error("Password is required");
+    const supabase = createAnonSupabaseClient();
+    const { data, error } = await supabase.auth.getUser(accessToken);
+
+    if (error || !data.user) {
+      throw new Error(error?.message ?? "Invalid session");
     }
 
-    if (user && !password) {
-       throw new Error("Password cannot be empty");
-    }
-
-    return { token: `token-for-${user.id}` };
+    return {
+      id: data.user.id,
+      email: data.user.email ?? null,
+      role: data.user.role ?? "authenticated",
+    };
   }
 }

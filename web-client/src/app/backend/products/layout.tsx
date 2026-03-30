@@ -23,6 +23,7 @@ const productSubNavItems: NavItem[] = [
 ];
 
 const BACKEND_TEST_USER_STORAGE_KEY = "backend-testing-user-id";
+const BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY = "backend-testing-access-token";
 
 function navClass(isActive: boolean): string {
   return isActive
@@ -60,6 +61,7 @@ export default function ProductBackendLayout({ children }: { children: ReactNode
 
   const clearTestUser = () => {
     window.localStorage.removeItem(BACKEND_TEST_USER_STORAGE_KEY);
+    window.localStorage.removeItem(BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY);
     setActiveUserId(null);
     setInputUserId("");
   };
