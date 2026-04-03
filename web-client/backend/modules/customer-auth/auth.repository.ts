@@ -9,6 +9,7 @@ export type UserRow = {
   password: string;
   phone: string | null;
   address: string | null;
+  image_url: string | null;
   status: UserStatus;
   created_at: string;
 };
@@ -17,7 +18,7 @@ export class AuthRepository {
   async findUserByEmail(email: string): Promise<UserRow | null> {
     const { data, error } = await supabaseServer
       .from("users")
-      .select("user_id,role_id,name,email,password,phone,address,status,created_at")
+      .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
       .ilike("email", email)
       .limit(1);
 
@@ -32,7 +33,7 @@ export class AuthRepository {
   async findUserById(userId: string): Promise<UserRow | null> {
     const { data, error } = await supabaseServer
       .from("users")
-      .select("user_id,role_id,name,email,password,phone,address,status,created_at")
+      .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -72,7 +73,7 @@ export class AuthRepository {
         password: input.passwordHash,
         status: "active",
       })
-      .select("user_id,role_id,name,email,password,phone,address,status,created_at")
+      .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
       .single();
 
     if (error) {
@@ -87,6 +88,7 @@ export class AuthRepository {
     name: string;
     phone: string;
     address: string;
+    imageUrl: string;
   }): Promise<UserRow> {
     const { data, error } = await supabaseServer
       .from("users")
@@ -94,9 +96,10 @@ export class AuthRepository {
         name: input.name,
         phone: input.phone,
         address: input.address,
+        image_url: input.imageUrl,
       })
       .eq("user_id", input.userId)
-      .select("user_id,role_id,name,email,password,phone,address,status,created_at")
+      .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
       .single();
 
     if (error) {

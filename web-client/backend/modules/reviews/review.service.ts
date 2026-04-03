@@ -1,6 +1,8 @@
 import { AppError } from "../../core/errors";
 import { CreateReviewInput, ReviewCreatedResult } from "./review.types";
 import { ReviewRepository } from "./review.repository";
+import { createReviewEligibilityState } from "./states/review-eligibility.state";
+import { createReviewValidationStrategy } from "./strategies/review-validation.strategy";
 import {
   ProductRatingUpdaterObserver,
   ReviewSubject,
@@ -10,6 +12,7 @@ import {
 export class ReviewService {
   private readonly subject = new ReviewSubject();
   private readonly repository = new ReviewRepository();
+  private readonly validationStrategy = createReviewValidationStrategy();
 
   constructor() {
     this.subject.addObserver(new ProductRatingUpdaterObserver());
@@ -17,14 +20,8 @@ export class ReviewService {
   }
 
   private validateInput(input: CreateReviewInput): void {
-    if (input.rating < 1 || input.rating > 5) {
-      throw new AppError("Invalid rating value", 400);
-    }
-
     const comment = input.comment ?? "";
-    if (comment.length > 500) {
-      throw new AppError("Comment exceeds maximum length", 400);
-    }
+    this.validationStrategy.validate(input.rating, comment);
   }
 
   private async verifyPurchasedProduct(userId: string, productId: string): Promise<void> {
@@ -46,7 +43,8 @@ export class ReviewService {
       throw new AppError(error instanceof Error ? error.message : "Failed to verify purchased product", 500);
     }
 
-    if (!hasDeliveredItem) {
+    const eligibilityState = createReviewEligibilityState(hasDeliveredItem);
+    if (!eligibilityState.canSubmit()) {
       throw new AppError("Review rejected: product has not been purchased in delivered orders", 400);
     }
   }

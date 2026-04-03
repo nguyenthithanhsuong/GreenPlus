@@ -11,6 +11,7 @@ import {
   OrderSummary,
   PaymentStatus,
   ShippingStatus,
+  UpdateOrderInput,
 } from "./order.types";
 
 const VALID_PAYMENT_STATUS = new Set<PaymentStatus>(["pending", "paid", "failed", "unknown"]);
@@ -356,6 +357,70 @@ export class OrderService {
       order_id: order.order_id,
       status: "cancelled",
       message: "Cancellation Successful",
+    };
+  }
+
+  async updateOrder(input: UpdateOrderInput): Promise<{ order_id: string; message: string }> {
+    if (!input.userId.trim()) {
+      throw new AppError("userId is required", 400);
+    }
+
+    if (!input.orderId.trim()) {
+      throw new AppError("orderId is required", 400);
+    }
+
+    let order: Awaited<ReturnType<OrderRepository["findOrderById"]>> = null;
+    try {
+      order = await this.repository.findOrderById(input.orderId.trim());
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to load order", 500);
+    }
+
+    if (!order) {
+      throw new AppError("Order not found", 404);
+    }
+
+    if (order.user_id !== input.userId.trim()) {
+      throw new AppError("Access denied for this order", 403);
+    }
+
+    const state = createOrderState(order.status);
+    if (!state.canCancel()) {
+      throw new AppError("Update failed: only pending or confirmed orders can be updated", 400);
+    }
+
+    const hasDeliveryAddress = typeof input.deliveryAddress === "string" && input.deliveryAddress.trim().length > 0;
+    const hasDeliveryFee = typeof input.deliveryFee === "number";
+    const hasNote = typeof input.note !== "undefined";
+
+    if (!hasDeliveryAddress && !hasDeliveryFee && !hasNote) {
+      throw new AppError("At least one field to update is required", 400);
+    }
+
+    const normalizedDeliveryFee = hasDeliveryFee ? Number(input.deliveryFee) : undefined;
+    if (typeof normalizedDeliveryFee === "number" && (!Number.isFinite(normalizedDeliveryFee) || normalizedDeliveryFee < 0)) {
+      throw new AppError("deliveryFee must be >= 0", 400);
+    }
+
+    try {
+      await this.repository.updateOrderFields({
+        orderId: order.order_id,
+        deliveryAddress: hasDeliveryAddress ? input.deliveryAddress?.trim() : undefined,
+        deliveryFee: normalizedDeliveryFee,
+        note: hasNote ? (input.note ?? "").trim() || null : undefined,
+      });
+      await this.repository.insertTracking({
+        orderId: order.order_id,
+        status: order.status,
+        note: "Order details updated",
+      });
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to update order", 500);
+    }
+
+    return {
+      order_id: order.order_id,
+      message: "Order updated successfully",
     };
   }
 }

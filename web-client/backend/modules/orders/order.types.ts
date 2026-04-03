@@ -67,8 +67,16 @@ export type CancelOrderInput = {
   note?: string;
 };
 
+export type UpdateOrderInput = {
+  userId: string;
+  orderId: string;
+  deliveryAddress?: string;
+  deliveryFee?: number;
+  note?: string;
+};
+
 export type OrderChangedEvent = {
   orderId: string;
-  event: "created" | "cancelled";
+  event: "created" | "updated" | "cancelled";
   changedAt: string;
 };

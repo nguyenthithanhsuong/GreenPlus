@@ -160,6 +160,7 @@ export class AuthFacade {
         email: user.email,
         phone: user.phone,
         address: user.address,
+        image_url: user.image_url,
         status: user.status,
       },
     };
@@ -181,6 +182,7 @@ export class AuthFacade {
       email: user.email,
       phone: user.phone,
       address: user.address,
+      image_url: user.image_url,
       status: user.status,
     };
   }
@@ -207,6 +209,7 @@ export class AuthFacade {
       name: input.name.trim(),
       phone: input.phone.trim(),
       address: (input.address ?? "").trim(),
+      imageUrl: (input.imageUrl ?? "").trim(),
     });
 
     await this.authSubject.notify({
@@ -220,6 +223,7 @@ export class AuthFacade {
       email: updated.email,
       phone: updated.phone,
       address: updated.address,
+      image_url: updated.image_url,
       status: updated.status,
     };
   }

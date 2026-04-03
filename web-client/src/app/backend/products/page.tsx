@@ -46,6 +46,38 @@ type ProductDetail = {
 
 type SortType = "newest" | "price_asc" | "price_desc";
 
+const KNOWN_IMAGE_HOSTS = ["gstatic.com", "googleusercontent.com", "imgur.com", "unsplash.com", "cloudinary.com"];
+
+function resolveRenderableImageUrl(value?: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalizedValue = value.trim();
+  if (!normalizedValue) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(normalizedValue);
+    const pathname = parsed.pathname.toLowerCase();
+    const hostname = parsed.hostname.toLowerCase();
+    const queryQ = parsed.searchParams.get("q") ?? "";
+
+    const hasImageExtension = /\.(?:png|jpe?g|gif|webp|svg|avif|bmp)$/.test(pathname);
+    const isKnownImageHost = KNOWN_IMAGE_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+    const isGoogleImageProxy = queryQ.includes("tbn:");
+
+    if (hasImageExtension || isKnownImageHost || isGoogleImageProxy) {
+      return normalizedValue;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 export default function BackendProductsTestPage() {
   const [keyword, setKeyword] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -144,26 +176,29 @@ export default function BackendProductsTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-xl border border-slate-300 bg-white p-5">
+        {/* <section className="rounded-xl border border-slate-300 bg-white p-5">
           <h1 className="text-2xl font-bold">Backend Product Test Route</h1>
           <p className="mt-2 text-sm text-slate-600">
             This is a pseudo frontend for testing backend product APIs only. It does not replace storefront UI logic.
           </p>
           <p className="mt-1 text-xs text-slate-500">Route: /backend/products</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <a href="/backend/cart" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Cart Test</a>
-            <a href="/backend/orders" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Orders Test</a>
-            <a href="/backend/categories" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Categories Test</a>
+            <a href="/backend/products/cart" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Cart Test</a>
+            <a href="/backend/products/orders" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Orders Test</a>
+            <a href="/backend/products/categories" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Categories Test</a>
             <a href="/backend/register" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Register Test</a>
             <a href="/backend/signin" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Sign In Test</a>
             <a href="/backend/profile" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Profile Test</a>
-            <a href="/backend/products/auth" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Auth and Account Test</a>
             <a href="/backend/products/qr" className="rounded bg-slate-200 px-2 py-1 text-slate-800">QR Origin Test</a>
             <a href="/backend/products/cart" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Cart and Notes Test</a>
+            <a href="/backend/products/group-purchases" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Group Purchase Test</a>
             <a href="/backend/products/reviews" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Review Test</a>
             <a href="/backend/products/subscriptions" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Subscription Test</a>
+            <a href="/backend/products/blogs" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Nutrition Blog Test</a>
+            <a href="/backend/products/community" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Community Post Test</a>
+            <a href="/backend/products/loyalty" className="rounded bg-slate-200 px-2 py-1 text-slate-800">Loyalty Points Test</a>
           </div>
-        </section>
+        </section> */}
 
         <section className="rounded-xl border border-slate-300 bg-white p-5">
           <h2 className="text-lg font-semibold">Browse and Search</h2>
@@ -252,6 +287,7 @@ export default function BackendProductsTestPage() {
                 <table className="min-w-full text-left text-sm">
                   <thead className="bg-slate-200">
                     <tr>
+                      <th className="px-3 py-2">image</th>
                       <th className="px-3 py-2">name</th>
                       <th className="px-3 py-2">category</th>
                       <th className="px-3 py-2">certification</th>
@@ -263,6 +299,17 @@ export default function BackendProductsTestPage() {
                   <tbody>
                     {result.items.map((item) => (
                       <tr key={item.productId} className="border-t border-slate-200">
+                        <td className="px-3 py-2">
+                          {resolveRenderableImageUrl(item.imageUrl) ? (
+                            <img
+                              src={resolveRenderableImageUrl(item.imageUrl) as string}
+                              alt={item.name}
+                              className="h-12 w-12 rounded object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs text-slate-500">-</span>
+                          )}
+                        </td>
                         <td className="px-3 py-2">{item.name}</td>
                         <td className="px-3 py-2">{item.categoryName ?? "-"}</td>
                         <td className="px-3 py-2">{item.certification ?? "-"}</td>
@@ -296,9 +343,31 @@ export default function BackendProductsTestPage() {
           {detailError && <p className="mt-3 text-sm text-rose-700">{detailError}</p>}
 
           {detail && (
-            <pre className="mt-3 overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
-              {JSON.stringify(detail, null, 2)}
-            </pre>
+            <div className="mt-3 space-y-3">
+              {detail.images.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {detail.images.map((imageUrl) => {
+                    const resolvedImageUrl = resolveRenderableImageUrl(imageUrl);
+                    if (!resolvedImageUrl) {
+                      return null;
+                    }
+
+                    return (
+                      <img
+                        key={imageUrl}
+                        src={resolvedImageUrl}
+                        alt={detail.name}
+                        className="h-24 w-24 rounded border border-slate-200 object-cover"
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
+              <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
+                {JSON.stringify(detail, null, 2)}
+              </pre>
+            </div>
           )}
 
           {!detail && !detailLoading && !detailError && (

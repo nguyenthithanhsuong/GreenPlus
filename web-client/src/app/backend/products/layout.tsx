@@ -15,11 +15,19 @@ const topNavItems: NavItem[] = [
 
 const productSubNavItems: NavItem[] = [
   { href: "/backend/products", label: "Overview" },
-  { href: "/backend/products/auth", label: "Auth and Account" },
+  { href: "/backend/register", label: "Register" },
+  { href: "/backend/signin", label: "Sign In" },
+  { href: "/backend/profile", label: "Profile" },
   { href: "/backend/products/qr", label: "QR Origin" },
   { href: "/backend/products/cart", label: "Cart and Notes" },
+  { href: "/backend/products/orders", label: "Orders" },
+  { href: "/backend/products/categories", label: "Categories" },
+  { href: "/backend/products/group-purchases", label: "Group Purchases" },
   { href: "/backend/products/reviews", label: "Reviews" },
   { href: "/backend/products/subscriptions", label: "Subscriptions" },
+  { href: "/backend/products/blogs", label: "Nutrition Blogs" },
+  { href: "/backend/products/community", label: "Community Posts" },
+  { href: "/backend/products/loyalty", label: "Loyalty Points" },
 ];
 
 const BACKEND_TEST_USER_STORAGE_KEY = "backend-testing-user-id";

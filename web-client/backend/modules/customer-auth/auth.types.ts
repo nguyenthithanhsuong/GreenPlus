@@ -17,6 +17,7 @@ export type UpdateProfileInput = {
   name: string;
   phone: string;
   address?: string;
+  imageUrl?: string;
 };
 
 export type ChangePasswordInput = {

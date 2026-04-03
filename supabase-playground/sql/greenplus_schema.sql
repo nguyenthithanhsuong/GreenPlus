@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(100) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
+  loyalty_points INTEGER NOT NULL DEFAULT 0 CHECK (loyalty_points >= 0),
   phone VARCHAR(20),
   address VARCHAR(255),
   status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'banned')),

@@ -181,7 +181,7 @@ export default function BackendOrdersTestPage() {
           <p className="mt-1 text-xs text-slate-500">Route: /backend/orders</p>
           <p className="mt-1 text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <Link href="/backend/cart" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link href="/backend/products/cart" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
               Cart Test
             </Link>
             <Link href="/backend/products" className="rounded bg-slate-200 px-2 py-1 text-slate-800">

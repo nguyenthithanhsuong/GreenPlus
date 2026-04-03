@@ -32,6 +32,7 @@ export async function PUT(request: Request) {
       name?: string;
       phone?: string;
       address?: string;
+      imageUrl?: string;
     };
 
     const data = await authFacade.updateProfile({
@@ -39,6 +40,7 @@ export async function PUT(request: Request) {
       name: body.name ?? "",
       phone: body.phone ?? "",
       address: body.address,
+      imageUrl: body.imageUrl,
     });
 
     return NextResponse.json(data, { status: 200 });

@@ -11,14 +11,26 @@ type ProfileResult = {
   email: string;
   phone: string | null;
   address: string | null;
+  image_url: string | null;
   status: string;
 };
 
 export default function BackendProfileTestPage() {
+  const fakeProfile: ProfileResult = {
+    user_id: "demo-profile-user-001",
+    name: "Jamie Green",
+    email: "jamie.green@example.com",
+    phone: "+84 912 345 678",
+    address: "42 Green Avenue, District 1, Ho Chi Minh City",
+    image_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
+    status: "active",
+  };
+
   const [userIdInput, setUserIdInput] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -61,6 +73,7 @@ export default function BackendProfileTestPage() {
       setName(profile.name ?? "");
       setPhone(profile.phone ?? "");
       setAddress(profile.address ?? "");
+      setImageUrl(profile.image_url ?? "");
       window.localStorage.setItem(BACKEND_TEST_USER_STORAGE_KEY, profile.user_id);
       setActiveUserId(profile.user_id);
       setUserIdInput(profile.user_id);
@@ -86,6 +99,7 @@ export default function BackendProfileTestPage() {
           name,
           phone,
           address,
+          imageUrl,
         }),
       });
 
@@ -96,6 +110,7 @@ export default function BackendProfileTestPage() {
 
       const profile = data as ProfileResult;
       setResult(profile);
+      setImageUrl(profile.image_url ?? "");
       window.localStorage.setItem(BACKEND_TEST_USER_STORAGE_KEY, profile.user_id);
       setActiveUserId(profile.user_id);
       setUserIdInput(profile.user_id);
@@ -140,6 +155,20 @@ export default function BackendProfileTestPage() {
       setLoading(false);
     }
   };
+
+  const showFakeProfile = () => {
+    setResult(fakeProfile);
+    setUserIdInput(fakeProfile.user_id);
+    setName(fakeProfile.name);
+    setPhone(fakeProfile.phone ?? "");
+    setAddress(fakeProfile.address ?? "");
+    setImageUrl(fakeProfile.image_url ?? "");
+  };
+
+  const previewImageSrc = imageUrl.trim() || fakeProfile.image_url || "https://placehold.co/160x160?text=No+Image";
+  const previewName = name.trim() || fakeProfile.name;
+  const previewAddress = address.trim() || fakeProfile.address || "No address";
+  const previewPhone = phone.trim() || fakeProfile.phone || "No phone";
 
   return (
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
@@ -189,6 +218,12 @@ export default function BackendProfileTestPage() {
               placeholder="address"
               className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2"
             />
+            <input
+              value={imageUrl}
+              onChange={(event) => setImageUrl(event.target.value)}
+              placeholder="image_url"
+              className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+            />
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -206,6 +241,35 @@ export default function BackendProfileTestPage() {
             >
               {loading ? "Saving..." : "Update Profile"}
             </button>
+            <button
+              onClick={showFakeProfile}
+              disabled={loading}
+              className="rounded bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            >
+              Show Fake Profile
+            </button>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-300 bg-white p-5">
+          <h2 className="text-lg font-semibold">Formatted Profile Preview</h2>
+          <p className="mt-1 text-xs text-slate-500">Preview uses form values and falls back to a fake demo profile.</p>
+          <div className="mt-4 rounded-xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-sky-50 p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <img
+                src={previewImageSrc}
+                alt="Profile preview"
+                className="h-24 w-24 rounded-full border border-slate-300 object-cover"
+                onError={(event) => {
+                  event.currentTarget.src = "https://placehold.co/160x160?text=Bad+URL";
+                }}
+              />
+              <div className="space-y-1">
+                <p className="text-xl font-bold text-slate-900">{previewName}</p>
+                <p className="text-sm text-slate-600">{previewPhone}</p>
+                <p className="text-sm text-slate-600">{previewAddress}</p>
+              </div>
+            </div>
           </div>
         </section>
 

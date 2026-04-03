@@ -9,9 +9,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo build && turbo dev --ui=tui",
-    "dev:admin": "turbo build --filter=web-admin && turbo dev --filter=web-admin",
-    "dev:client": "turbo build --filter=web-client && turbo dev --filter=web-client",
+    "dev": "turbo dev --ui=tui",
+    "dev:admin": "turbo dev --filter=web-admin",
+    "dev:client": "turbo dev --filter=web-client",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo run typecheck"

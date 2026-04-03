@@ -283,6 +283,33 @@ export class OrderRepository {
       throw new Error(error.message);
     }
   }
+
+  async updateOrderFields(input: {
+    orderId: string;
+    deliveryAddress?: string;
+    deliveryFee?: number;
+    note?: string | null;
+  }): Promise<void> {
+    const payload: Record<string, unknown> = {};
+
+    if (typeof input.deliveryAddress === "string") {
+      payload.delivery_address = input.deliveryAddress;
+    }
+
+    if (typeof input.deliveryFee === "number") {
+      payload.delivery_fee = input.deliveryFee;
+    }
+
+    if (typeof input.note !== "undefined") {
+      payload.note = input.note;
+    }
+
+    const { error } = await supabaseServer.from("orders").update(payload).eq("order_id", input.orderId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
 }
 
 export function readRelationValue<T = string>(rel: RelObj, field: string): T | null {
