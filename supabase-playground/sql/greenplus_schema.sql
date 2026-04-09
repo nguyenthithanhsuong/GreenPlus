@@ -56,7 +56,6 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS products (
   product_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   category_id UUID NOT NULL REFERENCES categories(category_id) ON DELETE RESTRICT,
-  supplier_id UUID NOT NULL REFERENCES suppliers(supplier_id) ON DELETE RESTRICT,
   name VARCHAR(150) NOT NULL,
   description TEXT,
   unit VARCHAR(20) NOT NULL,
@@ -102,7 +101,6 @@ CREATE TABLE IF NOT EXISTS inventory_transactions (
 
 CREATE TABLE IF NOT EXISTS prices (
   price_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id UUID NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
   batch_id UUID REFERENCES batches(batch_id) ON DELETE SET NULL,
   price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
   date DATE NOT NULL,
@@ -165,7 +163,7 @@ CREATE TABLE IF NOT EXISTS payments (
   payment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID NOT NULL UNIQUE REFERENCES orders(order_id) ON DELETE CASCADE,
   method VARCHAR(30) NOT NULL CHECK (method IN ('cod', 'momo', 'vnpay', 'bank_transfer')),
-  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed')),
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed', 'cancelled')),
   amount NUMERIC(10,2) NOT NULL CHECK (amount >= 0),
   transaction_id VARCHAR(255),
   payment_date TIMESTAMPTZ,
@@ -223,6 +221,26 @@ CREATE TABLE IF NOT EXISTS posts (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS post_medias (
+  media_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES posts(post_id) ON DELETE CASCADE,
+  media_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS post_interactions (
+  interaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID REFERENCES posts(post_id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('like', 'comment')),
+  comment TEXT,
+  created_at DATE DEFAULT CURRENT_DATE,
+  status VARCHAR(20) CHECK (status IN ('active', 'edited', 'deleted'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_interactions_post_id ON post_interactions(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_interactions_post_user_type ON post_interactions(post_id, user_id, type);
+
 CREATE TABLE IF NOT EXISTS group_buys (
   group_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
@@ -261,13 +279,12 @@ CREATE TABLE IF NOT EXISTS reviews (
 CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
-CREATE INDEX IF NOT EXISTS idx_products_supplier_id ON products(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
 CREATE INDEX IF NOT EXISTS idx_batches_product_id ON batches(product_id);
 CREATE INDEX IF NOT EXISTS idx_batches_supplier_id ON batches(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_batches_status ON batches(status);
 CREATE INDEX IF NOT EXISTS idx_inventory_transactions_batch_id ON inventory_transactions(batch_id);
-CREATE INDEX IF NOT EXISTS idx_prices_product_id_date ON prices(product_id, date);
+CREATE INDEX IF NOT EXISTS idx_prices_batch_id_date ON prices(batch_id, date);
 CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -279,6 +296,7 @@ CREATE INDEX IF NOT EXISTS idx_deliveries_employee_id ON deliveries(employee_id)
 CREATE INDEX IF NOT EXISTS idx_complaints_user_id ON complaints(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_post_medias_post_id ON post_medias(post_id);
 CREATE INDEX IF NOT EXISTS idx_group_buys_product_id ON group_buys(product_id);
 CREATE INDEX IF NOT EXISTS idx_group_buy_members_group_id ON group_buy_members(group_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);

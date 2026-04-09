@@ -1,5 +1,5 @@
 import { AppError } from "../../core/errors";
-import { CreateReviewInput, ReviewCreatedResult } from "./review.types";
+import { CreateReviewInput, ReviewCreatedResult, ReviewListItem } from "./review.types";
 import { ReviewRepository } from "./review.repository";
 import { createReviewEligibilityState } from "./states/review-eligibility.state";
 import { createReviewValidationStrategy } from "./strategies/review-validation.strategy";
@@ -105,6 +105,39 @@ export class ReviewService {
       createdAt: String(data.created_at),
       averageRatingAfterInsert: avg,
     };
+  }
+
+  async listReviewsByProduct(productId: string, limit = 20): Promise<ReviewListItem[]> {
+    if (!productId) {
+      throw new AppError("productId is required");
+    }
+
+    let rows: {
+      review_id: string;
+      user_id: string;
+      product_id: string;
+      rating: number;
+      comment: string | null;
+      created_at: string;
+      users: { name: string | null; image_url: string | null } | null;
+    }[] = [];
+
+    try {
+      rows = await this.repository.listReviewsByProduct(productId, limit);
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to load reviews", 500);
+    }
+
+    return rows.map((row) => ({
+      reviewId: String(row.review_id),
+      userId: String(row.user_id),
+      userName: String(row.users?.name ?? "Ẩn danh"),
+      userImageUrl: row.users?.image_url ?? null,
+      productId: String(row.product_id),
+      rating: Number(row.rating),
+      comment: row.comment,
+      createdAt: String(row.created_at),
+    }));
   }
 }
 

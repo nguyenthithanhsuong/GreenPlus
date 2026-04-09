@@ -14,3 +14,14 @@ export type ReviewCreatedResult = {
   createdAt: string;
   averageRatingAfterInsert: number;
 };
+
+export type ReviewListItem = {
+  reviewId: string;
+  userId: string;
+  userName: string;
+  userImageUrl: string | null;
+  productId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+};

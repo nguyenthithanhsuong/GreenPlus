@@ -21,6 +21,29 @@ type ReviewRatingRow = {
   rating: number;
 };
 
+type ReviewListRow = {
+  review_id: string;
+  user_id: string;
+  product_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  users: {
+    name: string | null;
+    image_url: string | null;
+  } | null;
+};
+
+type ReviewListRawRow = {
+  review_id: string;
+  user_id: string;
+  product_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  users: { name: string | null; image_url: string | null } | { name: string | null; image_url: string | null }[] | null;
+};
+
 export class ReviewRepository {
   async listDeliveredOrderIdsByUser(userId: string): Promise<string[]> {
     const { data, error } = await supabaseServer
@@ -90,5 +113,30 @@ export class ReviewRepository {
     }
 
     return ((data ?? []) as ReviewRatingRow[]).map((row) => Number(row.rating));
+  }
+
+  async listReviewsByProduct(productId: string, limit = 20): Promise<ReviewListRow[]> {
+    const { data, error } = await supabaseServer
+      .from("reviews")
+      .select("review_id,user_id,product_id,rating,comment,created_at,users(name,image_url)")
+      .eq("product_id", productId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const rows = (data ?? []) as ReviewListRawRow[];
+
+    return rows.map((row) => ({
+      review_id: String(row.review_id),
+      user_id: String(row.user_id),
+      product_id: String(row.product_id),
+      rating: Number(row.rating),
+      comment: row.comment,
+      created_at: String(row.created_at),
+      users: Array.isArray(row.users) ? row.users[0] ?? null : row.users,
+    }));
   }
 }

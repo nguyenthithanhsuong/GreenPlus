@@ -6,7 +6,9 @@ export type OrderStatus =
   | "completed"
   | "cancelled";
 
-export type PaymentStatus = "pending" | "paid" | "failed" | "unknown";
+export type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "unknown";
+
+export type PaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer";
 
 export type ShippingStatus = "assigned" | "picked_up" | "delivering" | "delivered" | "unknown";
 
@@ -20,6 +22,7 @@ export type OrderSummary = {
   delivery_fee: number;
   note: string | null;
   created_at: string;
+  preview_images: string[];
 };
 
 export type OrderTrackingEntry = {
@@ -36,6 +39,7 @@ export type OrderItemDetail = {
   quantity: number;
   price: number;
   product_name: string | null;
+  product_image_url: string | null;
 };
 
 export type OrderDetail = {
@@ -46,6 +50,7 @@ export type OrderDetail = {
   order_status_label: "Pending" | "Confirmed" | "Processing" | "Shipping" | "Delivered" | "Cancelled";
   shipping_status: ShippingStatus;
   payment_status: PaymentStatus;
+  payment_method: PaymentMethod | "unknown";
   tracking_history: OrderTrackingEntry[];
   items: OrderItemDetail[];
   total_amount: number;
@@ -59,12 +64,18 @@ export type CreateOrderInput = {
   deliveryAddress: string;
   deliveryFee?: number;
   note?: string;
+  paymentMethod?: PaymentMethod;
 };
 
 export type CancelOrderInput = {
   userId: string;
   orderId: string;
   note?: string;
+};
+
+export type ConfirmPaymentInput = {
+  userId: string;
+  orderId: string;
 };
 
 export type UpdateOrderInput = {

@@ -11,6 +11,27 @@ type ReviewBody = {
   comment?: string;
 };
 
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const productId = (searchParams.get("productId") ?? "").trim();
+    const limit = Number(searchParams.get("limit") ?? "20");
+
+    if (!productId) {
+      return NextResponse.json({ error: "productId is required" }, { status: 400 });
+    }
+
+    const data = await reviewFacade.listReviews(productId, Number.isFinite(limit) ? limit : 20);
+    return NextResponse.json({ total: data.length, items: data }, { status: 200 });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
+
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as ReviewBody;

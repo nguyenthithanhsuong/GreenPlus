@@ -158,6 +158,7 @@ export class CartService {
         cart_id: item.cart_id,
         product_id: item.product_id,
         product_name: readRelValue<string>(item.products, "name") ?? "Unknown product",
+        product_image_url: readRelValue<string>(item.products, "image_url"),
         quantity: Number(item.quantity),
         note: item.note,
         product_price: price,

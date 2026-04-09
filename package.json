@@ -21,6 +21,6 @@
     "turbo": "^2.8.19"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.99.2"
+    "@supabase/supabase-js": "^2.102.1"
   }
 }

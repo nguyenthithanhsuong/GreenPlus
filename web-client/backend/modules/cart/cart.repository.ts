@@ -53,7 +53,7 @@ export class CartRepository {
   async listCartItemsWithProduct(cartId: string): Promise<CartItemWithProductRow[]> {
     const { data, error } = await supabaseServer
       .from("cart_items")
-      .select("cart_item_id,cart_id,product_id,quantity,note,products(name)")
+      .select("cart_item_id,cart_id,product_id,quantity,note,products(name,image_url)")
       .eq("cart_id", cartId);
 
     if (error) {
@@ -68,20 +68,57 @@ export class CartRepository {
       return [];
     }
 
+    const { data: batchData, error: batchError } = await supabaseServer
+      .from("batches")
+      .select("batch_id,product_id")
+      .in("product_id", productIds);
+
+    if (batchError) {
+      throw new Error(batchError.message);
+    }
+
+    const batchToProductMap = new Map<string, string>();
+    const batchIds = Array.from(
+      new Set(
+        (batchData ?? [])
+          .map((row) => {
+            const batchId = String(row.batch_id);
+            batchToProductMap.set(batchId, String(row.product_id));
+            return batchId;
+          })
+          .filter(Boolean),
+      ),
+    );
+
+    if (batchIds.length === 0) {
+      return [];
+    }
+
     const { data, error } = await supabaseServer
       .from("prices")
-      .select("product_id,price,date")
-      .in("product_id", productIds)
+      .select("batch_id,price,date")
+      .in("batch_id", batchIds)
       .order("date", { ascending: false });
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as Array<{ product_id: string; price: number }>).map((row) => ({
-      product_id: String(row.product_id),
-      price: Number(row.price),
-    }));
+    const latestRows = new Map<string, { product_id: string; price: number }>();
+
+    (data ?? []).forEach((row) => {
+      const productId = batchToProductMap.get(String(row.batch_id));
+      if (!productId || latestRows.has(productId)) {
+        return;
+      }
+
+      latestRows.set(productId, {
+        product_id: productId,
+        price: Number(row.price),
+      });
+    });
+
+    return Array.from(latestRows.values());
   }
 
   async listBatchIdsByProduct(productId: string): Promise<string[]> {

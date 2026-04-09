@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { orderFacade } from "../../../../backend/modules/orders/facades/order.facade";
+import { PaymentMethod } from "../../../../backend/modules/orders/order.types";
 
 type CreateOrderBody = {
   userId?: string;
@@ -10,6 +11,8 @@ type CreateOrderBody = {
   deliveryFee?: number;
   delivery_fee?: number;
   note?: string;
+  paymentMethod?: string;
+  payment_method?: string;
 };
 
 export async function GET(request: Request) {
@@ -39,6 +42,11 @@ export async function POST(request: Request) {
     const deliveryAddress = body.deliveryAddress?.trim() ?? body.delivery_address?.trim() ?? "";
     const deliveryFee = Number(body.deliveryFee ?? body.delivery_fee ?? 0);
     const note = body.note ?? "";
+    const rawPaymentMethod = (body.paymentMethod?.trim() ?? body.payment_method?.trim() ?? "cod").toLowerCase();
+    const paymentMethod: PaymentMethod =
+      rawPaymentMethod === "momo" || rawPaymentMethod === "vnpay" || rawPaymentMethod === "bank_transfer"
+        ? rawPaymentMethod
+        : "cod";
 
     if (!userId || !deliveryAddress) {
       return NextResponse.json({ error: "userId and deliveryAddress are required" }, { status: 400 });
@@ -49,6 +57,7 @@ export async function POST(request: Request) {
       deliveryAddress,
       deliveryFee,
       note,
+      paymentMethod,
     });
 
     return NextResponse.json(result, { status: 201 });

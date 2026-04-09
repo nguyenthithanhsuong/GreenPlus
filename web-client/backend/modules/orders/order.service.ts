@@ -5,8 +5,10 @@ import { createOrderStatusStrategy } from "./strategies/order-status.strategy";
 import {
   CancelOrderInput,
   CreateOrderInput,
+  ConfirmPaymentInput,
   OrderDetail,
   OrderItemDetail,
+  PaymentMethod,
   OrderStatus,
   OrderSummary,
   PaymentStatus,
@@ -14,7 +16,8 @@ import {
   UpdateOrderInput,
 } from "./order.types";
 
-const VALID_PAYMENT_STATUS = new Set<PaymentStatus>(["pending", "paid", "failed", "unknown"]);
+const VALID_PAYMENT_STATUS = new Set<PaymentStatus>(["pending", "paid", "failed", "cancelled", "unknown"]);
+const VALID_PAYMENT_METHOD = new Set<PaymentMethod>(["cod", "momo", "vnpay", "bank_transfer"]);
 const VALID_SHIPPING_STATUS = new Set<ShippingStatus>([
   "assigned",
   "picked_up",
@@ -26,6 +29,14 @@ const VALID_SHIPPING_STATUS = new Set<ShippingStatus>([
 export class OrderService {
   private readonly repository = new OrderRepository();
 
+  private isLegacyPaymentStatusConstraintError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    return /payments_status_check/i.test(error.message);
+  }
+
   private normalizePaymentStatus(value: string | null): PaymentStatus {
     const lower = (value ?? "unknown").toLowerCase() as PaymentStatus;
     return VALID_PAYMENT_STATUS.has(lower) ? lower : "unknown";
@@ -34,6 +45,11 @@ export class OrderService {
   private normalizeShippingStatus(value: string | null): ShippingStatus {
     const lower = (value ?? "unknown").toLowerCase() as ShippingStatus;
     return VALID_SHIPPING_STATUS.has(lower) ? lower : "unknown";
+  }
+
+  private normalizePaymentMethod(value: string | null): PaymentMethod | "unknown" {
+    const lower = (value ?? "unknown").toLowerCase() as PaymentMethod | "unknown";
+    return VALID_PAYMENT_METHOD.has(lower as PaymentMethod) ? (lower as PaymentMethod) : "unknown";
   }
 
   private mapOrderSummary(statusStrategy: ReturnType<typeof createOrderStatusStrategy>, row: {
@@ -45,7 +61,7 @@ export class OrderService {
     delivery_fee: number;
     note: string | null;
     created_at: string;
-  }): OrderSummary {
+  }): Omit<OrderSummary, "preview_images"> {
     return {
       order_id: row.order_id,
       order_date: row.order_date,
@@ -73,7 +89,34 @@ export class OrderService {
       throw new AppError(error instanceof Error ? error.message : "Failed to load orders", 500);
     }
 
-    return rows.map((row) => this.mapOrderSummary(statusStrategy, row));
+    const orderIds = rows.map((row) => row.order_id);
+    let imageRows: Awaited<ReturnType<OrderRepository["listOrderItemImages"]>> = [];
+    try {
+      imageRows = await this.repository.listOrderItemImages(orderIds);
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to load order images", 500);
+    }
+
+    const imageMap = new Map<string, string[]>();
+    imageRows.forEach((row) => {
+      const orderId = String(row.order_id);
+      const imageUrl = readRelationValue<string>(row.products, "image_url");
+      if (!imageUrl) {
+        return;
+      }
+
+      const current = imageMap.get(orderId) ?? [];
+      if (current.length >= 3 || current.includes(imageUrl)) {
+        return;
+      }
+
+      imageMap.set(orderId, [...current, imageUrl]);
+    });
+
+    return rows.map((row) => ({
+      ...this.mapOrderSummary(statusStrategy, row),
+      preview_images: imageMap.get(row.order_id) ?? [],
+    }));
   }
 
   async getOrderDetail(userId: string, orderId: string): Promise<OrderDetail> {
@@ -105,15 +148,19 @@ export class OrderService {
     let trackingRows: Awaited<ReturnType<OrderRepository["listTracking"]>> = [];
     let itemRows: Awaited<ReturnType<OrderRepository["listOrderItems"]>> = [];
     let paymentStatus: string | null = null;
+    let paymentMethod: string | null = null;
     let shippingStatus: string | null = null;
 
     try {
-      [trackingRows, itemRows, paymentStatus, shippingStatus] = await Promise.all([
+      [trackingRows, itemRows, shippingStatus] = await Promise.all([
         this.repository.listTracking(order.order_id),
         this.repository.listOrderItems(order.order_id),
-        this.repository.findPaymentStatus(order.order_id),
         this.repository.findDeliveryStatus(order.order_id),
       ]);
+
+      const paymentInfo = await this.repository.findPaymentInfo(order.order_id);
+      paymentStatus = paymentInfo.status;
+      paymentMethod = paymentInfo.method;
     } catch (error) {
       throw new AppError(error instanceof Error ? error.message : "Failed to load order detail", 500);
     }
@@ -125,7 +172,14 @@ export class OrderService {
       quantity: Number(row.quantity),
       price: Number(row.price),
       product_name: readRelationValue<string>(row.products, "name"),
+      product_image_url: readRelationValue<string>(row.products, "image_url"),
     }));
+
+    const normalizedPaymentStatus = this.normalizePaymentStatus(paymentStatus);
+    const effectivePaymentStatus: PaymentStatus =
+      order.status === "cancelled" && (normalizedPaymentStatus === "failed" || normalizedPaymentStatus === "pending")
+        ? "cancelled"
+        : normalizedPaymentStatus;
 
     return {
       order_id: order.order_id,
@@ -134,7 +188,8 @@ export class OrderService {
       order_status: order.status,
       order_status_label: statusStrategy.toLabel(order.status),
       shipping_status: this.normalizeShippingStatus(shippingStatus),
-      payment_status: this.normalizePaymentStatus(paymentStatus),
+      payment_status: effectivePaymentStatus,
+      payment_method: this.normalizePaymentMethod(paymentMethod),
       tracking_history: trackingRows.map((row) => ({
         tracking_id: String(row.tracking_id),
         status: String(row.status),
@@ -266,6 +321,11 @@ export class OrderService {
       throw new AppError("deliveryFee must be >= 0", 400);
     }
 
+    const paymentMethod = (input.paymentMethod ?? "cod").toLowerCase() as PaymentMethod;
+    if (!VALID_PAYMENT_METHOD.has(paymentMethod)) {
+      throw new AppError("paymentMethod is invalid", 400);
+    }
+
     const resolvedItems = await this.resolveOrderItemsFromCart(input.userId.trim());
     const itemTotal = resolvedItems.reduce((sum, item) => sum + item.subtotal, 0);
     const totalAmount = itemTotal + deliveryFee;
@@ -296,6 +356,13 @@ export class OrderService {
         orderId: created.order_id,
         status: "pending",
         note: "Order created from cart",
+      });
+
+      await this.repository.insertPayment({
+        orderId: created.order_id,
+        method: paymentMethod,
+        status: "pending",
+        amount: totalAmount,
       });
 
       cart = await this.repository.findCartByUserId(input.userId.trim());
@@ -344,6 +411,28 @@ export class OrderService {
 
     try {
       await this.repository.updateOrderStatus(order.order_id, "cancelled");
+
+      try {
+        await this.repository.updatePaymentStatus({
+          orderId: order.order_id,
+          status: "cancelled",
+          transactionId: null,
+          paymentDate: null,
+        });
+      } catch (paymentUpdateError) {
+        if (!this.isLegacyPaymentStatusConstraintError(paymentUpdateError)) {
+          throw paymentUpdateError;
+        }
+
+        // Backward compatibility for databases that still enforce pending/paid/failed only.
+        await this.repository.updatePaymentStatus({
+          orderId: order.order_id,
+          status: "failed",
+          transactionId: null,
+          paymentDate: null,
+        });
+      }
+
       await this.repository.insertTracking({
         orderId: order.order_id,
         status: "cancelled",
@@ -357,6 +446,86 @@ export class OrderService {
       order_id: order.order_id,
       status: "cancelled",
       message: "Cancellation Successful",
+    };
+  }
+
+  async confirmPayment(input: ConfirmPaymentInput): Promise<{ order_id: string; status: OrderStatus; payment_status: "paid"; message: string }> {
+    if (!input.userId.trim()) {
+      throw new AppError("userId is required", 400);
+    }
+
+    if (!input.orderId.trim()) {
+      throw new AppError("orderId is required", 400);
+    }
+
+    let order: Awaited<ReturnType<OrderRepository["findOrderById"]>> = null;
+    try {
+      order = await this.repository.findOrderById(input.orderId.trim());
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to load order", 500);
+    }
+
+    if (!order) {
+      throw new AppError("Order not found", 404);
+    }
+
+    if (order.user_id !== input.userId.trim()) {
+      throw new AppError("Access denied for this order", 403);
+    }
+
+    if (order.status === "cancelled") {
+      throw new AppError("Payment cannot be confirmed for a cancelled order", 400);
+    }
+
+    let paymentInfo: Awaited<ReturnType<OrderRepository["findPaymentInfo"]>> | null = null;
+    try {
+      paymentInfo = await this.repository.findPaymentInfo(order.order_id);
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to load payment info", 500);
+    }
+
+    const paymentStatus = this.normalizePaymentStatus(paymentInfo.status);
+    if (paymentStatus === "paid") {
+      return {
+        order_id: order.order_id,
+        status: order.status,
+        payment_status: "paid",
+        message: "Payment is already confirmed",
+      };
+    }
+
+    if (paymentStatus === "cancelled") {
+      throw new AppError("Payment was cancelled for this order", 400);
+    }
+
+    const nextOrderStatus: OrderStatus = order.status === "pending" ? "confirmed" : order.status;
+
+    try {
+      if (order.status === "pending") {
+        await this.repository.updateOrderStatus(order.order_id, nextOrderStatus);
+      }
+
+      await this.repository.updatePaymentStatus({
+        orderId: order.order_id,
+        status: "paid",
+        transactionId: null,
+        paymentDate: new Date().toISOString(),
+      });
+
+      await this.repository.insertTracking({
+        orderId: order.order_id,
+        status: nextOrderStatus,
+        note: "Payment confirmed by customer",
+      });
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to confirm payment", 500);
+    }
+
+    return {
+      order_id: order.order_id,
+      status: nextOrderStatus,
+      payment_status: "paid",
+      message: "Payment confirmed successfully",
     };
   }
 

@@ -15,6 +15,7 @@ export class CategoryService {
         categoryId: row.category_id,
         name: row.name,
         description: row.description,
+        imageUrl: row.image_url,
       }));
 
     const sorted = createCategorySortStrategy(sort).apply(mapped);

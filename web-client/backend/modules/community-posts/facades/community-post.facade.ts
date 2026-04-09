@@ -7,6 +7,9 @@ import {
   CommunityPostSummary,
   CommunityPostCreatedResult,
   CreateCommunityPostInput,
+  DeleteCommunityPostInput,
+  UploadCommunityAttachmentInput,
+  UploadCommunityAttachmentResult,
   UpdateCommunityPostInput,
 } from "../community-post.types";
 
@@ -34,6 +37,10 @@ export class CommunityPostFacade {
     return this.service.listPostsByUser(userId);
   }
 
+  async listAllPosts(): Promise<CommunityPostSummary[]> {
+    return this.service.listAllPosts();
+  }
+
   async updatePost(input: UpdateCommunityPostInput): Promise<CommunityPostSummary> {
     const result = await this.service.updatePost(input);
 
@@ -44,6 +51,20 @@ export class CommunityPostFacade {
     });
 
     return result;
+  }
+
+  async deletePost(input: DeleteCommunityPostInput): Promise<void> {
+    await this.service.deletePost(input);
+
+    this.subject.notify({
+      postId: input.postId,
+      event: "deleted",
+      changedAt: new Date().toISOString(),
+    });
+  }
+
+  async uploadAttachment(input: UploadCommunityAttachmentInput): Promise<UploadCommunityAttachmentResult> {
+    return this.service.uploadAttachment(input);
   }
 }
 

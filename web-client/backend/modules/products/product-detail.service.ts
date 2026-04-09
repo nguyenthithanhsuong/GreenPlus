@@ -22,6 +22,15 @@ function toInventoryRows(input: ProductBatchRow["inventory"]): InventoryRow[] {
   return [input as InventoryRow];
 }
 
+function normalizeBatchStatus(status: ProductBatchRow["status"]): "available" | "expired" | "sold_out" {
+  if (status === "available" || status === "expired" || status === "sold_out") {
+    return status;
+  }
+
+  // Defensive default for nullable/unknown DB status values.
+  return "sold_out";
+}
+
 export class ProductDetailService {
   constructor(private readonly repository: ProductRepository) {}
 
@@ -43,31 +52,47 @@ export class ProductDetailService {
     }
 
     // Chay song song de giam do tre khi load trang chi tiet.
-    const [latestPrice, batches] = await Promise.all([
+    const [latestPrice, batches, supplierMap] = await Promise.all([
       this.repository.getLatestPriceForProduct(productId),
       this.repository.getBatchesWithInventoryByProduct(productId),
+      this.repository.getProductSupplierMap([productId]),
     ]);
 
     let totalAvailable = 0;
     let totalReserved = 0;
+    let totalQuantity = 0;
     let hasSellableBatch = false;
     let hasAnyExpiredBatch = false;
+    const batchDetails: ProductDetail["batches"] = [];
 
     batches.forEach((batch) => {
       const inventoryRows = toInventoryRows(batch.inventory);
+      const resolvedStatus = normalizeBatchStatus(batch.status);
       const availableInBatch = inventoryRows.reduce((sum, row) => sum + Number(row.quantity_available ?? 0), 0);
       const reservedInBatch = inventoryRows.reduce((sum, row) => sum + Number(row.quantity_reserved ?? 0), 0);
+      const quantityInBatch = Number(batch.quantity ?? 0);
 
       totalAvailable += availableInBatch;
       totalReserved += reservedInBatch;
+      totalQuantity += quantityInBatch;
 
       // Batch state quyet dinh kha nang ban theo status + ton kho + han su dung.
-      const isSellable = createBatchState(batch.status).isSellable(availableInBatch, batch.expire_date);
+      const isSellable = createBatchState(resolvedStatus).isSellable(availableInBatch, batch.expire_date);
       if (isSellable) {
         hasSellableBatch = true;
       }
 
-      if (batch.status === "expired") {
+      batchDetails.push({
+        batchId: batch.batch_id,
+        status: resolvedStatus,
+        expireDate: batch.expire_date,
+        quantity: quantityInBatch,
+        available: availableInBatch,
+        reserved: reservedInBatch,
+        isSellable,
+      });
+
+      if (resolvedStatus === "expired") {
         hasAnyExpiredBatch = true;
       }
     });
@@ -87,13 +112,15 @@ export class ProductDetailService {
       },
       inventory: {
         status: inventoryStatus,
+        totalQuantity,
         totalAvailable,
         totalReserved,
         hasSellableBatch,
       },
+      batches: batchDetails,
       supplier: {
-        id: product.supplier_id,
-        certification: getRelationValue<string>(product.suppliers, "certificate"),
+        id: supplierMap.get(product.product_id)?.supplierId ?? null,
+        certification: supplierMap.get(product.product_id)?.certification ?? null,
       },
     };
   }

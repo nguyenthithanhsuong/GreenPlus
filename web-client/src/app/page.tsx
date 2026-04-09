@@ -1,3 +1,5 @@
-import ClientFrontendPage from "../../frontend/page";
+import { redirect } from "next/navigation";
 
-export default ClientFrontendPage;
+export default function HomePage() {
+	redirect("/login");
+}

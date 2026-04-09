@@ -1,5 +1,5 @@
 import { supabaseServer } from "../../core/supabase";
-import { OrderStatus } from "./order.types";
+import { OrderStatus, PaymentMethod } from "./order.types";
 
 type RelObj = Record<string, unknown> | Record<string, unknown>[] | null;
 
@@ -22,6 +22,11 @@ export type OrderItemRow = {
   batch_id: string;
   quantity: number;
   price: number;
+  products: RelObj;
+};
+
+export type OrderItemImageRow = {
+  order_id: string;
   products: RelObj;
 };
 
@@ -65,7 +70,7 @@ export class OrderRepository {
   async listOrderItems(orderId: string): Promise<OrderItemRow[]> {
     const { data, error } = await supabaseServer
       .from("order_items")
-      .select("order_item_id,order_id,product_id,batch_id,quantity,price,products(name)")
+      .select("order_item_id,order_id,product_id,batch_id,quantity,price,products(name,image_url)")
       .eq("order_id", orderId);
 
     if (error) {
@@ -73,6 +78,23 @@ export class OrderRepository {
     }
 
     return (data ?? []) as OrderItemRow[];
+  }
+
+  async listOrderItemImages(orderIds: string[]): Promise<OrderItemImageRow[]> {
+    if (orderIds.length === 0) {
+      return [];
+    }
+
+    const { data, error } = await supabaseServer
+      .from("order_items")
+      .select("order_id,products(image_url)")
+      .in("order_id", orderIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []) as OrderItemImageRow[];
   }
 
   async listTracking(orderId: string): Promise<TrackingRow[]> {
@@ -105,6 +127,23 @@ export class OrderRepository {
     }
 
     return String(data.status);
+  }
+
+  async findPaymentInfo(orderId: string): Promise<{ status: string | null; method: string | null }> {
+    const { data, error } = await supabaseServer
+      .from("payments")
+      .select("status,method")
+      .eq("order_id", orderId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return {
+      status: data?.status ? String(data.status) : null,
+      method: data?.method ? String(data.method) : null,
+    };
   }
 
   async findDeliveryStatus(orderId: string): Promise<string | null> {
@@ -161,20 +200,57 @@ export class OrderRepository {
       return [];
     }
 
+    const { data: batchData, error: batchError } = await supabaseServer
+      .from("batches")
+      .select("batch_id,product_id")
+      .in("product_id", productIds);
+
+    if (batchError) {
+      throw new Error(batchError.message);
+    }
+
+    const batchToProductMap = new Map<string, string>();
+    const batchIds = Array.from(
+      new Set(
+        (batchData ?? [])
+          .map((row) => {
+            const batchId = String(row.batch_id);
+            batchToProductMap.set(batchId, String(row.product_id));
+            return batchId;
+          })
+          .filter(Boolean),
+      ),
+    );
+
+    if (batchIds.length === 0) {
+      return [];
+    }
+
     const { data, error } = await supabaseServer
       .from("prices")
-      .select("product_id,price,date")
-      .in("product_id", productIds)
+      .select("batch_id,price,date")
+      .in("batch_id", batchIds)
       .order("date", { ascending: false });
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as Array<{ product_id: string; price: number }>).map((row) => ({
-      product_id: String(row.product_id),
-      price: Number(row.price),
-    }));
+    const latestRows = new Map<string, { product_id: string; price: number }>();
+
+    (data ?? []).forEach((row) => {
+      const productId = batchToProductMap.get(String(row.batch_id));
+      if (!productId || latestRows.has(productId)) {
+        return;
+      }
+
+      latestRows.set(productId, {
+        product_id: productId,
+        price: Number(row.price),
+      });
+    });
+
+    return Array.from(latestRows.values());
   }
 
   async listBatchRows(productId: string): Promise<Array<{ batch_id: string; expire_date: string; status: string }>> {
@@ -268,6 +344,28 @@ export class OrderRepository {
     }
   }
 
+  async insertPayment(input: {
+    orderId: string;
+    method: PaymentMethod;
+    status: "pending" | "paid" | "failed" | "cancelled";
+    amount: number;
+    transactionId?: string | null;
+    paymentDate?: string | null;
+  }): Promise<void> {
+    const { error } = await supabaseServer.from("payments").insert({
+      order_id: input.orderId,
+      method: input.method,
+      status: input.status,
+      amount: input.amount,
+      transaction_id: input.transactionId ?? null,
+      payment_date: input.paymentDate ?? null,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
   async clearCart(cartId: string): Promise<void> {
     const { error } = await supabaseServer.from("cart_items").delete().eq("cart_id", cartId);
 
@@ -278,6 +376,31 @@ export class OrderRepository {
 
   async updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
     const { error } = await supabaseServer.from("orders").update({ status }).eq("order_id", orderId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async updatePaymentStatus(input: {
+    orderId: string;
+    status: "pending" | "paid" | "failed" | "cancelled";
+    transactionId?: string | null;
+    paymentDate?: string | null;
+  }): Promise<void> {
+    const payload: Record<string, unknown> = {
+      status: input.status,
+    };
+
+    if (typeof input.transactionId !== "undefined") {
+      payload.transaction_id = input.transactionId;
+    }
+
+    if (typeof input.paymentDate !== "undefined") {
+      payload.payment_date = input.paymentDate;
+    }
+
+    const { error } = await supabaseServer.from("payments").update(payload).eq("order_id", input.orderId);
 
     if (error) {
       throw new Error(error.message);

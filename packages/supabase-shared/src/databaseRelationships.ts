@@ -105,12 +105,6 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     outgoing: [],
     incoming: [
       {
-        targetTable: "products",
-        type: "one-to-many",
-        foreignKey: "products.supplier_id → suppliers.supplier_id",
-        description: "1 supplier → many products",
-      },
-      {
         targetTable: "batches",
         type: "one-to-many",
         foreignKey: "batches.supplier_id → suppliers.supplier_id",
@@ -136,12 +130,6 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     category: "Supply Chain & Products",
     outgoing: [
       {
-        targetTable: "suppliers",
-        type: "many-to-one",
-        foreignKey: "products.supplier_id → suppliers.supplier_id",
-        description: "Product from supplier",
-      },
-      {
         targetTable: "categories",
         type: "many-to-one",
         foreignKey: "products.category_id → categories.category_id",
@@ -154,12 +142,6 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
         type: "one-to-many",
         foreignKey: "batches.product_id → products.product_id",
         description: "1 product → many batches",
-      },
-      {
-        targetTable: "prices",
-        type: "one-to-many",
-        foreignKey: "prices.product_id → products.product_id",
-        description: "1 product → many prices",
       },
       {
         targetTable: "cart_items",
@@ -269,12 +251,6 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     table: "prices",
     category: "Inventory & Pricing",
     outgoing: [
-      {
-        targetTable: "products",
-        type: "many-to-one",
-        foreignKey: "prices.product_id → products.product_id",
-        description: "Product-level pricing",
-      },
       {
         targetTable: "batches",
         type: "many-to-one",

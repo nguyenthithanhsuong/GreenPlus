@@ -21,7 +21,6 @@ export type ProductBrowseItem = {
   imageUrl: string | null;
   categoryId: string | null;
   categoryName: string | null;
-  supplierId: string | null;
   certification: string | null;
   price: number | null;
   isAvailable: boolean;
@@ -40,10 +39,20 @@ export type ProductDetail = {
   };
   inventory: {
     status: "in_stock" | "out_of_stock" | "expired";
+    totalQuantity: number;
     totalAvailable: number;
     totalReserved: number;
     hasSellableBatch: boolean;
   };
+  batches: Array<{
+    batchId: string;
+    status: BatchStatus;
+    expireDate: string;
+    quantity: number;
+    available: number;
+    reserved: number;
+    isSellable: boolean;
+  }>;
   supplier: {
     id: string | null;
     certification: string | null;

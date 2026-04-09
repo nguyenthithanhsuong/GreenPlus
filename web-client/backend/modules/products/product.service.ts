@@ -13,7 +13,10 @@ export class ProductService {
     // Lay danh sach active + map gia moi nhat + map thong tin category/chung nhan.
     const products = await this.repository.listActiveProducts();
     const productIds = products.map((product) => product.product_id);
-    const latestPriceMap = await this.repository.getLatestPriceMap(productIds);
+    const [latestPriceMap, supplierMap] = await Promise.all([
+      this.repository.getLatestPriceMap(productIds),
+      this.repository.getProductSupplierMap(productIds),
+    ]);
 
     return products
       .filter((product) => createProductState(product.status).canView())
@@ -23,8 +26,7 @@ export class ProductService {
         imageUrl: product.image_url,
         categoryId: product.category_id,
         categoryName: getRelationValue<string>(product.categories, "name"),
-        supplierId: product.supplier_id,
-        certification: getRelationValue<string>(product.suppliers, "certificate"),
+        certification: supplierMap.get(product.product_id)?.certification ?? null,
         price: latestPriceMap.get(product.product_id) ?? null,
         isAvailable: true,
         createdAt: product.created_at,

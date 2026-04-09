@@ -66,7 +66,6 @@ export const TABLE_CRUD_PRESETS: Record<string, CrudPreset> = {
     idExample: "",
     insert: {
       category_id: "",
-      supplier_id: "",
       name: "",
       description: "",
       unit: "",
@@ -125,7 +124,6 @@ export const TABLE_CRUD_PRESETS: Record<string, CrudPreset> = {
     primaryKey: "price_id",
     idExample: "",
     insert: {
-      product_id: "",
       batch_id: "",
       price: "",
       date: "",

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const BACKEND_TEST_USER_STORAGE_KEY = "backend-testing-user-id";
@@ -197,22 +198,6 @@ export default function CommunityPostTestPage() {
           </div>
         </section>
 
-        {selectedPost && (
-          <article className="overflow-hidden rounded border border-slate-300 bg-white">
-            {renderMediaPreview(selectedPost, "large")}
-            <div className="space-y-3 p-4">
-              <h2 className="text-lg font-semibold text-slate-900">Editing: {selectedPost.title}</h2>
-              <p className="text-xs text-slate-500">
-                {new Date(selectedPost.created_at).toLocaleString()} | status: {selectedPost.status}
-              </p>
-              <p className="text-xs text-slate-600">post_id: {selectedPost.post_id}</p>
-              <p className="text-xs text-slate-600">media_type: {selectedPost.media_type}</p>
-              {selectedPost.media_url && <p className="break-all text-xs text-slate-600">media_url: {selectedPost.media_url}</p>}
-              <p className="whitespace-pre-wrap text-sm text-slate-700">{selectedPost.content}</p>
-            </div>
-          </article>
-        )}
-
         <section className="rounded border border-slate-300 bg-white p-4">
           <h2 className="text-sm font-semibold text-slate-800">My Posts</h2>
           {myPosts.length === 0 ? (
@@ -230,13 +215,21 @@ export default function CommunityPostTestPage() {
                     <p className="text-xs text-slate-600">post_id: {post.post_id}</p>
                     {post.media_url && <p className="truncate text-xs text-slate-600">media_url: {post.media_url}</p>}
                     <p className="line-clamp-3 text-sm text-slate-700">{post.content || "No content"}</p>
-                    <button
-                      onClick={() => applyPostToForm(post)}
-                      disabled={loading}
-                      className="rounded bg-emerald-700 px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
-                    >
-                      Open For Edit
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/backend/products/community/${post.post_id}`}
+                        className="rounded bg-slate-800 px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        View Details
+                      </Link>
+                      <button
+                        onClick={() => applyPostToForm(post)}
+                        disabled={loading}
+                        className="rounded bg-emerald-700 px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                      >
+                        Load Into Form
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))}

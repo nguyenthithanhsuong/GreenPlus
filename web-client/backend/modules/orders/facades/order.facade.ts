@@ -4,7 +4,7 @@ import {
   OrderNotificationObserver,
 } from "../observers/order.observer";
 import { OrderService } from "../order.service";
-import { CancelOrderInput, CreateOrderInput, OrderDetail, OrderSummary, UpdateOrderInput } from "../order.types";
+import { CancelOrderInput, ConfirmPaymentInput, CreateOrderInput, OrderDetail, OrderSummary, UpdateOrderInput } from "../order.types";
 
 export class OrderFacade {
   private readonly notifier: OrderChangeNotifier;
@@ -43,6 +43,20 @@ export class OrderFacade {
     this.notifier.notify({
       orderId: result.order_id,
       event: "cancelled",
+      changedAt: new Date().toISOString(),
+    });
+
+    return result;
+  }
+
+  async confirmPayment(
+    input: ConfirmPaymentInput
+  ): Promise<{ order_id: string; status: import("../order.types").OrderStatus; payment_status: "paid"; message: string }> {
+    const result = await this.service.confirmPayment(input);
+
+    this.notifier.notify({
+      orderId: result.order_id,
+      event: "updated",
       changedAt: new Date().toISOString(),
     });
 

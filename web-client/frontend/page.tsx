@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { APP_USE_CASES, CLIENT_VISIBLE_TABLES, ROLE_POLICIES } from "@greenplus/supabase-shared/accessPolicy";
 
 export default function ClientFrontendPage() {
@@ -8,11 +9,30 @@ export default function ClientFrontendPage() {
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
       <div className="mx-auto max-w-6xl space-y-6">
         <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h1 className="text-2xl font-bold">Web Client Configuration</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Client access follows Supabase playground RLS guidance: customers can browse active catalog data and
-            manage only their own profile, cart, orders, and reviews.
-          </p>
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Web Client Configuration</h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Client access follows Supabase playground RLS guidance: customers can browse active catalog data and
+                manage only their own profile, cart, orders, and reviews.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/login"
+                className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:border-emerald-300 hover:bg-emerald-100"
+              >
+                Go to Login
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+              >
+                Go to Register
+              </Link>
+            </div>
+          </div>
         </section>
 
         <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
