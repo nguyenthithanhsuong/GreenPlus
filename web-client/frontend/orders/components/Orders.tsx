@@ -71,7 +71,7 @@ type TabValue = "all" | OrderStatus;
 
 const DELIVERY_FEE = 15000;
 
-const ORDER_STATUS_SEQUENCE: OrderStatus[] = ["pending", "confirmed", "preparing", "delivering", "completed", "cancelled"];
+const ORDER_STATUS_SEQUENCE: OrderStatus[] = ["delivering", "preparing", "confirmed", "pending", "completed", "cancelled"];
 
 const STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
   pending: {
@@ -340,6 +340,118 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "flex-end",
   },
+  cartSummaryBanner: {
+    borderRadius: "16px",
+    background: "#F9FAFB",
+    border: "1px solid #E5E7EB",
+    padding: "14px",
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  cartSummaryCount: {
+    margin: 0,
+    fontSize: "18px",
+    fontWeight: 800,
+    color: "#1A4331",
+  },
+  cartSummaryLabel: {
+    margin: 0,
+    fontSize: "13px",
+    color: "#6B7280",
+  },
+  itemActions: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "10px",
+    flexWrap: "wrap",
+    marginTop: "10px",
+  },
+  quantityControl: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    borderRadius: "999px",
+    background: "#EAFBF0",
+    padding: "6px",
+  },
+  quantityButton: {
+    width: "34px",
+    height: "34px",
+    borderRadius: "999px",
+    border: "1px solid #B7E3C8",
+    background: "#FFFFFF",
+    color: "#1A4331",
+    fontSize: "18px",
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quantityValue: {
+    minWidth: "32px",
+    textAlign: "center",
+    fontSize: "14px",
+    lineHeight: "20px",
+    fontWeight: 700,
+    color: "#1E1E1E",
+  },
+  removeButton: {
+    border: "1px solid #FECACA",
+    background: "#FEF2F2",
+    color: "#B91C1C",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+    padding: "10px 12px",
+    borderRadius: "12px",
+  },
+  noteSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    borderTop: "1px solid #F3F4F6",
+    paddingTop: "10px",
+  },
+  noteSectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+  },
+  noteLabel: {
+    margin: 0,
+    fontSize: "13px",
+    lineHeight: "16px",
+    fontWeight: 700,
+    color: "#4B5563",
+  },
+  noteSaveButton: {
+    border: "1px solid #51B788",
+    background: "#51B788",
+    color: "#1A4331",
+    borderRadius: "12px",
+    padding: "10px 14px",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  noteInput: {
+    width: "100%",
+    boxSizing: "border-box",
+    border: "1px solid #E5E7EB",
+    background: "#F9FAFB",
+    borderRadius: "12px",
+    padding: "12px 14px",
+    fontSize: "14px",
+    lineHeight: "20px",
+    color: "#111827",
+    outline: "none",
+  },
   amountLabel: {
     margin: 0,
     color: "#6B7280",
@@ -494,6 +606,9 @@ export default function Orders() {
   const [cartItems, setCartItems] = useState<CartItemView[]>([]);
   const [cartTotal, setCartTotal] = useState(0);
   const [cartId, setCartId] = useState<string>("");
+  const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   
   // Orders state
   const [orders, setOrders] = useState<OrderItem[]>([]);
@@ -539,6 +654,12 @@ export default function Orders() {
           setCartItems(cartData.items ?? []);
           setCartTotal(cartData.cart_total ?? 0);
           setCartId(cartData.cart_id ?? "");
+          setNoteDrafts(
+            (cartData.items ?? []).reduce<Record<string, string>>((drafts, item) => {
+              drafts[item.cart_item_id] = item.note ?? "";
+              return drafts;
+            }, {}),
+          );
         }
 
         if ("items" in ordersData) {
@@ -594,6 +715,128 @@ export default function Orders() {
   }, [filteredOrders]);
 
   const hasOrders = filteredOrders.length > 0;
+  const cartQuantity = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
+
+  useEffect(() => {
+    setNoteDrafts(
+      cartItems.reduce<Record<string, string>>((drafts, item) => {
+        drafts[item.cart_item_id] = item.note ?? "";
+        return drafts;
+      }, {}),
+    );
+  }, [cartItems]);
+
+  const refreshCart = (nextCart: CartResponse) => {
+    setCartItems(nextCart.items ?? []);
+    setCartTotal(nextCart.cart_total ?? 0);
+    setCartId(nextCart.cart_id ?? "");
+    setNoteDrafts(
+      (nextCart.items ?? []).reduce<Record<string, string>>((drafts, item) => {
+        drafts[item.cart_item_id] = item.note ?? "";
+        return drafts;
+      }, {}),
+    );
+  };
+
+  const mutateCart = async (request: RequestInfo, init: RequestInit, fallbackMessage: string) => {
+    const response = await fetch(request, init);
+    const data = (await response.json()) as CartResponse | { error?: string };
+
+    if (!response.ok) {
+      const responseError = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+      throw new Error(responseError || fallbackMessage);
+    }
+
+    refreshCart(data as CartResponse);
+  };
+
+  const handleRemoveItem = async (item: CartItemView) => {
+    if (!user?.user_id) {
+      return;
+    }
+
+    setActiveItemId(item.cart_item_id);
+
+    try {
+      await mutateCart(
+        "/api/cart",
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.user_id,
+            productId: item.product_id,
+          }),
+        },
+        "Không thể xóa sản phẩm khỏi giỏ hàng.",
+      );
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể xóa sản phẩm khỏi giỏ hàng.");
+    } finally {
+      setActiveItemId(null);
+    }
+  };
+
+  const handleChangeQuantity = async (item: CartItemView, nextQuantity: number) => {
+    if (!user?.user_id) {
+      return;
+    }
+
+    if (nextQuantity <= 0) {
+      await handleRemoveItem(item);
+      return;
+    }
+
+    setActiveItemId(item.cart_item_id);
+
+    try {
+      await mutateCart(
+        "/api/cart",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.user_id,
+            productId: item.product_id,
+            quantity: nextQuantity,
+          }),
+        },
+        "Không thể cập nhật số lượng sản phẩm.",
+      );
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật số lượng sản phẩm.");
+    } finally {
+      setActiveItemId(null);
+    }
+  };
+
+  const handleSaveNote = async (item: CartItemView) => {
+    if (!user?.user_id) {
+      return;
+    }
+
+    setSavingNoteItemId(item.cart_item_id);
+
+    try {
+      await mutateCart(
+        "/api/cart/note",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.user_id,
+            cartItemId: item.cart_item_id,
+            note: (noteDrafts[item.cart_item_id] ?? "").trim(),
+          }),
+        },
+        "Không thể lưu ghi chú cho sản phẩm.",
+      );
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể lưu ghi chú cho sản phẩm.");
+    } finally {
+      setSavingNoteItemId(null);
+    }
+  };
 
   const handleOpenCancelPrompt = (order: OrderItem) => {
     setCancelTarget(order);
@@ -717,6 +960,13 @@ export default function Orders() {
 
       {initialized && isAuthenticated && !loading && cartItems.length > 0 && (
         <div style={styles.orderList}>
+          <div style={styles.cartSummaryBanner}>
+            <div>
+              <p style={styles.cartSummaryLabel}>Số sản phẩm trong giỏ</p>
+              <p style={styles.cartSummaryCount}>{cartQuantity}</p>
+            </div>
+            <p style={{ margin: 0, fontSize: "13px", color: "#6B7280" }}>Chỉnh số lượng, xóa hoặc thêm ghi chú ngay tại đây.</p>
+          </div>
           {cartItems.map((item) => (
             <div
               key={item.cart_item_id}
@@ -768,6 +1018,71 @@ export default function Orders() {
                 <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#111827" }}>
                   {formatPrice(item.subtotal)}
                 </p>
+                <div style={styles.noteSection}>
+                  <div style={styles.noteSectionHeader}>
+                    <p style={styles.noteLabel}>Ghi chú cho món hàng</p>
+                    <span style={{ margin: 0, fontSize: "12px", color: "#6B7280" }}>Bấm lưu để cập nhật</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={noteDrafts[item.cart_item_id] ?? ""}
+                    onChange={(event) =>
+                      setNoteDrafts((previous) => ({
+                        ...previous,
+                        [item.cart_item_id]: event.target.value,
+                      }))
+                    }
+                    onBlur={() => void handleSaveNote(item)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void handleSaveNote(item);
+                      }
+                    }}
+                    style={styles.noteInput}
+                    placeholder="Thêm ghi chú cho sản phẩm này"
+                    disabled={savingNoteItemId === item.cart_item_id}
+                  />
+                  <div style={styles.itemActions}>
+                    <div style={styles.quantityControl}>
+                      <button
+                        type="button"
+                        style={styles.quantityButton}
+                        onClick={() => void handleChangeQuantity(item, item.quantity - 1)}
+                        disabled={activeItemId === item.cart_item_id}
+                        aria-label={`Giảm số lượng ${item.product_name}`}
+                      >
+                        -
+                      </button>
+                      <span style={styles.quantityValue}>{item.quantity}</span>
+                      <button
+                        type="button"
+                        style={styles.quantityButton}
+                        onClick={() => void handleChangeQuantity(item, item.quantity + 1)}
+                        disabled={activeItemId === item.cart_item_id}
+                        aria-label={`Tăng số lượng ${item.product_name}`}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      style={styles.removeButton}
+                      onClick={() => void handleRemoveItem(item)}
+                      disabled={activeItemId === item.cart_item_id}
+                    >
+                      Xóa sản phẩm
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    style={styles.noteSaveButton}
+                    onClick={() => void handleSaveNote(item)}
+                    disabled={savingNoteItemId === item.cart_item_id}
+                  >
+                    {savingNoteItemId === item.cart_item_id ? "Đang lưu..." : "Cập nhật ghi chú"}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -815,7 +1130,7 @@ export default function Orders() {
               onClick={handleCheckout}
               disabled={saving}
             >
-              {saving ? "Đang xử lý..." : "Thanh toán"}
+              {saving ? "Đang xử lý..." : "Đặt hàng!"}
             </button>
           </div>
         </div>

@@ -7,6 +7,8 @@ type CategoryProductsPageProps = {
   searchParams?: Promise<{
     name?: string;
     backTo?: string;
+    keyword?: string;
+    sort?: string;
   }>;
 };
 
@@ -19,6 +21,8 @@ export default async function CategoryProductsPage({ params, searchParams }: Cat
       categoryId={resolvedParams.categoryId}
       categoryName={resolvedSearchParams?.name}
       backHref={resolvedSearchParams?.backTo}
+      initialKeyword={resolvedSearchParams?.keyword}
+      initialSort={resolvedSearchParams?.sort}
     />
   );
 }

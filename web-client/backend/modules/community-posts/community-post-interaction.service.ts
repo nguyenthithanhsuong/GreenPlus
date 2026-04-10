@@ -27,8 +27,8 @@ export class CommunityPostInteractionService {
       throw new AppError("postId and userId are required", 400);
     }
 
-    if (input.type === "like") {
-      const existing = await this.repository.findLike(postId, userId);
+    if (input.type === "like" || input.type === "bookmark") {
+      const existing = await this.repository.findByType(postId, userId, input.type);
       if (existing) {
         return toCommunityPostInteractionSummary(existing);
       }
@@ -36,7 +36,7 @@ export class CommunityPostInteractionService {
       const created = await this.repository.create({
         postId,
         userId,
-        type: "like",
+        type: input.type,
         status: "active",
       });
 
@@ -88,12 +88,12 @@ export class CommunityPostInteractionService {
       throw new AppError("userId is required", 400);
     }
 
-    if (input.type === "like") {
+    if (input.type === "like" || input.type === "bookmark") {
       if (!input.postId?.trim()) {
         throw new AppError("postId is required", 400);
       }
 
-      await this.repository.deleteLike({ postId: input.postId.trim(), userId });
+      await this.repository.deleteByType({ postId: input.postId.trim(), userId, type: input.type });
       return { success: true };
     }
 

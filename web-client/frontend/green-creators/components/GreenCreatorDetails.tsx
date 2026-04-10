@@ -20,7 +20,7 @@ type CommunityPostItem = {
   media_type: "JPG" | "PNG" | "MP4";
   media_url: string | null;
   media_urls?: string[];
-  type: "community" | "video";
+  type: "community" | "video" | "blog";
   status: "pending" | "approved" | "rejected";
   created_at: string;
 };
@@ -35,7 +35,7 @@ type CommunityPostInteractionItem = {
   interaction_id: string;
   post_id: string;
   user_id: string;
-  type: "like" | "comment";
+  type: "like" | "comment" | "bookmark";
   comment: string | null;
   created_at: string;
   status: string | null;
@@ -219,6 +219,29 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#1E1E1E",
     lineHeight: "18px",
   },
+  textPostBlock: {
+    borderRadius: "12px",
+    border: "1px solid #DCFCE7",
+    background: "#F0FDF4",
+    padding: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  textPostTitle: {
+    margin: 0,
+    color: "#065F46",
+    fontSize: "14px",
+    fontWeight: 700,
+    lineHeight: "20px",
+  },
+  textPostContent: {
+    margin: 0,
+    color: "#1F2937",
+    fontSize: "14px",
+    lineHeight: "22px",
+    whiteSpace: "pre-wrap",
+  },
   boldText: {
     fontWeight: 700,
   },
@@ -253,8 +276,8 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
   },
   likedIcon: {
-    stroke: "#E11D48",
-    fill: "#E11D48",
+    stroke: "#11A94D",
+    fill: "#11A94D",
   },
   likeCount: {
     fontSize: "14px",
@@ -464,8 +487,13 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
     [interactions]
   );
   const likeCount = useMemo(() => interactions.filter((item) => item.type === "like").length, [interactions]);
+  const bookmarkCount = useMemo(() => interactions.filter((item) => item.type === "bookmark").length, [interactions]);
   const liked = useMemo(
     () => Boolean(currentUserId && interactions.some((item) => item.type === "like" && item.user_id === currentUserId)),
+    [currentUserId, interactions]
+  );
+  const bookmarked = useMemo(
+    () => Boolean(currentUserId && interactions.some((item) => item.type === "bookmark" && item.user_id === currentUserId)),
     [currentUserId, interactions]
   );
 
@@ -734,6 +762,59 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
     }
   };
 
+  const handleToggleBookmark = async () => {
+    if (!post || !currentUserId || interactionBusy) {
+      return;
+    }
+
+    setInteractionBusy(true);
+    setInteractionError(null);
+
+    try {
+      if (bookmarked) {
+        const response = await fetch("/api/community/posts/interactions", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postId: post.post_id,
+            userId: currentUserId,
+            type: "bookmark",
+          }),
+        });
+
+        if (!response.ok) {
+          const data = (await response.json()) as { error?: string };
+          throw new Error(data.error || "Không thể bỏ lưu bài đăng.");
+        }
+      } else {
+        const response = await fetch("/api/community/posts/interactions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postId: post.post_id,
+            userId: currentUserId,
+            type: "bookmark",
+          }),
+        });
+
+        if (!response.ok) {
+          const data = (await response.json()) as { error?: string };
+          throw new Error(data.error || "Không thể lưu bài đăng.");
+        }
+      }
+
+      await refreshInteractions();
+    } catch (requestError) {
+      setInteractionError(requestError instanceof Error ? requestError.message : "Unexpected error");
+    } finally {
+      setInteractionBusy(false);
+    }
+  };
+
   const handleStartEditComment = (comment: CommunityPostInteractionItem) => {
     setEditingCommentId(comment.interaction_id);
     setEditingCommentValue(comment.comment ?? "");
@@ -895,84 +976,91 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                 <span style={toStatusStyle(post.status)}>{post.status}</span>
               </div>
 
-              <div>
-                <div style={styles.mediaScroller}>
-                  <div style={styles.mediaViewport}>
-                    <div
-                      style={{
-                        ...styles.mediaTrack,
-                        width: `${Math.max(mediaItems.length, 1) * 100}%`,
-                        transform: `translateX(-${activeMediaIndex * (100 / Math.max(mediaItems.length, 1))}%)`,
-                      }}
-                    >
-                      {mediaItems.length ? (
-                        mediaItems.map((mediaUrl, index) => {
-                          const video = isVideoUrl(mediaUrl, post.media_type);
+              {post.type !== "community" ? (
+                <div>
+                  <div style={styles.mediaScroller}>
+                    <div style={styles.mediaViewport}>
+                      <div
+                        style={{
+                          ...styles.mediaTrack,
+                          width: `${Math.max(mediaItems.length, 1) * 100}%`,
+                          transform: `translateX(-${activeMediaIndex * (100 / Math.max(mediaItems.length, 1))}%)`,
+                        }}
+                      >
+                        {mediaItems.length ? (
+                          mediaItems.map((mediaUrl, index) => {
+                            const video = isVideoUrl(mediaUrl, post.media_type);
 
-                          return (
-                            <div
-                              key={`${post.post_id}-${index}-${mediaUrl}`}
-                              style={{
-                                ...styles.mediaSlide,
-                                flex: `0 0 ${100 / mediaItems.length}%`,
-                                minWidth: `${100 / mediaItems.length}%`,
-                              }}
-                            >
-                              {video ? (
-                                <video src={mediaUrl} controls playsInline preload="metadata" style={styles.mediaVideo} />
-                              ) : (
-                                <img src={mediaUrl} alt={`${post.title} ${index + 1}`} style={styles.mediaImage} />
-                              )}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div
-                          style={{
-                            ...styles.mediaSlide,
-                            flex: "0 0 100%",
-                            minWidth: "100%",
-                          }}
-                        >
-                          <div style={{ ...styles.helperText, textAlign: "center" }}>Không có media</div>
-                        </div>
-                      )}
+                            return (
+                              <div
+                                key={`${post.post_id}-${index}-${mediaUrl}`}
+                                style={{
+                                  ...styles.mediaSlide,
+                                  flex: `0 0 ${100 / mediaItems.length}%`,
+                                  minWidth: `${100 / mediaItems.length}%`,
+                                }}
+                              >
+                                {video ? (
+                                  <video src={mediaUrl} controls playsInline preload="metadata" style={styles.mediaVideo} />
+                                ) : (
+                                  <img src={mediaUrl} alt={`${post.title} ${index + 1}`} style={styles.mediaImage} />
+                                )}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div
+                            style={{
+                              ...styles.mediaSlide,
+                              flex: "0 0 100%",
+                              minWidth: "100%",
+                            }}
+                          >
+                            <div style={{ ...styles.helperText, textAlign: "center" }}>Không có media</div>
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {mediaItems.length > 1 ? (
+                      <>
+                        <button type="button" style={{ ...styles.mediaArrowButton, ...styles.mediaArrowLeft }} onClick={goToPreviousMedia} aria-label="Xem media trước">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                        <button type="button" style={{ ...styles.mediaArrowButton, ...styles.mediaArrowRight }} onClick={goToNextMedia} aria-label="Xem media tiếp theo">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      </>
+                    ) : null}
                   </div>
 
                   {mediaItems.length > 1 ? (
-                    <>
-                      <button type="button" style={{ ...styles.mediaArrowButton, ...styles.mediaArrowLeft }} onClick={goToPreviousMedia} aria-label="Xem media trước">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                      <button type="button" style={{ ...styles.mediaArrowButton, ...styles.mediaArrowRight }} onClick={goToNextMedia} aria-label="Xem media tiếp theo">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                    </>
+                    <div style={styles.mediaIndicators}>
+                      {mediaItems.map((_, index) => (
+                        <button
+                          key={`indicator-${index}`}
+                          style={{
+                            ...styles.mediaDot,
+                            ...(index === activeMediaIndex ? styles.mediaDotActive : {}),
+                          }}
+                          onClick={() => setActiveMediaIndex(index)}
+                          aria-label={`Xem media ${index + 1}`}
+                          type="button"
+                        />
+                      ))}
+                    </div>
                   ) : null}
                 </div>
-
-                {mediaItems.length > 1 ? (
-                  <div style={styles.mediaIndicators}>
-                    {mediaItems.map((_, index) => (
-                      <button
-                        key={`indicator-${index}`}
-                        style={{
-                          ...styles.mediaDot,
-                          ...(index === activeMediaIndex ? styles.mediaDotActive : {}),
-                        }}
-                        onClick={() => setActiveMediaIndex(index)}
-                        aria-label={`Xem media ${index + 1}`}
-                        type="button"
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+              ) : (
+                <div style={styles.textPostBlock}>
+                  <p style={styles.textPostTitle}>{post.title || "Bài viết cộng đồng"}</p>
+                  <p style={styles.textPostContent}>{post.content || "Không có nội dung"}</p>
+                </div>
+              )}
 
               <div style={styles.postDetails}>
                 <div style={styles.caption}>
@@ -998,9 +1086,14 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                       <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
                   </button>
+                  <button type="button" style={styles.actionButton} onClick={() => void handleToggleBookmark()} aria-label="Lưu bài đăng">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill={bookmarked ? "#11A94D" : "none"} stroke="#000000" strokeWidth="2">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </button>
                 </div>
                 <div style={styles.likeCount}>
-                  {likeCount} lượt thích
+                  {likeCount} lượt thích · {bookmarkCount} đã lưu
                 </div>
               </div>
 

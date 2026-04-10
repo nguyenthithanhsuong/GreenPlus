@@ -56,14 +56,14 @@ export async function POST(request: Request) {
     const userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
     const type = (body.type ?? "").trim().toLowerCase();
 
-    if (!postId || !userId || (type !== "like" && type !== "comment")) {
+    if (!postId || !userId || (type !== "like" && type !== "comment" && type !== "bookmark")) {
       return NextResponse.json({ error: "postId, userId and type are required" }, { status: 400 });
     }
 
     const result = await communityPostInteractionFacade.addInteraction({
       postId,
       userId,
-      type: type as "like" | "comment",
+      type: type as "like" | "comment" | "bookmark",
       comment: body.comment,
     });
 
@@ -115,7 +115,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "userId is required" }, { status: 400 });
     }
 
-    if (type === "like") {
+    if (type === "like" || type === "bookmark") {
       if (!postId) {
         return NextResponse.json({ error: "postId is required" }, { status: 400 });
       }
@@ -123,7 +123,7 @@ export async function DELETE(request: Request) {
       const result = await communityPostInteractionFacade.deleteInteraction({
         userId,
         postId,
-        type: "like",
+        type: type as "like" | "bookmark",
       });
 
       return NextResponse.json(result, { status: 200 });

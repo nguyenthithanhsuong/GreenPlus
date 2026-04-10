@@ -17,6 +17,7 @@ type CartItemView = {
   product_name: string;
   product_image_url: string | null;
   quantity: number;
+  note: string | null;
   product_price: number | null;
   subtotal: number;
 };
@@ -229,6 +230,96 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: "20px",
     color: "#6B7280",
   },
+  itemActions: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "10px",
+    flexWrap: "wrap",
+    marginTop: "4px",
+  },
+  quantityControl: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    borderRadius: "999px",
+    background: "#EAFBF0",
+    padding: "6px",
+  },
+  quantityButton: {
+    width: "34px",
+    height: "34px",
+    borderRadius: "999px",
+    border: "1px solid #B7E3C8",
+    background: "#FFFFFF",
+    color: "#1A4331",
+    fontSize: "18px",
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quantityValue: {
+    minWidth: "32px",
+    textAlign: "center",
+    fontSize: "14px",
+    lineHeight: "20px",
+    fontWeight: 700,
+    color: "#1E1E1E",
+  },
+  removeButton: {
+    border: "1px solid #FECACA",
+    background: "#FEF2F2",
+    color: "#B91C1C",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+    padding: "10px 12px",
+    borderRadius: "12px",
+  },
+  noteSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    borderTop: "1px solid #F3F4F6",
+    paddingTop: "10px",
+  },
+  noteSectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+  },
+  noteLabel: {
+    margin: 0,
+    fontSize: "13px",
+    lineHeight: "16px",
+    fontWeight: 700,
+    color: "#4B5563",
+  },
+  noteSaveButton: {
+    border: "1px solid #51B788",
+    background: "#51B788",
+    color: "#1A4331",
+    borderRadius: "12px",
+    padding: "10px 14px",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  noteInput: {
+    width: "100%",
+    boxSizing: "border-box",
+    border: "1px solid #E5E7EB",
+    background: "#F9FAFB",
+    borderRadius: "12px",
+    padding: "12px 14px",
+    fontSize: "14px",
+    lineHeight: "20px",
+    color: "#111827",
+    outline: "none",
+  },
   noteWrap: {
     borderTop: "1px solid #F3F4F6",
     paddingTop: "16px",
@@ -423,6 +514,9 @@ export default function Payment() {
   const [cart, setCart] = useState<CartResponse | null>(null);
   const [note, setNote] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!initialized) {
@@ -458,6 +552,12 @@ export default function Payment() {
         }
 
         setCart(cartData);
+        setNoteDrafts(
+          (cartData.items ?? []).reduce<Record<string, string>>((drafts, item) => {
+            drafts[item.cart_item_id] = item.note ?? "";
+            return drafts;
+          }, {}),
+        );
       } catch (requestError) {
         if ((requestError as Error).name === "AbortError") {
           return;
@@ -478,9 +578,130 @@ export default function Payment() {
   }, [initialized, isAuthenticated, router, user]);
 
   const itemTotal = useMemo(() => Number(cart?.cart_total ?? 0), [cart]);
+  const cartItems = useMemo(() => cart?.items ?? [], [cart]);
+  const cartQuantity = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
   const shippingFee = useMemo(() => (itemTotal > 0 ? DELIVERY_FEE : 0), [itemTotal]);
   const promoValue = useMemo(() => (itemTotal > 0 ? PROMOTION : 0), [itemTotal]);
   const grandTotal = useMemo(() => Math.max(itemTotal + shippingFee - promoValue, 0), [itemTotal, shippingFee, promoValue]);
+
+  useEffect(() => {
+    setNoteDrafts(
+      cartItems.reduce<Record<string, string>>((drafts, item) => {
+        drafts[item.cart_item_id] = item.note ?? "";
+        return drafts;
+      }, {}),
+    );
+  }, [cartItems]);
+
+  const refreshCart = (nextCart: CartResponse) => {
+    setCart(nextCart);
+    setNoteDrafts(
+      (nextCart.items ?? []).reduce<Record<string, string>>((drafts, item) => {
+        drafts[item.cart_item_id] = item.note ?? "";
+        return drafts;
+      }, {}),
+    );
+  };
+
+  const mutateCart = async (request: RequestInfo, init: RequestInit, fallbackMessage: string) => {
+    const response = await fetch(request, init);
+    const data = (await response.json()) as CartResponse | { error?: string };
+
+    if (!response.ok) {
+      const responseError = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+      throw new Error(responseError || fallbackMessage);
+    }
+
+    refreshCart(data as CartResponse);
+  };
+
+  const handleChangeQuantity = async (item: CartItemView, nextQuantity: number) => {
+    if (!user?.user_id) {
+      return;
+    }
+
+    if (nextQuantity <= 0) {
+      await handleRemoveItem(item);
+      return;
+    }
+
+    setActiveItemId(item.cart_item_id);
+
+    try {
+      await mutateCart(
+        "/api/cart",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.user_id,
+            productId: item.product_id,
+            quantity: nextQuantity,
+          }),
+        },
+        "Không thể cập nhật số lượng sản phẩm.",
+      );
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật số lượng sản phẩm.");
+    } finally {
+      setActiveItemId(null);
+    }
+  };
+
+  const handleRemoveItem = async (item: CartItemView) => {
+    if (!user?.user_id) {
+      return;
+    }
+
+    setActiveItemId(item.cart_item_id);
+
+    try {
+      await mutateCart(
+        "/api/cart",
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.user_id,
+            productId: item.product_id,
+          }),
+        },
+        "Không thể xóa sản phẩm khỏi giỏ hàng.",
+      );
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể xóa sản phẩm khỏi giỏ hàng.");
+    } finally {
+      setActiveItemId(null);
+    }
+  };
+
+  const handleSaveNote = async (item: CartItemView) => {
+    if (!user?.user_id) {
+      return;
+    }
+
+    setSavingNoteItemId(item.cart_item_id);
+
+    try {
+      await mutateCart(
+        "/api/cart/note",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.user_id,
+            cartItemId: item.cart_item_id,
+            note: (noteDrafts[item.cart_item_id] ?? "").trim(),
+          }),
+        },
+        "Không thể lưu ghi chú cho sản phẩm.",
+      );
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể lưu ghi chú cho sản phẩm.");
+    } finally {
+      setSavingNoteItemId(null);
+    }
+  };
 
   const handlePlaceOrder = async () => {
     if (!user?.user_id) {
@@ -579,6 +800,7 @@ export default function Payment() {
                 </div>
 
                 <div style={styles.itemList}>
+                  <p style={styles.itemMeta}>Có {cartQuantity} sản phẩm trong giỏ</p>
                   {cart.items.map((item, index) => (
                     <div
                       key={item.cart_item_id}
@@ -603,6 +825,71 @@ export default function Payment() {
                         <div style={styles.itemPriceRow}>
                           <p style={styles.itemPrice}>{formatPrice(Number(item.subtotal))}</p>
                           <p style={styles.itemQty}>x{item.quantity}</p>
+                        </div>
+                        <div style={styles.noteSection}>
+                          <div style={styles.noteSectionHeader}>
+                            <p style={styles.noteLabel}>Ghi chú cho món hàng</p>
+                            <span style={styles.itemMeta}>Bấm lưu để cập nhật</span>
+                          </div>
+                          <input
+                            type="text"
+                            value={noteDrafts[item.cart_item_id] ?? ""}
+                            onChange={(event) =>
+                              setNoteDrafts((previous) => ({
+                                ...previous,
+                                [item.cart_item_id]: event.target.value,
+                              }))
+                            }
+                            onBlur={() => void handleSaveNote(item)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                void handleSaveNote(item);
+                              }
+                            }}
+                            style={styles.noteInput}
+                            placeholder="Thêm ghi chú cho sản phẩm này"
+                            disabled={savingNoteItemId === item.cart_item_id}
+                          />
+                          <div style={styles.itemActions}>
+                            <div style={styles.quantityControl}>
+                              <button
+                                type="button"
+                                style={styles.quantityButton}
+                                onClick={() => void handleChangeQuantity(item, item.quantity - 1)}
+                                disabled={activeItemId === item.cart_item_id}
+                                aria-label={`Giảm số lượng ${item.product_name}`}
+                              >
+                                -
+                              </button>
+                              <span style={styles.quantityValue}>{item.quantity}</span>
+                              <button
+                                type="button"
+                                style={styles.quantityButton}
+                                onClick={() => void handleChangeQuantity(item, item.quantity + 1)}
+                                disabled={activeItemId === item.cart_item_id}
+                                aria-label={`Tăng số lượng ${item.product_name}`}
+                              >
+                                +
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              style={styles.removeButton}
+                              onClick={() => void handleRemoveItem(item)}
+                              disabled={activeItemId === item.cart_item_id}
+                            >
+                              Xóa sản phẩm
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            style={styles.noteSaveButton}
+                            onClick={() => void handleSaveNote(item)}
+                            disabled={savingNoteItemId === item.cart_item_id}
+                          >
+                            {savingNoteItemId === item.cart_item_id ? "Đang lưu..." : "Cập nhật ghi chú"}
+                          </button>
                         </div>
                       </div>
                     </div>

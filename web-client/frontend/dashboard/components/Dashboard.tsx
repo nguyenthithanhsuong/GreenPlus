@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import NavigationBar from "./NavigationBar";
+import { useAuthStore } from "@/lib/stores/authStore";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -96,6 +98,18 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "0 10px",
     color: "#AAAAAA",
     fontSize: "16px",
+  },
+  searchButton: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "16px",
+    border: "1px solid #51B788",
+    background: "#FFFFFF",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#51B788",
+    cursor: "pointer",
   },
   filterButton: {
     width: "48px",
@@ -272,6 +286,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
     display: "flex",
     flexDirection: "column",
+    position: "relative" as const,
   },
   productImageWrap: {
     width: "100%",
@@ -358,9 +373,31 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     cursor: "pointer",
   },
+  toastContainer: {
+    position: "fixed" as const,
+    bottom: "120px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 9999,
+    animation: "slideUp 0.3s ease-out",
+  },
+  toast: {
+    background: "#51B788",
+    color: "#FFFFFF",
+    padding: "14px 20px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 12px rgba(81, 183, 136, 0.3)",
+    fontSize: "14px",
+    fontWeight: 500,
+    textAlign: "center" as const,
+    minWidth: "280px",
+    maxWidth: "90vw",
+  },
 };
 
 const Dashboard = () => {
+  const router = useRouter();
+  const { isAuthenticated, user: authUser } = useAuthStore();
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [categoryError, setCategoryError] = useState<string | null>(null);
@@ -369,6 +406,73 @@ const Dashboard = () => {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
   const [categoryColumns, setCategoryColumns] = useState(4);
+  const [searchValue, setSearchValue] = useState("");
+  const [cartActionMessage, setCartActionMessage] = useState<string | null>(null);
+  const [cartActionLoading, setCartActionLoading] = useState(false);
+
+  useEffect(() => {
+    // Add animation styles globally
+    const style = document.createElement("style");
+    style.innerHTML = `
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  const handleAddToCart = async (productId: string) => {
+    setCartActionMessage(null);
+
+    if (!isAuthenticated || !authUser?.user_id) {
+      setCartActionMessage("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      setTimeout(() => setCartActionMessage(null), 4000);
+      return;
+    }
+
+    setCartActionLoading(true);
+    try {
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: authUser.user_id,
+          productId,
+          quantity: 1,
+        }),
+      });
+
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || "Không thể thêm sản phẩm vào giỏ hàng.");
+      }
+
+      // Find product name for the notification
+      const product = products.find((p) => p.productId === productId);
+      const productName = product?.name || "sản phẩm";
+      setCartActionMessage(`Đã thêm ${productName} vào Giỏ hàng!`);
+      setTimeout(() => setCartActionMessage(null), 4000);
+    } catch (requestError) {
+      const errorMsg = requestError instanceof Error ? requestError.message : "Không thể thêm sản phẩm vào giỏ hàng.";
+      setCartActionMessage(errorMsg);
+      setTimeout(() => setCartActionMessage(null), 4000);
+    } finally {
+      setCartActionLoading(false);
+    }
+  };
 
   useEffect(() => {
     const resolveColumns = () => {
@@ -439,7 +543,15 @@ const Dashboard = () => {
       setProductsError(null);
 
       try {
-        const response = await fetch("/api/products?sort=newest&limit=8", { signal: controller.signal });
+        const query = new URLSearchParams();
+        query.set("sort", "newest");
+        query.set("limit", "8");
+
+        if (searchValue.trim()) {
+          query.set("keyword", searchValue.trim());
+        }
+
+        const response = await fetch(`/api/products?${query.toString()}`, { signal: controller.signal });
         const data = (await response.json()) as ProductsResponse | { error?: string };
 
         if (!response.ok) {
@@ -465,7 +577,21 @@ const Dashboard = () => {
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [searchValue]);
+
+  const runSearch = () => {
+    const keyword = searchValue.trim();
+    const query = new URLSearchParams();
+    query.set("name", "Tất cả");
+    query.set("backTo", "/dashboard");
+    query.set("sort", "newest");
+
+    if (keyword) {
+      query.set("keyword", keyword);
+    }
+
+    router.push(`/category-products/all?${query.toString()}`);
+  };
 
   const displayCategories = useMemo(
     () => [
@@ -508,9 +634,27 @@ const Dashboard = () => {
                 <circle cx="11" cy="11" r="7" stroke="#AAAAAA" strokeWidth="2" />
                 <path d="m20 20-4-4" stroke="#AAAAAA" strokeWidth="2" strokeLinecap="round" />
               </svg>
-              <span>Tìm kiếm trên FRESH DROP</span>
+              <input
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    runSearch();
+                  }
+                }}
+                placeholder="Tìm kiếm trên FRESH DROP"
+                style={{
+                  flex: 1,
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  color: "#111827",
+                  fontSize: "16px",
+                }}
+              />
             </div>
-            <button type="button" style={styles.filterButton} aria-label="Lọc">
+            <button type="button" style={styles.searchButton} aria-label="Tìm kiếm" onClick={runSearch}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M4 6h16M7 12h10M10 18h4" stroke="#51B788" strokeWidth="2" strokeLinecap="round" />
               </svg>
@@ -609,34 +753,41 @@ const Dashboard = () => {
             {!loadingProducts && productsError && <p style={styles.errorText}>{productsError}</p>}
             <div style={styles.productRow}>
               {freshProducts.map((product) => (
-                <Link key={product.productId} href={`/product-detail/${product.productId}?backTo=${encodeURIComponent("/dashboard")}`} style={styles.productLink}>
-                  <article style={styles.productCard}>
-                    <div style={styles.productImageWrap}>
-                      <img
-                        src={product.imageUrl ?? "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"}
-                        alt={product.name}
-                        style={styles.productImage}
-                      />
-                    </div>
-                    <div style={styles.productContent}>
-                      <p style={styles.productName}>{product.name}</p>
-                      <div style={styles.ratingRow}>
-                        <span aria-hidden="true">★</span>
-                        <span>{product.isAvailable ? "Sẵn hàng" : "Tạm hết"}</span>
+                <div key={product.productId} style={{ display: "flex", flexDirection: "column" }}>
+                  <Link href={`/product-detail/${product.productId}?backTo=${encodeURIComponent("/dashboard")}`} style={styles.productLink}>
+                    <article style={styles.productCard}>
+                      <div style={styles.productImageWrap}>
+                        <img
+                          src={product.imageUrl ?? "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"}
+                          alt={product.name}
+                          style={styles.productImage}
+                        />
                       </div>
-                      <div style={styles.priceRow}>
-                        <div style={styles.prices}>
-                          <span>{formatPrice(product.price)}</span>
+                      <div style={styles.productContent}>
+                        <p style={styles.productName}>{product.name}</p>
+                        <div style={styles.ratingRow}>
+                          <span aria-hidden="true">★</span>
+                          <span>{product.isAvailable ? "Sẵn hàng" : "Tạm hết"}</span>
                         </div>
-                        <button type="button" style={styles.addButton} aria-label={`Thêm ${product.name}`}>
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-                          </svg>
-                        </button>
+                        <div style={styles.priceRow}>
+                          <div style={styles.prices}>
+                            <span>{formatPrice(product.price)}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                </Link>
+                    </article>
+                  </Link>
+                  <button
+                    type="button"
+                    style={{ ...styles.addButton, alignSelf: "flex-end", marginTop: "-50px", marginRight: "8px", position: "relative", zIndex: 10 }}
+                    aria-label={`Thêm ${product.name}`}
+                    onClick={() => void handleAddToCart(product.productId)}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
               ))}
             </div>
           </section>
@@ -649,42 +800,55 @@ const Dashboard = () => {
             {!loadingProducts && !productsError && dealProducts.length === 0 && <p style={styles.infoText}>Không có sản phẩm ưu đãi.</p>}
             <div style={styles.productRow}>
               {dealProducts.map((product) => (
-                <Link key={product.productId} href={`/product-detail/${product.productId}?backTo=${encodeURIComponent("/dashboard")}`} style={styles.productLink}>
-                  <article style={styles.productCard}>
-                    <div style={styles.productImageWrap}>
-                      <div style={styles.productBadge}>Mua ngay</div>
-                      <img
-                        src={product.imageUrl ?? "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"}
-                        alt={product.name}
-                        style={styles.productImage}
-                      />
-                    </div>
-                    <div style={styles.productContent}>
-                      <p style={styles.productName}>{product.name}</p>
-                      <div style={styles.ratingRow}>
-                        <span aria-hidden="true">★</span>
-                        <span>{product.categoryName ?? "Sản phẩm"}</span>
+                <div key={product.productId} style={{ display: "flex", flexDirection: "column" }}>
+                  <Link href={`/product-detail/${product.productId}?backTo=${encodeURIComponent("/dashboard")}`} style={styles.productLink}>
+                    <article style={styles.productCard}>
+                      <div style={styles.productImageWrap}>
+                        <div style={styles.productBadge}>Mua ngay</div>
+                        <img
+                          src={product.imageUrl ?? "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"}
+                          alt={product.name}
+                          style={styles.productImage}
+                        />
                       </div>
-                      <div style={styles.priceRow}>
-                        <div style={styles.prices}>
-                          <span>{formatPrice(product.price)}</span>
-                          <span style={styles.oldPrice}>Đang cập nhật</span>
+                      <div style={styles.productContent}>
+                        <p style={styles.productName}>{product.name}</p>
+                        <div style={styles.ratingRow}>
+                          <span aria-hidden="true">★</span>
+                          <span>{product.categoryName ?? "Sản phẩm"}</span>
                         </div>
-                        <button type="button" style={styles.addButton} aria-label={`Thêm ${product.name}`}>
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-                          </svg>
-                        </button>
+                        <div style={styles.priceRow}>
+                          <div style={styles.prices}>
+                            <span>{formatPrice(product.price)}</span>
+                            <span style={styles.oldPrice}>Đang cập nhật</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                </Link>
+                    </article>
+                  </Link>
+                  <button
+                    type="button"
+                    style={{ ...styles.addButton, alignSelf: "flex-end", marginTop: "-50px", marginRight: "8px", position: "relative", zIndex: 10 }}
+                    aria-label={`Thêm ${product.name}`}
+                    onClick={() => void handleAddToCart(product.productId)}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
               ))}
             </div>
           </section>
         </main>
 
         <NavigationBar />
+
+        {cartActionMessage && (
+          <div style={styles.toastContainer}>
+            <div style={styles.toast}>{cartActionMessage}</div>
+          </div>
+        )}
       </div>
     </div>
   );

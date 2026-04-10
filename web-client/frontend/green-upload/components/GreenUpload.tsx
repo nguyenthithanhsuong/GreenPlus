@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "@/lib/stores/authStore";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import {
@@ -273,7 +273,6 @@ function toMediaTypeFromType(type: PostType): "JPG" | "MP4" {
 export default function GreenUpload() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [type, setType] = useState<PostType>("community");
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviewUrls, setFilePreviewUrls] = useState<string[]>([]);
   const [posts, setPosts] = useState<PostSummary[]>([]);
@@ -326,6 +325,18 @@ export default function GreenUpload() {
     return () => {
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
     };
+  }, [files]);
+
+  const inferredType = useMemo<PostType>(() => {
+    if (files.some((file) => file.type.startsWith("video/"))) {
+      return "video";
+    }
+
+    if (files.some((file) => file.type.startsWith("image/"))) {
+      return "blog";
+    }
+
+    return "community";
   }, [files]);
 
   const uploadAttachment = async (ownerUserId: string, postId: string, selectedFiles: File[]): Promise<string[]> => {
@@ -396,8 +407,8 @@ export default function GreenUpload() {
           userId: activeUserId,
           title,
           content,
-          type,
-          mediaType: toMediaTypeFromType(type),
+          type: inferredType,
+          mediaType: toMediaTypeFromType(inferredType),
         }),
       });
 
@@ -451,12 +462,9 @@ export default function GreenUpload() {
             </div>
 
             <div style={styles.row}>
-              <label style={styles.label} htmlFor="post-type">Loại bài</label>
-              <select id="post-type" style={styles.select} value={type} onChange={(event) => setType(event.target.value as PostType)}>
-                <option value="community">community</option>
-                <option value="video">video</option>
-                <option value="blog">blog</option>
-              </select>
+              <label style={styles.label} htmlFor="post-type">Loại bài (tự động)</label>
+              <input id="post-type" style={styles.input} value={inferredType} disabled readOnly />
+              <p style={styles.helperText}>Hệ thống tự gán: video nếu chọn video, blog nếu chọn ảnh.</p>
             </div>
 
             <div style={styles.row}>

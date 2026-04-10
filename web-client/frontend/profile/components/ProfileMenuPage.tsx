@@ -29,7 +29,9 @@ type ProfileResult = {
 };
 
 const menuItems: MenuItem[] = [
+  { title: "Quét QR Batch", href: "/profile/scan-batch" },
   { title: "Profile của tôi", href: "/profile/my-profile" },
+  { title: "Đổi mật khẩu", href: "/profile/change-password" },
   { title: "Phương thức thanh toán", href: "/profile/payment-method" },
   { title: "Lịch sử điểm thưởng", href: "/profile/score-history" },
   { title: "Cài đặt thông báo", href: "/profile/notification-setting" },

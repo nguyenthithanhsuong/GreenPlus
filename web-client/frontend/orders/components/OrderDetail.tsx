@@ -410,6 +410,19 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#CA8A04",
     background: "#FEF9C3",
   },
+  paymentActionBtn: {
+    marginTop: "10px",
+    width: "100%",
+    height: "40px",
+    borderRadius: "10px",
+    border: "1px solid #4EA96A",
+    background: "#4EA96A",
+    color: "#FFFFFF",
+    fontSize: "13px",
+    lineHeight: "20px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
   bottomBar: {
     position: "sticky",
     bottom: 0,
@@ -683,51 +696,14 @@ export default function OrderDetail() {
     }
   };
 
-  const handleConfirmPayment = async () => {
-    if (!user?.user_id || !detail) {
-      return;
-    }
-
-    if (detail.payment_status !== "pending" || detail.order_status === "cancelled") {
-      setMessage("Thanh toán này không thể xác nhận ở trạng thái hiện tại.");
-      return;
-    }
-
-    setSaving(true);
-    setMessage(null);
-
-    try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(detail.order_id)}/confirm-payment`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user.user_id,
-        }),
-      });
-
-      const data = (await response.json()) as { status?: string; payment_status?: string; error?: string };
-      if (!response.ok) {
-        throw new Error(String(data.error ?? "Không thể xác nhận thanh toán."));
-      }
-
-      setMessage("Thanh toán đã được xác nhận thành công.");
-      setRefreshToken((value) => value + 1);
-    } catch (requestError) {
-      setMessage(requestError instanceof Error ? requestError.message : "Không thể xác nhận thanh toán.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handlePrimaryAction = () => {
     if (!detail) {
       return;
     }
 
-    if (detail.payment_status === "pending" && detail.order_status !== "cancelled") {
-      void handleConfirmPayment();
+    const canOpenPayment = detail.payment_status !== "paid" && detail.order_status !== "cancelled";
+    if (canOpenPayment) {
+      router.push(`/orders/${encodeURIComponent(detail.order_id)}/payment`);
       return;
     }
 
@@ -892,6 +868,11 @@ export default function OrderDetail() {
                   <p style={styles.paymentText}>{getMethodLabel(detail.payment_method)}</p>
                   <span style={{ ...styles.paymentBadge, ...getPaymentBadgeStyle(detail.payment_status) }}>{getPaymentStatusLabel(detail.payment_status)}</span>
                 </div>
+                {detail.payment_status !== "paid" && detail.order_status !== "cancelled" ? (
+                  <button type="button" style={styles.paymentActionBtn} onClick={handlePrimaryAction} disabled={saving}>
+                    Thanh toán
+                  </button>
+                ) : null}
               </section>
 
               {message ? <p style={styles.loadingText}>{message}</p> : null}
@@ -915,7 +896,7 @@ export default function OrderDetail() {
               onClick={handlePrimaryAction}
               disabled={saving}
             >
-              {detail.payment_status === "pending" && detail.order_status !== "cancelled" ? "Xác nhận thanh toán" : "Quay lại đơn hàng"}
+              {detail.payment_status !== "paid" && detail.order_status !== "cancelled" ? "Thanh toán" : "Quay lại đơn hàng"}
             </button>
           </div>
         )}

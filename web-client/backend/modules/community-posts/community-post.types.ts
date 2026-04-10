@@ -71,7 +71,7 @@ export type UploadCommunityAttachmentResult = {
   mediaUrls: string[];
 };
 
-export type CommunityPostInteractionType = "like" | "comment";
+export type CommunityPostInteractionType = "like" | "comment" | "bookmark";
 export type CommunityPostInteractionStatus = "active" | "edited" | "deleted";
 
 export type CommunityPostInteraction = {

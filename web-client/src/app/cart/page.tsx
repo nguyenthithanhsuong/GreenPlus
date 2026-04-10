@@ -1,3 +1,5 @@
-import Cart from "../../../frontend/cart/components/Cart";
+import { redirect } from "next/navigation";
 
-export default Cart;
+export default function CartPage() {
+	redirect("/orders");
+}

@@ -80,33 +80,35 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    gap: "clamp(8px, 2.2vw, 16px)",
-    minHeight: "44px",
+    gap: "16px",
+    minHeight: "48px",
     width: "100%",
   },
   searchInputContainer: {
     flex: 1,
+    height: "48px",
     background: "#F9FAFB",
     border: "1px solid #AAAAAA",
-    borderRadius: "14px",
+    borderRadius: "16px",
     display: "flex",
     alignItems: "center",
-    padding: "0 clamp(10px, 2.4vw, 12px)",
-    gap: "clamp(6px, 2vw, 8px)",
+    boxSizing: "border-box",
+    padding: "0 10px",
+    gap: "6px",
   },
   searchInput: {
     border: "none",
     background: "transparent",
     outline: "none",
     width: "100%",
-    fontSize: "clamp(14px, 3.6vw, 16px)",
-    color: "#333",
+    fontSize: "16px",
+    color: "#111827",
   },
   filterButton: {
-    width: "clamp(42px, 11vw, 48px)",
-    height: "clamp(42px, 11vw, 48px)",
+    width: "48px",
+    height: "48px",
     border: "1px solid #51B788",
-    borderRadius: "14px",
+    borderRadius: "16px",
     background: "#FFFFFF",
     display: "flex",
     justifyContent: "center",
@@ -282,11 +284,11 @@ const Category = () => {
                 type="text"
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Tìm kiếm danh mục"
+                placeholder="Tìm kiếm Danh Mục"
                 style={styles.searchInput}
               />
             </div>
-            <button style={styles.filterButton}>
+            <button type="button" style={styles.filterButton}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M4 6H20M4 12H20M4 18H20" stroke="#51B788" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>

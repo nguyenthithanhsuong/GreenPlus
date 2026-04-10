@@ -26,13 +26,13 @@ export class CommunityPostInteractionRepository {
     return (data ?? []) as PostInteractionRow[];
   }
 
-  async findLike(postId: string, userId: string): Promise<PostInteractionRow | null> {
+  async findByType(postId: string, userId: string, type: Extract<CommunityPostInteractionType, "like" | "bookmark">): Promise<PostInteractionRow | null> {
     const { data, error } = await supabaseServer
       .from("post_interactions")
       .select("interaction_id,post_id,user_id,type,comment,created_at,status")
       .eq("post_id", postId)
       .eq("user_id", userId)
-      .eq("type", "like")
+      .eq("type", type)
       .maybeSingle();
 
     if (error) {
@@ -117,12 +117,16 @@ export class CommunityPostInteractionRepository {
   }
 
   async deleteLike(input: { postId: string; userId: string }): Promise<number> {
+    return this.deleteByType({ ...input, type: "like" });
+  }
+
+  async deleteByType(input: { postId: string; userId: string; type: Extract<CommunityPostInteractionType, "like" | "bookmark"> }): Promise<number> {
     const { data, error } = await supabaseServer
       .from("post_interactions")
       .delete()
       .eq("post_id", input.postId)
       .eq("user_id", input.userId)
-      .eq("type", "like")
+      .eq("type", input.type)
       .select("interaction_id");
 
     if (error) {

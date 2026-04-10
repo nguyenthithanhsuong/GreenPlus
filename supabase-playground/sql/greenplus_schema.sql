@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS post_interactions (
   interaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID REFERENCES posts(post_id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('like', 'comment')),
+  type VARCHAR(20) NOT NULL CHECK (type IN ('like', 'comment', 'bookmark')),
   comment TEXT,
   created_at DATE DEFAULT CURRENT_DATE,
   status VARCHAR(20) CHECK (status IN ('active', 'edited', 'deleted'))

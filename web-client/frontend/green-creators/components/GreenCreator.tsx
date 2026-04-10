@@ -14,10 +14,11 @@ import {
 } from "../../shared/screen.styles";
 
 type Comment = {
-  id: number;
+  id: string;
+  userId: string;
   username: string;
   text: string;
-  isLiked: boolean;
+  createdAt: string;
 };
 
 type Post = {
@@ -27,7 +28,7 @@ type Post = {
   title: string;
   content: string;
   mediaType: "JPG" | "PNG" | "MP4";
-  type: "community" | "video";
+  type: "community" | "video" | "blog";
   status: "pending" | "approved" | "rejected";
   author: {
     name: string;
@@ -49,7 +50,7 @@ type CommunityPostItem = {
   media_type: "JPG" | "PNG" | "MP4";
   media_url: string | null;
   media_urls?: string[];
-  type: "community" | "video";
+  type: "community" | "video" | "blog";
   status: "pending" | "approved" | "rejected";
   created_at: string;
 };
@@ -58,6 +59,16 @@ type ProfileResult = {
   user_id: string;
   name: string;
   image_url: string | null;
+};
+
+type CommunityPostInteractionItem = {
+  interaction_id: string;
+  post_id: string;
+  user_id: string;
+  type: "like" | "comment" | "bookmark";
+  comment: string | null;
+  created_at: string;
+  status: string | null;
 };
 
 const BACKEND_TEST_USER_STORAGE_KEY = "backend-testing-user-id";
@@ -200,32 +211,34 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    gap: "clamp(8px, 2.2vw, 16px)",
-    minHeight: "44px",
+    gap: "16px",
+    minHeight: "48px",
   },
   searchInputContainer: {
     flex: 1,
+    height: "48px",
     background: "#F9FAFB",
     border: "1px solid #AAAAAA",
-    borderRadius: "14px",
+    borderRadius: "16px",
     display: "flex",
     alignItems: "center",
-    padding: "0 clamp(10px, 2.4vw, 12px)",
-    gap: "clamp(6px, 2vw, 8px)",
+    boxSizing: "border-box",
+    padding: "0 10px",
+    gap: "6px",
   },
   searchInput: {
     border: "none",
     background: "transparent",
     outline: "none",
     width: "100%",
-    fontSize: "clamp(14px, 3.6vw, 16px)",
-    color: "#1E1E1E",
+    fontSize: "16px",
+    color: "#111827",
   },
   filterButton: {
-    width: "clamp(42px, 11vw, 48px)",
-    height: "clamp(42px, 11vw, 48px)",
+    width: "48px",
+    height: "48px",
     border: "1px solid #51B788",
-    borderRadius: "14px",
+    borderRadius: "16px",
     background: "#FFFFFF",
     display: "flex",
     justifyContent: "center",
@@ -326,14 +339,29 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: "12px",
   },
+  actionButton: {
+    border: "none",
+    background: "transparent",
+    padding: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+  },
   actionGroupRight: {
     display: "flex",
     alignItems: "center",
+  },
+  likedIcon: {
+    stroke: "#11A94D",
+    fill: "#11A94D",
   },
   paginationDots: {
     display: "flex",
     gap: "4px",
     alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
   },
   dotButton: {
     border: "none",
@@ -422,6 +450,29 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "13px",
     color: "#1E1E1E",
   },
+  textPostBlock: {
+    borderRadius: "12px",
+    border: "1px solid #DCFCE7",
+    background: "#F0FDF4",
+    padding: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  textPostTitle: {
+    margin: 0,
+    color: "#065F46",
+    fontSize: "14px",
+    fontWeight: 700,
+    lineHeight: "20px",
+  },
+  textPostContent: {
+    margin: 0,
+    color: "#1F2937",
+    fontSize: "14px",
+    lineHeight: "22px",
+    whiteSpace: "pre-wrap",
+  },
   commentText: {
     flex: 1,
     lineHeight: "18px",
@@ -433,6 +484,35 @@ const styles: Record<string, React.CSSProperties> = {
   dateText: {
     fontSize: "12px",
     color: "#8A8A8A",
+  },
+  commentComposer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginTop: "2px",
+  },
+  commentComposerInput: {
+    flex: 1,
+    border: "1px solid #D1D5DB",
+    borderRadius: "10px",
+    padding: "9px 10px",
+    fontSize: "13px",
+    outline: "none",
+  },
+  commentComposerButton: {
+    border: "none",
+    background: "#11A94D",
+    color: "#FFFFFF",
+    borderRadius: "10px",
+    padding: "9px 11px",
+    fontSize: "12px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  interactionErrorText: {
+    margin: 0,
+    color: "#B91C1C",
+    fontSize: "12px",
   },
   menuWrap: {
     position: "relative",
@@ -512,14 +592,28 @@ const styles: Record<string, React.CSSProperties> = {
 const GreenCreator = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"own" | "community">("community");
+  const [activeTab, setActiveTab] = useState<"all" | "interacted" | "saved" | "own">("all");
   const [allPosts, setAllPosts] = useState<CommunityPostItem[]>([]);
   const [profileByUserId, setProfileByUserId] = useState<Record<string, ProfileResult>>({});
+  const [interactionsByPostId, setInteractionsByPostId] = useState<Record<string, CommunityPostInteractionItem[]>>({});
+  const [commentDraftByPostId, setCommentDraftByPostId] = useState<Record<string, string>>({});
+  const [expandedCommentPostId, setExpandedCommentPostId] = useState<string | null>(null);
   const [activeMenuPostId, setActiveMenuPostId] = useState<string | null>(null);
   const [workingPostId, setWorkingPostId] = useState<string | null>(null);
+  const [workingInteractionPostId, setWorkingInteractionPostId] = useState<string | null>(null);
+  const [interactionError, setInteractionError] = useState<string | null>(null);
+  const [interactionErrorPostId, setInteractionErrorPostId] = useState<string | null>(null);
   const [activeMediaIndexByPostId, setActiveMediaIndexByPostId] = useState<Record<string, number>>({});
   const userId = useAuthStore((state) => state.user?.user_id ?? "");
   const userName = useAuthStore((state) => state.user?.name ?? "Bạn");
+
+  const resolveActorUserId = () => {
+    if (userId) {
+      return userId;
+    }
+
+    return window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+  };
 
   useEffect(() => {
     const fallbackUserId = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
@@ -553,7 +647,62 @@ const GreenCreator = () => {
   }, [userId]);
 
   useEffect(() => {
-    const uniqueUserIds = Array.from(new Set(allPosts.map((post) => post.user_id).filter(Boolean)));
+    const postIds = Array.from(new Set(allPosts.map((post) => post.post_id).filter(Boolean)));
+
+    if (!postIds.length) {
+      setInteractionsByPostId({});
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadInteractions = async () => {
+      try {
+        const results = await Promise.all(
+          postIds.map(async (postId) => {
+            const response = await fetch(`/api/community/posts/interactions?postId=${encodeURIComponent(postId)}`, {
+              signal: controller.signal,
+            });
+            const data = (await response.json()) as { items?: CommunityPostInteractionItem[]; error?: string };
+
+            if (!response.ok) {
+              return [postId, [] as CommunityPostInteractionItem[]] as const;
+            }
+
+            return [postId, Array.isArray(data.items) ? data.items : ([] as CommunityPostInteractionItem[])] as const;
+          })
+        );
+
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        const nextMap: Record<string, CommunityPostInteractionItem[]> = {};
+        results.forEach(([postId, items]) => {
+          nextMap[postId] = items;
+        });
+        setInteractionsByPostId(nextMap);
+      } catch {
+        if (!controller.signal.aborted) {
+          setInteractionsByPostId({});
+        }
+      }
+    };
+
+    void loadInteractions();
+
+    return () => {
+      controller.abort();
+    };
+  }, [allPosts]);
+
+  useEffect(() => {
+    const interactionUsers = Object.values(interactionsByPostId)
+      .flat()
+      .map((item) => item.user_id)
+      .filter(Boolean);
+
+    const uniqueUserIds = Array.from(new Set([...allPosts.map((post) => post.user_id).filter(Boolean), ...interactionUsers]));
 
     if (!uniqueUserIds.length) {
       setProfileByUserId({});
@@ -607,7 +756,182 @@ const GreenCreator = () => {
     return () => {
       controller.abort();
     };
-  }, [allPosts]);
+  }, [allPosts, interactionsByPostId]);
+
+  const refreshInteractionsForPost = async (postId: string) => {
+    const response = await fetch(`/api/community/posts/interactions?postId=${encodeURIComponent(postId)}`);
+    const data = (await response.json()) as { items?: CommunityPostInteractionItem[]; error?: string };
+
+    if (!response.ok) {
+      throw new Error(data.error || "Không thể tải tương tác.");
+    }
+
+    setInteractionsByPostId((current) => ({
+      ...current,
+      [postId]: Array.isArray(data.items) ? data.items : [],
+    }));
+  };
+
+  const handleToggleLike = async (postId: string) => {
+    const actorUserId = resolveActorUserId();
+    if (!actorUserId || workingInteractionPostId === postId) {
+      return;
+    }
+
+    const postInteractions = interactionsByPostId[postId] ?? [];
+    const liked = postInteractions.some((item) => item.type === "like" && item.user_id === actorUserId);
+
+    setWorkingInteractionPostId(postId);
+    setInteractionError(null);
+    setInteractionErrorPostId(null);
+
+    try {
+      if (liked) {
+        const response = await fetch("/api/community/posts/interactions", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postId,
+            userId: actorUserId,
+            type: "like",
+          }),
+        });
+
+        if (!response.ok) {
+          const data = (await response.json()) as { error?: string };
+          throw new Error(data.error || "Không thể bỏ thích bài đăng.");
+        }
+      } else {
+        const response = await fetch("/api/community/posts/interactions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postId,
+            userId: actorUserId,
+            type: "like",
+          }),
+        });
+
+        if (!response.ok) {
+          const data = (await response.json()) as { error?: string };
+          throw new Error(data.error || "Không thể thích bài đăng.");
+        }
+      }
+
+      await refreshInteractionsForPost(postId);
+    } catch (error) {
+      setInteractionErrorPostId(postId);
+      setInteractionError(error instanceof Error ? error.message : "Không thể thao tác tương tác.");
+    } finally {
+      setWorkingInteractionPostId(null);
+    }
+  };
+
+  const handleAddComment = async (postId: string) => {
+    const actorUserId = resolveActorUserId();
+    const draft = (commentDraftByPostId[postId] ?? "").trim();
+    if (!actorUserId || !draft || workingInteractionPostId === postId) {
+      return;
+    }
+
+    setWorkingInteractionPostId(postId);
+    setInteractionError(null);
+    setInteractionErrorPostId(null);
+
+    try {
+      const response = await fetch("/api/community/posts/interactions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          postId,
+          userId: actorUserId,
+          type: "comment",
+          comment: draft,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || "Không thể gửi bình luận.");
+      }
+
+      setCommentDraftByPostId((current) => ({
+        ...current,
+        [postId]: "",
+      }));
+      await refreshInteractionsForPost(postId);
+    } catch (error) {
+      setInteractionErrorPostId(postId);
+      setInteractionError(error instanceof Error ? error.message : "Không thể gửi bình luận.");
+    } finally {
+      setWorkingInteractionPostId(null);
+    }
+  };
+
+  const handleToggleBookmark = async (postId: string) => {
+    const actorUserId = resolveActorUserId();
+    if (!actorUserId || workingInteractionPostId === postId) {
+      return;
+    }
+
+    const postInteractions = interactionsByPostId[postId] ?? [];
+    const bookmarked = postInteractions.some((item) => item.type === "bookmark" && item.user_id === actorUserId);
+
+    setWorkingInteractionPostId(postId);
+    setInteractionError(null);
+    setInteractionErrorPostId(null);
+
+    try {
+      if (bookmarked) {
+        const response = await fetch("/api/community/posts/interactions", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postId,
+            userId: actorUserId,
+            type: "bookmark",
+          }),
+        });
+
+        if (!response.ok) {
+          const data = (await response.json()) as { error?: string };
+          throw new Error(data.error || "Không thể bỏ lưu bài đăng.");
+        }
+      } else {
+        const response = await fetch("/api/community/posts/interactions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postId,
+            userId: actorUserId,
+            type: "bookmark",
+          }),
+        });
+
+        if (!response.ok) {
+          const data = (await response.json()) as { error?: string };
+          throw new Error(data.error || "Không thể lưu bài đăng.");
+        }
+      }
+
+      await refreshInteractionsForPost(postId);
+    } catch (error) {
+      setInteractionErrorPostId(postId);
+      setInteractionError(error instanceof Error ? error.message : "Không thể lưu bài đăng.");
+    } finally {
+      setWorkingInteractionPostId(null);
+    }
+  };
 
   const filteredPosts = useMemo<Post[]>(() => {
     if (!allPosts.length) {
@@ -615,12 +939,31 @@ const GreenCreator = () => {
     }
 
     let results = allPosts;
+    const actorUserId = resolveActorUserId();
 
     // Filter by tab
     if (activeTab === "own") {
       results = results.filter((post) => post.user_id === userId);
-    } else {
-      results = results.filter((post) => post.user_id !== userId);
+    } else if (activeTab === "interacted") {
+      results = results.filter((post) => {
+        const interactions = interactionsByPostId[post.post_id] ?? [];
+        return interactions.some((item) => {
+          if (item.user_id !== actorUserId) {
+            return false;
+          }
+
+          if (item.type === "like") {
+            return true;
+          }
+
+          return item.type === "comment" && item.status !== "deleted";
+        });
+      });
+    } else if (activeTab === "saved") {
+      results = results.filter((post) => {
+        const interactions = interactionsByPostId[post.post_id] ?? [];
+        return interactions.some((item) => item.user_id === actorUserId && item.type === "bookmark");
+      });
     }
 
     // Filter by search query
@@ -634,7 +977,7 @@ const GreenCreator = () => {
     }
 
     return results.map(mapCommunityPostToUi);
-  }, [allPosts, activeTab, searchQuery, userId]);
+  }, [allPosts, activeTab, interactionsByPostId, searchQuery, userId]);
 
   const renderPostMedia = (post: Post) => {
     const mediaItems = post.images.length ? post.images : post.image ? [post.image] : [];
@@ -757,6 +1100,15 @@ const GreenCreator = () => {
     }
 
     return post.author.avatar;
+  };
+
+  const getInteractionProfileName = (value: string) => {
+    const profileName = profileByUserId[value]?.name;
+    if (profileName) {
+      return profileName;
+    }
+
+    return value === userId ? userName : `Creator ${value.slice(0, 6)}`;
   };
 
   const handleSharePost = async (post: Post) => {
@@ -894,13 +1246,13 @@ const GreenCreator = () => {
             </svg>
             <input
               type="text"
-              placeholder="Tìm kiếm trên FRESH DROP"
+              placeholder="Tìm kiếm trên Green Creator"
               style={styles.searchInput}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
           </div>
-          <button style={styles.filterButton}>
+          <button type="button" style={styles.filterButton} aria-label="Tìm kiếm bài đăng">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path d="M4 6H20M4 12H20M4 18H20" stroke="#51B788" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -912,11 +1264,31 @@ const GreenCreator = () => {
             type="button"
             style={{
               ...styles.tabBtn,
-              ...(activeTab === "community" ? styles.tabBtnActive : {}),
+              ...(activeTab === "all" ? styles.tabBtnActive : {}),
             }}
-            onClick={() => setActiveTab("community")}
+            onClick={() => setActiveTab("all")}
           >
-            Cộng đồng
+            Tất cả
+          </button>
+          <button
+            type="button"
+            style={{
+              ...styles.tabBtn,
+              ...(activeTab === "interacted" ? styles.tabBtnActive : {}),
+            }}
+            onClick={() => setActiveTab("interacted")}
+          >
+            Đã tương tác
+          </button>
+          <button
+            type="button"
+            style={{
+              ...styles.tabBtn,
+              ...(activeTab === "saved" ? styles.tabBtnActive : {}),
+            }}
+            onClick={() => setActiveTab("saved")}
+          >
+            Đã lưu
           </button>
           <button
             type="button"
@@ -926,12 +1298,36 @@ const GreenCreator = () => {
             }}
             onClick={() => setActiveTab("own")}
           >
-            Bài đăng của tôi
+            Blog của tôi
           </button>
         </div>
 
         <div style={styles.feedContainer}>
-          {filteredPosts.map((post: Post) => (
+          {filteredPosts.map((post: Post) => {
+            const postInteractions = interactionsByPostId[post.postId] ?? [];
+            const likeCount = postInteractions.filter((item) => item.type === "like").length;
+            const bookmarkCount = postInteractions.filter((item) => item.type === "bookmark").length;
+            const likedByCurrentUser = Boolean(resolveActorUserId() && postInteractions.some((item) => item.type === "like" && item.user_id === resolveActorUserId()));
+            const bookmarkedByCurrentUser = Boolean(
+              resolveActorUserId() && postInteractions.some((item) => item.type === "bookmark" && item.user_id === resolveActorUserId())
+            );
+            const visibleComments: Comment[] = postInteractions
+              .filter((item) => item.type === "comment" && item.status !== "deleted")
+              .sort((left, right) => left.created_at.localeCompare(right.created_at))
+              .slice(-2)
+              .map((item) => ({
+                id: item.interaction_id,
+                userId: item.user_id,
+                username: getInteractionProfileName(item.user_id),
+                text: item.comment ?? "",
+                createdAt: item.created_at,
+              }));
+
+            const commentCount = postInteractions.filter((item) => item.type === "comment" && item.status !== "deleted").length;
+            const commentDraft = commentDraftByPostId[post.postId] ?? "";
+            const commentExpanded = expandedCommentPostId === post.postId;
+
+            return (
             <article
               key={post.id}
               style={styles.postCard}
@@ -1003,46 +1399,145 @@ const GreenCreator = () => {
                 </div>
               </div>
 
-              {renderPostMedia(post)}
+              {post.type !== "community" ? renderPostMedia(post) : null}
 
               <div style={styles.postActions}>
                 <div style={styles.actionGroupLeft}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                  </svg>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2">
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                  </svg>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
+                  <button
+                    type="button"
+                    style={styles.actionButton}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleToggleLike(post.postId);
+                    }}
+                    aria-label="Thích bài đăng"
+                    disabled={workingInteractionPostId === post.postId}
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={likedByCurrentUser ? "#E11D48" : "none"}
+                      stroke="#000000"
+                      strokeWidth="2"
+                      style={likedByCurrentUser ? styles.likedIcon : undefined}
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    style={styles.actionButton}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setExpandedCommentPostId((current) => (current === post.postId ? null : post.postId));
+                    }}
+                    aria-label="Bình luận bài đăng"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2">
+                      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    style={styles.actionButton}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleSharePost(post);
+                    }}
+                    aria-label="Chia sẻ bài đăng"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
                 </div>
 
-                <div style={styles.actionGroupRight}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                  </svg>
+                <div
+                  style={styles.actionGroupRight}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                >
+                  <button
+                    type="button"
+                    style={styles.actionButton}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleToggleBookmark(post.postId);
+                    }}
+                    aria-label="Lưu bài đăng"
+                    disabled={workingInteractionPostId === post.postId}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill={bookmarkedByCurrentUser ? "#11A94D" : "none"} stroke="#000000" strokeWidth="2">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
 
               <div style={styles.postDetails}>
-                <div style={styles.likesCount}>{post.likes} Lượt Thích</div>
+                <div style={styles.likesCount}>{likeCount} Lượt Thích · {commentCount} Bình luận · {bookmarkCount} Đã lưu</div>
+                {post.type === "community" ? (
+                  <div style={styles.textPostBlock}>
+                    <p style={styles.textPostTitle}>{post.title || "Bài viết cộng đồng"}</p>
+                    <p style={styles.textPostContent}>{post.content || "Không có nội dung"}</p>
+                  </div>
+                ) : null}
                 <div style={styles.caption}>
                   <span style={styles.boldText}>{resolveAuthorName(post)}</span> {post.caption}
                 </div>
-                {post.comments.map((comment: Comment) => (
+                {visibleComments.map((comment: Comment) => (
                   <div key={comment.id} style={styles.commentRow}>
                     <span style={styles.commentText}>
                       <span style={styles.boldText}>{comment.username}</span> {comment.text}
                     </span>
-                    {comment.isLiked ? <span style={styles.likedComment}>♥</span> : null}
                   </div>
                 ))}
+
+                {commentExpanded ? (
+                  <div
+                    style={styles.commentComposer}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Viết bình luận..."
+                      style={styles.commentComposerInput}
+                      value={commentDraft}
+                      onChange={(event) =>
+                        setCommentDraftByPostId((current) => ({
+                          ...current,
+                          [post.postId]: event.target.value,
+                        }))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void handleAddComment(post.postId);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      style={styles.commentComposerButton}
+                      onClick={() => void handleAddComment(post.postId)}
+                      disabled={workingInteractionPostId === post.postId}
+                    >
+                      Gửi
+                    </button>
+                  </div>
+                ) : null}
+
+                {interactionError && interactionErrorPostId === post.postId ? <p style={styles.interactionErrorText}>{interactionError}</p> : null}
                 <div style={styles.dateText}>{post.date}</div>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
         </main>
 
