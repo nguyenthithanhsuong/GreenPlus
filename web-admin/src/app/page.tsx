@@ -1,4 +1,4 @@
-import AdminFrontendPage from "../../frontend/page";
+import AdminFrontendPage from "../../frontend/obsolete";
 
 export default AdminFrontendPage;
 

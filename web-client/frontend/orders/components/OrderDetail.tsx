@@ -17,6 +17,7 @@ import {
 type OrderStatus = "pending" | "confirmed" | "preparing" | "delivering" | "completed" | "cancelled";
 type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "unknown";
 type PaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer" | "unknown";
+type ComplaintType = "quality" | "damaged" | "missing_items" | "wrong_item" | "late_delivery" | "other";
 
 type OrderTrackingEntry = {
   tracking_id: string;
@@ -452,7 +453,89 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     boxShadow: "0px 10px 15px -3px rgba(16, 185, 129, 0.3), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)",
   },
+  actionBtnDanger: {
+    background: "#FFFFFF",
+    color: "#B91C1C",
+    border: "1px solid #FCA5A5",
+    fontWeight: 700,
+  },
+  complaintOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0, 0, 0, 0.25)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "16px",
+    zIndex: 1200,
+  },
+  complaintModal: {
+    width: "100%",
+    maxWidth: "420px",
+    borderRadius: "16px",
+    background: "#FFFFFF",
+    boxShadow: "0px 20px 25px -5px rgba(0, 0, 0, 0.1)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    padding: "16px",
+  },
+  complaintTitle: {
+    margin: 0,
+    fontSize: "16px",
+    lineHeight: "24px",
+    fontWeight: 700,
+    color: "#111827",
+  },
+  complaintHint: {
+    margin: 0,
+    fontSize: "12px",
+    lineHeight: "16px",
+    color: "#6B7280",
+  },
+  complaintLabel: {
+    margin: 0,
+    fontSize: "12px",
+    lineHeight: "16px",
+    color: "#4B5563",
+    fontWeight: 600,
+  },
+  complaintSelect: {
+    width: "100%",
+    height: "40px",
+    borderRadius: "10px",
+    border: "1px solid #D1D5DB",
+    padding: "0 10px",
+    fontSize: "14px",
+    color: "#111827",
+    background: "#FFFFFF",
+  },
+  complaintTextarea: {
+    width: "100%",
+    minHeight: "100px",
+    borderRadius: "10px",
+    border: "1px solid #D1D5DB",
+    padding: "10px",
+    fontSize: "14px",
+    color: "#111827",
+    resize: "vertical" as const,
+    boxSizing: "border-box",
+  },
+  complaintActions: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "4px",
+  },
 };
+
+const COMPLAINT_OPTIONS: Array<{ value: ComplaintType; label: string }> = [
+  { value: "quality", label: "Chất lượng sản phẩm" },
+  { value: "damaged", label: "Sản phẩm bị hư hỏng" },
+  { value: "missing_items", label: "Thiếu sản phẩm" },
+  { value: "wrong_item", label: "Giao sai sản phẩm" },
+  { value: "late_delivery", label: "Giao hàng trễ" },
+  { value: "other", label: "Vấn đề khác" },
+];
 
 function formatPrice(value: number): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
@@ -547,6 +630,11 @@ export default function OrderDetail() {
   const [message, setMessage] = useState<string | null>(null);
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
   const [cancelPromptOpen, setCancelPromptOpen] = useState(false);
+  const [complaintOpen, setComplaintOpen] = useState(false);
+  const [complaintType, setComplaintType] = useState<ComplaintType>("quality");
+  const [complaintDescription, setComplaintDescription] = useState("");
+  const [complaintError, setComplaintError] = useState<string | null>(null);
+  const [complaintSaving, setComplaintSaving] = useState(false);
 
   useEffect(() => {
     if (!initialized) {
@@ -708,6 +796,55 @@ export default function OrderDetail() {
     }
 
     router.push("/orders");
+  };
+
+  const handleOpenComplaintModal = () => {
+    setComplaintError(null);
+    setComplaintDescription("");
+    setComplaintType("quality");
+    setComplaintOpen(true);
+  };
+
+  const handleSubmitComplaint = async () => {
+    if (!user?.user_id || !detail) {
+      return;
+    }
+
+    const normalizedDescription = complaintDescription.trim();
+    if (normalizedDescription.length < 10) {
+      setComplaintError("Mô tả khiếu nại cần ít nhất 10 ký tự.");
+      return;
+    }
+
+    setComplaintSaving(true);
+    setComplaintError(null);
+
+    try {
+      const response = await fetch("/api/complaints", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.user_id,
+          orderId: detail.order_id,
+          type: complaintType,
+          description: normalizedDescription,
+        }),
+      });
+
+      const data = (await response.json()) as { error?: string; complaintId?: string };
+      if (!response.ok) {
+        throw new Error(String(data.error ?? "Không thể gửi khiếu nại."));
+      }
+
+      setComplaintOpen(false);
+      setMessage("Đã gửi khiếu nại thành công. Bộ phận CSKH sẽ phản hồi sớm nhất.");
+    } catch (requestError) {
+      setComplaintError(requestError instanceof Error ? requestError.message : "Không thể gửi khiếu nại.");
+    } finally {
+      setComplaintSaving(false);
+    }
   };
 
   return (
@@ -884,6 +1021,14 @@ export default function OrderDetail() {
           <div style={styles.bottomBar}>
             <button
               type="button"
+              style={{ ...styles.actionBtn, ...styles.actionBtnDanger }}
+              onClick={handleOpenComplaintModal}
+              disabled={saving}
+            >
+              Khiếu nại
+            </button>
+            <button
+              type="button"
               style={styles.actionBtn}
               onClick={() => setCancelPromptOpen(true)}
               disabled={saving || !(detail.order_status === "pending" || detail.order_status === "confirmed")}
@@ -900,6 +1045,79 @@ export default function OrderDetail() {
             </button>
           </div>
         )}
+
+        {complaintOpen && detail ? (
+          <div
+            style={styles.complaintOverlay}
+            onClick={() => {
+              if (!complaintSaving) {
+                setComplaintOpen(false);
+              }
+            }}
+          >
+            <section
+              style={styles.complaintModal}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              <h3 style={styles.complaintTitle}>Gửi khiếu nại đơn hàng</h3>
+              <p style={styles.complaintHint}>Đơn #{detail.order_id.slice(0, 8).toUpperCase()}</p>
+
+              <label>
+                <p style={styles.complaintLabel}>Loại khiếu nại</p>
+                <select
+                  style={styles.complaintSelect}
+                  value={complaintType}
+                  onChange={(event) => setComplaintType(event.target.value as ComplaintType)}
+                  disabled={complaintSaving}
+                >
+                  {COMPLAINT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <p style={styles.complaintLabel}>Mô tả chi tiết</p>
+                <textarea
+                  style={styles.complaintTextarea}
+                  placeholder="Mô tả vấn đề bạn gặp phải để chúng tôi hỗ trợ nhanh hơn..."
+                  value={complaintDescription}
+                  onChange={(event) => setComplaintDescription(event.target.value)}
+                  disabled={complaintSaving}
+                />
+              </label>
+
+              {complaintError ? <p style={{ ...styles.errorText, padding: 0 }}>{complaintError}</p> : null}
+
+              <div style={styles.complaintActions}>
+                <button
+                  type="button"
+                  style={styles.actionBtn}
+                  disabled={complaintSaving}
+                  onClick={() => {
+                    if (!complaintSaving) {
+                      setComplaintOpen(false);
+                    }
+                  }}
+                >
+                  Đóng
+                </button>
+                <button
+                  type="button"
+                  style={{ ...styles.actionBtn, ...styles.actionBtnPrimary }}
+                  disabled={complaintSaving}
+                  onClick={() => void handleSubmitComplaint()}
+                >
+                  {complaintSaving ? "Đang gửi..." : "Gửi khiếu nại"}
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
 
         <ConfirmationDialog
           open={cancelPromptOpen}

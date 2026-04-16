@@ -3,6 +3,9 @@
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
+import PurchaseModeSelector from "./PurchaseModeSelector";
+import SubscriptionModal from "./SubscriptionModal";
+import GroupPurchaseModal from "./GroupPurchaseModal";
 import { useAuthStore } from "@/lib/stores/authStore";
 import {
   SCREEN_BACKGROUND_GRADIENT,
@@ -540,6 +543,9 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
   const [error, setError] = useState<string | null>(null);
   const [cartActionLoading, setCartActionLoading] = useState(false);
   const [cartActionMessage, setCartActionMessage] = useState<string | null>(null);
+  const [purchaseMode, setPurchaseMode] = useState<"cart" | "subscription" | "group">("cart");
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showGroupPurchaseModal, setShowGroupPurchaseModal] = useState(false);
   const [debugSteps, setDebugSteps] = useState<DebugStep[]>([
     { label: "route params", status: productId ? "ok" : "error", detail: productId ? `productId=${productId}` : "Missing productId route param" },
     { label: "product detail fetch", status: "idle" },
@@ -551,6 +557,36 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
     nutrition: false,
     origin: false,
   });
+
+  useEffect(() => {
+    // Add animation styles globally
+    const style = document.createElement("style");
+    style.innerHTML = `
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   useEffect(() => {
     if (!productId) {
@@ -746,6 +782,97 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
     }
   };
 
+  const handleSubscription = async (frequency: string) => {
+    if (!productId || !isAuthenticated || !routerUser?.user_id) {
+      setCartActionMessage("Vui lòng đăng nhập để đặt lịch mua định kì.");
+      return;
+    }
+
+    setCartActionLoading(true);
+    try {
+      const response = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: routerUser.user_id,
+          productId,
+          frequency,
+        }),
+      });
+
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || "Không thể đặt lịch mua định kì.");
+      }
+
+      setCartActionMessage("✓ Đã đặt lịch mua định kì thành công!");
+      setTimeout(() => {
+        setCartActionMessage(null);
+        setPurchaseMode("cart");
+      }, 3000);
+    } catch (requestError) {
+      setCartActionMessage(requestError instanceof Error ? requestError.message : "Không thể đặt lịch mua định kì.");
+    } finally {
+      setCartActionLoading(false);
+    }
+  };
+
+  const handleGroupPurchase = async (groupId: string, joinQuantity: number) => {
+    if (!isAuthenticated || !routerUser?.user_id) {
+      setCartActionMessage("Vui lòng đăng nhập để tham gia mua chung.");
+      return;
+    }
+
+    setCartActionLoading(true);
+    try {
+      const response = await fetch("/api/group-purchases", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: routerUser.user_id,
+          groupId,
+          quantity: joinQuantity,
+        }),
+      });
+
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || "Không thể tham gia mua chung.");
+      }
+
+      setCartActionMessage("✓ Đã tham gia mua chung thành công!");
+      setTimeout(() => {
+        setCartActionMessage(null);
+        setPurchaseMode("cart");
+      }, 3000);
+    } catch (requestError) {
+      setCartActionMessage(requestError instanceof Error ? requestError.message : "Không thể tham gia mua chung.");
+    } finally {
+      setCartActionLoading(false);
+    }
+  };
+
+  const handlePurchaseAction = () => {
+    if (purchaseMode === "subscription") {
+      setShowSubscriptionModal(true);
+    } else if (purchaseMode === "group") {
+      setShowGroupPurchaseModal(true);
+    } else {
+      void handleAddToCart();
+    }
+  };
+
+    const handleCreateGroup = () => {
+      setShowGroupPurchaseModal(false);
+      setCartActionMessage("Đang chuyển sang trang tạo nhóm mua chung...");
+      setTimeout(() => {
+        window.location.href = "/group-purchase/create";
+      }, 500);
+    };
   // If no productId is provided, show an error state
   if (!productId) {
     return (
@@ -845,9 +972,15 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
               <p style={styles.priceText}>{resolvedPrice ?? (loading ? "Đang tải..." : "Liên hệ")}</p>
             </div>
 
+            <PurchaseModeSelector currentMode={purchaseMode} onModeChange={setPurchaseMode} />
+
             <div style={styles.ctaRow}>
-              <button style={styles.addButton} onClick={() => void handleAddToCart()} disabled={cartActionLoading}>
-                {cartActionLoading ? "Đang thêm..." : "Thêm vào giỏ hàng"}
+              <button 
+                style={styles.addButton} 
+                onClick={() => void handlePurchaseAction()} 
+                disabled={cartActionLoading}
+              >
+                {cartActionLoading ? "Đang xử lý..." : purchaseMode === "subscription" ? "Đặt lịch" : purchaseMode === "group" ? "Tham gia" : "Thêm vào giỏ hàng"}
               </button>
               <button style={styles.favoriteButton} aria-label="Yêu thích">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -961,6 +1094,25 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
             <button style={styles.moreReviewBtn}>Xem thêm đánh giá</button>
           </section>
         </main>
+
+        <SubscriptionModal
+          isOpen={showSubscriptionModal}
+          productId={productId ?? ""}
+          productName={product?.name ?? "Sản phẩm"}
+          price={product?.availablePrice ?? null}
+          onClose={() => setShowSubscriptionModal(false)}
+          onSubmit={handleSubscription}
+        />
+
+        <GroupPurchaseModal
+          isOpen={showGroupPurchaseModal}
+          productId={productId ?? ""}
+          productName={product?.name ?? "Sản phẩm"}
+          regularPrice={product?.availablePrice ?? null}
+          onClose={() => setShowGroupPurchaseModal(false)}
+          onSubmit={handleGroupPurchase}
+           onCreateGroup={handleCreateGroup}
+        />
 
         <NavigationBar />
       </div>
