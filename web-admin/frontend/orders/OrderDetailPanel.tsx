@@ -69,7 +69,7 @@ const OrderDetailPanel: React.FC<OrderDetailPanelProps> = ({ isOpen, onClose, or
               {/* Note */}
               <div className="mt-4 p-3 bg-yellow-50/50 border border-yellow-100 rounded-lg">
                 <p className="text-xs font-bold text-yellow-700 mb-1">Ghi chú của khách (Note):</p>
-                <p className="text-sm text-gray-700 italic">"Rau xà lách chọn cây non giúp mình, cà chua để riêng đừng đè lên nha."</p>
+                <p className="text-sm text-gray-700 italic">&quot;Rau xà lách chọn cây non giúp mình, cà chua để riêng đừng đè lên nha.&quot;</p>
               </div>
             </div>
 

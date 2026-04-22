@@ -1,30 +1,21 @@
-import React from 'react';
-import Sidebar from './Sidebar'; // Ensure your Sidebar path is correct
-import Header from './components/reports/Header';
-import PageHeader from './components/reports/PageHeader';
-import ReportStats from './components/reports/ReportStats';
-import ReportCharts from './components/reports/ReportCharts';
-import TransactionHistory from './components/reports/TransactionHistory';
+import ReportCharts from "./ReportCharts";
+import ReportStats from "./ReportStats";
+import AdminShell from "../shared/AdminShell";
 
 const FinancialReport = () => {
   return (
-    <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Header />
-        
-        {/* Main Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <PageHeader />
-            <ReportStats />
-            <ReportCharts />
-            <TransactionHistory />
-          </div>
-        </main>
-      </div>
-    </div>
+    <AdminShell
+      title="Báo cáo tài chính"
+      description="Tổng hợp doanh thu, chi phí và hiệu quả theo thời gian."
+      searchPlaceholder="Tìm kiếm giao dịch, báo cáo..."
+    >
+      <ReportStats />
+      <ReportCharts />
+      <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <h3 className="text-base font-bold text-gray-900">Lịch sử giao dịch</h3>
+        <p className="text-sm text-gray-500 mt-1">Đang cập nhật dữ liệu giao dịch chi tiết.</p>
+      </section>
+    </AdminShell>
   );
 };
 

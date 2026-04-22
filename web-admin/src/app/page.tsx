@@ -1,4 +1,6 @@
-import AdminFrontendPage from "../../frontend/obsolete";
+import { redirect } from "next/navigation";
 
-export default AdminFrontendPage;
+export default function HomePage() {
+	redirect("/dashboard");
+}
 

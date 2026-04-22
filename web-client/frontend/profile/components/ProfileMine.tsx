@@ -118,7 +118,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   infoRow: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent: "flex-end", // Đã cập nhật để căn lề nút đăng xuất
     gap: "12px",
     alignItems: "center",
     flexWrap: "wrap",
@@ -351,13 +351,12 @@ export default function ProfileMine() {
 
   const profileFields = useMemo(
     () => [
-      { label: "Mã người dùng", value: profile?.user_id ?? user?.user_id ?? "-" },
       { label: "Email", value: displayEmail || "-" },
       { label: "Số điện thoại", value: displayPhone },
       { label: "Địa chỉ", value: displayAddress },
       { label: "Trạng thái", value: displayStatus },
     ],
-    [displayAddress, displayEmail, displayPhone, displayStatus, profile?.user_id, user?.user_id],
+    [displayAddress, displayEmail, displayPhone, displayStatus],
   );
 
   const handleLogout = () => {
@@ -461,15 +460,7 @@ export default function ProfileMine() {
               </section>
 
               <section style={styles.infoCard}>
-                <div style={styles.infoRow}>
-                  <div>
-                    <p style={styles.infoLabel}>Phiên hiện tại</p>
-                    <p style={styles.infoValue}>{user?.user_id}</p>
-                  </div>
-                  <button type="button" style={{ ...styles.actionButton, ...styles.actionSecondary }} onClick={handleLogout}>
-                    Đăng xuất
-                  </button>
-                </div>
+                
 
                 <div style={styles.statGrid}>
                   {profileFields.map((field) => (
@@ -506,7 +497,13 @@ export default function ProfileMine() {
                     </button>
                     {saveMessage ? <p style={styles.infoText}>{saveMessage}</p> : null}
                   </div>
+                  <div style={styles.infoRow}>
+                  <button type="button" style={{ ...styles.actionButton, ...styles.actionSecondary }} onClick={handleLogout}>
+                    Đăng xuất
+                  </button>
                 </div>
+                </div>
+                
               </section>
             </>
           )}

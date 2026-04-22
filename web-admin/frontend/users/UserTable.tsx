@@ -5,12 +5,12 @@ import { Edit, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 const users = [
   {
     id: 1,
-    name: 'Phan Chí Cường',
-    email: 'cuongpc@greenplus.vn',
+    name: 'Admin',
+    email: 'Admin@greenplus.vn',
     avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-    phone: '0901 234 567',
+    phone: '0123 456 789',
     role: 'Admin',
-    joinDate: '15/01/2026',
+    joinDate: '01/01/2026',
     status: 'Active',
   },
   {

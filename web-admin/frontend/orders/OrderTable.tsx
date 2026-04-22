@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Phone, Check, Eye } from 'lucide-react';
 import OrderDetailPanel from './OrderDetailPanel';

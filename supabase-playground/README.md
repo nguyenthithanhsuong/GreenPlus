@@ -14,7 +14,7 @@ Test real queries, see documentation, understand data formats—all in one place
 npm run dev
 ```
 
-Open [http://localhost:3002](http://localhost:3002) in your browser.
+Open [http://localhost:3003](http://localhost:3003) in your browser.
 
 ### Try Your First Operation
 1. Select **"Products"** from the left sidebar
@@ -109,7 +109,7 @@ Open [http://localhost:3002](http://localhost:3002) in your browser.
 ## 📖 Learning Path
 
 ### 🟢 **Beginner**
-1. Open playground (http://localhost:3002)
+1. Open playground (http://localhost:3003)
 2. Try `Products > selectAll`
 3. Read [PLAYGROUND.md](PLAYGROUND.md)
 4. Try a few more SELECT operations
@@ -246,7 +246,7 @@ supabase-playground/
 ### Your Project Docs
 1. [Complete Schema Reference](SUPABASE.md)
 2. [Real Operation Examples](API_EXAMPLES.md)
-3. [Interactive Testing](http://localhost:3002)
+3. [Interactive Testing](http://localhost:3003)
 
 ---
 

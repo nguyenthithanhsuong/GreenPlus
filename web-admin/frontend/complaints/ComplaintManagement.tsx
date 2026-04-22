@@ -1,28 +1,17 @@
-ComplaintManagement.tsximport React from 'react';
-import Sidebar from './Sidebar'; // Ensure your Sidebar path is correct
-import Header from './components/complaints/Header';
-import PageHeader from './components/complaints/PageHeader';
-import ComplaintStats from './components/complaints/ComplaintStats';
-import ComplaintTable from './components/complaints/ComplaintTable';
+import ComplaintStats from "./ComplaintStats";
+import ComplaintTable from "./ComplaintTable";
+import AdminShell from "../shared/AdminShell";
 
 const ComplaintManagement = () => {
   return (
-    <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Header />
-        
-        {/* Main Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <PageHeader />
-            <ComplaintStats />
-            <ComplaintTable />
-          </div>
-        </main>
-      </div>
-    </div>
+    <AdminShell
+      title="Quản lý khiếu nại"
+      description="Theo dõi và xử lý các khiếu nại, đổi trả và phản hồi của khách hàng."
+      searchPlaceholder="Tìm kiếm khiếu nại theo mã đơn, người gửi..."
+    >
+      <ComplaintStats />
+      <ComplaintTable />
+    </AdminShell>
   );
 };
 
