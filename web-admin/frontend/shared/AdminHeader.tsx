@@ -1,23 +1,8 @@
-import { Bell, Search } from "lucide-react";
+import { Bell } from "lucide-react";
 
-type AdminHeaderProps = {
-  searchPlaceholder?: string;
-};
-
-export default function AdminHeader({
-  searchPlaceholder = "Tìm kiếm nhanh...",
-}: AdminHeaderProps) {
+export default function AdminHeader() {
   return (
     <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 md:px-8 shrink-0">
-      <div className="relative w-full max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder={searchPlaceholder}
-          className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-colors"
-        />
-      </div>
-
       <div className="flex items-center gap-6">
         <button className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors" aria-label="Thông báo">
           <Bell className="w-5 h-5" />

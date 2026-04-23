@@ -1,7 +1,13 @@
 import React from 'react';
 import { Users, UserCheck, UserX } from 'lucide-react';
 
-const UserStats = () => {
+type UserStatsProps = {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveOrBannedUsers: number;
+};
+
+const UserStats = ({ totalUsers, activeUsers, inactiveOrBannedUsers }: UserStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
@@ -10,7 +16,7 @@ const UserStats = () => {
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Tổng Người dùng</p>
-          <h3 className="text-2xl font-bold text-gray-900">12,450</h3>
+          <h3 className="text-2xl font-bold text-gray-900">{totalUsers.toLocaleString('vi-VN')}</h3>
         </div>
       </div>
 
@@ -20,7 +26,7 @@ const UserStats = () => {
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Đang hoạt động (Active)</p>
-          <h3 className="text-2xl font-bold text-gray-900">12,100</h3>
+          <h3 className="text-2xl font-bold text-gray-900">{activeUsers.toLocaleString('vi-VN')}</h3>
         </div>
       </div>
 
@@ -30,7 +36,7 @@ const UserStats = () => {
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Bị khóa (Banned/Inactive)</p>
-          <h3 className="text-2xl font-bold text-gray-900">350</h3>
+          <h3 className="text-2xl font-bold text-gray-900">{inactiveOrBannedUsers.toLocaleString('vi-VN')}</h3>
         </div>
       </div>
     </div>

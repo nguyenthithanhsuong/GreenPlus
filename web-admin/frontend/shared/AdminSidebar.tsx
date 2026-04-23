@@ -34,7 +34,6 @@ const navGroups = [
       { href: "/users", label: "Người dùng", icon: Users },
       { href: "/roles", label: "Vai trò", icon: Shield },
       { href: "/suppliers", label: "Nhà cung cấp", icon: Store },
-      { href: "/shippers", label: "Shipper", icon: Truck },
     ],
   },
   {
@@ -46,6 +45,7 @@ const navGroups = [
       { href: "/inventories", label: "Tồn kho", icon: Warehouse },
       { href: "/prices", label: "Giá", icon: Wallet },
       { href: "/orders", label: "Đơn hàng", icon: ShoppingCart },
+      { href: "/shippers", label: "Giao hàng", icon: Truck },
       { href: "/complaints", label: "Khiếu nại", icon: AlertCircle },
       { href: "/customers", label: "Phân tích khách hàng", icon: PieChart },
       { href: "/greencreators", label: "Kiểm duyệt nội dung", icon: Image },

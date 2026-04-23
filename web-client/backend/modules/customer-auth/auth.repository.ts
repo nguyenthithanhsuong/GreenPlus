@@ -1,6 +1,8 @@
 import { supabaseServer } from "../../core/supabase";
 import { UserStatus } from "./auth.types";
 
+const PROFILE_IMAGE_BUCKET = "User_Images";
+
 export type UserRow = {
   user_id: string;
   role_id: string | null;
@@ -28,6 +30,24 @@ export class AuthRepository {
 
     const rows = (data ?? []) as UserRow[];
     return rows[0] ?? null;
+  }
+
+  async findRoleNameById(roleId: string | null): Promise<string | null> {
+    if (!roleId) {
+      return null;
+    }
+
+    const { data, error } = await supabaseServer
+      .from("roles")
+      .select("role_name")
+      .eq("role_id", roleId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data?.role_name ? String(data.role_name) : null;
   }
 
   async findUserById(userId: string): Promise<UserRow | null> {
@@ -118,5 +138,22 @@ export class AuthRepository {
     if (error) {
       throw new Error(error.message);
     }
+  }
+
+  async uploadProfileImage(path: string, file: File): Promise<void> {
+    const { error } = await supabaseServer.storage
+      .from(PROFILE_IMAGE_BUCKET)
+      .upload(path, file, {
+        contentType: file.type || undefined,
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  getProfileImagePublicUrl(path: string): string {
+    const { data } = supabaseServer.storage.from(PROFILE_IMAGE_BUCKET).getPublicUrl(path);
+    return data.publicUrl;
   }
 }

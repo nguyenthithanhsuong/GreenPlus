@@ -1,95 +1,170 @@
-import React from 'react';
-import { X, Edit, Info, PencilLine } from 'lucide-react';
+import React, { useDeferredValue } from "react";
+import { ChevronLeft, ChevronRight, Edit, Info, PencilLine, Search, X } from "lucide-react";
+import type { SupplierRow, SupplierStatus } from "../../backend/modules/suppliers/supplier-management.types";
+import { supplierSearchStrategy } from "../shared/searchStrategies";
 
-// Mock Data
-const suppliers = [
-  {
-    id: 1,
-    initials: 'ND',
-    avatarBg: 'bg-yellow-100 text-yellow-700',
-    name: 'Nông trại Rau Sạch Đà Lạt',
-    address: 'Phường 8, TP. Đà Lạt, Lâm Đồng',
-    contactName: 'Nguyễn Văn Lên',
-    contactPhone: '0933.111.222',
-    certs: ['VietGAP'],
-    date: '19/03/2026',
-    status: 'Pending',
-  },
-  {
-    id: 2,
-    initials: 'BF',
-    avatarBg: 'bg-yellow-100 text-yellow-700',
-    name: 'Trang trại Heo Hữu Cơ BAF',
-    address: 'Huyện Trảng Bom, Đồng Nai',
-    contactName: 'Trần Đại Quang',
-    contactPhone: '0988.333.444',
-    certs: ['GlobalGAP'],
-    date: '18/03/2026',
-    status: 'Pending',
-  },
-  {
-    id: 3,
-    initials: 'GF',
-    avatarBg: 'bg-emerald-100 text-emerald-700',
-    name: 'Green Farm Củ Chi',
-    address: 'Xã An Nhơn Tây, Củ Chi, TP.HCM',
-    contactName: 'Lê Hữu Nghĩa',
-    contactPhone: '0912.456.789',
-    certs: ['Organic', 'VietGAP'],
-    date: '15/01/2026',
-    status: 'Approved',
-  },
-  {
-    id: 4,
-    initials: 'OL',
-    avatarBg: 'bg-blue-100 text-blue-700',
-    name: 'Organic Life Cần Thơ',
-    address: 'Quận Bình Thủy, TP. Cần Thơ',
-    contactName: 'Phạm Băng Băng',
-    contactPhone: '0909.888.999',
-    certs: ['GlobalGAP'],
-    date: '10/02/2026',
-    status: 'Approved',
-  },
-  {
-    id: 5,
-    initials: 'SC',
-    avatarBg: 'bg-gray-200 text-gray-700',
-    name: 'Thủy hải sản Sáu Cua',
-    address: 'Huyện Cần Giờ, TP.HCM',
-    contactName: 'Trần Văn Sáu',
-    contactPhone: '0977.666.555',
-    certs: [],
-    date: '05/03/2026',
-    status: 'Rejected',
-  },
-];
-
-const renderCertPill = (cert: string) => {
-  if (cert === 'VietGAP') return <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[11px] font-semibold border border-emerald-100">VietGAP</span>;
-  if (cert === 'GlobalGAP') return <span className="px-2 py-1 bg-teal-50 text-teal-600 rounded text-[11px] font-semibold border border-teal-100">GlobalGAP</span>;
-  if (cert === 'Organic') return <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[11px] font-semibold border border-blue-100">Organic</span>;
-  return null;
+type SupplierTableProps = {
+  suppliers: SupplierRow[];
+  loading: boolean;
+  saving: boolean;
+  onEdit: (supplier: SupplierRow) => void;
+  onDelete: (supplier: SupplierRow) => void;
+  onApprove: (supplier: SupplierRow) => void;
+  onReject: (supplier: SupplierRow) => void;
 };
 
-const SupplierTable = () => {
+type SupplierTab = "all" | SupplierStatus;
+
+const PAGE_SIZE = 10;
+
+const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) {
+    return [1, 2, 3, 4, "ellipsis", totalPages];
+  }
+
+  if (currentPage >= totalPages - 2) {
+    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+};
+
+function formatDate(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleDateString("vi-VN");
+}
+
+function getStatusStyles(status: SupplierStatus) {
+  if (status === "approved") {
+    return {
+      dot: "bg-[#059669]",
+      text: "text-[#047857]",
+      label: "Đã duyệt",
+    };
+  }
+
+  if (status === "rejected") {
+    return {
+      dot: "bg-red-500",
+      text: "text-red-600",
+      label: "Từ chối",
+    };
+  }
+
+  return {
+    dot: "bg-yellow-500",
+    text: "text-yellow-600",
+    label: "Chờ duyệt",
+  };
+}
+
+const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove, onReject }: SupplierTableProps) => {
+  const [activeTab, setActiveTab] = React.useState<SupplierTab>("all");
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
+  const statusCounts = React.useMemo(
+    () => ({
+      approved: suppliers.filter((supplier) => supplier.status === "approved").length,
+      pending: suppliers.filter((supplier) => supplier.status === "pending").length,
+      rejected: suppliers.filter((supplier) => supplier.status === "rejected").length,
+    }),
+    [suppliers]
+  );
+
+  const filteredSuppliers = React.useMemo(() => {
+    const scopedSuppliers = suppliers.filter((supplier) => activeTab === "all" || supplier.status === activeTab);
+
+    return supplierSearchStrategy.filter(scopedSuppliers, deferredSearchQuery);
+  }, [activeTab, deferredSearchQuery, suppliers]);
+
+  const totalItems = filteredSuppliers.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, deferredSearchQuery]);
+
+  React.useEffect(() => {
+    setCurrentPage((previous) => {
+      if (previous > totalPages) {
+        return totalPages;
+      }
+
+      if (previous < 1) {
+        return 1;
+      }
+
+      return previous;
+    });
+  }, [totalPages]);
+
+  const visibleSuppliers = React.useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredSuppliers.slice(start, start + PAGE_SIZE);
+  }, [currentPage, filteredSuppliers]);
+
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
       
       {/* Table Top Controls: Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-50 gap-4">
         <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg overflow-x-auto">
-          <button className="px-4 py-1.5 text-sm font-medium bg-white shadow-sm rounded-md text-gray-900 whitespace-nowrap">Tất cả</button>
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md whitespace-nowrap">Đang hoạt động</button>
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md whitespace-nowrap flex items-center gap-1.5">
-            Chờ duyệt
-            <span className="flex items-center justify-center w-5 h-5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full">3</span>
+          <button
+            type="button"
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap ${activeTab === "all" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Tất cả
           </button>
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md whitespace-nowrap">Đã từ chối/Khóa</button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("approved")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap ${activeTab === "approved" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Đang hoạt động
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("pending")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${activeTab === "pending" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Chờ duyệt
+            <span className="flex items-center justify-center w-5 h-5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full">{statusCounts.pending}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("rejected")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap ${activeTab === "rejected" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Đã từ chối/Khóa
+          </button>
         </div>
 
         <div className="flex items-center gap-2">
-           <div className="h-9 w-40 border border-gray-200 rounded-lg bg-gray-50 hidden sm:block"></div>
+          <div className="relative hidden sm:block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              type="text"
+              placeholder="Tìm supplier"
+              className="h-9 w-56 rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
+          </div>
         </div>
       </div>
 
@@ -98,75 +173,103 @@ const SupplierTable = () => {
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
             <tr>
-              <th className="px-6 py-4 font-medium">Tên Nhà cung cấp</th>
-              <th className="px-6 py-4 font-medium">Liên hệ (Contact)</th>
-              <th className="px-6 py-4 font-medium">Chứng nhận</th>
-              <th className="px-6 py-4 font-medium">Ngày tham gia/Đăng ký</th>
+              <th className="px-6 py-4 font-medium">Nhà cung cấp</th>
+              <th className="px-6 py-4 font-medium">Địa chỉ</th>
+              <th className="px-6 py-4 font-medium">Certificate</th>
+              <th className="px-6 py-4 font-medium">Ngày tạo</th>
               <th className="px-6 py-4 font-medium">Trạng thái</th>
               <th className="px-6 py-4 font-medium text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {suppliers.map((supplier) => (
-              <tr key={supplier.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${supplier.avatarBg}`}>
-                      {supplier.initials}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{supplier.name}</p>
-                      <p className="text-xs text-gray-500">{supplier.address}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <p className="font-medium text-gray-800">{supplier.contactName}</p>
-                  <p className="text-xs text-gray-500">{supplier.contactPhone}</p>
-                </td>
-                <td className="px-6 py-4">
-                  {supplier.certs.length > 0 ? (
-                    <div className="flex flex-col gap-1 items-start">
-                      {supplier.certs.map(cert => <div key={cert}>{renderCertPill(cert)}</div>)}
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 text-xs">Không có</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-gray-600">{supplier.date}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${supplier.status === 'Approved' ? 'bg-[#059669]' : supplier.status === 'Pending' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
-                    <span className={`font-medium ${supplier.status === 'Approved' ? 'text-gray-700' : supplier.status === 'Pending' ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {supplier.status}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right align-middle">
-                  <div className="flex items-center justify-end gap-3">
-                    {supplier.status === 'Pending' && (
-                      <>
-                        <button className="px-3 py-1.5 bg-[#059669] hover:bg-[#047857] text-white rounded-md text-xs font-semibold transition-colors shadow-sm">
-                          Duyệt ngay
-                        </button>
-                        <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200">
-                           <X className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    )}
-                    {supplier.status === 'Approved' && (
-                       <>
-                         <button className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"><Edit className="w-4 h-4" /></button>
-                         <button className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"><PencilLine className="w-4 h-4" /></button>
-                       </>
-                    )}
-                    {supplier.status === 'Rejected' && (
-                       <button className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"><Info className="w-4 h-4" /></button>
-                    )}
-                  </div>
+            {loading ? (
+              <tr>
+                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>
+                  Đang tải danh sách supplier...
                 </td>
               </tr>
-            ))}
+            ) : filteredSuppliers.length === 0 ? (
+              <tr>
+                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>
+                  {searchQuery.trim() ? "Không tìm thấy supplier phù hợp." : "Chưa có supplier nào."}
+                </td>
+              </tr>
+            ) : (
+              visibleSuppliers.map((supplier) => {
+                const statusStyles = getStatusStyles(supplier.status);
+
+                return (
+                  <tr key={supplier.supplier_id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        <p className="font-semibold text-gray-900">{supplier.name}</p>
+                        <p className="text-xs text-gray-500 line-clamp-2">{supplier.description || "Chưa có mô tả"}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-700">{supplier.address}</td>
+                    <td className="px-6 py-4">
+                      {supplier.certificate ? (
+                        <span className="inline-flex max-w-[14rem] rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700" title={supplier.certificate}>
+                          {supplier.certificate}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">Không có</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">{formatDate(supplier.created_at)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${statusStyles.dot}`}></span>
+                        <span className={`font-medium ${statusStyles.text}`}>
+                          {statusStyles.label}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right align-middle">
+                      <div className="flex items-center justify-end gap-3">
+                        {supplier.status === "pending" && (
+                          <>
+                            <button
+                              onClick={() => onApprove(supplier)}
+                              className="px-3 py-1.5 bg-[#059669] hover:bg-[#047857] text-white rounded-md text-xs font-semibold transition-colors shadow-sm disabled:opacity-60"
+                              disabled={saving}
+                            >
+                              Duyệt
+                            </button>
+                            <button
+                              onClick={() => onReject(supplier)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200 disabled:opacity-60"
+                              title="Từ chối"
+                              disabled={saving}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                        {supplier.status === "approved" && (
+                          <>
+                            <button onClick={() => onEdit(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Sửa" disabled={saving}>
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onReject(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Chuyển sang từ chối" disabled={saving}>
+                              <PencilLine className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {supplier.status === "rejected" && (
+                          <button onClick={() => onEdit(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Xem / Sửa" disabled={saving}>
+                            <Info className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button onClick={() => onDelete(supplier)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200 disabled:opacity-60" title="Xóa" disabled={saving}>
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
@@ -174,16 +277,48 @@ const SupplierTable = () => {
       {/* Pagination Footer */}
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
         <span className="text-sm text-gray-500">
-          Hiển thị <span className="font-bold text-gray-900">1 - 5</span> trong tổng số <span className="font-bold text-gray-900">156</span>
+          Hiển thị <span className="font-bold text-gray-900">{startItem} - {endItem}</span> trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>
         </span>
         
         <div className="flex items-center gap-1">
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">&lt;</button>
-          <button className="w-8 h-8 flex items-center justify-center border border-[#059669] bg-[#059669] text-white rounded-lg text-sm font-medium">1</button>
-          <button className="w-8 h-8 flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium">2</button>
-          <button className="w-8 h-8 flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium">3</button>
-          <span className="px-1 text-gray-400">...</span>
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">&gt;</button>
+          <button
+            type="button"
+            className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+            disabled={currentPage === 1}
+            aria-label="Trang trước"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {pageItems.map((item, index) => {
+            if (item === "ellipsis") {
+              return <span key={`ellipsis-${index}`} className="px-1 text-gray-400">...</span>;
+            }
+
+            const isActive = item === currentPage;
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCurrentPage(item)}
+                className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium ${isActive ? "border border-emerald-500 bg-emerald-500 text-white" : "border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {item}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))}
+            disabled={currentPage === totalPages}
+            aria-label="Trang sau"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       </div>
 

@@ -1,6 +1,1 @@
-export class InventoryService {
-  async getStock(productId: string): Promise<number> {
-    if (!productId) return 0;
-    return 0;
-  }
-}
+export { InventoryManagementFacade as InventoryService, inventoryManagementFacade } from "./facades/inventory-management.facade";

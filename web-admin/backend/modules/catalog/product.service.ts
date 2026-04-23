@@ -1,5 +1,1 @@
-export class ProductService {
-  async listProducts(): Promise<Array<{ id: string; name: string }>> {
-    return [];
-  }
-}
+export { ProductManagementFacade as ProductService, productManagementFacade } from "./facades/product-management.facade";

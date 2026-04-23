@@ -20,6 +20,16 @@ export type UpdateProfileInput = {
   imageUrl?: string;
 };
 
+export type UploadProfileImageInput = {
+  userId: string;
+  file: File;
+};
+
+export type UploadProfileImageResult = {
+  path: string;
+  publicUrl: string;
+};
+
 export type ChangePasswordInput = {
   userId: string;
   currentPassword: string;

@@ -1,7 +1,14 @@
 import React from 'react';
 import { ListOrdered, CheckCircle2, Clock, XCircle } from 'lucide-react';
 
-const SupplierStats = () => {
+type SupplierStatsProps = {
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+};
+
+const SupplierStats = ({ total, approved, pending, rejected }: SupplierStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Total */}
@@ -11,7 +18,7 @@ const SupplierStats = () => {
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Tổng số đối tác</p>
-          <h3 className="text-2xl font-bold text-gray-900">156</h3>
+          <h3 className="text-2xl font-bold text-gray-900">{total}</h3>
         </div>
       </div>
 
@@ -22,7 +29,7 @@ const SupplierStats = () => {
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Đang hoạt động</p>
-          <h3 className="text-2xl font-bold text-gray-900">142</h3>
+          <h3 className="text-2xl font-bold text-gray-900">{approved}</h3>
         </div>
       </div>
 
@@ -35,7 +42,7 @@ const SupplierStats = () => {
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Chờ duyệt (Pending)</p>
-          <h3 className="text-2xl font-bold text-gray-900">3</h3>
+          <h3 className="text-2xl font-bold text-gray-900">{pending}</h3>
         </div>
       </div>
 
@@ -47,7 +54,7 @@ const SupplierStats = () => {
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Bị từ chối / Khóa</p>
-          <h3 className="text-2xl font-bold text-gray-900">11</h3>
+          <h3 className="text-2xl font-bold text-gray-900">{rejected}</h3>
         </div>
       </div>
     </div>

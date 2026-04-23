@@ -15,7 +15,7 @@ export default function AdminShell({
   title,
   description,
   pageActions,
-  searchPlaceholder,
+  searchPlaceholder: _searchPlaceholder,
   children,
 }: AdminShellProps) {
   return (
@@ -23,7 +23,7 @@ export default function AdminShell({
       <AdminSidebar />
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <AdminHeader searchPlaceholder={searchPlaceholder} />
+        <AdminHeader />
 
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
           <div className="max-w-7xl mx-auto space-y-6">

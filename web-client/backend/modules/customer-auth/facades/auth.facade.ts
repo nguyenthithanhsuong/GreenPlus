@@ -9,6 +9,8 @@ import {
   RegisterInput,
   SessionInfo,
   SignInInput,
+  UploadProfileImageInput,
+  UploadProfileImageResult,
   UpdateProfileInput,
   UserStatus,
 } from "../auth.types";
@@ -16,6 +18,7 @@ import {
   PasswordHasherStrategy,
   Pbkdf2HasherStrategy,
 } from "../strategies/password-hasher.strategy";
+import { createProfileImageStorageStrategy } from "../strategies/profile-image.strategy";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
@@ -25,6 +28,7 @@ export class AuthFacade {
   private readonly repository: AuthRepository;
   private readonly hasher: PasswordHasherStrategy;
   private readonly authSubject: AuthSubject;
+  private readonly profileImageStrategy = createProfileImageStorageStrategy();
 
   constructor() {
     this.repository = new AuthRepository();
@@ -95,7 +99,7 @@ export class AuthFacade {
     };
   }
 
-  async signIn(input: SignInInput): Promise<{ session: SessionInfo; user: Record<string, unknown> }> {
+  async signIn(input: SignInInput): Promise<{ session: SessionInfo; user: Record<string, unknown>; role_name: string | null }> {
     const email = input.email.trim().toLowerCase();
 
     if (email.length === 0) {
@@ -146,6 +150,8 @@ export class AuthFacade {
       login_time: new Date().toISOString(),
     };
 
+    const roleName = await this.repository.findRoleNameById(user.role_id);
+
     await this.authSubject.notify({
       type: "sign_in_succeeded",
       userId: user.user_id,
@@ -154,6 +160,7 @@ export class AuthFacade {
 
     return {
       session,
+      role_name: roleName,
       user: {
         user_id: user.user_id,
         name: user.name,
@@ -267,6 +274,46 @@ export class AuthFacade {
     });
 
     return { updated: true };
+  }
+
+  async uploadProfileImage(input: UploadProfileImageInput): Promise<UploadProfileImageResult> {
+    const userId = input.userId.trim();
+
+    if (!userId) {
+      throw new AppError("userId is required", 400);
+    }
+
+    const file = input.file;
+    if (!file) {
+      throw new AppError("file is required", 400);
+    }
+
+    if (!file.type.startsWith("image/")) {
+      throw new AppError("Only image files are supported", 400);
+    }
+
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      throw new AppError("Profile image must be smaller than 5MB", 400);
+    }
+
+    const user = await this.repository.findUserById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    const path = this.profileImageStrategy.buildObjectPath(userId, file.name || "profile-image.jpg");
+
+    try {
+      await this.repository.uploadProfileImage(path, file);
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to upload profile image", 400);
+    }
+
+    return {
+      path,
+      publicUrl: this.repository.getProfileImagePublicUrl(path),
+    };
   }
 }
 

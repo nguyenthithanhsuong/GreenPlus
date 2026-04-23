@@ -355,7 +355,7 @@ export class OrderService {
       await this.repository.insertTracking({
         orderId: created.order_id,
         status: "pending",
-        note: "Order created from cart",
+        note: "Đã tạo đơn từ Đơn hàng",
       });
 
       await this.repository.insertPayment({
@@ -515,7 +515,7 @@ export class OrderService {
       await this.repository.insertTracking({
         orderId: order.order_id,
         status: nextOrderStatus,
-        note: "Payment confirmed by customer",
+        note: "Khách hàng đã trả tiền",
       });
     } catch (error) {
       throw new AppError(error instanceof Error ? error.message : "Failed to confirm payment", 500);

@@ -43,7 +43,6 @@ export const APP_USE_CASES: Record<AppSurface, AppUseCase[]> = {
       tables: [
         "orders",
         "order_items",
-        "order_tracking",
         "payments",
         "deliveries",
         "complaints",
@@ -102,7 +101,6 @@ export const ROLE_POLICIES: RolePolicy[] = [
       select: [
         "orders",
         "order_items",
-        "order_tracking",
         "deliveries",
         "payments",
         "complaints",
@@ -113,7 +111,7 @@ export const ROLE_POLICIES: RolePolicy[] = [
         "prices",
         "categories",
       ],
-      insert: ["batches", "inventory_transactions", "prices", "order_tracking"],
+      insert: ["batches", "inventory_transactions", "prices"],
       update: ["products", "batches", "inventory", "prices", "orders", "deliveries", "complaints"],
     },
   },
@@ -121,7 +119,7 @@ export const ROLE_POLICIES: RolePolicy[] = [
     role: "employee",
     description: "Delivery staff can view and update only assigned deliveries and related order progress.",
     tableAccess: {
-      select: ["deliveries", "order_tracking", "orders"],
+      select: ["deliveries", , "orders"],
       update: ["deliveries", "order_tracking"],
     },
   },

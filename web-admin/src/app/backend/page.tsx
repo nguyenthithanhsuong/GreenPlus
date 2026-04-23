@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import SupabaseCrudExplorer from "../../../frontend/backend/SupabaseCrudExplorer";
 
 type EndpointCheck = {
   id: string;
@@ -325,6 +326,10 @@ export default function BackendHealthPage() {
             );
           })}
         </section>
+
+        <div className="mt-6">
+          <SupabaseCrudExplorer />
+        </div>
       </div>
     </main>
   );

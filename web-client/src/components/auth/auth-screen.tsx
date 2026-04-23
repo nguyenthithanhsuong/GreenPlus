@@ -6,6 +6,8 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useAuthStore } from "@/lib/stores/authStore";
 
+const ADMIN_APP_URL = process.env.NEXT_PUBLIC_WEB_ADMIN_URL ?? "http://localhost:3001";
+
 type AuthMode = "login" | "register";
 
 type AuthScreenProps = {
@@ -106,6 +108,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
       if (isLogin && typeof data === "object" && data !== null) {
         const payload = data as {
+          role_name?: string | null;
           session?: { session_id?: string; user_id?: string; login_time?: string } | null;
           user?: {
             user_id?: string;
@@ -120,26 +123,34 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
         const sessionId = payload.session?.session_id?.trim() ?? "";
         const userId = payload.session?.user_id?.trim() ?? payload.user?.user_id?.trim() ?? "";
+        const roleName = payload.role_name?.trim().toLowerCase() ?? "";
+        const isCustomer = roleName === "customer";
 
         if (sessionId && userId && payload.user) {
-          setAuth({
-            session: {
-              session_id: sessionId,
-              user_id: userId,
-              login_time: payload.session?.login_time ?? new Date().toISOString(),
-            },
-            user: {
-              user_id: payload.user.user_id ?? userId,
-              name: payload.user.name ?? "",
-              email: payload.user.email ?? "",
-              phone: payload.user.phone ?? null,
-              address: payload.user.address ?? null,
-              image_url: payload.user.image_url ?? null,
-              status: payload.user.status ?? "active",
-            },
-            token: sessionId,
-          });
-          router.replace("/dashboard");
+          if (isCustomer) {
+            setAuth({
+              session: {
+                session_id: sessionId,
+                user_id: userId,
+                login_time: payload.session?.login_time ?? new Date().toISOString(),
+              },
+              user: {
+                user_id: payload.user.user_id ?? userId,
+                name: payload.user.name ?? "",
+                email: payload.user.email ?? "",
+                phone: payload.user.phone ?? null,
+                address: payload.user.address ?? null,
+                image_url: payload.user.image_url ?? null,
+                status: payload.user.status ?? "active",
+              },
+              token: sessionId,
+            });
+            router.replace("/dashboard");
+            return;
+          }
+
+          useAuthStore.getState().clearAuth();
+          window.location.replace(ADMIN_APP_URL);
         }
       }
     } catch (submitError) {

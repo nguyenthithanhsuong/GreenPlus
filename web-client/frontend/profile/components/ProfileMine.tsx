@@ -106,6 +106,27 @@ const styles: Record<string, React.CSSProperties> = {
     height: "100%",
     objectFit: "cover",
   },
+  avatarUploadSection: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+  },
+  avatarUploadLabel: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "12px",
+    border: "1px solid rgba(255,255,255,0.45)",
+    padding: "8px 12px",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+    color: "#ECFDF5",
+    background: "rgba(15, 23, 42, 0.18)",
+  },
+  hiddenFileInput: {
+    display: "none",
+  },
   infoCard: {
     width: "100%",
     borderRadius: "18px",
@@ -273,6 +294,8 @@ export default function ProfileMine() {
   const [phoneInput, setPhoneInput] = useState("");
   const [addressInput, setAddressInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -313,6 +336,7 @@ export default function ProfileMine() {
         setProfile(nextProfile);
         setPhoneInput(nextProfile.phone ?? "");
         setAddressInput(nextProfile.address ?? "");
+        setImageUrlInput(nextProfile.image_url ?? "");
         updateUser({
           name: nextProfile.name,
           email: nextProfile.email,
@@ -347,7 +371,7 @@ export default function ProfileMine() {
   const displayPhone = profile?.phone ?? "Chưa cập nhật";
   const displayAddress = profile?.address ?? "Chưa cập nhật";
   const displayStatus = profile?.status ?? user?.status ?? "unknown";
-  const displayAvatar = profile?.image_url ?? user?.image_url ?? "";
+  const displayAvatar = imageUrlInput || profile?.image_url || user?.image_url || "";
 
   const profileFields = useMemo(
     () => [
@@ -390,7 +414,7 @@ export default function ProfileMine() {
           name: nameForUpdate,
           phone: phoneInput,
           address: addressInput,
-          imageUrl: profile?.image_url ?? user?.image_url ?? "",
+          imageUrl: imageUrlInput || profile?.image_url || user?.image_url || "",
         }),
       });
 
@@ -404,6 +428,7 @@ export default function ProfileMine() {
       setProfile(nextProfile);
       setPhoneInput(nextProfile.phone ?? "");
       setAddressInput(nextProfile.address ?? "");
+      setImageUrlInput(nextProfile.image_url ?? "");
       updateUser({
         name: nextProfile.name,
         email: nextProfile.email,
@@ -417,6 +442,59 @@ export default function ProfileMine() {
       setSaveMessage(requestError instanceof Error ? requestError.message : "Không thể cập nhật hồ sơ.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0] ?? null;
+    event.target.value = "";
+
+    if (!selectedFile) {
+      return;
+    }
+
+    if (!userId) {
+      setSaveMessage("Không tìm thấy tài khoản để cập nhật ảnh đại diện.");
+      return;
+    }
+
+    if (!selectedFile.type.startsWith("image/")) {
+      setSaveMessage("Chỉ hỗ trợ tệp ảnh cho ảnh đại diện.");
+      return;
+    }
+
+    const maxBytes = 5 * 1024 * 1024;
+    if (selectedFile.size > maxBytes) {
+      setSaveMessage("Ảnh đại diện phải nhỏ hơn 5MB.");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    setSaveMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("userId", userId);
+      formData.append("file", selectedFile);
+
+      const uploadResponse = await fetch("/api/account/profile/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      const uploadData = (await uploadResponse.json()) as { publicUrl?: string; error?: string };
+      if (!uploadResponse.ok || !uploadData.publicUrl) {
+        throw new Error(uploadData.error ?? "Không thể upload ảnh đại diện.");
+      }
+
+      setImageUrlInput(uploadData.publicUrl);
+      setProfile((current) => (current ? { ...current, image_url: uploadData.publicUrl ?? null } : current));
+      updateUser({ image_url: uploadData.publicUrl });
+      setSaveMessage("Upload ảnh đại diện thành công. Nhấn 'Lưu thay đổi' để cập nhật hồ sơ.");
+    } catch (uploadError) {
+      setSaveMessage(uploadError instanceof Error ? uploadError.message : "Không thể upload ảnh đại diện.");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -451,6 +529,21 @@ export default function ProfileMine() {
                       </svg>
                     )}
                   </div>
+                </div>
+                <div style={styles.avatarUploadSection}>
+                  <label style={styles.avatarUploadLabel} htmlFor="profile-avatar-upload">
+                    {uploadingAvatar ? "Đang upload ảnh..." : "Đổi ảnh đại diện"}
+                  </label>
+                  <input
+                    id="profile-avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    style={styles.hiddenFileInput}
+                    onChange={(event) => {
+                      void handleAvatarChange(event);
+                    }}
+                    disabled={uploadingAvatar}
+                  />
                 </div>
                 <div>
                   <p style={styles.infoLabel}>Hồ sơ của</p>
@@ -497,11 +590,7 @@ export default function ProfileMine() {
                     </button>
                     {saveMessage ? <p style={styles.infoText}>{saveMessage}</p> : null}
                   </div>
-                  <div style={styles.infoRow}>
-                  <button type="button" style={{ ...styles.actionButton, ...styles.actionSecondary }} onClick={handleLogout}>
-                    Đăng xuất
-                  </button>
-                </div>
+                  
                 </div>
                 
               </section>

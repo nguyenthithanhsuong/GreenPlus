@@ -1,16 +1,224 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { RefreshCw } from "lucide-react";
+import AdminShell from "../shared/AdminShell";
 import ShipperStats from "./ShipperStats";
 import ShipperTable from "./ShipperTable";
-import AdminShell from "../shared/AdminShell";
+import ShipperDrawer, { ShipperFormValues } from "./ShipperDrawer";
+import type { DeliveryStatus, DeliveryTrackingDetailRow, DeliveryTrackingRow } from "../../backend/modules/delivery-tracking/delivery-tracking.types";
+import { deliveryTrackingSearchStrategy } from "../shared/searchStrategies";
+
+type StatusFilter = "all" | DeliveryStatus;
+
+const emptyForm = (): ShipperFormValues => ({
+  status: "assigned",
+  note: "",
+});
 
 const ShipperManagement = () => {
+  const [items, setItems] = useState<DeliveryTrackingRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [drawerError, setDrawerError] = useState<string | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<DeliveryTrackingDetailRow | null>(null);
+  const [form, setForm] = useState<ShipperFormValues>(emptyForm());
+
+  const loadDeliveries = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams();
+      if (fromDate) params.set("fromDate", fromDate);
+      if (toDate) params.set("toDate", toDate);
+
+      const response = await fetch(`/api/order-tracking${params.toString() ? `?${params.toString()}` : ""}`, { cache: "no-store" });
+      const data = (await response.json()) as { items?: DeliveryTrackingRow[]; error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Không thể tải dữ liệu giao hàng");
+      }
+
+      setItems(Array.isArray(data.items) ? data.items : []);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu giao hàng");
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [fromDate, toDate]);
+
+  useEffect(() => {
+    void loadDeliveries();
+  }, [loadDeliveries]);
+
+  const filteredByStatus = useMemo(() => {
+    if (statusFilter === "all") {
+      return items;
+    }
+
+    return items.filter((item) => item.latest_status === statusFilter);
+  }, [items, statusFilter]);
+
+  const filteredItems = useMemo(() => deliveryTrackingSearchStrategy.filter(filteredByStatus, searchQuery), [filteredByStatus, searchQuery]);
+
+  const counts = useMemo(() => {
+    const result: Record<StatusFilter, number> = {
+      all: items.length,
+      pending: 0,
+      assigned: 0,
+      picked_up: 0,
+      delivering: 0,
+      delivered: 0,
+      failed: 0,
+      cancelled: 0,
+    };
+
+    items.forEach((item) => {
+      result[item.latest_status] += 1;
+    });
+
+    return result;
+  }, [items]);
+
+  const stats = useMemo(() => ({
+    totalDeliveries: items.length,
+    inProgressCount: items.filter((item) => ["assigned", "picked_up", "delivering"].includes(item.latest_status)).length,
+    deliveredCount: items.filter((item) => item.latest_status === "delivered").length,
+    failedCount: items.filter((item) => item.latest_status === "failed").length,
+  }), [items]);
+
+  const openDetail = useCallback(async (orderId: string) => {
+    setDrawerOpen(true);
+    setDetailLoading(true);
+    setDrawerError(null);
+
+    try {
+      const response = await fetch(`/api/order-tracking/${encodeURIComponent(orderId)}`, { cache: "no-store" });
+      const data = (await response.json()) as DeliveryTrackingDetailRow & { error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Không thể tải chi tiết giao hàng");
+      }
+
+      setSelectedDetail(data);
+      setForm({
+        status: data.latest_status === "delivered" || data.latest_status === "failed" || data.latest_status === "cancelled"
+          ? data.latest_status
+          : data.latest_status === "pending"
+            ? "assigned"
+            : data.latest_status,
+        note: "",
+      });
+    } catch (requestError) {
+      setDrawerError(requestError instanceof Error ? requestError.message : "Không thể tải chi tiết giao hàng");
+      setSelectedDetail(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const closeDrawer = useCallback(() => {
+    setDrawerOpen(false);
+    setSelectedDetail(null);
+    setDrawerError(null);
+    setForm(emptyForm());
+  }, []);
+
+  const submitStatus = useCallback(async () => {
+    if (!selectedDetail) {
+      setDrawerError("Không tìm thấy đơn giao hàng cần cập nhật");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    setDrawerError(null);
+
+    try {
+      const response = await fetch(`/api/order-tracking/${encodeURIComponent(selectedDetail.order_id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: form.status,
+          note: form.note,
+        }),
+      });
+
+      const data = (await response.json()) as DeliveryTrackingDetailRow & { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error ?? "Không thể cập nhật trạng thái giao hàng");
+      }
+
+      setSelectedDetail(data);
+      await loadDeliveries();
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "Không thể cập nhật trạng thái giao hàng";
+      setError(message);
+      setDrawerError(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [form.note, form.status, loadDeliveries, selectedDetail]);
+
   return (
     <AdminShell
-      title="Quản lý shipper"
-      description="Danh sách tài xế giao hàng, trạng thái hoạt động và hiệu suất giao nhận."
-      searchPlaceholder="Tìm kiếm shipper..."
+      title="Theo dõi giao hàng"
+      description="Lọc đơn theo trạng thái/ngày, xem lịch sử giao hàng và cập nhật tiến độ trực tiếp từ bảng điều phối."
+      pageActions={
+        <button
+          type="button"
+          onClick={() => void loadDeliveries()}
+          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+          disabled={loading || saving}
+        >
+          <RefreshCw className="h-4 w-4" />
+          Tải lại
+        </button>
+      }
     >
-      <ShipperStats />
-      <ShipperTable />
+      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+      <ShipperStats {...stats} />
+      <ShipperTable
+        items={filteredItems}
+        loading={loading}
+        saving={saving}
+        searchQuery={searchQuery}
+        statusFilter={statusFilter}
+        fromDate={fromDate}
+        toDate={toDate}
+        counts={counts}
+        onSearchQueryChange={setSearchQuery}
+        onStatusFilterChange={setStatusFilter}
+        onFromDateChange={setFromDate}
+        onToDateChange={setToDate}
+        onOpenDetail={(orderId) => {
+          void openDetail(orderId);
+        }}
+      />
+
+      <ShipperDrawer
+        isOpen={drawerOpen}
+        loading={detailLoading}
+        saving={saving}
+        error={drawerError}
+        detail={selectedDetail}
+        form={form}
+        onClose={closeDrawer}
+        onSubmit={() => {
+          void submitStatus();
+        }}
+        onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
+      />
     </AdminShell>
   );
 };

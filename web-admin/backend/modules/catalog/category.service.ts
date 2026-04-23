@@ -1,5 +1,1 @@
-export class CategoryService {
-  async listCategories(): Promise<Array<{ id: string; name: string }>> {
-    return [];
-  }
-}
+export { CategoryManagementFacade as CategoryService, categoryManagementFacade } from "./facades/category-management.facade";

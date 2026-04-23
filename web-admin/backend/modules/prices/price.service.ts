@@ -1,0 +1,1 @@
+export { priceManagementFacade as priceService } from "./facades/price-management.facade";

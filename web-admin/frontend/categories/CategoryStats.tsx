@@ -1,39 +1,42 @@
-import React from 'react';
-import { Layers, Package, Award } from 'lucide-react';
+import React from "react";
+import { Award, Layers, Package } from "lucide-react";
 
-const CategoryStats = () => {
+type CategoryStatsProps = {
+  totalCategories: number;
+  totalProducts: number;
+  topCategoryName: string;
+};
+
+const CategoryStats = ({ totalCategories, totalProducts, topCategoryName }: CategoryStatsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Total Categories */}
-      <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-5">
-        <div className="p-3.5 bg-gray-50 rounded-full">
-          <Layers className="w-6 h-6 text-gray-600" />
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="flex items-center gap-5 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="rounded-full bg-gray-50 p-3.5">
+          <Layers className="h-6 w-6 text-gray-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500 mb-1">Tổng Danh mục</p>
-          <h3 className="text-2xl font-bold text-gray-900">8</h3>
+          <p className="mb-1 text-sm font-medium text-gray-500">Tổng danh mục</p>
+          <h3 className="text-2xl font-bold text-gray-900">{totalCategories}</h3>
         </div>
       </div>
 
-      {/* Total Products */}
-      <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-5">
-        <div className="p-3.5 bg-emerald-50 rounded-full">
-          <Package className="w-6 h-6 text-emerald-600" />
+      <div className="flex items-center gap-5 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="rounded-full bg-emerald-50 p-3.5">
+          <Package className="h-6 w-6 text-emerald-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500 mb-1">Tổng Sản phẩm (Đang bán)</p>
-          <h3 className="text-2xl font-bold text-gray-900">145</h3>
+          <p className="mb-1 text-sm font-medium text-gray-500">Tổng sản phẩm đang gán</p>
+          <h3 className="text-2xl font-bold text-gray-900">{totalProducts}</h3>
         </div>
       </div>
 
-      {/* Best Selling Category */}
-      <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-5">
-        <div className="p-3.5 bg-orange-50 rounded-full">
-          <Award className="w-6 h-6 text-orange-600" />
+      <div className="flex items-center gap-5 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="rounded-full bg-orange-50 p-3.5">
+          <Award className="h-6 w-6 text-orange-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500 mb-1">Danh mục bán chạy nhất</p>
-          <h3 className="text-lg font-bold text-gray-900 line-clamp-1">Rau củ hữu cơ</h3>
+          <p className="mb-1 text-sm font-medium text-gray-500">Danh mục nổi bật</p>
+          <h3 className="line-clamp-1 text-lg font-bold text-gray-900">{topCategoryName}</h3>
         </div>
       </div>
     </div>
