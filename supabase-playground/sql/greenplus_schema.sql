@@ -150,14 +150,6 @@ CREATE TABLE IF NOT EXISTS order_items (
   UNIQUE (order_id, product_id, batch_id)
 );
 
-CREATE TABLE IF NOT EXISTS order_tracking (
-  tracking_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
-  status VARCHAR(20) NOT NULL,
-  note TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
 -- 5. Fulfillment, Social & Extras
 CREATE TABLE IF NOT EXISTS payments (
   payment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -290,7 +282,6 @@ CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_order_date ON orders(order_date);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_tracking_order_id ON order_tracking(order_id);
 CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);
 CREATE INDEX IF NOT EXISTS idx_deliveries_employee_id ON deliveries(employee_id);
 CREATE INDEX IF NOT EXISTS idx_complaints_user_id ON complaints(user_id);

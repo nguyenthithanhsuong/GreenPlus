@@ -20,6 +20,6 @@ Source of truth is shared policy in:
 ## Commonly Used Tables
 - categories, products, batches, prices
 - carts, cart_items
-- orders, order_items, order_tracking, payments, deliveries
+- orders, order_items, payments, deliveries
 - reviews, posts, group_buys, group_buy_members, subscriptions
 - users (own profile only)

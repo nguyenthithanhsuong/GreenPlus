@@ -99,8 +99,8 @@ export class OrderRepository {
 
   async listTracking(orderId: string): Promise<TrackingRow[]> {
     const { data, error } = await supabaseServer
-      .from("order_tracking")
-      .select("tracking_id,order_id,status,note,created_at")
+      .from("orders")
+      .select("order_id,status,note,created_at")
       .eq("order_id", orderId)
       .order("created_at", { ascending: false });
 
@@ -325,18 +325,6 @@ export class OrderRepository {
       batch_id: input.batchId,
       quantity: input.quantity,
       price: input.price,
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-  }
-
-  async insertTracking(input: { orderId: string; status: string; note: string | null }): Promise<void> {
-    const { error } = await supabaseServer.from("order_tracking").insert({
-      order_id: input.orderId,
-      status: input.status,
-      note: input.note,
     });
 
     if (error) {

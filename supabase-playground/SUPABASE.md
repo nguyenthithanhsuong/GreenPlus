@@ -39,9 +39,8 @@ Use this in Supabase Dashboard -> SQL Editor to create the full schema with cons
 | **PRICES** | Price history by batch/date | n→1 PRODUCTS, BATCHES |
 | **CARTS** | User shopping carts | n→1 USERS; 1→n CART_ITEMS |
 | **CART_ITEMS** | Items in cart | n→1 CARTS, PRODUCTS |
-| **ORDERS** | Customer orders | n→1 USERS; 1→n ORDER_ITEMS, ORDER_TRACKING |
+| **ORDERS** | Customer orders | n→1 USERS; 1→n ORDER_ITEMS |
 | **ORDER_ITEMS** | Order line items | n→1 ORDERS, PRODUCTS, BATCHES |
-| **ORDER_TRACKING** | Order status history | n→1 ORDERS |
 | **PAYMENTS** | Payment records | n→1 ORDERS |
 | **DELIVERIES** | Delivery assignments | n→1 ORDERS, USERS (employee) |
 | **REVIEWS** | Product reviews | n→1 USERS, PRODUCTS |
@@ -357,27 +356,6 @@ CREATE TABLE ORDER_ITEMS (
 | **batch_id** | UUID | FK → BATCHES.batch_id |
 | **quantity** | INTEGER | NOT NULL |
 | **price** | NUMERIC(10,2) | Price at time of order |
-
-### 14. ORDER_TRACKING
-Order status history and timeline
-
-```sql
-CREATE TABLE ORDER_TRACKING (
-  tracking_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID NOT NULL REFERENCES ORDERS(order_id),
-  status VARCHAR(20) NOT NULL,
-  note TEXT,
-  created_at TIMESTAMP DEFAULT now()
-);
-```
-
-| Field | Type | Constraint |
-|-------|------|-----------|
-| **tracking_id** | UUID | PK |
-| **order_id** | UUID | FK → ORDERS.order_id |
-| **status** | VARCHAR(20) | NOT NULL |
-| **note** | TEXT | NULL |
-| **created_at** | TIMESTAMP | DEFAULT now() |
 
 ### 15. PAYMENTS
 Payment information and status
@@ -962,7 +940,6 @@ const { data, error } = await supabase
     ),
     DELIVERIES(status, pickup_time, delivery_time),
     PAYMENTS(status, amount, method),
-    ORDER_TRACKING(status, note, created_at)
   `)
   .eq("order_id", orderUUID);
 ```

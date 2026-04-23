@@ -187,19 +187,6 @@ export const TABLE_CRUD_PRESETS: Record<string, CrudPreset> = {
       price: "",
     },
   },
-  order_tracking: {
-    primaryKey: "tracking_id",
-    idExample: "",
-    insert: {
-      order_id: "",
-      status: "",
-      note: "",
-    },
-    update: {
-      status: "",
-      note: "",
-    },
-  },
   payments: {
     primaryKey: "payment_id",
     idExample: "",

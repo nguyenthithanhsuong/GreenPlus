@@ -29,8 +29,8 @@ export class DeliveryTrackingRepository {
 
   async listTrackingRows(): Promise<DeliveryTrackingRow[]> {
     const { data, error } = await this.supabase
-      .from("order_tracking")
-      .select("tracking_id,order_id,status,note,created_at,orders(order_id,order_date,total_amount,delivery_address,users(name,phone))")
+      .from("orders")
+      .select("order_id,status,note,created_at,orders(order_id,order_date,total_amount,delivery_address,users(name,phone))")
       .order("created_at", { ascending: false, nullsFirst: false });
 
     if (error) {
@@ -42,8 +42,8 @@ export class DeliveryTrackingRepository {
 
   async listTrackingHistoryByOrderId(orderId: string): Promise<DeliveryTrackingHistoryRow[]> {
     const { data, error } = await this.supabase
-      .from("order_tracking")
-      .select("tracking_id,order_id,status,note,created_at")
+      .from("orders")
+      .select("order_id,status,note,created_at")
       .eq("order_id", orderId)
       .order("created_at", { ascending: true, nullsFirst: false });
 
@@ -60,7 +60,7 @@ export class DeliveryTrackingRepository {
     note?: string;
   }): Promise<void> {
     const { error } = await this.supabase
-      .from("order_tracking")
+      .from("orders")
       .insert({
         order_id: input.orderId,
         status: input.status,

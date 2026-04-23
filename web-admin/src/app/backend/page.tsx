@@ -26,7 +26,7 @@ type CheckResult = {
 
 type RealtimeEvent = {
   id: string;
-  table: "orders" | "order_tracking" | "inventory";
+  table: "orders" | "inventory";
   eventType: string;
   timestamp: string;
   payload: unknown;
@@ -115,13 +115,6 @@ export default function BackendHealthPage() {
         { event: "*", schema: "public", table: "orders" },
         (payload) => {
           appendEvent("orders", payload, payload.eventType);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "order_tracking" },
-        (payload) => {
-          appendEvent("order_tracking", payload, payload.eventType);
         }
       )
       .on(
@@ -256,7 +249,7 @@ export default function BackendHealthPage() {
             </span>
           </div>
           <p className="mt-2 text-sm text-slate-600">
-            Subscribed tables: orders, order_tracking, inventory.
+            Subscribed tables: orders, inventory.
           </p>
 
           {realtimeEvents.length === 0 && (

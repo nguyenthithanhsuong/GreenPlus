@@ -43,7 +43,6 @@ const clientFeatures: ClientFeature[] = [
   { key: "subscription", label: "Mua dinh ky", table: "subscriptions", description: "Quan ly lich giao hang tu dong" },
   { key: "community", label: "Cong dong GreenPlus", table: "posts", description: "Chia se hinh anh/video trai nghiem" },
   { key: "profile", label: "Trang ca nhan", table: "users", description: "Thong tin thanh vien, diem thuong" },
-  { key: "tracking", label: "Theo doi don hang", table: "order_tracking", description: "Trang thai don theo thoi gian thuc" },
   { key: "history", label: "Lich su mua hang", table: "orders", description: "Xem lai don cu va mua lai nhanh" },
   { key: "reviews", label: "Danh gia san pham", table: "reviews", description: "Danh gia va nhan xet cua nguoi dung" },
 ];

@@ -24,5 +24,5 @@ Source of truth is shared policy in:
 ## Key Tables
 - roles, users, suppliers
 - categories, products, batches, inventory, inventory_transactions, prices
-- orders, order_items, order_tracking, payments, deliveries, complaints
+- orders, order_items, payments, deliveries, complaints
 - posts, reviews, subscriptions, group_buys, group_buy_members

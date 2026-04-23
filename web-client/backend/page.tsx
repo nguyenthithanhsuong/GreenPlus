@@ -81,12 +81,6 @@ const clientFeatures: FeatureItem[] = [
     description: "Thong tin thanh vien, diem thuong",
   },
   {
-    key: "tracking",
-    label: "Theo doi don hang",
-    table: "order_tracking",
-    description: "Trang thai don theo thoi gian thuc",
-  },
-  {
     key: "history",
     label: "Lich su mua hang",
     table: "orders",

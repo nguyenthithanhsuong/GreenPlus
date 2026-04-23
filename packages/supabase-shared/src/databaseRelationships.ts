@@ -320,12 +320,6 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
         description: "1 order → many items",
       },
       {
-        targetTable: "order_tracking",
-        type: "one-to-many",
-        foreignKey: "order_tracking.order_id → orders.order_id",
-        description: "1 order → many status logs",
-      },
-      {
         targetTable: "payments",
         type: "one-to-many",
         foreignKey: "payments.order_id → orders.order_id",
@@ -366,19 +360,6 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
         type: "many-to-one",
         foreignKey: "order_items.batch_id → batches.batch_id",
         description: "Batch for traceability",
-      },
-    ],
-    incoming: [],
-  },
-  order_tracking: {
-    table: "order_tracking",
-    category: "Shopping & Orders",
-    outgoing: [
-      {
-        targetTable: "orders",
-        type: "many-to-one",
-        foreignKey: "order_tracking.order_id → orders.order_id",
-        description: "Status log for order",
       },
     ],
     incoming: [],

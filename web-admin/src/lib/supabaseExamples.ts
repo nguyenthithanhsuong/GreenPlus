@@ -122,7 +122,6 @@ export const tableDefinitions: TableDefinition[] = [
   { table: "cart_items", idColumn: "cart_item_id" },
   { table: "orders", idColumn: "order_id" },
   { table: "order_items", idColumn: "order_item_id" },
-  { table: "order_tracking", idColumn: "tracking_id" },
   { table: "payments", idColumn: "payment_id" },
   { table: "deliveries", idColumn: "delivery_id" },
   { table: "complaints", idColumn: "complaint_id" },

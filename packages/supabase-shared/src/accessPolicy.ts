@@ -120,7 +120,7 @@ export const ROLE_POLICIES: RolePolicy[] = [
     description: "Delivery staff can view and update only assigned deliveries and related order progress.",
     tableAccess: {
       select: ["deliveries", , "orders"],
-      update: ["deliveries", "order_tracking"],
+      update: ["deliveries", "orders"],
     },
   },
   {
@@ -137,7 +137,6 @@ export const ROLE_POLICIES: RolePolicy[] = [
         "cart_items",
         "orders",
         "order_items",
-        "order_tracking",
         "deliveries",
         "reviews",
         "group_buys",
@@ -175,7 +174,6 @@ export const CLIENT_VISIBLE_TABLES = [
   "cart_items",
   "orders",
   "order_items",
-  "order_tracking",
   "payments",
   "deliveries",
   "users",
@@ -193,7 +191,6 @@ export const ADMIN_CORE_TABLES = [
   "prices",
   "orders",
   "order_items",
-  "order_tracking",
   "payments",
   "deliveries",
   "complaints",

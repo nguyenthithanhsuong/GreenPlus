@@ -126,12 +126,12 @@ export class OrderTrackingRepository {
     note?: string;
   }): Promise<void> {
     const { error } = await this.supabase
-      .from("order_tracking")
-      .insert({
-        order_id: input.orderId,
+      .from("orders")
+      .update({
         status: input.status,
         note: input.note?.trim() || null,
-      });
+      })
+      .eq("order_id", input.orderId);
 
     if (error) {
       throw new Error(error.message);
