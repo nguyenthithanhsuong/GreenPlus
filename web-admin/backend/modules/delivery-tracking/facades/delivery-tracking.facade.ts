@@ -5,6 +5,7 @@ import {
   DeliveryTrackingSubject,
 } from "../observers/delivery-tracking.observer";
 import {
+  AssignShipperInput,
   DeliveryTrackingDetailRow,
   DeliveryTrackingFilterInput,
   DeliveryTrackingRow,
@@ -35,20 +36,30 @@ export class DeliveryTrackingFacade {
     return detail;
   }
 
+  async assignShipper(input: AssignShipperInput): Promise<DeliveryTrackingDetailRow> {
+    const detail = await this.service.assignShipper(input);
+    await this.subject.notify({
+      type: "shipper_assigned",
+      orderId: detail.order_id,
+      actor: "manager",
+      employeeId: detail.employee_id,
+    });
+
+    return detail;
+  }
+
   async updateDeliveryStatus(input: UpdateDeliveryStatusInput): Promise<DeliveryTrackingDetailRow> {
-    const before = await this.service.getDeliveryDetail(input.orderId).catch(() => null);
+    const previous = await this.service.getDeliveryDetail(input.orderId).catch(() => null);
     const updated = await this.service.updateDeliveryStatus(input);
 
     await this.subject.notify({
       type: "delivery_status_updated",
       orderId: updated.order_id,
       actor: "manager",
-      from: before?.latest_status ?? "pending",
-      to: updated.latest_status,
+      from: previous?.status ?? "assigned",
+      to: updated.status,
     });
 
     return updated;
   }
 }
-
-export const deliveryTrackingFacade = new DeliveryTrackingFacade();

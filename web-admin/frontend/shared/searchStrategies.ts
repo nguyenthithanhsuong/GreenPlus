@@ -1,3 +1,5 @@
+import type { DeliveryTrackingRow } from "../../backend/modules/delivery-tracking/delivery-tracking.types";
+
 export interface SearchStrategy<T> {
   filter(items: T[], query: string): T[];
   matches(item: T, query: string): boolean;
@@ -209,35 +211,23 @@ class OrderSearchStrategy extends BaseSearchStrategy<{
   }
 }
 
-class DeliveryTrackingSearchStrategy extends BaseSearchStrategy<{
-  order_id: string;
-  customer_name: string | null;
-  customer_phone: string | null;
-  delivery_address: string;
-  latest_status: string;
-  latest_note: string | null;
-  latest_tracking_at: string | null;
-  tracking_count: number;
-}> {
-  protected getSearchableText(item: {
-    order_id: string;
-    customer_name: string | null;
-    customer_phone: string | null;
-    delivery_address: string;
-    latest_status: string;
-    latest_note: string | null;
-    latest_tracking_at: string | null;
-    tracking_count: number;
-  }): Array<string | number | null | undefined> {
+class DeliveryTrackingSearchStrategy extends BaseSearchStrategy<DeliveryTrackingRow> {
+  protected getSearchableText(item: DeliveryTrackingRow): Array<string | number | null | undefined> {
     return [
+      item.delivery_id,
       item.order_id,
+      item.employee_id,
+      item.shipper_name,
+      item.shipper_phone,
       item.customer_name,
       item.customer_phone,
+      item.order_date,
       item.delivery_address,
-      item.latest_status,
-      item.latest_note,
-      item.latest_tracking_at,
-      item.tracking_count,
+      item.total_amount,
+      item.status,
+      item.note,
+      item.pickup_time,
+      item.delivery_time,
     ];
   }
 }

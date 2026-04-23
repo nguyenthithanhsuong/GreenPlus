@@ -4,19 +4,31 @@ export type DeliveryTrackingEvent =
   | {
       type: "delivery_created";
       orderId: string;
-      actor: "manager" | "employee";
+      actor: "manager" | "employee" | "system_user";
     }
   | {
       type: "delivery_status_updated";
       orderId: string;
-      actor: "manager" | "employee";
-      from: DeliveryStatus;
+      actor: "manager" | "employee" | "system_user";
+      from: DeliveryStatus | "pending";
       to: DeliveryStatus;
     }
   | {
       type: "delivery_detail_viewed";
       orderId: string;
-      actor: "manager" | "employee";
+      actor: "manager" | "employee" | "system_user";
+    }
+  | {
+      type: "shipper_assigned";
+      orderId: string;
+      actor: "manager" | "employee" | "system_user";
+      employeeId: string;
+    }
+  | {
+      type: "delivery_failed";
+      orderId: string;
+      actor: "manager" | "employee" | "system_user";
+      reason: string;
     };
 
 export interface DeliveryTrackingObserver {

@@ -8,8 +8,9 @@ export async function GET(request: Request) {
     const status = searchParams.get("status") ?? undefined;
     const fromDate = searchParams.get("fromDate") ?? undefined;
     const toDate = searchParams.get("toDate") ?? undefined;
+    const employeeId = searchParams.get("employeeId") ?? undefined;
 
-    const items = await deliveryTrackingFacade.listDeliveries({ status, fromDate, toDate });
+    const items = await deliveryTrackingFacade.listDeliveries({ status, fromDate, toDate, employeeId });
     return NextResponse.json({ items, total: items.length }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {

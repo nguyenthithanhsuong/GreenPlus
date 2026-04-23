@@ -1,45 +1,40 @@
-export type DeliveryStatus =
-  | "pending"
-  | "assigned"
-  | "picked_up"
-  | "delivering"
-  | "delivered"
-  | "failed"
-  | "cancelled";
-
-export type DeliveryTrackingHistoryRow = {
-  tracking_id: string;
-  order_id: string | null;
-  status: DeliveryStatus;
-  note: string | null;
-  created_at: string | null;
-};
+export type DeliveryStatus = "assigned" | "picked_up" | "delivering" | "delivered";
 
 export type DeliveryTrackingRow = {
+  delivery_id: string;
   order_id: string;
+  employee_id: string;
+  shipper_name: string | null;
+  shipper_phone: string | null;
   customer_name: string | null;
   customer_phone: string | null;
   order_date: string | null;
   delivery_address: string;
   total_amount: number;
-  latest_status: DeliveryStatus;
-  latest_note: string | null;
-  latest_tracking_at: string | null;
-  tracking_count: number;
+  status: DeliveryStatus;
+  note: string | null;
+  pickup_time: string | null;
+  delivery_time: string | null;
 };
 
-export type DeliveryTrackingDetailRow = DeliveryTrackingRow & {
-  history: DeliveryTrackingHistoryRow[];
-};
+export type DeliveryTrackingDetailRow = DeliveryTrackingRow;
 
 export type DeliveryTrackingFilterInput = {
-  status?: string;
+  status?: DeliveryStatus;
   fromDate?: string;
   toDate?: string;
+  employeeId?: string;
+  search?: string;
 };
 
 export type UpdateDeliveryStatusInput = {
   orderId: string;
-  status: string;
+  status: DeliveryStatus;
+  note?: string;
+};
+
+export type AssignShipperInput = {
+  orderId: string;
+  employeeId: string;
   note?: string;
 };

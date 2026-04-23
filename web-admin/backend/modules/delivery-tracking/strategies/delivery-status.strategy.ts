@@ -11,15 +11,12 @@ export class DefaultDeliveryStatusStrategy implements DeliveryStatusStrategy {
     const normalized = value.trim().toLowerCase();
 
     if (
-      normalized === "pending" ||
       normalized === "assigned" ||
       normalized === "picked_up" ||
       normalized === "delivering" ||
-      normalized === "delivered" ||
-      normalized === "failed" ||
-      normalized === "cancelled"
+      normalized === "delivered"
     ) {
-      return normalized;
+      return normalized as DeliveryStatus;
     }
 
     throw new AppError(`Unsupported delivery status: ${value}`, 400);
@@ -30,22 +27,11 @@ export class DefaultDeliveryStatusStrategy implements DeliveryStatusStrategy {
       return false;
     }
 
-    if (current === "delivered" || current === "cancelled") {
-      return false;
-    }
-
-    if (next === "cancelled" || next === "failed") {
-      return true;
-    }
-
     const validNext: Record<DeliveryStatus, DeliveryStatus[]> = {
-      pending: ["assigned", "cancelled"],
-      assigned: ["picked_up", "delivering", "cancelled", "failed"],
-      picked_up: ["delivering", "delivered", "cancelled", "failed"],
-      delivering: ["delivered", "failed", "cancelled"],
+      assigned: ["picked_up", "delivering"],
+      picked_up: ["delivering", "delivered"],
+      delivering: ["delivered"],
       delivered: [],
-      failed: [],
-      cancelled: [],
     };
 
     return validNext[current].includes(next);

@@ -1,10 +1,11 @@
 import { AppError } from "../../core/errors";
 import { DeliveryTrackingRepository } from "./delivery-tracking.repository";
 import {
+  AssignShipperInput,
   DeliveryStatus,
   DeliveryTrackingDetailRow,
-  DeliveryTrackingRow,
   DeliveryTrackingFilterInput,
+  DeliveryTrackingRow,
   UpdateDeliveryStatusInput,
 } from "./delivery-tracking.types";
 import { createDeliveryStatusState } from "./states/delivery-status.state";
@@ -15,33 +16,18 @@ export class DeliveryTrackingService {
 
   constructor(private readonly repository: DeliveryTrackingRepository) {}
 
-  async listDeliveries(filters: DeliveryTrackingFilterInput): Promise<DeliveryTrackingRow[]> {
-    const normalizedStatus = typeof filters.status === "string" && filters.status.trim()
-      ? this.statusStrategy.normalizeStatus(filters.status)
-      : undefined;
+  async listDeliveries(filters: DeliveryTrackingFilterInput = {}): Promise<DeliveryTrackingRow[]> {
+    const normalizedFromDate = this.normalizeDate(filters.fromDate);
+    const normalizedToDate = this.normalizeDate(filters.toDate);
 
-    const fromDate = this.normalizeDate(filters.fromDate);
-    const toDate = this.normalizeDate(filters.toDate);
-
-    if (fromDate && toDate && fromDate > toDate) {
+    if (normalizedFromDate && normalizedToDate && normalizedFromDate > normalizedToDate) {
       throw new AppError("fromDate must be before or equal to toDate", 400);
     }
 
-    const rows = await this.repository.listTrackingRows();
-    return rows.filter((row) => {
-      if (normalizedStatus && row.latest_status !== normalizedStatus) {
-        return false;
-      }
-
-      if (fromDate && (!row.latest_tracking_at || row.latest_tracking_at.slice(0, 10) < fromDate)) {
-        return false;
-      }
-
-      if (toDate && (!row.latest_tracking_at || row.latest_tracking_at.slice(0, 10) > toDate)) {
-        return false;
-      }
-
-      return true;
+    return this.repository.listDeliveries({
+      ...filters,
+      fromDate: normalizedFromDate,
+      toDate: normalizedToDate,
     });
   }
 
@@ -51,43 +37,66 @@ export class DeliveryTrackingService {
       throw new AppError("orderId is required", 400);
     }
 
-    const rows = await this.repository.listTrackingRows();
-    const summary = rows.find((row) => row.order_id === normalizedOrderId);
-    if (!summary) {
-      throw new AppError("delivery tracking not found", 404);
+    const delivery = await this.repository.getDeliveryByOrderId(normalizedOrderId);
+    if (!delivery) {
+      throw new AppError("delivery not found", 404);
     }
 
-    const history = await this.repository.listTrackingHistoryByOrderId(normalizedOrderId);
-    return {
-      ...summary,
-      history,
-    };
+    return delivery;
   }
 
-  async updateDeliveryStatus(input: UpdateDeliveryStatusInput): Promise<DeliveryTrackingDetailRow> {
-    const normalizedOrderId = input.orderId.trim();
-    if (!normalizedOrderId) {
+  async assignShipper(input: AssignShipperInput): Promise<DeliveryTrackingDetailRow> {
+    const orderId = input.orderId.trim();
+    if (!orderId) {
       throw new AppError("orderId is required", 400);
     }
 
-    const nextStatus = this.statusStrategy.normalizeStatus(input.status);
-    const existing = await this.getDeliveryDetail(normalizedOrderId).catch(() => null);
-
-    if (existing) {
-      const currentStatus: DeliveryStatus = existing.latest_status;
-      const state = createDeliveryStatusState(currentStatus);
-      if (!state.canTransitionTo(nextStatus)) {
-        throw new AppError(`Cannot transition delivery from ${currentStatus} to ${nextStatus}`, 400);
-      }
+    const employeeId = input.employeeId.trim();
+    if (!employeeId) {
+      throw new AppError("employeeId is required", 400);
     }
 
-    await this.repository.createTrackingEntry({
-      orderId: normalizedOrderId,
-      status: nextStatus,
+    const existing = await this.repository.getDeliveryByOrderId(orderId);
+    if (existing) {
+      throw new AppError("delivery already assigned", 400);
+    }
+
+    await this.repository.createDelivery({
+      orderId,
+      employeeId,
+      status: "assigned",
       note: input.note,
     });
 
-    return this.getDeliveryDetail(normalizedOrderId);
+    return this.getDeliveryDetail(orderId);
+  }
+
+  async updateDeliveryStatus(input: UpdateDeliveryStatusInput): Promise<DeliveryTrackingDetailRow> {
+    const orderId = input.orderId.trim();
+    if (!orderId) {
+      throw new AppError("orderId is required", 400);
+    }
+
+    const existing = await this.repository.getDeliveryByOrderId(orderId);
+    if (!existing) {
+      throw new AppError("delivery not found", 404);
+    }
+
+    const nextStatus = this.statusStrategy.normalizeStatus(input.status);
+    const currentStatus: DeliveryStatus = existing.status;
+
+    const state = createDeliveryStatusState(currentStatus);
+    if (!state.canTransitionTo(nextStatus)) {
+      throw new AppError(`Cannot transition delivery from ${currentStatus} to ${nextStatus}`, 400);
+    }
+
+    await this.repository.updateDeliveryStatus({
+      deliveryId: existing.delivery_id,
+      status: nextStatus,
+      note: input.note ?? existing.note ?? undefined,
+    });
+
+    return this.getDeliveryDetail(orderId);
   }
 
   private normalizeDate(value?: string): string | undefined {

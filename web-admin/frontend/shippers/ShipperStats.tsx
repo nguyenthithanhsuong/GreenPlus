@@ -1,14 +1,13 @@
 import React from "react";
-import { CheckCircle2, Clock3, Route, Truck } from "lucide-react";
+import { CheckCircle2, Route, Truck } from "lucide-react";
 
 type ShipperStatsProps = {
   totalDeliveries: number;
   inProgressCount: number;
   deliveredCount: number;
-  failedCount: number;
 };
 
-const ShipperStats = ({ totalDeliveries, inProgressCount, deliveredCount, failedCount }: ShipperStatsProps) => {
+const ShipperStats = ({ totalDeliveries, inProgressCount, deliveredCount }: ShipperStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
@@ -41,15 +40,6 @@ const ShipperStats = ({ totalDeliveries, inProgressCount, deliveredCount, failed
         </div>
       </div>
 
-      <div className="bg-white p-5 rounded-xl border border-red-100 shadow-sm flex items-center gap-4">
-        <div className="p-3 bg-red-50 rounded-full">
-          <Clock3 className="w-5 h-5 text-red-600" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-red-700">Giao thất bại</p>
-          <h3 className="text-2xl font-bold text-gray-900">{failedCount}</h3>
-        </div>
-      </div>
     </div>
   );
 };

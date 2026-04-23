@@ -21,13 +21,10 @@ type ShipperTableProps = {
 };
 
 const statusMeta: Record<DeliveryStatus, { label: string; className: string }> = {
-  pending: { label: "Chờ xử lý", className: "bg-gray-50 text-gray-600 border-gray-200" },
   assigned: { label: "Đã phân công", className: "bg-blue-50 text-blue-600 border-blue-200" },
   picked_up: { label: "Đã lấy hàng", className: "bg-amber-50 text-amber-600 border-amber-200" },
   delivering: { label: "Đang giao", className: "bg-purple-50 text-purple-600 border-purple-200" },
   delivered: { label: "Đã giao", className: "bg-emerald-50 text-emerald-600 border-emerald-200" },
-  failed: { label: "Thất bại", className: "bg-red-50 text-red-600 border-red-200" },
-  cancelled: { label: "Đã hủy", className: "bg-gray-100 text-gray-500 border-gray-200" },
 };
 
 const formatCurrency = (value: number): string => {
@@ -69,9 +66,6 @@ const ShipperTable = ({
           <button type="button" onClick={() => onStatusFilterChange("all")} className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "all" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}>
             Tất cả ({counts.all})
           </button>
-          <button type="button" onClick={() => onStatusFilterChange("pending")} className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "pending" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}>
-            Chờ xử lý ({counts.pending})
-          </button>
           <button type="button" onClick={() => onStatusFilterChange("assigned")} className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "assigned" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}>
             Đã phân công ({counts.assigned})
           </button>
@@ -80,9 +74,6 @@ const ShipperTable = ({
           </button>
           <button type="button" onClick={() => onStatusFilterChange("delivered")} className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "delivered" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}>
             Đã giao ({counts.delivered})
-          </button>
-          <button type="button" onClick={() => onStatusFilterChange("failed")} className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "failed" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}>
-            Thất bại ({counts.failed})
           </button>
         </div>
 
@@ -117,7 +108,7 @@ const ShipperTable = ({
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-white border-b border-gray-100">
             <tr>
-              <th className="px-6 py-4 font-medium">Mã đơn / Lần cập nhật</th>
+              <th className="px-6 py-4 font-medium">Mã đơn / Ngày cập nhật</th>
               <th className="px-6 py-4 font-medium">Khách hàng</th>
               <th className="px-6 py-4 font-medium">Địa chỉ giao</th>
               <th className="px-6 py-4 font-medium text-center">Tổng tiền</th>
@@ -136,13 +127,13 @@ const ShipperTable = ({
               </tr>
             ) : (
               items.map((item) => {
-                const meta = statusMeta[item.latest_status];
+                const meta = statusMeta[item.status];
 
                 return (
                   <tr key={item.order_id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 align-top">
                       <p className="font-bold text-[#059669] mb-1">{item.order_id}</p>
-                      <p className="text-[11px] text-gray-400">{formatDateTime(item.latest_tracking_at)}</p>
+                      <p className="text-[11px] text-gray-400">{formatDateTime(item.delivery_time || item.pickup_time || item.order_date)}</p>
                     </td>
                     <td className="px-6 py-4 align-top">
                       <p className="font-bold text-gray-900 mb-1">{item.customer_name ?? "Khách chưa xác định"}</p>
@@ -150,14 +141,16 @@ const ShipperTable = ({
                     </td>
                     <td className="px-6 py-4 align-top">
                       <p className="text-gray-800 leading-relaxed">{item.delivery_address}</p>
-                      <p className="text-[11px] text-gray-500 mt-1">{item.tracking_count} lần tracking</p>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        {item.shipper_name ? `Shipper: ${item.shipper_name}` : "Chưa phân công shipper"}
+                      </p>
                     </td>
                     <td className="px-6 py-4 text-center font-bold text-gray-900">{formatCurrency(item.total_amount)}</td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-[11px] font-bold border ${meta.className}`}>
                         {meta.label}
                       </span>
-                      {item.latest_note ? <p className="mt-1 text-[10px] text-gray-400">{item.latest_note}</p> : null}
+                      {item.note ? <p className="mt-1 text-[10px] text-gray-400">{item.note}</p> : null}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button

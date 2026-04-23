@@ -48,6 +48,13 @@ const endpointChecks: EndpointCheck[] = [
     expectedStatuses: [200],
   },
   {
+    id: "deliveries-get",
+    label: "Deliveries Route",
+    path: "/api/deliveries",
+    method: "GET",
+    expectedStatuses: [200],
+  },
+  {
     id: "products-get",
     label: "Products Route",
     path: "/api/products",

@@ -40,7 +40,7 @@ const ShipperManagement = () => {
       if (fromDate) params.set("fromDate", fromDate);
       if (toDate) params.set("toDate", toDate);
 
-      const response = await fetch(`/api/order-tracking${params.toString() ? `?${params.toString()}` : ""}`, { cache: "no-store" });
+      const response = await fetch(`/api/deliveries${params.toString() ? `?${params.toString()}` : ""}`, { cache: "no-store" });
       const data = (await response.json()) as { items?: DeliveryTrackingRow[]; error?: string };
 
       if (!response.ok) {
@@ -65,7 +65,7 @@ const ShipperManagement = () => {
       return items;
     }
 
-    return items.filter((item) => item.latest_status === statusFilter);
+    return items.filter((item) => item.status === statusFilter);
   }, [items, statusFilter]);
 
   const filteredItems = useMemo(() => deliveryTrackingSearchStrategy.filter(filteredByStatus, searchQuery), [filteredByStatus, searchQuery]);
@@ -73,17 +73,16 @@ const ShipperManagement = () => {
   const counts = useMemo(() => {
     const result: Record<StatusFilter, number> = {
       all: items.length,
-      pending: 0,
       assigned: 0,
       picked_up: 0,
       delivering: 0,
       delivered: 0,
-      failed: 0,
-      cancelled: 0,
     };
 
     items.forEach((item) => {
-      result[item.latest_status] += 1;
+      if (result[item.status] !== undefined) {
+        result[item.status] += 1;
+      }
     });
 
     return result;
@@ -91,9 +90,8 @@ const ShipperManagement = () => {
 
   const stats = useMemo(() => ({
     totalDeliveries: items.length,
-    inProgressCount: items.filter((item) => ["assigned", "picked_up", "delivering"].includes(item.latest_status)).length,
-    deliveredCount: items.filter((item) => item.latest_status === "delivered").length,
-    failedCount: items.filter((item) => item.latest_status === "failed").length,
+    inProgressCount: items.filter((item) => ["assigned", "picked_up", "delivering"].includes(item.status)).length,
+    deliveredCount: items.filter((item) => item.status === "delivered").length,
   }), [items]);
 
   const openDetail = useCallback(async (orderId: string) => {
@@ -102,7 +100,7 @@ const ShipperManagement = () => {
     setDrawerError(null);
 
     try {
-      const response = await fetch(`/api/order-tracking/${encodeURIComponent(orderId)}`, { cache: "no-store" });
+      const response = await fetch(`/api/deliveries/${encodeURIComponent(orderId)}`, { cache: "no-store" });
       const data = (await response.json()) as DeliveryTrackingDetailRow & { error?: string };
 
       if (!response.ok) {
@@ -110,14 +108,7 @@ const ShipperManagement = () => {
       }
 
       setSelectedDetail(data);
-      setForm({
-        status: data.latest_status === "delivered" || data.latest_status === "failed" || data.latest_status === "cancelled"
-          ? data.latest_status
-          : data.latest_status === "pending"
-            ? "assigned"
-            : data.latest_status,
-        note: "",
-      });
+      setForm({ status: data.status, note: "" });
     } catch (requestError) {
       setDrawerError(requestError instanceof Error ? requestError.message : "Không thể tải chi tiết giao hàng");
       setSelectedDetail(null);
@@ -144,7 +135,7 @@ const ShipperManagement = () => {
     setDrawerError(null);
 
     try {
-      const response = await fetch(`/api/order-tracking/${encodeURIComponent(selectedDetail.order_id)}`, {
+      const response = await fetch(`/api/deliveries/${encodeURIComponent(selectedDetail.order_id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

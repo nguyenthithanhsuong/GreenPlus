@@ -1,19 +1,15 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import {
-  DeliveryStatus,
-  DeliveryTrackingDetailRow,
-  DeliveryTrackingHistoryRow,
-  DeliveryTrackingRow,
-} from "./delivery-tracking.types";
+import { DeliveryStatus, DeliveryTrackingFilterInput, DeliveryTrackingRow } from "./delivery-tracking.types";
 
-type DeliveryTrackingDbRow = {
-  tracking_id: string;
-  order_id: string | null;
-  status: string;
+type DeliveryDbRow = {
+  delivery_id: string;
+  order_id: string;
+  employee_id: string;
+  status: string | null;
+  pickup_time: string | null;
+  delivery_time: string | null;
   note: string | null;
-  created_at: string | null;
   orders?: {
-    order_id?: string | null;
     order_date?: string | null;
     total_amount?: number | string | null;
     delivery_address?: string | null;
@@ -22,126 +18,163 @@ type DeliveryTrackingDbRow = {
       phone?: string | null;
     } | null;
   } | null;
+  users?: {
+    name?: string | null;
+    phone?: string | null;
+  } | null;
 };
 
 export class DeliveryTrackingRepository {
   private readonly supabase = createServiceRoleSupabaseClient();
 
-  async listTrackingRows(): Promise<DeliveryTrackingRow[]> {
+  async listDeliveries(filters: DeliveryTrackingFilterInput = {}): Promise<DeliveryTrackingRow[]> {
     const { data, error } = await this.supabase
-      .from("orders")
-      .select("order_id,status,note,created_at,orders(order_id,order_date,total_amount,delivery_address,users(name,phone))")
-      .order("created_at", { ascending: false, nullsFirst: false });
+      .from("deliveries")
+      .select(
+        "delivery_id,order_id,employee_id,status,pickup_time,delivery_time,note,orders(order_date,total_amount,delivery_address,users(name,phone)),users(name,phone)",
+      );
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return this.toLatestRows((data ?? []) as DeliveryTrackingDbRow[]);
+    const rows = ((data ?? []) as DeliveryDbRow[]).map((row) => this.toDeliveryTrackingRow(row));
+
+    return rows
+      .filter((row) => (filters.status ? row.status === filters.status : true))
+      .filter((row) => (filters.employeeId ? row.employee_id === filters.employeeId : true))
+      .filter((row) => this.matchesDateRange(row, filters.fromDate, filters.toDate))
+      .sort((left, right) => this.toSortTimestamp(right) - this.toSortTimestamp(left));
   }
 
-  async listTrackingHistoryByOrderId(orderId: string): Promise<DeliveryTrackingHistoryRow[]> {
+  async getDeliveryByOrderId(orderId: string): Promise<DeliveryTrackingRow | null> {
     const { data, error } = await this.supabase
-      .from("orders")
-      .select("order_id,status,note,created_at")
+      .from("deliveries")
+      .select(
+        "delivery_id,order_id,employee_id,status,pickup_time,delivery_time,note,orders(order_date,total_amount,delivery_address,users(name,phone)),users(name,phone)",
+      )
       .eq("order_id", orderId)
-      .order("created_at", { ascending: true, nullsFirst: false });
+      .maybeSingle();
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as DeliveryTrackingDbRow[]).map((row) => this.toHistoryRow(row));
+    return data ? this.toDeliveryTrackingRow(data as DeliveryDbRow) : null;
   }
 
-  async createTrackingEntry(input: {
+  async createDelivery(input: {
     orderId: string;
+    employeeId: string;
+    status?: DeliveryStatus;
+    note?: string;
+  }): Promise<void> {
+    const { error } = await this.supabase.from("deliveries").insert({
+      order_id: input.orderId,
+      employee_id: input.employeeId,
+      status: input.status ?? "assigned",
+      note: input.note?.trim() || null,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async updateDeliveryStatus(input: {
+    deliveryId: string;
     status: DeliveryStatus;
     note?: string;
   }): Promise<void> {
+    const updateData: Partial<DeliveryDbRow> = {
+      status: input.status,
+      note: input.note?.trim() || null,
+    };
+
+    // handle timestamps based on status
+    if (input.status === "picked_up") {
+      updateData.pickup_time = new Date().toISOString();
+    }
+
+    if (input.status === "delivered") {
+      updateData.delivery_time = new Date().toISOString();
+    }
+
     const { error } = await this.supabase
-      .from("orders")
-      .insert({
-        order_id: input.orderId,
-        status: input.status,
-        note: input.note?.trim() || null,
-      });
+      .from("deliveries")
+      .update(updateData)
+      .eq("delivery_id", input.deliveryId);
 
     if (error) {
       throw new Error(error.message);
     }
   }
 
-  private toLatestRows(rows: DeliveryTrackingDbRow[]): DeliveryTrackingRow[] {
-    const grouped = new Map<string, { row: DeliveryTrackingDbRow; count: number }>();
-
-    for (const row of rows) {
-      const orderId = row.order_id ?? row.orders?.order_id ?? null;
-      if (!orderId) {
-        continue;
-      }
-
-      const existing = grouped.get(orderId);
-      const count = (existing?.count ?? 0) + 1;
-
-      if (!existing) {
-        grouped.set(orderId, { row, count });
-        continue;
-      }
-
-      const currentCreatedAt = existing.row.created_at ? new Date(existing.row.created_at).getTime() : 0;
-      const nextCreatedAt = row.created_at ? new Date(row.created_at).getTime() : 0;
-
-      if (nextCreatedAt >= currentCreatedAt) {
-        grouped.set(orderId, { row, count });
-      } else {
-        grouped.set(orderId, { row: existing.row, count });
-      }
-    }
-
-    return Array.from(grouped.values()).map(({ row, count }) => this.toLatestRow(row, count));
-  }
-
-  private toLatestRow(row: DeliveryTrackingDbRow, trackingCount: number): DeliveryTrackingRow {
-    const normalizedStatus = this.normalizeStatus(row.status);
-
-    return {
-      order_id: row.order_id ?? row.orders?.order_id ?? "",
-      customer_name: row.orders?.users?.name ?? null,
-      customer_phone: row.orders?.users?.phone ?? null,
-      order_date: row.orders?.order_date ?? null,
-      delivery_address: row.orders?.delivery_address ?? "",
-      total_amount: Number(row.orders?.total_amount ?? 0),
-      latest_status: normalizedStatus,
-      latest_note: row.note,
-      latest_tracking_at: row.created_at,
-      tracking_count: trackingCount,
-    };
-  }
-
-  private toHistoryRow(row: DeliveryTrackingDbRow): DeliveryTrackingHistoryRow {
-    return {
-      tracking_id: row.tracking_id,
-      order_id: row.order_id,
-      status: this.normalizeStatus(row.status),
-      note: row.note,
-      created_at: row.created_at,
-    };
-  }
-
-  private normalizeStatus(value: string): DeliveryStatus {
+  private normalizeStatus(value: string | null): DeliveryStatus {
     if (
-      value === "pending" ||
       value === "assigned" ||
       value === "picked_up" ||
       value === "delivering" ||
-      value === "delivered" ||
-      value === "failed" ||
-      value === "cancelled"
+      value === "delivered"
     ) {
       return value;
     }
 
-    return "pending";
+    return "assigned";
+  }
+
+  private toDeliveryTrackingRow(row: DeliveryDbRow): DeliveryTrackingRow {
+    const order = row.orders ?? null;
+    const customer = order?.users ?? null;
+    const shipper = row.users ?? null;
+
+    return {
+      delivery_id: row.delivery_id,
+      order_id: row.order_id,
+      employee_id: row.employee_id,
+      shipper_name: shipper?.name ?? null,
+      shipper_phone: shipper?.phone ?? null,
+      customer_name: customer?.name ?? null,
+      customer_phone: customer?.phone ?? null,
+      order_date: order?.order_date ?? null,
+      delivery_address: order?.delivery_address ?? "",
+      total_amount: Number(order?.total_amount ?? 0),
+      status: this.normalizeStatus(row.status),
+      note: row.note,
+      pickup_time: row.pickup_time,
+      delivery_time: row.delivery_time,
+    };
+  }
+
+  private matchesDateRange(row: DeliveryTrackingRow, fromDate?: string, toDate?: string): boolean {
+    const source = row.order_date ?? row.pickup_time ?? row.delivery_time;
+    if (!source) {
+      return !fromDate && !toDate;
+    }
+
+    const timestamp = Date.parse(source);
+    if (Number.isNaN(timestamp)) {
+      return true;
+    }
+
+    if (fromDate && timestamp < Date.parse(`${fromDate}T00:00:00.000Z`)) {
+      return false;
+    }
+
+    if (toDate && timestamp > Date.parse(`${toDate}T23:59:59.999Z`)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private toSortTimestamp(row: DeliveryTrackingRow): number {
+    const source = row.pickup_time ?? row.delivery_time ?? row.order_date;
+    if (!source) {
+      return 0;
+    }
+
+    const timestamp = Date.parse(source);
+    return Number.isNaN(timestamp) ? 0 : timestamp;
   }
 }

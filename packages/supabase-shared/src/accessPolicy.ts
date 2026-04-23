@@ -119,7 +119,7 @@ export const ROLE_POLICIES: RolePolicy[] = [
     role: "employee",
     description: "Delivery staff can view and update only assigned deliveries and related order progress.",
     tableAccess: {
-      select: ["deliveries", , "orders"],
+      select: ["deliveries", "orders"],
       update: ["deliveries", "orders"],
     },
   },

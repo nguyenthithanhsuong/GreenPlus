@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CalendarDays, CheckCircle2, ClipboardList, MapPin, Phone, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, ClipboardList, MapPin, Phone, Truck, X } from "lucide-react";
 import type { DeliveryStatus, DeliveryTrackingDetailRow } from "../../backend/modules/delivery-tracking/delivery-tracking.types";
 
 export type ShipperFormValues = {
@@ -35,13 +35,10 @@ const formatDateTime = (value: string | null): string => {
 };
 
 const statusLabel: Record<DeliveryStatus, string> = {
-  pending: "Chờ xử lý",
   assigned: "Đã phân công",
   picked_up: "Đã lấy hàng",
   delivering: "Đang giao",
   delivered: "Đã giao",
-  failed: "Giao thất bại",
-  cancelled: "Đã hủy",
 };
 
 const ShipperDrawer = ({ isOpen, loading, saving, error, detail, form, onClose, onSubmit, onChange }: ShipperDrawerProps) => {
@@ -81,30 +78,51 @@ const ShipperDrawer = ({ isOpen, loading, saving, error, detail, form, onClose, 
 
                   <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Thông tin đơn</p>
-                    <p className="mt-2 text-sm text-gray-700 flex items-center gap-2"><CalendarDays className="h-4 w-4 text-gray-400" /> {formatDateTime(detail.order_date)}</p>
+                    <p className="mt-2 text-sm text-gray-700 flex items-center gap-2"><CalendarDays className="h-4 w-4 text-gray-400" /> Đặt lúc: {formatDateTime(detail.order_date)}</p>
                     <p className="mt-1 text-sm text-gray-700"><span className="font-semibold">Tổng tiền:</span> {new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(detail.total_amount)} đ</p>
-                    <p className="mt-1 text-sm text-gray-700"><span className="font-semibold">Số lần tracking:</span> {detail.tracking_count}</p>
-                    <p className="mt-1 text-sm text-gray-700"><span className="font-semibold">Trạng thái hiện tại:</span> {statusLabel[detail.latest_status]}</p>
+                    <p className="mt-1 text-sm text-gray-700"><span className="font-semibold">Trạng thái hiện tại:</span> {statusLabel[detail.status]}</p>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 md:col-span-2 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Nhân viên giao hàng</p>
+                      <p className="mt-2 text-base font-bold text-gray-900">{detail.shipper_name ?? "Chưa phân công"}</p>
+                      {detail.shipper_phone && (
+                        <p className="mt-1 text-sm text-gray-600 flex items-center gap-2"><Phone className="h-4 w-4 text-gray-400" /> {detail.shipper_phone}</p>
+                      )}
+                    </div>
+                    {detail.note && (
+                      <div className="bg-white p-3 rounded-lg border border-gray-200 text-sm text-gray-700 max-w-sm">
+                        <span className="font-semibold text-gray-900 block mb-1">Ghi chú gần nhất:</span>
+                        {detail.note}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
                   <div className="border-b border-gray-100 px-5 py-4">
-                    <h3 className="font-bold text-gray-900 flex items-center gap-2"><ClipboardList className="h-4 w-4 text-[#059669]" /> Lịch sử tracking</h3>
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2"><ClipboardList className="h-4 w-4 text-[#059669]" /> Tiến độ giao hàng</h3>
                   </div>
                   <div className="space-y-4 p-5">
-                    {detail.history.map((item) => (
-                      <div key={item.tracking_id} className="flex gap-3">
-                        <div className="mt-1 h-3 w-3 rounded-full bg-[#059669] ring-4 ring-emerald-50" />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="font-bold text-gray-900">{statusLabel[item.status]}</p>
-                            <p className="text-xs text-gray-400">{formatDateTime(item.created_at)}</p>
-                          </div>
-                          {item.note ? <p className="mt-1 text-sm text-gray-600">{item.note}</p> : null}
+                    <div className="flex gap-3">
+                      <div className="mt-1 h-3 w-3 rounded-full bg-[#059669] ring-4 ring-emerald-50" />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-bold text-gray-900">Đã lấy hàng</p>
+                          <p className="text-xs text-gray-400">{formatDateTime(detail.pickup_time)}</p>
                         </div>
                       </div>
-                    ))}
+                    </div>
+                    <div className="flex gap-3">
+                      <div className={`mt-1 h-3 w-3 rounded-full ring-4 ${detail.delivery_time ? 'bg-[#059669] ring-emerald-50' : 'bg-gray-300 ring-gray-50'}`} />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-bold text-gray-900">Đã giao hàng</p>
+                          <p className="text-xs text-gray-400">{formatDateTime(detail.delivery_time)}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -123,8 +141,6 @@ const ShipperDrawer = ({ isOpen, loading, saving, error, detail, form, onClose, 
                         <option value="picked_up">picked_up</option>
                         <option value="delivering">delivering</option>
                         <option value="delivered">delivered</option>
-                        <option value="failed">failed</option>
-                        <option value="cancelled">cancelled</option>
                       </select>
                     </div>
                     <div>
@@ -134,7 +150,7 @@ const ShipperDrawer = ({ isOpen, loading, saving, error, detail, form, onClose, 
                         onChange={(event) => onChange({ note: event.target.value })}
                         rows={4}
                         className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
-                        placeholder="Nhập lý do thất bại hoặc ghi chú giao hàng"
+                        placeholder="Nhập ghi chú giao hàng"
                         disabled={saving}
                       />
                     </div>
