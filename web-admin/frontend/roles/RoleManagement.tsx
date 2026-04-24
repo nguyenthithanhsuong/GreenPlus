@@ -50,8 +50,6 @@ const RoleManagement = () => {
 
   const stats = useMemo(() => ({
     total: roles.length,
-    system: roles.filter((role) => role.is_system_role).length,
-    custom: roles.filter((role) => !role.is_system_role).length,
     assignedUsers: roles.reduce((sum, role) => sum + role.user_count, 0),
   }), [roles]);
 
@@ -181,18 +179,14 @@ const RoleManagement = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Tổng role</p>
           <h3 className="mt-2 text-2xl font-bold text-gray-900">{stats.total}</h3>
         </div>
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">System default</p>
-          <h3 className="mt-2 text-2xl font-bold text-gray-900">{stats.system}</h3>
-        </div>
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Role tuỳ chỉnh</p>
-          <h3 className="mt-2 text-2xl font-bold text-gray-900">{stats.custom}</h3>
+          <p className="text-sm font-medium text-gray-500">Kết quả tìm kiếm</p>
+          <h3 className="mt-2 text-2xl font-bold text-gray-900">{filteredRoles.length}</h3>
         </div>
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">User được gán</p>

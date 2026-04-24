@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../backend/core/errors";
-import { deliveryTrackingFacade } from "../../../../backend/modules/delivery-tracking/facades/delivery-tracking.facade";
+import { deliveryTrackingFacade } from "../../../backend/modules/delivery-tracking/facades/delivery-tracking.facade";
 
 export async function GET(request: Request) {
   try {

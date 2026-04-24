@@ -1,5 +1,5 @@
 import React, { useDeferredValue } from "react";
-import { ChevronLeft, ChevronRight, Edit, Info, PencilLine, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit, Info, Search, X } from "lucide-react";
 import type { SupplierRow, SupplierStatus } from "../../backend/modules/suppliers/supplier-management.types";
 import { supplierSearchStrategy } from "../shared/searchStrategies";
 
@@ -70,6 +70,8 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
   const [activeTab, setActiveTab] = React.useState<SupplierTab>("all");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [reviewingSupplier, setReviewingSupplier] = React.useState<SupplierRow | null>(null);
+  const [deletingSupplier, setDeletingSupplier] = React.useState<SupplierRow | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const statusCounts = React.useMemo(
@@ -117,42 +119,96 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
   const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
   const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
 
+  const closeReviewModal = React.useCallback(() => {
+    setReviewingSupplier(null);
+  }, []);
+
+  const closeDeleteModal = React.useCallback(() => {
+    setDeletingSupplier(null);
+  }, []);
+
+  const handleReviewSupplier = React.useCallback((nextStatus: "approved" | "rejected") => {
+    if (!reviewingSupplier) {
+      return;
+    }
+
+    if (nextStatus === "approved") {
+      onApprove(reviewingSupplier);
+    } else {
+      onReject(reviewingSupplier);
+    }
+
+    closeReviewModal();
+  }, [closeReviewModal, onApprove, onReject, reviewingSupplier]);
+
+  const handleDeleteSupplier = React.useCallback(() => {
+    if (!deletingSupplier) {
+      return;
+    }
+
+    onDelete(deletingSupplier);
+    closeDeleteModal();
+  }, [closeDeleteModal, deletingSupplier, onDelete]);
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
       
       {/* Table Top Controls: Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-50 gap-4">
         <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab("all")}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap ${activeTab === "all" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
-          >
-            Tất cả
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("approved")}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap ${activeTab === "approved" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
-          >
-            Đang hoạt động
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("pending")}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${activeTab === "pending" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
-          >
-            Chờ duyệt
-            <span className="flex items-center justify-center w-5 h-5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full">{statusCounts.pending}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("rejected")}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap ${activeTab === "rejected" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
-          >
-            Đã từ chối/Khóa
-          </button>
-        </div>
+  {/* Tab Tất cả */}
+  <button
+    type="button"
+    onClick={() => setActiveTab("all")}
+    className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap ${
+      activeTab === "all" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+    }`}
+  >
+    Tất cả
+  </button>
+
+  {/* Tab Đang hoạt động */}
+  <button
+    type="button"
+    onClick={() => setActiveTab("approved")}
+    className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${
+      activeTab === "approved" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+    }`}
+  >
+    <span>Đang hoạt động</span>
+    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">
+      {statusCounts.approved}
+    </span>
+  </button>
+
+  {/* Tab Chờ duyệt */}
+  <button
+    type="button"
+    onClick={() => setActiveTab("pending")}
+    className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${
+      activeTab === "pending" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+    }`}
+  >
+    <span>Chờ duyệt</span>
+    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full">
+      {statusCounts.pending}
+    </span>
+  </button>
+
+  {/* Tab Đã từ chối */}
+  <button
+    type="button"
+    onClick={() => setActiveTab("rejected")}
+    className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${
+      activeTab === "rejected" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+    }`}
+  >
+    <span>Đã từ chối/Khóa</span>
+    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-red-100 text-red-700 text-[10px] font-bold rounded-full">
+      {statusCounts.rejected}
+    </span>
+  </button>
+</div>
 
         <div className="flex items-center gap-2">
           <div className="relative hidden sm:block">
@@ -230,19 +286,11 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
                         {supplier.status === "pending" && (
                           <>
                             <button
-                              onClick={() => onApprove(supplier)}
+                              onClick={() => setReviewingSupplier(supplier)}
                               className="px-3 py-1.5 bg-[#059669] hover:bg-[#047857] text-white rounded-md text-xs font-semibold transition-colors shadow-sm disabled:opacity-60"
                               disabled={saving}
                             >
-                              Duyệt
-                            </button>
-                            <button
-                              onClick={() => onReject(supplier)}
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200 disabled:opacity-60"
-                              title="Từ chối"
-                              disabled={saving}
-                            >
-                              <X className="w-3.5 h-3.5" />
+                              Xử lý
                             </button>
                           </>
                         )}
@@ -251,9 +299,9 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
                             <button onClick={() => onEdit(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Sửa" disabled={saving}>
                               <Edit className="w-4 h-4" />
                             </button>
-                            <button onClick={() => onReject(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Chuyển sang từ chối" disabled={saving}>
+                            {/* <button onClick={() => onReject(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Chuyển sang từ chối" disabled={saving}>
                               <PencilLine className="w-4 h-4" />
-                            </button>
+                            </button> */}
                           </>
                         )}
                         {supplier.status === "rejected" && (
@@ -261,7 +309,7 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
                             <Info className="w-4 h-4" />
                           </button>
                         )}
-                        <button onClick={() => onDelete(supplier)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200 disabled:opacity-60" title="Xóa" disabled={saving}>
+                        <button onClick={() => setDeletingSupplier(supplier)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200 disabled:opacity-60" title="Xóa" disabled={saving}>
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -321,6 +369,96 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
           </button>
         </div>
       </div>
+
+      {reviewingSupplier && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/45 backdrop-blur-[1px]"
+            onClick={closeReviewModal}
+            aria-label="Đóng"
+            disabled={saving}
+          />
+
+          <div className="relative w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-gray-900">Xử lý yêu cầu nhà cung cấp</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-600">
+              Chọn trạng thái mới cho <span className="font-semibold text-gray-900">{reviewingSupplier.name}</span>.
+            </p>
+
+            <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => handleReviewSupplier("approved")}
+                disabled={saving}
+                className="w-full rounded-lg bg-[#059669] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#047857] disabled:opacity-60"
+              >
+                Duyệt
+              </button>
+              <button
+                type="button"
+                onClick={() => handleReviewSupplier("rejected")}
+                disabled={saving}
+                className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:opacity-60"
+              >
+                Từ chối
+              </button>
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={closeReviewModal}
+                disabled={saving}
+                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-60"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletingSupplier && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/45 backdrop-blur-[1px]"
+            onClick={closeDeleteModal}
+            aria-label="Đóng"
+            disabled={saving}
+          />
+
+          <div className="relative w-full max-w-md rounded-2xl border border-red-100 bg-white p-6 shadow-2xl">
+            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <X className="h-5 w-5" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Xác nhận xóa nhà cung cấp</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-600">
+              Bạn có chắc muốn xóa <span className="font-semibold text-gray-900">{deletingSupplier.name}</span>? Hành động này không thể hoàn tác.
+            </p>
+
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={saving}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteSupplier}
+                disabled={saving}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+              >
+                Xóa supplier
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

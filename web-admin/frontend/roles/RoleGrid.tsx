@@ -32,10 +32,9 @@ const RoleGrid = ({ roles, loading, saving, onEditRole, onDeleteRole, emptyMessa
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {roles.map((role) => {
-        const isSystemRole = role.is_system_role;
         const description = role.description?.trim() || "Chưa có mô tả từ backend.";
-        const cardClassName = isSystemRole ? "bg-[#F8FAFC] border border-gray-100" : "bg-white border border-gray-100";
-        const iconClassName = isSystemRole ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-700";
+        const cardClassName = "bg-white border border-gray-100";
+        const iconClassName = "bg-gray-100 text-gray-700";
 
         return (
           <div key={role.role_id} className={`relative flex h-full flex-col rounded-2xl p-6 ${cardClassName}`}>
@@ -43,11 +42,6 @@ const RoleGrid = ({ roles, loading, saving, onEditRole, onDeleteRole, emptyMessa
               <div className={`rounded-2xl p-3 ${iconClassName}`}>
                 <Users className="h-6 w-6" strokeWidth={1.5} />
               </div>
-              {role.is_system_role && (
-                <span className="rounded-md bg-gray-100/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                  System Default
-                </span>
-              )}
             </div>
 
             <div className="flex-1">

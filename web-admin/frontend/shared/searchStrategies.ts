@@ -43,96 +43,142 @@ abstract class BaseSearchStrategy<T> implements SearchStrategy<T> {
 }
 
 class UserSearchStrategy extends BaseSearchStrategy<{
+  user_id: string;
+  role_id: string | null;
   name: string;
   email: string;
   role_name: string | null;
   phone: string | null;
   address: string | null;
-  status: string;
+  status: "active" | "inactive" | "banned";
+  created_at: string;
+  image_url: string | null;
 }> {
   protected getSearchableText(item: {
+    user_id: string;
+    role_id: string | null;
     name: string;
     email: string;
     role_name: string | null;
     phone: string | null;
     address: string | null;
-    status: string;
+    status: "active" | "inactive" | "banned";
+    created_at: string;
+    image_url: string | null;
   }): Array<string | number | null | undefined> {
-    return [item.name, item.email, item.role_name, item.phone, item.address, item.status];
+    return [
+      item.user_id,
+      item.name,
+      item.email,
+      item.role_name,
+      item.phone,
+      item.address,
+      item.status,
+      item.created_at,
+    ];
   }
 }
 
 class SupplierSearchStrategy extends BaseSearchStrategy<{
+  supplier_id: string;
   name: string;
   address: string;
   certificate: string | null;
   description: string | null;
-  status: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
 }> {
   protected getSearchableText(item: {
+    supplier_id: string;
     name: string;
     address: string;
     certificate: string | null;
     description: string | null;
-    status: string;
+    status: "pending" | "approved" | "rejected";
+    created_at: string;
   }): Array<string | number | null | undefined> {
-    return [item.name, item.address, item.certificate, item.description, item.status];
+    return [item.supplier_id, item.name, item.address, item.certificate, item.description, item.status, item.created_at];
   }
 }
 
 class BatchSearchStrategy extends BaseSearchStrategy<{
   batch_id: string;
+  product_id: string;
+  supplier_id: string;
   product_name: string | null;
   supplier_name: string | null;
   harvest_date: string;
   expire_date: string;
   qr_code: string | null;
   quantity: number;
-  status: string;
+  status: "pending" | "available" | "expired" | "sold_out";
+  created_at: string;
+  updated_at: string;
 }> {
   protected getSearchableText(item: {
     batch_id: string;
+    product_id: string;
+    supplier_id: string;
     product_name: string | null;
     supplier_name: string | null;
     harvest_date: string;
     expire_date: string;
     qr_code: string | null;
     quantity: number;
-    status: string;
+    status: "pending" | "available" | "expired" | "sold_out";
+    created_at: string;
+    updated_at: string;
   }): Array<string | number | null | undefined> {
-    return [item.batch_id, item.product_name, item.supplier_name, item.harvest_date, item.expire_date, item.qr_code, item.quantity, item.status];
+    return [
+      item.batch_id,
+      item.product_id,
+      item.supplier_id,
+      item.product_name,
+      item.supplier_name,
+      item.harvest_date,
+      item.expire_date,
+      item.qr_code,
+      item.quantity,
+      item.status,
+      item.created_at,
+      item.updated_at,
+    ];
   }
 }
 
 class RoleSearchStrategy extends BaseSearchStrategy<{
+  role_id: string;
   role_name: string;
   description: string | null;
   user_count: number;
-  is_system_role: boolean;
 }> {
   protected getSearchableText(item: {
+    role_id: string;
     role_name: string;
     description: string | null;
     user_count: number;
-    is_system_role: boolean;
   }): Array<string | number | null | undefined> {
-    return [item.role_name, item.description, item.user_count, item.is_system_role ? "system" : "custom"];
+    return [item.role_id, item.role_name, item.description, item.user_count];
   }
 }
 
 class CategorySearchStrategy extends BaseSearchStrategy<{
+  category_id: string;
   name: string;
   description: string | null;
   image_url: string | null;
   product_count: number;
+  created_at: string;
 }> {
   protected getSearchableText(item: {
+    category_id: string;
     name: string;
     description: string | null;
     image_url: string | null;
     product_count: number;
+    created_at: string;
   }): Array<string | number | null | undefined> {
-    return [item.name, item.description, item.image_url, item.product_count];
+    return [item.category_id, item.name, item.description, item.image_url, item.product_count, item.created_at];
   }
 }
 

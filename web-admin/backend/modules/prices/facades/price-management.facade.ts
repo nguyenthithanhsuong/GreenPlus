@@ -21,10 +21,12 @@ export class PriceManagementFacade {
 
   async createPrice(input: CreatePriceInput): Promise<PriceRow> {
     const created = await this.service.createPrice(input);
+
     await this.subject.notify({
       type: "price_created",
       priceId: created.price_id,
       actor: "manager",
+      status: created.status ?? "pending",
     });
 
     return created;
@@ -32,10 +34,12 @@ export class PriceManagementFacade {
 
   async updatePrice(input: UpdatePriceInput): Promise<PriceRow> {
     const updated = await this.service.updatePrice(input);
+
     await this.subject.notify({
       type: "price_updated",
       priceId: updated.price_id,
       actor: "manager",
+      status: updated.status ?? "pending",
     });
 
     return updated;
@@ -43,6 +47,7 @@ export class PriceManagementFacade {
 
   async deletePrice(priceId: string): Promise<void> {
     await this.service.deletePrice(priceId);
+
     await this.subject.notify({
       type: "price_deleted",
       priceId,

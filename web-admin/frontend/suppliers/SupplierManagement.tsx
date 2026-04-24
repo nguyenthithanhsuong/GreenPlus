@@ -150,10 +150,6 @@ const SupplierManagement = () => {
   };
 
   const deleteSupplier = async (supplier: SupplierRow) => {
-    if (!window.confirm(`Xóa supplier "${supplier.name}"?`)) {
-      return;
-    }
-
     setSaving(true);
     setError(null);
 

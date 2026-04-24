@@ -51,12 +51,34 @@ const daysUntilExpire = (expireDate: string): number => {
   return Math.ceil((expire.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 };
 
+const deriveBatchStatus = (batch: BatchRow): BatchStatus => {
+  if (batch.status === "pending") {
+    return "pending";
+  }
+
+  if (batch.quantity <= 0) {
+    return "sold_out";
+  }
+
+  if (daysUntilExpire(batch.expire_date) < 0) {
+    return "expired";
+  }
+
+  return "available";
+};
+
 const getStatusLabel = (batch: BatchRow): string => {
-  if (batch.status === "sold_out") {
+  const effectiveStatus = deriveBatchStatus(batch);
+
+  if (effectiveStatus === "pending") {
+    return "Chờ duyệt";
+  }
+
+  if (effectiveStatus === "sold_out") {
     return "Hết hàng";
   }
 
-  if (batch.status === "expired") {
+  if (effectiveStatus === "expired") {
     return "Hết hạn";
   }
 
@@ -73,7 +95,18 @@ const getStatusLabel = (batch: BatchRow): string => {
 };
 
 const getStatusStyles = (batch: BatchRow): { badge: string; dot: string; text: string; label: string } => {
-  if (batch.status === "sold_out") {
+  const effectiveStatus = deriveBatchStatus(batch);
+
+  if (effectiveStatus === "pending") {
+    return {
+      badge: "bg-amber-50",
+      dot: "bg-amber-500",
+      text: "text-amber-700",
+      label: "Chờ duyệt",
+    };
+  }
+
+  if (effectiveStatus === "sold_out") {
     return {
       badge: "bg-gray-100",
       dot: "bg-gray-500",
@@ -82,7 +115,7 @@ const getStatusStyles = (batch: BatchRow): { badge: string; dot: string; text: s
     };
   }
 
-  if (batch.status === "expired") {
+  if (effectiveStatus === "expired") {
     return {
       badge: "bg-red-50",
       dot: "bg-red-500",
@@ -92,7 +125,7 @@ const getStatusStyles = (batch: BatchRow): { badge: string; dot: string; text: s
   }
 
   const daysLeft = daysUntilExpire(batch.expire_date);
-  if (daysLeft <= 3) {
+  if (daysLeft >= 0 && daysLeft <= 3) {
     return {
       badge: "bg-orange-50",
       dot: "bg-orange-500",
@@ -126,26 +159,35 @@ const BatchTable = ({ batches, loading, saving, onEdit, onDelete }: BatchTablePr
   const tabCounts = React.useMemo(
     () => ({
       all: batches.length,
-      available: batches.filter((batch) => batch.status === "available").length,
-      expiring: batches.filter((batch) => batch.status === "available" && daysUntilExpire(batch.expire_date) >= 0 && daysUntilExpire(batch.expire_date) <= 3).length,
-      expired: batches.filter((batch) => batch.status === "expired").length,
-      sold_out: batches.filter((batch) => batch.status === "sold_out").length,
+      pending: batches.filter((batch) => deriveBatchStatus(batch) === "pending").length,
+      available: batches.filter((batch) => deriveBatchStatus(batch) === "available").length,
+      expiring: batches.filter((batch) => {
+        const status = deriveBatchStatus(batch);
+        const daysLeft = daysUntilExpire(batch.expire_date);
+        return status === "available" && daysLeft >= 0 && daysLeft <= 3;
+      }).length,
+      expired: batches.filter((batch) => deriveBatchStatus(batch) === "expired").length,
+      sold_out: batches.filter((batch) => deriveBatchStatus(batch) === "sold_out").length,
     }),
     [batches]
   );
 
   const filteredBatches = React.useMemo(() => {
     const scopedBatches = batches.filter((batch) => {
-      const isExpiringSoon = batch.status === "available" && daysUntilExpire(batch.expire_date) >= 0 && daysUntilExpire(batch.expire_date) <= 3;
+      const effectiveStatus = deriveBatchStatus(batch);
+      const daysLeft = daysUntilExpire(batch.expire_date);
+      const isExpiringSoon = effectiveStatus === "available" && daysLeft >= 0 && daysLeft <= 3;
+
       return (
         activeTab === "all" ||
-        (activeTab === "available" && batch.status === "available") ||
+        (activeTab === "pending" && effectiveStatus === "pending") ||
+        (activeTab === "available" && effectiveStatus === "available") ||
         (activeTab === "expiring" && isExpiringSoon) ||
-        batch.status === activeTab
+        effectiveStatus === activeTab
       );
     });
 
-    return batchSearchStrategy.filter(scopedBatches, deferredSearchQuery);
+    return batchSearchStrategy.filter(scopedBatches, deferredSearchQuery) as BatchRow[];
   }, [activeTab, batches, deferredSearchQuery]);
 
   const totalItems = filteredBatches.length;
@@ -196,6 +238,9 @@ const BatchTable = ({ batches, loading, saving, onEdit, onDelete }: BatchTablePr
           <button type="button" onClick={() => setActiveTab("available")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "available" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
             Khả dụng ({tabCounts.available})
           </button>
+          <button type="button" onClick={() => setActiveTab("pending")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "pending" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+            Chờ duyệt ({tabCounts.pending})
+          </button>
           <button type="button" onClick={() => setActiveTab("expiring")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "expiring" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
             Cận date ({tabCounts.expiring})
           </button>
@@ -230,7 +275,7 @@ const BatchTable = ({ batches, loading, saving, onEdit, onDelete }: BatchTablePr
               <th className="px-6 py-4 font-medium">Thu hoạch</th>
               <th className="px-6 py-4 font-medium">Hạn dùng</th>
               <th className="px-6 py-4 font-medium text-center">Số lượng</th>
-              <th className="px-6 py-4 font-medium">QR Code</th>
+              {/* <th className="px-6 py-4 font-medium">QR Code</th> */}
               <th className="px-6 py-4 font-medium">Trạng thái</th>
               <th className="px-6 py-4 font-medium text-right">Thao tác</th>
             </tr>
@@ -271,12 +316,12 @@ const BatchTable = ({ batches, loading, saving, onEdit, onDelete }: BatchTablePr
                   <td className="px-6 py-4 text-gray-600">{formatDate(batch.harvest_date)}</td>
                   <td className="px-6 py-4">
                     <p className="mb-0.5 font-bold text-gray-800">{formatDate(batch.expire_date)}</p>
-                    <p className={`text-[11px] ${batch.status === "expired" ? "font-bold text-red-500" : batch.status === "sold_out" ? "font-bold text-gray-500" : daysUntilExpire(batch.expire_date) <= 3 ? "font-bold text-orange-500" : "text-emerald-600"}`}>
+                    <p className={`text-[11px] ${deriveBatchStatus(batch) === "expired" ? "font-bold text-red-500" : deriveBatchStatus(batch) === "sold_out" ? "font-bold text-gray-500" : daysUntilExpire(batch.expire_date) <= 3 ? "font-bold text-orange-500" : "text-emerald-600"}`}>
                       {getStatusLabel(batch)}
                     </p>
                   </td>
                   <td className="px-6 py-4 text-center font-bold text-gray-900">{batch.quantity.toLocaleString("vi-VN")}</td>
-                  <td className="px-6 py-4">
+                  {/* <td className="px-6 py-4">
                     {batch.qr_code ? (
                       <div className="flex items-center gap-2">
                         <span className="max-w-40 truncate rounded bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{batch.qr_code}</span>
@@ -287,7 +332,7 @@ const BatchTable = ({ batches, loading, saving, onEdit, onDelete }: BatchTablePr
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
-                  </td>
+                  </td> */}
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-2 rounded px-2.5 py-1 text-[11px] font-bold ${statusStyles.badge} ${statusStyles.text}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${statusStyles.dot}`} />

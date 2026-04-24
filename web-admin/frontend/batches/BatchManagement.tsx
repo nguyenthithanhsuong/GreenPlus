@@ -22,8 +22,34 @@ const emptyForm = (): BatchFormValues => ({
   expireDate: "",
   quantity: 0,
   qrCode: "",
-  status: "available",
+  status: "pending",
 });
+
+const daysUntilExpire = (expireDate: string): number => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const expire = new Date(`${expireDate}T00:00:00`);
+  expire.setHours(0, 0, 0, 0);
+
+  return Math.ceil((expire.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+};
+
+const deriveBatchStatus = (batch: BatchRow): BatchRow["status"] => {
+  if (batch.status === "pending") {
+    return "pending";
+  }
+
+  if (batch.quantity <= 0) {
+    return "sold_out";
+  }
+
+  if (daysUntilExpire(batch.expire_date) < 0) {
+    return "expired";
+  }
+
+  return "available";
+};
 
 const BatchManagement = () => {
   const [batches, setBatches] = useState<BatchRow[]>([]);
@@ -94,21 +120,20 @@ const BatchManagement = () => {
   }, [loadBatches, loadProducts, loadSuppliers]);
 
   const stats = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const toMidnight = (value: string) => new Date(`${value}T00:00:00`).getTime();
-
-    const availableBatches = batches.filter((batch) => batch.status === "available").length;
+    const availableBatches = batches.filter((batch) => deriveBatchStatus(batch) === "available").length;
     const expiringSoonBatches = batches.filter((batch) => {
-      if (batch.status !== "available") {
+      if (deriveBatchStatus(batch) !== "available") {
         return false;
       }
 
-      const daysLeft = Math.ceil((toMidnight(batch.expire_date) - today.getTime()) / (1000 * 60 * 60 * 24));
+      const daysLeft = daysUntilExpire(batch.expire_date);
       return daysLeft >= 0 && daysLeft <= 3;
     }).length;
 
-    const problemBatches = batches.filter((batch) => batch.status === "expired" || batch.status === "sold_out").length;
+    const problemBatches = batches.filter((batch) => {
+      const status = deriveBatchStatus(batch);
+      return status === "expired" || status === "sold_out";
+    }).length;
 
     return {
       totalBatches: batches.length,
@@ -195,7 +220,7 @@ const BatchManagement = () => {
           expireDate: form.expireDate,
           quantity: form.quantity,
           qrCode: form.qrCode,
-          status: form.status,
+          status: selectedBatch ? form.status : undefined,
         }),
       });
 

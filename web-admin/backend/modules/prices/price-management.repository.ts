@@ -1,9 +1,12 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
 import { PriceRow } from "./price-management.types";
 
+type PriceStatus = "pending" | "active" | "inactive";
+
 type PriceDbRow = {
   price_id: string;
   batch_id: string | null;
+  status?: PriceStatus | null;
   price: number | string;
   date: string;
   created_at: string | null;
@@ -24,7 +27,7 @@ export class PriceManagementRepository {
   async listPrices(): Promise<PriceRow[]> {
     const { data, error } = await this.supabase
       .from("prices")
-      .select("price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name))")
+      .select("price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name)),status")
       .order("date", { ascending: false })
       .order("created_at", { ascending: false, nullsFirst: false });
 
@@ -53,6 +56,7 @@ export class PriceManagementRepository {
     batchId: string | null;
     price: number;
     date: string;
+    status?: PriceStatus | null;
   }): Promise<PriceRow> {
     const { data, error } = await this.supabase
       .from("prices")
@@ -60,6 +64,7 @@ export class PriceManagementRepository {
         batch_id: input.batchId,
         price: input.price,
         date: input.date,
+        status: input.status,
       })
       .select("price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name))")
       .single();
@@ -76,11 +81,13 @@ export class PriceManagementRepository {
     batchId?: string | null;
     price?: number;
     date?: string;
+    status?: PriceStatus | null;
   }): Promise<PriceRow | null> {
     const payload: {
       batch_id?: string | null;
       price?: number;
       date?: string;
+      status?: PriceStatus | null;
     } = {};
 
     if (typeof input.batchId !== "undefined") {
@@ -93,6 +100,10 @@ export class PriceManagementRepository {
 
     if (typeof input.date === "string") {
       payload.date = input.date;
+    }
+
+    if (typeof input.status === "string") {
+      payload.status = input.status;
     }
 
     const { data, error } = await this.supabase
@@ -133,6 +144,7 @@ export class PriceManagementRepository {
       price: Number(row.price),
       date: row.date,
       created_at: row.created_at,
+      status: row.status ?? null,
     };
   }
 }

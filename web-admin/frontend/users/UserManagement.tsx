@@ -36,7 +36,7 @@ const UserManagement = () => {
   const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
   const [confirmState, setConfirmState] = useState<
     | {
-      type: "disable" | "delete";
+      type: "ban" | "unban" | "delete";
       user: UserViewModel;
     }
     | null
@@ -157,17 +157,17 @@ const UserManagement = () => {
     });
   }, [withSaving]);
 
-  const handleDisableUser = useCallback(async (userId: string) => {
+  const handleToggleBanStatus = useCallback(async (userId: string, newStatus: "active" | "banned") => {
     await withSaving(async () => {
       const response = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "disable" }),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        throw new Error(data.error ?? "Khóa user thất bại");
+        throw new Error(data.error ?? "Cập nhật trạng thái user thất bại");
       }
     });
   }, [withSaving]);
@@ -233,8 +233,10 @@ const UserManagement = () => {
     setShowPassword(false);
   }, []);
 
-  const requestDisableUser = useCallback((user: UserViewModel) => {
-    setConfirmState({ type: "disable", user });
+  const requestToggleBanStatus = useCallback((user: UserViewModel) => {
+    // If active, ban them. If banned, unban them (restore to active).
+    const type = user.status === "active" ? "ban" : "unban";
+    setConfirmState({ type, user });
   }, []);
 
   const requestDeleteUser = useCallback((user: UserViewModel) => {
@@ -316,8 +318,8 @@ const UserManagement = () => {
       return;
     }
 
-    requestDisableUser(selectedUser);
-  }, [requestDisableUser, selectedUser]);
+    requestToggleBanStatus(selectedUser);
+  }, [requestToggleBanStatus, selectedUser]);
 
   const handleDeleteFromDetail = useCallback(async () => {
     if (!selectedUser) {
@@ -370,8 +372,10 @@ const UserManagement = () => {
     }
 
     try {
-      if (confirmState.type === "disable") {
-        await handleDisableUser(confirmState.user.user_id);
+      if (confirmState.type === "ban") {
+        await handleToggleBanStatus(confirmState.user.user_id, "banned");
+      } else if (confirmState.type === "unban") {
+        await handleToggleBanStatus(confirmState.user.user_id, "active");
       } else {
         await handleDeleteUser(confirmState.user.user_id);
       }
@@ -384,7 +388,7 @@ const UserManagement = () => {
     } catch {
       // Error state is already handled by withSaving.
     }
-  }, [closeDrawer, confirmState, handleDeleteUser, handleDisableUser, selectedUser]);
+  }, [closeDrawer, confirmState, handleDeleteUser, handleToggleBanStatus, selectedUser]);
 
   return (
     <AdminShell
@@ -410,7 +414,7 @@ const UserManagement = () => {
         onAddUser={openCreateDrawer}
         onViewUser={openDetailDrawer}
         onEditUser={openEditDrawer}
-        onRequestDisableUser={requestDisableUser}
+        onRequestDisableUser={requestToggleBanStatus}
         onRequestDeleteUser={requestDeleteUser}
       />
 
@@ -436,16 +440,34 @@ const UserManagement = () => {
 
       <ConfirmActionDialog
         open={Boolean(confirmState)}
-        title={confirmState?.type === "disable" ? "Xác nhận khóa tài khoản" : "Xác nhận xóa tài khoản"}
+        title={
+          confirmState?.type === "ban"
+            ? "Xác nhận khóa tài khoản"
+            : confirmState?.type === "unban"
+              ? "Xác nhận mở khóa tài khoản"
+              : "Xác nhận xóa tài khoản"
+        }
         message={
           confirmState
-            ? confirmState.type === "disable"
+            ? confirmState.type === "ban"
               ? `Bạn có chắc muốn khóa tài khoản ${confirmState.user.name}?`
-              : `Bạn có chắc muốn xóa tài khoản ${confirmState.user.name}? Hành động này không thể hoàn tác.`
+              : confirmState.type === "unban"
+                ? `Bạn có chắc muốn mở khóa tài khoản ${confirmState.user.name}?`
+                : `Bạn có chắc muốn xóa tài khoản ${confirmState.user.name}? Hành động này không thể hoàn tác.`
             : ""
         }
-        confirmLabel={confirmState?.type === "disable" ? "Khóa tài khoản" : "Xóa tài khoản"}
-        confirmVariant={confirmState?.type === "disable" ? "warning" : "danger"}
+        confirmLabel={
+          confirmState?.type === "ban"
+            ? "Khóa tài khoản"
+            : confirmState?.type === "unban"
+              ? "Mở khóa tài khoản"
+              : "Xóa tài khoản"
+        }
+        confirmVariant={
+          confirmState?.type === "delete"
+            ? "danger"
+            : "warning"
+        }
         loading={saving}
         onCancel={closeConfirmDialog}
         onConfirm={() => {

@@ -210,6 +210,19 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: "24px",
     color: "#717171",
   },
+  warningBox: {
+    borderRadius: "12px",
+    border: "1px solid #FCA5A5",
+    background: "#FEF2F2",
+    padding: "10px 12px",
+  },
+  warningText: {
+    margin: 0,
+    fontSize: "13px",
+    lineHeight: "18px",
+    color: "#B91C1C",
+    fontWeight: 600,
+  },
   quantityRow: {
     display: "flex",
     alignItems: "center",
@@ -532,6 +545,18 @@ function formatPrice(value: number | null): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
 }
 
+function toMidnightTimestamp(value: string): number {
+  const date = new Date(`${value}T00:00:00`);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+}
+
+function todayMidnightTimestamp(): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today.getTime();
+}
+
 export default function ProductDetail({ productId, backHref }: ProductDetailProps) {
   const [quantity, setQuantity] = useState(1);
   const routerUser = useAuthStore((state) => state.user);
@@ -737,7 +762,51 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
   const resolvedName = product?.name ?? null;
   const resolvedDescription = product?.description ?? null;
   const resolvedPrice = product ? formatPrice(product.availablePrice) : null;
-  const resolvedStatus = product ? (product.inventory.hasSellableBatch ? "Sẵn hàng" : "Tạm hết") : null;
+  const effectiveAvailability = useMemo(() => {
+    if (!product) {
+      return {
+        isExpired: false,
+        canPurchase: false,
+        warning: null as string | null,
+      };
+    }
+
+    const today = todayMidnightTimestamp();
+    const hasSellableUnexpiredBatch = product.batches.some(
+      (batch) =>
+        batch.status === "available" &&
+        batch.available > 0 &&
+        toMidnightTimestamp(batch.expireDate) >= today,
+    );
+
+    const allBatchesExpired =
+      product.batches.length > 0 &&
+      product.batches.every(
+        (batch) =>
+          batch.status === "expired" ||
+          toMidnightTimestamp(batch.expireDate) < today,
+      );
+
+    const isExpired = product.inventory.status === "expired" || allBatchesExpired;
+    const canPurchase = !isExpired && hasSellableUnexpiredBatch;
+
+    let warning: string | null = null;
+    if (isExpired) {
+      warning = "Sản phẩm này đã hết hạn, hiện không thể mua.";
+    } else if (!canPurchase) {
+      warning = "Sản phẩm hiện không còn lô hàng khả dụng để mua.";
+    }
+
+    return { isExpired, canPurchase, warning };
+  }, [product]);
+
+  const resolvedStatus = product
+    ? effectiveAvailability.isExpired
+      ? "Hết hạn"
+      : effectiveAvailability.canPurchase
+        ? "Sẵn hàng"
+        : "Tạm hết"
+    : null;
   const resolvedCategoryName = product?.category.name ?? null;
   const ratingText = averageRating === null ? "0.0" : averageRating.toFixed(1);
   const debugVisible = true;
@@ -857,6 +926,11 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
   };
 
   const handlePurchaseAction = () => {
+    if (!effectiveAvailability.canPurchase) {
+      setCartActionMessage(effectiveAvailability.warning ?? "Sản phẩm hiện không thể mua.");
+      return;
+    }
+
     if (purchaseMode === "subscription") {
       setShowSubscriptionModal(true);
     } else if (purchaseMode === "group") {
@@ -974,11 +1048,17 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
 
             <PurchaseModeSelector currentMode={purchaseMode} onModeChange={setPurchaseMode} />
 
+            {effectiveAvailability.warning ? (
+              <div style={styles.warningBox}>
+                <p style={styles.warningText}>{effectiveAvailability.warning}</p>
+              </div>
+            ) : null}
+
             <div style={styles.ctaRow}>
               <button 
                 style={styles.addButton} 
                 onClick={() => void handlePurchaseAction()} 
-                disabled={cartActionLoading}
+                disabled={cartActionLoading || !effectiveAvailability.canPurchase}
               >
                 {cartActionLoading ? "Đang xử lý..." : purchaseMode === "subscription" ? "Đặt lịch" : purchaseMode === "group" ? "Tham gia" : "Thêm vào giỏ hàng"}
               </button>

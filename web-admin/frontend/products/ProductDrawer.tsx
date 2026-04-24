@@ -15,10 +15,12 @@ export type ProductFormValues = {
 type ProductDrawerProps = {
   open: boolean;
   saving: boolean;
+  uploadingImage: boolean;
   product: ProductRow | null;
   form: ProductFormValues;
   categories: CategoryRow[];
   onChange: (patch: Partial<ProductFormValues>) => void;
+  onUploadImage: (file: File) => Promise<void>;
   onClose: () => void;
   onSubmit: () => void;
 };
@@ -28,7 +30,9 @@ const statusLabel: Record<ProductStatus, string> = {
   inactive: "Ngừng bán",
 };
 
-const ProductDrawer = ({ open, saving, product, form, categories, onChange, onClose, onSubmit }: ProductDrawerProps) => {
+const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories, onChange, onUploadImage, onClose, onSubmit }: ProductDrawerProps) => {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   if (!open) {
     return null;
   }
@@ -75,7 +79,30 @@ const ProductDrawer = ({ open, saving, product, form, categories, onChange, onCl
                     <span className="text-xs text-gray-400">Image</span>
                   )}
                 </div>
-                <span className="text-sm font-medium text-[#1da453]">Ảnh sản phẩm (URL)</span>
+                <span className="text-sm font-medium text-[#1da453]">Tải ảnh sản phẩm lên</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) {
+                      return;
+                    }
+
+                    void onUploadImage(file);
+                    event.currentTarget.value = "";
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 rounded-md border border-[#1da453] px-3 py-1.5 text-xs font-semibold text-[#1da453] hover:bg-emerald-50 disabled:opacity-60"
+                  disabled={uploadingImage || saving}
+                >
+                  {uploadingImage ? "Đang upload..." : "Chọn ảnh từ máy"}
+                </button>
               </div>
 
               <div>
@@ -127,17 +154,6 @@ const ProductDrawer = ({ open, saving, product, form, categories, onChange, onCl
                     onChange={(event) => onChange({ unit: event.target.value })}
                     type="text"
                     placeholder="Ví dụ: Hộp 500g"
-                    className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">Ảnh đại diện (URL)</label>
-                  <input
-                    value={form.imageUrl}
-                    onChange={(event) => onChange({ imageUrl: event.target.value })}
-                    type="text"
-                    placeholder="https://..."
                     className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                   />
                 </div>

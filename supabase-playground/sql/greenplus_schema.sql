@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS batches (
   expire_date DATE NOT NULL,
   quantity INTEGER NOT NULL CHECK (quantity >= 0),
   qr_code VARCHAR(255) UNIQUE,
-  status VARCHAR(20) NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'expired', 'sold_out')),
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'available', 'expired', 'sold_out')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CHECK (expire_date >= harvest_date)

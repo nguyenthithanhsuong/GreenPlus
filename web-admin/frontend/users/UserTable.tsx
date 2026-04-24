@@ -250,7 +250,16 @@ const UserTable = ({
                       <Edit className="w-4 h-4" />
                     </button>
                     {(user.role_name ?? '').toLowerCase() !== 'admin' && (
-                      <button onClick={() => onRequestDisableUser(user)} className="p-2 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Khóa" disabled={saving}>
+                      <button
+                        onClick={() => onRequestDisableUser(user)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          user.status === 'active'
+                            ? 'text-gray-500 hover:text-amber-600 hover:bg-amber-50'
+                            : 'text-gray-500 hover:text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                        title={user.status === 'active' ? 'Khóa' : 'Mở khóa'}
+                        disabled={saving}
+                      >
                         <Lock className="w-4 h-4" />
                       </button>
                     )}

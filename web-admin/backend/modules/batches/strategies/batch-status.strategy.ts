@@ -20,7 +20,7 @@ export class DefaultBatchStatusStrategy implements BatchStatusStrategy {
   normalize(value?: string | null): BatchStatus {
     const normalized = (value ?? "available").trim().toLowerCase();
 
-    if (normalized === "available" || normalized === "expired" || normalized === "sold_out") {
+    if (normalized === "pending" || normalized === "available" || normalized === "expired" || normalized === "sold_out") {
       return normalized;
     }
 

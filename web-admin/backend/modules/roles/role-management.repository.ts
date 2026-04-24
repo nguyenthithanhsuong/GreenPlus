@@ -47,7 +47,6 @@ export class RoleManagementRepository {
       role_name: role.role_name,
       description: role.description,
       user_count: userCounts.get(role.role_id) ?? 0,
-      is_system_role: isSystemRoleRow(role),
     }));
   }
 
@@ -81,7 +80,6 @@ export class RoleManagementRepository {
       role_name: data.role_name,
       description: data.description,
       user_count: 0,
-      is_system_role: isSystemRoleRow(data),
     };
   }
 
@@ -111,7 +109,6 @@ export class RoleManagementRepository {
       role_name: data.role_name,
       description: data.description,
       user_count: 0,
-      is_system_role: isSystemRoleRow(data),
     };
   }
 

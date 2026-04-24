@@ -1,13 +1,17 @@
+import { PriceStatus } from "../price-management.types";
+
 export type PriceManagementEvent =
   | {
       type: "price_created";
       priceId: string;
       actor: "manager";
+      status: PriceStatus;
     }
   | {
       type: "price_updated";
       priceId: string;
       actor: "manager";
+      status: PriceStatus;
     }
   | {
       type: "price_deleted";
@@ -33,7 +37,16 @@ export class PriceManagementSubject {
 
 export class PriceManagementAuditObserver implements PriceManagementObserver {
   async update(event: PriceManagementEvent): Promise<void> {
-    void event;
-    return Promise.resolve();
+    if (event.type === "price_created") {
+      console.log(`[AUDIT] Created price ${event.priceId} with status ${event.status}`);
+    }
+
+    if (event.type === "price_updated") {
+      console.log(`[AUDIT] Updated price ${event.priceId} to status ${event.status}`);
+    }
+
+    if (event.type === "price_deleted") {
+      console.log(`[AUDIT] Deleted price ${event.priceId}`);
+    }
   }
 }

@@ -13,24 +13,30 @@ export type CategoryFormValues = {
 type CategoryDrawerProps = {
   isOpen: boolean;
   saving: boolean;
+  uploadingImage: boolean;
   error: string | null;
   form: CategoryFormValues;
   selectedCategory: CategoryRow | null;
   onClose: () => void;
   onSubmit: () => void;
   onChange: (patch: Partial<CategoryFormValues>) => void;
+  onUploadImage: (file: File) => Promise<void>;
 };
 
 const CategoryDrawer = ({
   isOpen,
   saving,
+  uploadingImage,
   error,
   form,
   selectedCategory,
   onClose,
   onSubmit,
   onChange,
+  onUploadImage,
 }: CategoryDrawerProps) => {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   if (!isOpen) {
     return null;
   }
@@ -77,6 +83,40 @@ const CategoryDrawer = ({
                 onSubmit();
               }}
             >
+              <div className="mb-4 flex flex-col items-center">
+                <div className="mb-3 flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
+                  {form.imageUrl ? (
+                    <img src={form.imageUrl} alt={form.name || "category"} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-xs text-gray-400">Ảnh danh mục</span>
+                  )}
+                </div>
+                <span className="text-sm font-medium text-[#1da453]">Tải ảnh danh mục lên</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) {
+                      return;
+                    }
+
+                    void onUploadImage(file);
+                    event.currentTarget.value = "";
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 rounded-md border border-[#1da453] px-3 py-1.5 text-xs font-semibold text-[#1da453] hover:bg-emerald-50 disabled:opacity-60"
+                  disabled={uploadingImage || saving}
+                >
+                  {uploadingImage ? "Đang upload..." : "Chọn ảnh từ máy"}
+                </button>
+              </div>
+
               <div>
                 <label className="mb-1.5 block text-sm font-bold text-gray-800">
                   Tên danh mục <span className="text-red-500">*</span>
@@ -101,16 +141,6 @@ const CategoryDrawer = ({
                 />
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-bold text-gray-800">Image URL</label>
-                <input
-                  value={form.imageUrl}
-                  onChange={(event) => onChange({ imageUrl: event.target.value })}
-                  type="text"
-                  placeholder="https://..."
-                  className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
-                />
-              </div>
             </form>
           </div>
 

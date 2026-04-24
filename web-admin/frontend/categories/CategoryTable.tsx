@@ -29,6 +29,20 @@ const getInitials = (name: string) => {
 
 const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQueryChange, onEdit, onDelete }: CategoryTableProps) => {
   const emptyMessage = searchQuery.trim() ? "Không tìm thấy danh mục phù hợp." : "Chưa có danh mục nào.";
+  const [deletingCategory, setDeletingCategory] = React.useState<CategoryRow | null>(null);
+
+  const closeDeleteModal = React.useCallback(() => {
+    setDeletingCategory(null);
+  }, []);
+
+  const handleConfirmDelete = React.useCallback(() => {
+    if (!deletingCategory) {
+      return;
+    }
+
+    onDelete(deletingCategory);
+    closeDeleteModal();
+  }, [closeDeleteModal, deletingCategory, onDelete]);
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -70,17 +84,27 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
             ) : (
               categories.map((category, index) => {
                 const badgeClass = colorClasses[index % colorClasses.length];
+                const hasImage = Boolean(category.image_url?.trim());
 
                 return (
                   <tr key={category.category_id} className="border-b border-gray-50 transition-colors hover:bg-gray-50/50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${badgeClass}`}>
-                          {getInitials(category.name)}
-                        </div>
+                        {hasImage ? (
+                          <img
+                            src={category.image_url as string}
+                            alt={category.name}
+                            className="h-10 w-10 shrink-0 rounded-xl border border-gray-200 object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${badgeClass}`}>
+                            {getInitials(category.name)}
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <p className="truncate font-bold text-gray-900">{category.name}</p>
-                          <p className="text-[11px] text-gray-400">{category.image_url ? "Có ảnh đại diện" : "Chưa có ảnh"}</p>
+                          {!hasImage ? <p className="text-[11px] text-gray-400">Chưa có ảnh</p> : null}
                         </div>
                       </div>
                     </td>
@@ -107,7 +131,7 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
                         </button>
                         <button
                           type="button"
-                          onClick={() => onDelete(category)}
+                          onClick={() => setDeletingCategory(category)}
                           disabled={saving}
                           className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
                           title="Xóa"
@@ -123,6 +147,48 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
           </tbody>
         </table>
       </div>
+
+      {deletingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/45 backdrop-blur-[1px]"
+            onClick={closeDeleteModal}
+            aria-label="Đóng"
+            disabled={saving}
+          />
+
+          <div className="relative w-full max-w-md rounded-2xl border border-red-100 bg-white p-6 shadow-2xl">
+            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <Trash2 className="h-5 w-5" />
+            </div>
+
+            <h3 className="text-lg font-bold text-gray-900">Xác nhận xóa danh mục</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-600">
+              Bạn có chắc muốn xóa <span className="font-semibold text-gray-900">{deletingCategory.name}</span>? Hành động này không thể hoàn tác.
+            </p>
+
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={saving}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={saving}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+              >
+                Xóa danh mục
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

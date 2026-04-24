@@ -3,7 +3,6 @@ export type RoleRow = {
   role_name: string;
   description: string | null;
   user_count: number;
-  is_system_role: boolean;
 };
 
 export type RoleSummary = RoleRow;

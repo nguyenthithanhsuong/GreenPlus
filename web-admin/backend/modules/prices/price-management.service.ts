@@ -1,6 +1,11 @@
 import { AppError } from "../../core/errors";
 import { PriceManagementRepository } from "./price-management.repository";
-import { CreatePriceInput, PriceRow, UpdatePriceInput } from "./price-management.types";
+import {
+  CreatePriceInput,
+  PriceRow,
+  UpdatePriceInput,
+  PriceStatus,
+} from "./price-management.types";
 import { createPriceState } from "./states/price-state";
 import { DefaultPriceValidationStrategy } from "./strategies/price-validation.strategy";
 
@@ -22,6 +27,7 @@ export class PriceManagementService {
       batchId,
       price,
       date,
+      status: this.normalizeStatus(input.status) ?? "pending",
     });
   }
 
@@ -34,7 +40,8 @@ export class PriceManagementService {
     if (
       typeof input.batchId === "undefined" &&
       typeof input.price === "undefined" &&
-      typeof input.date === "undefined"
+      typeof input.date === "undefined" &&
+      typeof input.status === "undefined"
     ) {
       throw new AppError("At least one field must be provided for update", 400);
     }
@@ -46,9 +53,22 @@ export class PriceManagementService {
 
     const updated = await this.repository.updatePrice({
       priceId,
-      batchId: typeof input.batchId !== "undefined" ? this.normalizeBatchId(input.batchId) : undefined,
-      price: typeof input.price === "number" ? this.validationStrategy.normalizePrice(input.price) : undefined,
-      date: typeof input.date === "string" ? this.validationStrategy.normalizeDate(input.date) : undefined,
+      batchId:
+        typeof input.batchId !== "undefined"
+          ? this.normalizeBatchId(input.batchId)
+          : undefined,
+      price:
+        typeof input.price === "number"
+          ? this.validationStrategy.normalizePrice(input.price)
+          : undefined,
+      date:
+        typeof input.date === "string"
+          ? this.validationStrategy.normalizeDate(input.date)
+          : undefined,
+      status:
+        typeof input.status !== "undefined"
+          ? this.normalizeStatus(input.status)
+          : undefined,
     });
 
     if (!updated) {
@@ -81,11 +101,21 @@ export class PriceManagementService {
   }
 
   private normalizeBatchId(batchId?: string | null): string | null {
-    if (typeof batchId === "undefined" || batchId === null) {
-      return null;
-    }
-
+    if (batchId == null) return null;
     const normalized = batchId.trim();
     return normalized || null;
+  }
+
+  private normalizeStatus(status?: string | null): PriceStatus | null {
+    if (status == null) return null;
+
+    const normalized = status.trim().toLowerCase();
+    const allowed: PriceStatus[] = ["pending", "active", "inactive"];
+
+    if (!allowed.includes(normalized as PriceStatus)) {
+      throw new AppError(`Invalid status: ${status}`, 400);
+    }
+
+    return normalized as PriceStatus;
   }
 }

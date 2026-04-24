@@ -1,5 +1,5 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { BatchRow, CreateBatchInput, UpdateBatchInput } from "./batch-management.types";
+import { BatchRow, BatchStatus, CreateBatchInput, UpdateBatchInput } from "./batch-management.types";
 
 type BatchDbRow = {
   batch_id: string;
@@ -23,6 +23,10 @@ type BatchDbRow = {
 type IdRow = {
   product_id?: string;
   supplier_id?: string;
+};
+
+type InventoryIdRow = {
+  inventory_id?: string;
 };
 
 export class BatchManagementRepository {
@@ -75,7 +79,7 @@ export class BatchManagementRepository {
     return Boolean((data as IdRow | null)?.supplier_id);
   }
 
-  async createBatch(input: CreateBatchInput & { status: "available" | "expired" | "sold_out" }): Promise<BatchRow> {
+  async createBatch(input: CreateBatchInput & { status: BatchStatus }): Promise<BatchRow> {
     const { data, error } = await this.supabase
       .from("batches")
       .insert({
@@ -137,7 +141,60 @@ export class BatchManagementRepository {
     return Boolean((data as { batch_id?: string } | null)?.batch_id);
   }
 
+  async hasInventoryByBatchId(batchId: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from("inventory")
+      .select("inventory_id")
+      .eq("batch_id", batchId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return Boolean((data as InventoryIdRow | null)?.inventory_id);
+  }
+
+  async createInventoryForBatch(input: { batchId: string; quantityAvailable: number }): Promise<void> {
+    const { error } = await this.supabase
+      .from("inventory")
+      .insert({
+        batch_id: input.batchId,
+        quantity_available: input.quantityAvailable,
+        quantity_reserved: 0,
+        last_updated: new Date().toISOString(),
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async createInventoryInitializationTransaction(input: {
+    batchId: string;
+    quantity: number;
+    note?: string;
+  }): Promise<void> {
+    const { error } = await this.supabase
+      .from("inventory_transactions")
+      .insert({
+        batch_id: input.batchId,
+        type: "adjustment",
+        quantity: input.quantity,
+        note: input.note?.trim() || "Init inventory when batch moved from pending to available",
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
   private toRow(batch: BatchDbRow): BatchRow {
+    const normalizedStatus: BatchStatus =
+      batch.status === "pending" || batch.status === "available" || batch.status === "expired" || batch.status === "sold_out"
+        ? batch.status
+        : "available";
+
     return {
       batch_id: batch.batch_id,
       product_id: batch.product_id,
@@ -148,7 +205,7 @@ export class BatchManagementRepository {
       expire_date: batch.expire_date,
       quantity: batch.quantity,
       qr_code: batch.qr_code,
-      status: batch.status === "expired" || batch.status === "sold_out" ? batch.status : "available",
+      status: normalizedStatus,
       created_at: batch.created_at,
       updated_at: batch.updated_at,
     };

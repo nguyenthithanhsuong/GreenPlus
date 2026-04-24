@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       expireDate?: string;
       quantity?: number;
       qrCode?: string | null;
-      status?: "available" | "expired" | "sold_out";
+      status?: "pending" | "available" | "expired" | "sold_out";
     };
 
     const created = await batchManagementFacade.createBatch({

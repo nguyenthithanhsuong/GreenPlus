@@ -8,6 +8,7 @@ export type PriceFormValues = {
   batchId: string;
   price: string;
   date: string;
+  status: PriceRow["status"] | ""; // ✅ added
 };
 
 export type PriceDrawerMode = "create" | "edit" | "delete";
@@ -39,6 +40,13 @@ const actionByMode: Record<PriceDrawerMode, string> = {
   edit: "Lưu thay đổi",
   delete: "Xác nhận xóa",
 };
+
+// ✅ status options
+const STATUS_OPTIONS = [
+  { value: "pending", label: "Chờ áp dụng" },
+  { value: "active", label: "Đang áp dụng" },
+  { value: "inactive", label: "Ngưng áp dụng" },
+];
 
 const PriceDrawer = ({
   isOpen,
@@ -98,6 +106,7 @@ const PriceDrawer = ({
                     <p><span className="font-semibold">Sản phẩm:</span> {selectedPrice?.product_name ?? "Chưa gán sản phẩm"}</p>
                     <p><span className="font-semibold">Giá:</span> {selectedPrice ? formatCurrency(selectedPrice.price) : "-"}</p>
                     <p><span className="font-semibold">Ngày áp dụng:</span> {selectedPrice?.date ?? "-"}</p>
+                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice?.status ?? "-"}</p> {/* ✅ */}
                   </div>
                 </div>
               </div>
@@ -156,12 +165,32 @@ const PriceDrawer = ({
                   </div>
                 </div>
 
+                {/* ✅ STATUS (same style as inputs) */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                    Trạng thái
+                  </label>
+                  <select
+                    value={form.status}
+                    onChange={(event) => onChange({ status: event.target.value })}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                  >
+                    <option value="">Chọn trạng thái</option>
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {selectedPrice ? (
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Thông tin hiện tại</p>
                     <p><span className="font-semibold">Mã giá:</span> {selectedPrice.price_id}</p>
                     <p><span className="font-semibold">Sản phẩm:</span> {selectedPrice.product_name ?? "Chưa gán sản phẩm"}</p>
                     <p><span className="font-semibold">Supplier:</span> {selectedPrice.supplier_name ?? "-"}</p>
+                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice.status ?? "-"}</p> {/* ✅ */}
                   </div>
                 ) : null}
               </form>

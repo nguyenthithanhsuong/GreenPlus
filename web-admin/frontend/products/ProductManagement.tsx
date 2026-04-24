@@ -23,6 +23,7 @@ const ProductManagement = () => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
@@ -156,6 +157,35 @@ const ProductManagement = () => {
     }
   }, [closeDrawer, form, loadCategories, loadProducts, reloadData, selectedProduct]);
 
+  const handleUploadImage = useCallback(async (file: File) => {
+    setUploadingImage(true);
+    setError(null);
+
+    try {
+      const body = new FormData();
+      body.append("file", file);
+
+      const response = await fetch("/api/products/image", {
+        method: "POST",
+        body,
+      });
+
+      const data = (await response.json()) as { publicUrl?: string; error?: string };
+      if (!response.ok || !data.publicUrl) {
+        throw new Error(data.error ?? "Upload ảnh sản phẩm thất bại");
+      }
+
+      setForm((previous) => ({
+        ...previous,
+        imageUrl: data.publicUrl ?? previous.imageUrl,
+      }));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Upload ảnh sản phẩm thất bại");
+    } finally {
+      setUploadingImage(false);
+    }
+  }, []);
+
   const deleteProduct = useCallback(async (product: ProductRow) => {
     if (!window.confirm(`Xóa sản phẩm "${product.name}"?`)) {
       return;
@@ -260,10 +290,12 @@ const ProductManagement = () => {
       <ProductDrawer
         open={drawerOpen}
         saving={saving}
+        uploadingImage={uploadingImage}
         product={selectedProduct}
         form={form}
         categories={categories}
         onChange={patchForm}
+        onUploadImage={handleUploadImage}
         onClose={closeDrawer}
         onSubmit={() => {
           void submitDrawer();

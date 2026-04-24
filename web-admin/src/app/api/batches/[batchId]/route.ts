@@ -18,7 +18,7 @@ export async function PUT(request: Request, context: Context) {
       expireDate?: string;
       quantity?: number;
       qrCode?: string | null;
-      status?: "available" | "expired" | "sold_out";
+      status?: "pending" | "available" | "expired" | "sold_out";
     };
 
     const updated = await batchManagementFacade.updateBatch({
@@ -49,7 +49,7 @@ export async function PATCH(request: Request, context: Context) {
   try {
     const { batchId } = await context.params;
     const body = (await request.json()) as {
-      status?: "available" | "expired" | "sold_out";
+      status?: "pending" | "available" | "expired" | "sold_out";
     };
 
     if (!body.status) {

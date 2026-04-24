@@ -56,6 +56,36 @@ export class BatchManagementService {
     }
   }
 
+  private async initializeInventoryOnPendingToAvailable(input: {
+    batchId: string;
+    previousStatus: BatchRow["status"];
+    nextStatus: BatchRow["status"];
+    quantity: number;
+  }): Promise<void> {
+    if (!(input.previousStatus === "pending" && input.nextStatus === "available")) {
+      return;
+    }
+
+    if (input.quantity <= 0) {
+      throw new AppError("Batch must have quantity greater than zero before moving to available", 400);
+    }
+
+    const hasInventory = await this.repository.hasInventoryByBatchId(input.batchId);
+    if (hasInventory) {
+      return;
+    }
+
+    await this.repository.createInventoryForBatch({
+      batchId: input.batchId,
+      quantityAvailable: input.quantity,
+    });
+
+    await this.repository.createInventoryInitializationTransaction({
+      batchId: input.batchId,
+      quantity: input.quantity,
+    });
+  }
+
   async createBatch(input: CreateBatchInput): Promise<BatchRow> {
     const productId = input.productId.trim();
     const supplierId = input.supplierId.trim();
@@ -89,7 +119,7 @@ export class BatchManagementService {
       expireDate,
       quantity: input.quantity,
       qrCode: input.qrCode?.trim() || null,
-      status: input.status ?? this.statusStrategy.derive({ quantity: input.quantity, expireDate }),
+      status: "pending",
     });
   }
 
@@ -131,8 +161,6 @@ export class BatchManagementService {
     let nextStatus = existing.status;
     if (typeof input.status !== "undefined") {
       nextStatus = this.statusStrategy.transition(existing.status, this.statusStrategy.normalize(input.status));
-    } else {
-      nextStatus = this.statusStrategy.transition(existing.status, this.statusStrategy.derive({ quantity: nextQuantity, expireDate: nextExpireDate }));
     }
 
     const updated = await this.repository.updateBatch({
@@ -150,6 +178,13 @@ export class BatchManagementService {
       throw new AppError("Batch not found", 404);
     }
 
+    await this.initializeInventoryOnPendingToAvailable({
+      batchId: updated.batch_id,
+      previousStatus: existing.status,
+      nextStatus: updated.status,
+      quantity: updated.quantity,
+    });
+
     return updated;
   }
 
@@ -165,6 +200,13 @@ export class BatchManagementService {
     if (!updated) {
       throw new AppError("Batch not found", 404);
     }
+
+    await this.initializeInventoryOnPendingToAvailable({
+      batchId: updated.batch_id,
+      previousStatus: existing.status,
+      nextStatus: updated.status,
+      quantity: updated.quantity,
+    });
 
     return updated;
   }

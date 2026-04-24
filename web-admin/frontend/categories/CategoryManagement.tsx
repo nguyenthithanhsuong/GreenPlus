@@ -19,6 +19,7 @@ const CategoryManagement = () => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryRow | null>(null);
@@ -138,11 +139,36 @@ const CategoryManagement = () => {
     }
   }, [closeDrawer, form, reloadData, selectedCategory]);
 
-  const deleteCategory = useCallback(async (category: CategoryRow) => {
-    if (!window.confirm(`Xóa danh mục "${category.name}"?`)) {
-      return;
-    }
+  const handleUploadImage = useCallback(async (file: File) => {
+    setUploadingImage(true);
+    setError(null);
 
+    try {
+      const body = new FormData();
+      body.append("file", file);
+
+      const response = await fetch("/api/categories/image", {
+        method: "POST",
+        body,
+      });
+
+      const data = (await response.json()) as { publicUrl?: string; error?: string };
+      if (!response.ok || !data.publicUrl) {
+        throw new Error(data.error ?? "Upload ảnh danh mục thất bại");
+      }
+
+      setForm((previous) => ({
+        ...previous,
+        imageUrl: data.publicUrl ?? previous.imageUrl,
+      }));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Upload ảnh danh mục thất bại");
+    } finally {
+      setUploadingImage(false);
+    }
+  }, []);
+
+  const deleteCategory = useCallback(async (category: CategoryRow) => {
     setSaving(true);
     setError(null);
 
@@ -213,6 +239,7 @@ const CategoryManagement = () => {
       <CategoryDrawer
         isOpen={drawerOpen}
         saving={saving}
+        uploadingImage={uploadingImage}
         error={error}
         form={form}
         selectedCategory={selectedCategory}
@@ -221,6 +248,7 @@ const CategoryManagement = () => {
           void submitDrawer();
         }}
         onChange={patchForm}
+        onUploadImage={handleUploadImage}
       />
     </AdminShell>
   );

@@ -30,6 +30,7 @@ type BatchDrawerProps = {
 };
 
 const statusLabel: Record<BatchStatus, string> = {
+  pending: "Chờ duyệt",
   available: "Khả dụng",
   expired: "Hết hạn",
   sold_out: "Hết hàng",
@@ -110,18 +111,20 @@ const BatchDrawer = ({ open, saving, batch, form, products, suppliers, onChange,
 
                 <div>
                   <label className="mb-1.5 block text-sm font-bold text-gray-800">Trạng thái</label>
-                  <select value={form.status} onChange={(event) => onChange({ status: event.target.value as BatchStatus })} className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]">
+                  <select value={form.status} onChange={(event) => onChange({ status: event.target.value as BatchStatus })} disabled={!batch} className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500">
+                    <option value="pending">{statusLabel.pending}</option>
                     <option value="available">{statusLabel.available}</option>
                     <option value="expired">{statusLabel.expired}</option>
                     <option value="sold_out">{statusLabel.sold_out}</option>
                   </select>
+                  {!batch ? <p className="mt-1 text-xs text-gray-500">Batch mới luôn khởi tạo ở trạng thái chờ duyệt.</p> : null}
                 </div>
               </div>
 
-              <div>
+              {/* <div>
                 <label className="mb-1.5 block text-sm font-bold text-gray-800">QR Code</label>
                 <input value={form.qrCode} onChange={(event) => onChange({ qrCode: event.target.value })} type="text" placeholder="Mã QR hoặc đường dẫn in tem" className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]" />
-              </div>
+              </div> */}
 
               <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
                 <button type="button" onClick={onClose} disabled={saving} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
