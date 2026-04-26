@@ -11,6 +11,11 @@ import { roleSearchStrategy } from "../shared/searchStrategies";
 const emptyForm = (): RoleFormValues => ({
   roleName: "",
   description: "",
+  isCustomer: false,
+  isAdmin: false,
+  isManager: false,
+  isEmployee: false,
+  isShipper: false,
 });
 
 const RoleManagement = () => {
@@ -69,6 +74,11 @@ const RoleManagement = () => {
     setForm({
       roleName: role.role_name,
       description: role.description ?? "",
+      isCustomer: Boolean(role.is_customer),
+      isAdmin: Boolean(role.is_admin),
+      isManager: Boolean(role.is_manager),
+      isEmployee: Boolean(role.is_employee),
+      isShipper: Boolean(role.is_shipper),
     });
     setDrawerOpen(true);
   };
@@ -90,6 +100,11 @@ const RoleManagement = () => {
         body: JSON.stringify({
           roleName: form.roleName,
           description: form.description,
+          isCustomer: form.isCustomer,
+          isAdmin: form.isAdmin,
+          isManager: form.isManager,
+          isEmployee: form.isEmployee,
+          isShipper: form.isShipper,
         }),
       });
 

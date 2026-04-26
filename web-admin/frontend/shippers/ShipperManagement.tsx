@@ -1,22 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import ShipperStats from "./ShipperStats";
 import ShipperTable from "./ShipperTable";
 import ShipperDrawer, { ShipperFormValues } from "./ShipperDrawer";
-import type { DeliveryStatus, DeliveryTrackingDetailRow, DeliveryTrackingRow } from "../../backend/modules/delivery-tracking/delivery-tracking.types";
+import type {
+  DeliveryShipperOption,
+  DeliveryStatus,
+  DeliveryTrackingDetailRow,
+  DeliveryTrackingRow,
+} from "../../backend/modules/delivery-tracking/delivery-tracking.types";
 import { deliveryTrackingSearchStrategy } from "../shared/searchStrategies";
 
 type StatusFilter = "all" | DeliveryStatus;
 
 const emptyForm = (): ShipperFormValues => ({
+  employeeId: "",
   status: "assigned",
   note: "",
 });
 
 const ShipperManagement = () => {
+  const searchParams = useSearchParams();
+  const autoOpenedOrderIdRef = useRef<string | null>(null);
   const [items, setItems] = useState<DeliveryTrackingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,8 +37,24 @@ const ShipperManagement = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [drawerError, setDrawerError] = useState<string | null>(null);
+  const [shippers, setShippers] = useState<DeliveryShipperOption[]>([]);
   const [selectedDetail, setSelectedDetail] = useState<DeliveryTrackingDetailRow | null>(null);
   const [form, setForm] = useState<ShipperFormValues>(emptyForm());
+
+  const loadShippers = useCallback(async () => {
+    try {
+      const response = await fetch("/api/deliveries/shippers", { cache: "no-store" });
+      const data = (await response.json()) as { items?: DeliveryShipperOption[]; error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Không thể tải danh sách shipper");
+      }
+
+      setShippers(Array.isArray(data.items) ? data.items : []);
+    } catch {
+      setShippers([]);
+    }
+  }, []);
 
   const loadDeliveries = useCallback(async () => {
     setLoading(true);
@@ -59,6 +84,10 @@ const ShipperManagement = () => {
   useEffect(() => {
     void loadDeliveries();
   }, [loadDeliveries]);
+
+  useEffect(() => {
+    void loadShippers();
+  }, [loadShippers]);
 
   const filteredByStatus = useMemo(() => {
     if (statusFilter === "all") {
@@ -108,7 +137,11 @@ const ShipperManagement = () => {
       }
 
       setSelectedDetail(data);
-      setForm({ status: data.status, note: "" });
+      setForm({
+        employeeId: data.employee_id ?? "",
+        status: data.status,
+        note: "",
+      });
     } catch (requestError) {
       setDrawerError(requestError instanceof Error ? requestError.message : "Không thể tải chi tiết giao hàng");
       setSelectedDetail(null);
@@ -116,6 +149,17 @@ const ShipperManagement = () => {
       setDetailLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const orderId = searchParams.get("orderId")?.trim();
+
+    if (!orderId || loading || autoOpenedOrderIdRef.current === orderId) {
+      return;
+    }
+
+    autoOpenedOrderIdRef.current = orderId;
+    void openDetail(orderId);
+  }, [loading, openDetail, searchParams]);
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
@@ -135,10 +179,15 @@ const ShipperManagement = () => {
     setDrawerError(null);
 
     try {
+      if (!form.employeeId) {
+        throw new Error("Vui lòng chọn shipper phụ trách");
+      }
+
       const response = await fetch(`/api/deliveries/${encodeURIComponent(selectedDetail.order_id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          employeeId: form.employeeId,
           status: form.status,
           note: form.note,
         }),
@@ -158,7 +207,7 @@ const ShipperManagement = () => {
     } finally {
       setSaving(false);
     }
-  }, [form.note, form.status, loadDeliveries, selectedDetail]);
+  }, [form.employeeId, form.note, form.status, loadDeliveries, selectedDetail]);
 
   return (
     <AdminShell
@@ -203,6 +252,7 @@ const ShipperManagement = () => {
         saving={saving}
         error={drawerError}
         detail={selectedDetail}
+        shippers={shippers}
         form={form}
         onClose={closeDrawer}
         onSubmit={() => {

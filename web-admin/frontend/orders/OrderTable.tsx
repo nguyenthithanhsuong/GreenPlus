@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, Eye, Phone, Search } from "lucide-react";
+import { Check, Eye, Loader, Phone, Search, Truck } from "lucide-react";
 import type { OrderListRow, OrderStatus } from "../../backend/modules/orders/order-tracking.types";
 
 type StatusFilter = "all" | OrderStatus;
@@ -21,11 +21,14 @@ type OrderTableProps = {
   onToDateChange: (value: string) => void;
   onOpenDetail: (orderId: string) => void;
   onQuickConfirm: (orderId: string) => void;
+  onViewDelivery: (orderId: string) => void;
+  onStartPreparing?: (orderId: string) => void;
+  onStartDelivering?: (orderId: string) => void;
 };
 
 const statusMeta: Record<OrderStatus, { label: string; dot: string; text: string }> = {
-  pending: { label: "Pending", dot: "bg-yellow-500", text: "text-yellow-600" },
-  confirmed: { label: "Confirmed", dot: "bg-emerald-500", text: "text-emerald-600" },
+  pending: { label: "Pending", dot: "bg-orange-500", text: "text-orange-600" },
+  confirmed: { label: "Confirmed", dot: "bg-yellow-500", text: "text-yellow-600" },
   preparing: { label: "Preparing", dot: "bg-blue-500", text: "text-blue-600" },
   delivering: { label: "Delivering", dot: "bg-purple-500", text: "text-purple-600" },
   completed: { label: "Completed", dot: "bg-[#059669]", text: "text-[#059669]" },
@@ -91,6 +94,9 @@ const OrderTable = ({
   onToDateChange,
   onOpenDetail,
   onQuickConfirm,
+  onViewDelivery,
+  onStartPreparing,
+  onStartDelivering,
 }: OrderTableProps) => {
   const totalItems = items.length;
 
@@ -111,6 +117,13 @@ const OrderTable = ({
             className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "pending" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}
           >
             Chờ xác nhận ({counts.pending})
+          </button>
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange("confirmed")}
+            className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "confirmed" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}
+          >
+            Đã xác nhận ({counts.confirmed})
           </button>
           <button
             type="button"
@@ -232,6 +245,39 @@ const OrderTable = ({
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {order.status === "confirmed" && onStartPreparing && (
+                          <button
+                            type="button"
+                            onClick={() => onStartPreparing(order.order_id)}
+                            disabled={saving}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
+                            title="Bắt đầu chuẩn bị"
+                          >
+                            <Loader className="w-4 h-4" />
+                          </button>
+                        )}
+                        {order.status === "preparing" && onStartDelivering && (
+                          <button
+                            type="button"
+                            onClick={() => onStartDelivering(order.order_id)}
+                            disabled={saving}
+                            className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors disabled:opacity-50"
+                            title="Bắt đầu giao hàng"
+                          >
+                            <Truck className="w-4 h-4" />
+                          </button>
+                        )}
+                        {(order.status === "delivering" || order.status === "completed") && (
+                          <button
+                            type="button"
+                            onClick={() => onViewDelivery(order.order_id)}
+                            disabled={saving}
+                            className="p-1.5 text-gray-500 hover:text-[#059669] hover:bg-emerald-50 rounded-full transition-colors disabled:opacity-50"
+                            title="Xem giao hàng"
+                          >
+                            <Truck className="w-4 h-4" />
+                          </button>
+                        )}
                         {order.status === "pending" && (
                           <button
                             type="button"

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Calendar, Check, CreditCard, MapPin, Package, Phone, X } from "lucide-react";
+import { Calendar, Check, CreditCard, MapPin, Package, Phone, Truck, X } from "lucide-react";
 import type { OrderDetailRow, OrderStatus } from "../../backend/modules/orders/order-tracking.types";
 
 type OrderDetailPanelProps = {
@@ -12,6 +12,7 @@ type OrderDetailPanelProps = {
   order: OrderDetailRow | null;
   onClose: () => void;
   onUpdateStatus: (status: OrderStatus, note: string) => void;
+  onViewDelivery: (orderId: string) => void;
 };
 
 const statusOrder: OrderStatus[] = ["pending", "confirmed", "preparing", "delivering", "completed"];
@@ -49,7 +50,7 @@ const statusLabel = (status: OrderStatus): string => {
   return dictionary[status];
 };
 
-const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUpdateStatus }: OrderDetailPanelProps) => {
+const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUpdateStatus, onViewDelivery }: OrderDetailPanelProps) => {
   const [nextStatus, setNextStatus] = useState<OrderStatus>("confirmed");
   const [note, setNote] = useState("");
 
@@ -249,6 +250,15 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
           </div>
 
           <div className="flex items-center gap-3">
+            {(order?.status === "delivering" || order?.status === "completed") && (
+              <button
+                type="button"
+                onClick={() => onViewDelivery(order.order_id)}
+                className="px-4 py-2.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-sm font-bold hover:bg-emerald-50 transition-colors inline-flex items-center gap-2"
+              >
+                Xem giao hàng <Truck className="w-4 h-4" />
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}

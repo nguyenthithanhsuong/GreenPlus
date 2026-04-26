@@ -62,6 +62,20 @@ export class InventoryManagementRepository {
     return data ? this.toInventoryRow(data as InventoryDbRow) : null;
   }
 
+  async findInventoryByBatchId(batchId: string): Promise<InventoryRow | null> {
+    const { data, error } = await this.supabase
+      .from("inventory")
+      .select("inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,status,products(name),suppliers(name))")
+      .eq("batch_id", batchId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? this.toInventoryRow(data as InventoryDbRow) : null;
+  }
+
   async updateInventory(input: {
     inventoryId: string;
     quantityAvailable: number;

@@ -179,9 +179,9 @@ export class BatchManagementRepository {
       .from("inventory_transactions")
       .insert({
         batch_id: input.batchId,
-        type: "adjustment",
+        type: "Giao hàng",
         quantity: input.quantity,
-        note: input.note?.trim() || "Init inventory when batch moved from pending to available",
+        note: input.note?.trim() || "Hàng trừ đi sau khi Giao",
       });
 
     if (error) {

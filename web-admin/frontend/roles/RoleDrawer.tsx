@@ -7,6 +7,11 @@ import type { RoleSummary } from "../../backend/modules/roles/role-management.ty
 export type RoleFormValues = {
   roleName: string;
   description: string;
+  isCustomer: boolean;
+  isAdmin: boolean;
+  isManager: boolean;
+  isEmployee: boolean;
+  isShipper: boolean;
 };
 
 type RoleDrawerProps = {
@@ -98,6 +103,57 @@ const RoleDrawer = ({
                   rows={5}
                   className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                 />
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-bold text-gray-800">Quyền và phạm vi</p>
+                <div className="grid grid-cols-1 gap-2 rounded-md border border-gray-200 bg-gray-50 p-3 md:grid-cols-2">
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={form.isCustomer}
+                      onChange={(event) => onChange({ isCustomer: event.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
+                    />
+                    is_customer
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={form.isAdmin}
+                      onChange={(event) => onChange({ isAdmin: event.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
+                    />
+                    is_admin
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={form.isManager}
+                      onChange={(event) => onChange({ isManager: event.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
+                    />
+                    is_manager
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={form.isEmployee}
+                      onChange={(event) => onChange({ isEmployee: event.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
+                    />
+                    is_employee
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700 md:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={form.isShipper}
+                      onChange={(event) => onChange({ isShipper: event.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
+                    />
+                    is_shipper
+                  </label>
+                </div>
               </div>
             </form>
           </div>

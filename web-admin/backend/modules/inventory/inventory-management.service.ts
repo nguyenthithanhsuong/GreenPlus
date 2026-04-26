@@ -100,4 +100,40 @@ export class InventoryManagementService {
 
     return this.repository.listTransactionsByBatchId(normalizedBatchId);
   }
+
+  async updateInventoryForDelivery(input: {
+    orderId: string;
+    orderItems: Array<{
+      batchId: string | null;
+      quantity: number;
+    }>;
+    note?: string;
+  }): Promise<void> {
+    const normalizedOrderId = input.orderId.trim();
+    if (!normalizedOrderId) {
+      throw new AppError("orderId is required", 400);
+    }
+
+    for (const item of input.orderItems) {
+      if (!item.batchId || item.quantity <= 0) {
+        continue;
+      }
+
+      const inventory = await this.repository.findInventoryByBatchId(item.batchId);
+      if (!inventory) {
+        continue;
+      }
+
+      const newQuantityAvailable = Math.max(0, inventory.quantity_available - item.quantity);
+      const newQuantityReserved = Math.max(0, (inventory.quantity_reserved ?? 0) - item.quantity);
+
+      await this.repository.updateInventory({
+        inventoryId: inventory.inventory_id,
+        quantityAvailable: newQuantityAvailable,
+        quantityReserved: newQuantityReserved,
+        type: "stock_out",
+        note: input.note ? `Order ${normalizedOrderId}: ${input.note}` : `Order ${normalizedOrderId} delivery`,
+      });
+    }
+  }
 }

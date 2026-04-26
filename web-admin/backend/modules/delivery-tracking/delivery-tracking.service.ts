@@ -2,6 +2,7 @@ import { AppError } from "../../core/errors";
 import { DeliveryTrackingRepository } from "./delivery-tracking.repository";
 import {
   AssignShipperInput,
+  DeliveryShipperOption,
   DeliveryStatus,
   DeliveryTrackingDetailRow,
   DeliveryTrackingFilterInput,
@@ -45,6 +46,10 @@ export class DeliveryTrackingService {
     return delivery;
   }
 
+  async listShippers(): Promise<DeliveryShipperOption[]> {
+    return this.repository.listShippers();
+  }
+
   async assignShipper(input: AssignShipperInput): Promise<DeliveryTrackingDetailRow> {
     const orderId = input.orderId.trim();
     if (!orderId) {
@@ -56,9 +61,17 @@ export class DeliveryTrackingService {
       throw new AppError("employeeId is required", 400);
     }
 
+    await this.requireShipper(employeeId);
+
     const existing = await this.repository.getDeliveryByOrderId(orderId);
     if (existing) {
-      throw new AppError("delivery already assigned", 400);
+      await this.repository.updateDeliveryAssignment({
+        orderId,
+        employeeId,
+        note: input.note,
+      });
+
+      return this.getDeliveryDetail(orderId);
     }
 
     await this.repository.createDelivery({
@@ -82,6 +95,11 @@ export class DeliveryTrackingService {
       throw new AppError("delivery not found", 404);
     }
 
+    const employeeId = input.employeeId?.trim();
+    if (employeeId) {
+      await this.requireShipper(employeeId);
+    }
+
     const nextStatus = this.statusStrategy.normalizeStatus(input.status);
     const currentStatus: DeliveryStatus = existing.status;
 
@@ -93,6 +111,7 @@ export class DeliveryTrackingService {
     await this.repository.updateDeliveryStatus({
       deliveryId: existing.delivery_id,
       status: nextStatus,
+      employeeId,
       note: input.note ?? existing.note ?? undefined,
     });
 
@@ -115,5 +134,12 @@ export class DeliveryTrackingService {
     }
 
     return new Date(timestamp).toISOString().slice(0, 10);
+  }
+
+  private async requireShipper(employeeId: string): Promise<void> {
+    const shipper = await this.repository.findShipperById(employeeId);
+    if (!shipper) {
+      throw new AppError("employeeId must belong to a shipper user", 400);
+    }
   }
 }

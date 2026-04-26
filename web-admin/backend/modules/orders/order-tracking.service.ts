@@ -8,6 +8,7 @@ import {
   UpdateOrderStatusInput,
 } from "./order-tracking.types";
 import { DefaultOrderStatusStrategy } from "./strategies/order-status.strategy";
+import { inventoryManagementFacade } from "../inventory/facades/inventory-management.facade";
 
 export class OrderTrackingService {
   private readonly statusStrategy = new DefaultOrderStatusStrategy();
@@ -78,6 +79,23 @@ export class OrderTrackingService {
       status: nextStatus,
       note: input.note,
     });
+
+    if (currentStatus === "preparing" && nextStatus === "delivering") {
+      await this.repository.ensureDeliveryForOrder({
+        orderId: normalizedOrderId,
+        note: input.note,
+        employeeId: input.employeeId,
+      });
+
+      await inventoryManagementFacade.updateInventoryForDelivery({
+        orderId: normalizedOrderId,
+        orderItems: updated.items.map((item) => ({
+          batchId: item.batch_id,
+          quantity: item.quantity,
+        })),
+        note: input.note,
+      });
+    }
 
     return updated;
   }

@@ -45,4 +45,5 @@ export type UpdateOrderStatusInput = {
   orderId: string;
   status: string;
   note?: string;
+  employeeId?: string;
 };

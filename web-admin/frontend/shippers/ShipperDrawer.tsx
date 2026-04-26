@@ -2,9 +2,14 @@
 
 import React from "react";
 import { CalendarDays, CheckCircle2, ClipboardList, MapPin, Phone, Truck, X } from "lucide-react";
-import type { DeliveryStatus, DeliveryTrackingDetailRow } from "../../backend/modules/delivery-tracking/delivery-tracking.types";
+import type {
+  DeliveryShipperOption,
+  DeliveryStatus,
+  DeliveryTrackingDetailRow,
+} from "../../backend/modules/delivery-tracking/delivery-tracking.types";
 
 export type ShipperFormValues = {
+  employeeId: string;
   status: DeliveryStatus;
   note: string;
 };
@@ -15,6 +20,7 @@ type ShipperDrawerProps = {
   saving: boolean;
   error: string | null;
   detail: DeliveryTrackingDetailRow | null;
+  shippers: DeliveryShipperOption[];
   form: ShipperFormValues;
   onClose: () => void;
   onSubmit: () => void;
@@ -41,7 +47,7 @@ const statusLabel: Record<DeliveryStatus, string> = {
   delivered: "Đã giao",
 };
 
-const ShipperDrawer = ({ isOpen, loading, saving, error, detail, form, onClose, onSubmit, onChange }: ShipperDrawerProps) => {
+const ShipperDrawer = ({ isOpen, loading, saving, error, detail, shippers, form, onClose, onSubmit, onChange }: ShipperDrawerProps) => {
   if (!isOpen) {
     return null;
   }
@@ -130,6 +136,22 @@ const ShipperDrawer = ({ isOpen, loading, saving, error, detail, form, onClose, 
                   <h3 className="font-bold text-gray-900 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#059669]" /> Cập nhật trạng thái</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
+                      <label className="mb-1.5 block text-sm font-bold text-gray-800">Shipper phụ trách</label>
+                      <select
+                        value={form.employeeId}
+                        onChange={(event) => onChange({ employeeId: event.target.value })}
+                        className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                        disabled={saving}
+                      >
+                        <option value="">Chọn shipper</option>
+                        {shippers.map((shipper) => (
+                          <option key={shipper.user_id} value={shipper.user_id}>
+                            {shipper.name}{shipper.phone ? ` - ${shipper.phone}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
                       <label className="mb-1.5 block text-sm font-bold text-gray-800">Trạng thái mới</label>
                       <select
                         value={form.status}
@@ -137,10 +159,10 @@ const ShipperDrawer = ({ isOpen, loading, saving, error, detail, form, onClose, 
                         className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                         disabled={saving}
                       >
-                        <option value="assigned">assigned</option>
-                        <option value="picked_up">picked_up</option>
-                        <option value="delivering">delivering</option>
-                        <option value="delivered">delivered</option>
+                        <option value="assigned">{statusLabel.assigned}</option>
+                        <option value="picked_up">{statusLabel.picked_up}</option>
+                        <option value="delivering">{statusLabel.delivering}</option>
+                        <option value="delivered">{statusLabel.delivered}</option>
                       </select>
                     </div>
                     <div>

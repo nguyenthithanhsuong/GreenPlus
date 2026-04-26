@@ -31,12 +31,14 @@ export async function PATCH(request: Request, context: Context) {
     const body = (await request.json()) as {
       status?: string;
       note?: string;
+      employeeId?: string;
     };
 
     const updated = await orderTrackingFacade.updateOrderStatus({
       orderId,
       status: body.status ?? "",
       note: body.note,
+      employeeId: body.employeeId,
     });
 
     return NextResponse.json(updated, { status: 200 });

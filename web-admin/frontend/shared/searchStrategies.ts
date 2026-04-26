@@ -1,4 +1,6 @@
 import type { DeliveryTrackingRow } from "../../backend/modules/delivery-tracking/delivery-tracking.types";
+import type { OrderListRow } from "../../backend/modules/orders/order-tracking.types";
+import type { RoleSummary } from "../../backend/modules/roles/role-management.types";
 
 export interface SearchStrategy<T> {
   filter(items: T[], query: string): T[];
@@ -146,19 +148,19 @@ class BatchSearchStrategy extends BaseSearchStrategy<{
   }
 }
 
-class RoleSearchStrategy extends BaseSearchStrategy<{
-  role_id: string;
-  role_name: string;
-  description: string | null;
-  user_count: number;
-}> {
-  protected getSearchableText(item: {
-    role_id: string;
-    role_name: string;
-    description: string | null;
-    user_count: number;
-  }): Array<string | number | null | undefined> {
-    return [item.role_id, item.role_name, item.description, item.user_count];
+class RoleSearchStrategy extends BaseSearchStrategy<RoleSummary> {
+  protected getSearchableText(item: RoleSummary): Array<string | number | null | undefined> {
+    return [
+      item.role_id,
+      item.role_name,
+      item.description,
+      item.user_count,
+      item.is_customer ? "customer" : "",
+      item.is_admin ? "admin" : "",
+      item.is_manager ? "manager" : "",
+      item.is_employee ? "employee" : "",
+      item.is_shipper ? "shipper" : "",
+    ];
   }
 }
 
@@ -227,32 +229,22 @@ class PriceSearchStrategy extends BaseSearchStrategy<{
   }
 }
 
-class OrderSearchStrategy extends BaseSearchStrategy<{
-  order_id: string;
-  customer_name: string | null;
-  customer_phone: string | null;
-  delivery_address: string;
-  note: string | null;
-  status: string;
-  total_amount: number;
-}> {
-  protected getSearchableText(item: {
-    order_id: string;
-    customer_name: string | null;
-    customer_phone: string | null;
-    delivery_address: string;
-    note: string | null;
-    status: string;
-    total_amount: number;
-  }): Array<string | number | null | undefined> {
+class OrderSearchStrategy extends BaseSearchStrategy<OrderListRow> {
+  protected getSearchableText(item: OrderListRow): Array<string | number | null | undefined> {
     return [
       item.order_id,
+      item.user_id,
       item.customer_name,
       item.customer_phone,
+      item.order_date,
       item.delivery_address,
+      item.delivery_fee,
       item.note,
       item.status,
       item.total_amount,
+      item.payment_method,
+      item.payment_status,
+      item.item_count,
     ];
   }
 }

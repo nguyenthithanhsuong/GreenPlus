@@ -3,7 +3,7 @@ export type DeliveryStatus = "assigned" | "picked_up" | "delivering" | "delivere
 export type DeliveryTrackingRow = {
   delivery_id: string;
   order_id: string;
-  employee_id: string;
+  employee_id: string | null;
   shipper_name: string | null;
   shipper_phone: string | null;
   customer_name: string | null;
@@ -30,6 +30,7 @@ export type DeliveryTrackingFilterInput = {
 export type UpdateDeliveryStatusInput = {
   orderId: string;
   status: DeliveryStatus;
+  employeeId?: string;
   note?: string;
 };
 
@@ -37,4 +38,12 @@ export type AssignShipperInput = {
   orderId: string;
   employeeId: string;
   note?: string;
+};
+
+export type DeliveryShipperOption = {
+  user_id: string;
+  name: string;
+  phone: string | null;
+  role_name: string | null;
+  status: string | null;
 };

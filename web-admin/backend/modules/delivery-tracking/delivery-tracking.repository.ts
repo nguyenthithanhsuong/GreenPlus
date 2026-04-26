@@ -1,10 +1,15 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { DeliveryStatus, DeliveryTrackingFilterInput, DeliveryTrackingRow } from "./delivery-tracking.types";
+import {
+  DeliveryShipperOption,
+  DeliveryStatus,
+  DeliveryTrackingFilterInput,
+  DeliveryTrackingRow,
+} from "./delivery-tracking.types";
 
 type DeliveryDbRow = {
   delivery_id: string;
-  order_id: string;
-  employee_id: string;
+  order_id: string | null;
+  employee_id: string | null;
   status: string | null;
   pickup_time: string | null;
   delivery_time: string | null;
@@ -21,6 +26,17 @@ type DeliveryDbRow = {
   users?: {
     name?: string | null;
     phone?: string | null;
+  } | null;
+};
+
+type ShipperDbRow = {
+  user_id: string;
+  name: string;
+  phone: string | null;
+  status: string | null;
+  roles?: {
+    role_name?: string | null;
+    is_shipper?: boolean | null;
   } | null;
 };
 
@@ -81,15 +97,38 @@ export class DeliveryTrackingRepository {
     }
   }
 
+  async updateDeliveryAssignment(input: {
+    orderId: string;
+    employeeId: string;
+    note?: string;
+  }): Promise<void> {
+    const { error } = await this.supabase
+      .from("deliveries")
+      .update({
+        employee_id: input.employeeId,
+        note: input.note?.trim() || null,
+      })
+      .eq("order_id", input.orderId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
   async updateDeliveryStatus(input: {
     deliveryId: string;
     status: DeliveryStatus;
+    employeeId?: string;
     note?: string;
   }): Promise<void> {
     const updateData: Partial<DeliveryDbRow> = {
       status: input.status,
       note: input.note?.trim() || null,
     };
+
+    if (input.employeeId) {
+      updateData.employee_id = input.employeeId;
+    }
 
     // handle timestamps based on status
     if (input.status === "picked_up") {
@@ -108,6 +147,54 @@ export class DeliveryTrackingRepository {
     if (error) {
       throw new Error(error.message);
     }
+  }
+
+  async listShippers(): Promise<DeliveryShipperOption[]> {
+    const { data, error } = await this.supabase
+      .from("users")
+      .select("user_id,name,phone,status,roles!inner(role_name,is_shipper)")
+      .eq("roles.is_shipper", true)
+      .neq("status", "banned")
+      .order("name", { ascending: true });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return ((data ?? []) as ShipperDbRow[]).map((row) => ({
+      user_id: row.user_id,
+      name: row.name,
+      phone: row.phone,
+      role_name: row.roles?.role_name ?? null,
+      status: row.status,
+    }));
+  }
+
+  async findShipperById(employeeId: string): Promise<DeliveryShipperOption | null> {
+    const { data, error } = await this.supabase
+      .from("users")
+      .select("user_id,name,phone,status,roles!inner(role_name,is_shipper)")
+      .eq("user_id", employeeId)
+      .eq("roles.is_shipper", true)
+      .neq("status", "banned")
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    const row = data as ShipperDbRow;
+    return {
+      user_id: row.user_id,
+      name: row.name,
+      phone: row.phone,
+      role_name: row.roles?.role_name ?? null,
+      status: row.status,
+    };
   }
 
   private normalizeStatus(value: string | null): DeliveryStatus {
@@ -130,7 +217,7 @@ export class DeliveryTrackingRepository {
 
     return {
       delivery_id: row.delivery_id,
-      order_id: row.order_id,
+      order_id: row.order_id ?? "",
       employee_id: row.employee_id,
       shipper_name: shipper?.name ?? null,
       shipper_phone: shipper?.phone ?? null,

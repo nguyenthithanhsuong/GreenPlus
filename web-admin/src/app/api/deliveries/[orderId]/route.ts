@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
 import { deliveryTrackingFacade } from "../../../../../backend/modules/delivery-tracking/facades/delivery-tracking.facade";
+import type { DeliveryStatus } from "../../../../../backend/modules/delivery-tracking/delivery-tracking.types";
 
 type Context = {
   params: Promise<{
     orderId: string;
   }>;
+};
+
+const parseDeliveryStatus = (value: string | undefined): DeliveryStatus => {
+  if (value === "assigned" || value === "picked_up" || value === "delivering" || value === "delivered") {
+    return value;
+  }
+
+  throw new AppError("Unsupported delivery status", 400);
 };
 
 export async function GET(_: Request, context: Context) {
@@ -30,12 +39,14 @@ export async function PATCH(request: Request, context: Context) {
     const { orderId } = await context.params;
     const body = (await request.json()) as {
       status?: string;
+      employeeId?: string;
       note?: string;
     };
 
     const updated = await deliveryTrackingFacade.updateDeliveryStatus({
       orderId,
-      status: body.status ?? "",
+      employeeId: body.employeeId,
+      status: parseDeliveryStatus(body.status),
       note: body.note,
     });
 

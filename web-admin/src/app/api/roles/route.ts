@@ -23,11 +23,21 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       roleName?: string;
       description?: string;
+      isCustomer?: boolean;
+      isAdmin?: boolean;
+      isManager?: boolean;
+      isEmployee?: boolean;
+      isShipper?: boolean;
     };
 
     const created = await roleManagementFacade.createRole({
       roleName: body.roleName ?? "",
       description: body.description,
+      isCustomer: body.isCustomer,
+      isAdmin: body.isAdmin,
+      isManager: body.isManager,
+      isEmployee: body.isEmployee,
+      isShipper: body.isShipper,
     });
 
     return NextResponse.json(created, { status: 201 });

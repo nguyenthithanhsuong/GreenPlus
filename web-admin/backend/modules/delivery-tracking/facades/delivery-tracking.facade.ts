@@ -6,6 +6,7 @@ import {
 } from "../observers/delivery-tracking.observer";
 import {
   AssignShipperInput,
+  DeliveryShipperOption,
   DeliveryTrackingDetailRow,
   DeliveryTrackingFilterInput,
   DeliveryTrackingRow,
@@ -23,6 +24,10 @@ export class DeliveryTrackingFacade {
 
   async listDeliveries(filters: DeliveryTrackingFilterInput): Promise<DeliveryTrackingRow[]> {
     return this.service.listDeliveries(filters);
+  }
+
+  async listShippers(): Promise<DeliveryShipperOption[]> {
+    return this.service.listShippers();
   }
 
   async getDeliveryDetail(orderId: string): Promise<DeliveryTrackingDetailRow> {
@@ -63,3 +68,5 @@ export class DeliveryTrackingFacade {
     return updated;
   }
 }
+
+export const deliveryTrackingFacade = new DeliveryTrackingFacade();

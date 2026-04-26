@@ -21,7 +21,26 @@ export class UserManagementRepository {
   async listUsers(): Promise<UserRow[]> {
     const { data, error } = await this.supabase
       .from("users")
-      .select("user_id,role_id,name,email,password,phone,address,status,created_at,image_url,roles(role_name)")
+      .select(`
+  user_id,
+  role_id,
+  name,
+  email,
+  password,
+  phone,
+  address,
+  status,
+  created_at,
+  image_url,
+  roles(
+    role_name,
+    is_customer,
+    is_admin,
+    is_manager,
+    is_employee,
+    is_shipper
+  )
+`)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -34,7 +53,26 @@ export class UserManagementRepository {
   async findById(userId: string): Promise<UserRow | null> {
     const { data, error } = await this.supabase
       .from("users")
-      .select("user_id,role_id,name,email,password,phone,address,status,created_at,image_url,roles(role_name)")
+      .select(`
+  user_id,
+  role_id,
+  name,
+  email,
+  password,
+  phone,
+  address,
+  status,
+  created_at,
+  image_url,
+  roles(
+    role_name,
+    is_customer,
+    is_admin,
+    is_manager,
+    is_employee,
+    is_shipper
+  )
+`)
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -58,7 +96,26 @@ export class UserManagementRepository {
         image_url: input.imageUrl?.trim() || null,
         status: input.status ?? "active",
       })
-      .select("user_id,role_id,name,email,password,phone,address,status,created_at,image_url,roles(role_name)")
+      .select(`
+  user_id,
+  role_id,
+  name,
+  email,
+  password,
+  phone,
+  address,
+  status,
+  created_at,
+  image_url,
+  roles(
+    role_name,
+    is_customer,
+    is_admin,
+    is_manager,
+    is_employee,
+    is_shipper
+  )
+`)
       .single();
 
     if (error) {
@@ -83,7 +140,26 @@ export class UserManagementRepository {
       .from("users")
       .update(payload)
       .eq("user_id", input.userId)
-      .select("user_id,role_id,name,email,password,phone,address,status,created_at,image_url,roles(role_name)")
+      .select(`
+  user_id,
+  role_id,
+  name,
+  email,
+  password,
+  phone,
+  address,
+  status,
+  created_at,
+  image_url,
+  roles(
+    role_name,
+    is_customer,
+    is_admin,
+    is_manager,
+    is_employee,
+    is_shipper
+  )
+`)
       .maybeSingle();
 
     if (error) {

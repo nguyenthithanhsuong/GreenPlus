@@ -56,6 +56,23 @@ export class InventoryManagementFacade {
   async listTransactionsByBatchId(batchId: string): Promise<InventoryTransactionRow[]> {
     return this.service.listTransactionsByBatchId(batchId);
   }
+
+  async updateInventoryForDelivery(input: {
+    orderId: string;
+    orderItems: Array<{
+      batchId: string | null;
+      quantity: number;
+    }>;
+    note?: string;
+  }): Promise<void> {
+    await this.service.updateInventoryForDelivery(input);
+    await this.subject.notify({
+      type: "inventory_transaction_created",
+      inventoryId: input.orderId,
+      actor: "system",
+      transactionType: "stock_out",
+    });
+  }
 }
 
 export const inventoryManagementFacade = new InventoryManagementFacade();

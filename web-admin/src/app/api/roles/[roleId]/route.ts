@@ -14,12 +14,22 @@ export async function PUT(request: Request, context: Context) {
     const body = (await request.json()) as {
       roleName?: string;
       description?: string | null;
+      isCustomer?: boolean;
+      isAdmin?: boolean;
+      isManager?: boolean;
+      isEmployee?: boolean;
+      isShipper?: boolean;
     };
 
     const updated = await roleManagementFacade.updateRole({
       roleId,
       roleName: body.roleName,
       description: body.description,
+      isCustomer: body.isCustomer,
+      isAdmin: body.isAdmin,
+      isManager: body.isManager,
+      isEmployee: body.isEmployee,
+      isShipper: body.isShipper,
     });
 
     return NextResponse.json(updated, { status: 200 });
@@ -42,6 +52,11 @@ export async function PATCH(request: Request, context: Context) {
       action?: "rename";
       roleName?: string;
       description?: string | null;
+      isCustomer?: boolean;
+      isAdmin?: boolean;
+      isManager?: boolean;
+      isEmployee?: boolean;
+      isShipper?: boolean;
     };
 
     if (body.action === "rename") {
@@ -49,6 +64,11 @@ export async function PATCH(request: Request, context: Context) {
         roleId,
         roleName: body.roleName,
         description: body.description,
+        isCustomer: body.isCustomer,
+        isAdmin: body.isAdmin,
+        isManager: body.isManager,
+        isEmployee: body.isEmployee,
+        isShipper: body.isShipper,
       });
 
       return NextResponse.json(updated, { status: 200 });

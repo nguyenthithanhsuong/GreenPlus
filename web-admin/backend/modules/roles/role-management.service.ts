@@ -24,6 +24,11 @@ export class RoleManagementService {
     return this.repository.createRole({
       roleName,
       description: input.description?.trim() || null,
+      isCustomer: input.isCustomer,
+      isAdmin: input.isAdmin,
+      isManager: input.isManager,
+      isEmployee: input.isEmployee,
+      isShipper: input.isShipper,
     });
   }
 
@@ -57,6 +62,11 @@ export class RoleManagementService {
       roleId: input.roleId,
       roleName: typeof input.roleName !== "undefined" ? normalizedRoleName : undefined,
       description: input.description,
+      isCustomer: input.isCustomer,
+      isAdmin: input.isAdmin,
+      isManager: input.isManager,
+      isEmployee: input.isEmployee,
+      isShipper: input.isShipper,
     });
 
     if (!updated) {

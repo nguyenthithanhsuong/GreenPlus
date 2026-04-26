@@ -52,6 +52,11 @@ type OrderDbRow = {
   order_items?: OrderItemJoin;
 };
 
+type DeliveryDbRow = {
+  delivery_id: string;
+  pickup_time: string | null;
+};
+
 export class OrderTrackingRepository {
   private readonly supabase = createServiceRoleSupabaseClient();
 
@@ -138,6 +143,52 @@ export class OrderTrackingRepository {
     }
   }
 
+  async ensureDeliveryForOrder(input: { orderId: string; note?: string; employeeId?: string }): Promise<void> {
+    const { data: existing, error: existingError } = await this.supabase
+      .from("deliveries")
+      .select("delivery_id,pickup_time")
+      .eq("order_id", input.orderId)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingError) {
+      throw new Error(existingError.message);
+    }
+
+    const now = new Date().toISOString();
+
+    if (!existing) {
+      const { error: insertError } = await this.supabase.from("deliveries").insert({
+        order_id: input.orderId,
+        employee_id: input.employeeId || null,
+        status: "delivering",
+        pickup_time: now,
+        note: input.note?.trim() || null,
+      });
+
+      if (insertError) {
+        throw new Error(insertError.message);
+      }
+
+      return;
+    }
+
+    const delivery = existing as DeliveryDbRow;
+    const { error: updateError } = await this.supabase
+      .from("deliveries")
+      .update({
+        employee_id: input.employeeId || null,
+        status: "delivering",
+        pickup_time: delivery.pickup_time ?? now,
+        note: input.note?.trim() || null,
+      })
+      .eq("delivery_id", delivery.delivery_id);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+  }
+
   private toOrderListRow(row: OrderDbRow): OrderListRow {
     const payment = this.pickPayment(row.payments);
     const itemCount = (row.order_items ?? []).reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
@@ -186,7 +237,7 @@ export class OrderTrackingRepository {
     };
   }
 
-  private pickPayment(payment: PaymentJoin): { method?: string | null; status?: string | null } | null {
+  private pickPayment(payment: PaymentJoin | undefined): { method?: string | null; status?: string | null } | null {
     if (!payment) {
       return null;
     }

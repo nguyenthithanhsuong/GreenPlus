@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import OrderStats from "./OrderStats";
 import OrderTable from "./OrderTable";
 import OrderDetailPanel from "./OrderDetailPanel";
+import DeliveryAssignDialog from "./DeliveryAssignDialog";
 import type {
   OrderDetailRow,
   OrderListRow,
@@ -22,6 +24,7 @@ const toIsoDate = (date: Date): string => {
 };
 
 const OrderManagement = () => {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,6 +39,10 @@ const OrderManagement = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderDetailRow | null>(null);
+
+  const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
+  const [deliveryDialogOrderId, setDeliveryDialogOrderId] = useState("");
+
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -106,6 +113,7 @@ const OrderManagement = () => {
     return {
       totalToday: orders.filter((order) => (order.order_date ?? "").slice(0, 10) === today).length,
       pendingCount: counts.pending,
+      confirmedCount: counts.confirmed,
       preparingCount: counts.preparing,
       deliveringCount: counts.delivering,
       completedCount: counts.completed,
@@ -168,6 +176,64 @@ const OrderManagement = () => {
     }
   }, [loadOrders]);
 
+  const updateStatusWithEmployeeId = useCallback(
+    async (orderId: string, status: OrderStatus, employeeId: string, note?: string) => {
+      setSaving(true);
+      setError(null);
+      setDetailError(null);
+
+      try {
+        const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status, note, employeeId }),
+        });
+
+        const data = (await response.json()) as OrderDetailRow & { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể cập nhật trạng thái đơn hàng");
+        }
+
+        setSelectedOrder(data);
+        await loadOrders();
+      } catch (requestError) {
+        const message = requestError instanceof Error ? requestError.message : "Không thể cập nhật trạng thái đơn hàng";
+        setError(message);
+        setDetailError(message);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [loadOrders]
+  );
+
+  const onStartPreparing = useCallback((orderId: string) => {
+    void updateStatus(orderId, "preparing", "Bắt đầu chuẩn bị đơn hàng từ bảng");
+  }, [updateStatus]);
+
+  const onStartDelivering = useCallback((orderId: string) => {
+    setDeliveryDialogOrderId(orderId);
+    setDeliveryDialogOpen(true);
+  }, []);
+
+  const onDeliveryDialogSubmit = useCallback(
+    (employeeId: string, note: string) => {
+      void updateStatusWithEmployeeId(
+        deliveryDialogOrderId,
+        "delivering",
+        employeeId,
+        note || "Bắt đầu giao hàng"
+      );
+      setDeliveryDialogOpen(false);
+      setDeliveryDialogOrderId("");
+    },
+    [deliveryDialogOrderId, updateStatusWithEmployeeId]
+  );
+
+  const viewDelivery = useCallback((orderId: string) => {
+    router.push(`/shippers?orderId=${encodeURIComponent(orderId)}`);
+  }, [router]);
+
   return (
     <AdminShell
       title="Quản lý đơn hàng"
@@ -210,6 +276,9 @@ const OrderManagement = () => {
         onQuickConfirm={(orderId) => {
           void updateStatus(orderId, "confirmed", "Xác nhận nhanh từ bảng đơn hàng");
         }}
+        onViewDelivery={viewDelivery}
+        onStartPreparing={onStartPreparing}
+        onStartDelivering={onStartDelivering}
       />
 
       <OrderDetailPanel
@@ -226,6 +295,18 @@ const OrderManagement = () => {
 
           void updateStatus(selectedOrder.order_id, status, note);
         }}
+        onViewDelivery={viewDelivery}
+      />
+
+      <DeliveryAssignDialog
+        isOpen={deliveryDialogOpen}
+        orderId={deliveryDialogOrderId}
+        saving={saving}
+        onClose={() => {
+          setDeliveryDialogOpen(false);
+          setDeliveryDialogOrderId("");
+        }}
+        onSubmit={onDeliveryDialogSubmit}
       />
     </AdminShell>
   );
