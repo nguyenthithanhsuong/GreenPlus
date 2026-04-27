@@ -1,109 +1,203 @@
-import React from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from "lucide-react";
+import { UserSummary } from "../../backend/modules/users/user-management.types";
+import { OrderListRow } from "../../backend/modules/orders/order-tracking.types";
 
-const CustomerCharts = () => {
+type CustomerChartsProps = {
+  users: UserSummary[];
+  orders: OrderListRow[];
+  loading: boolean;
+};
+
+type MonthBucket = {
+  key: string;
+  label: string;
+  newUsers: number;
+  activeBuyers: number;
+};
+
+const monthKey = (value: Date) => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}`;
+
+const CustomerCharts = ({ users, orders, loading }: CustomerChartsProps) => {
+  const now = new Date();
+  const buckets: MonthBucket[] = Array.from({ length: 12 }, (_, index) => {
+    const dateValue = new Date(now.getFullYear(), now.getMonth() - (11 - index), 1);
+    return {
+      key: monthKey(dateValue),
+      label: `T${dateValue.getMonth() + 1}`,
+      newUsers: 0,
+      activeBuyers: 0,
+    };
+  });
+
+  const bucketMap = new Map(buckets.map((bucket) => [bucket.key, bucket]));
+
+  for (const user of users) {
+    if (!user.created_at) {
+      continue;
+    }
+
+    const bucket = bucketMap.get(monthKey(new Date(user.created_at)));
+    if (!bucket) {
+      continue;
+    }
+
+    bucket.newUsers += 1;
+  }
+
+  const activeBuyerByMonth = new Map<string, Set<string>>();
+  for (const order of orders) {
+    const dateValue = order.order_date ?? order.created_at;
+    if (!dateValue || !order.user_id) {
+      continue;
+    }
+
+    const key = monthKey(new Date(dateValue));
+    if (!activeBuyerByMonth.has(key)) {
+      activeBuyerByMonth.set(key, new Set());
+    }
+
+    activeBuyerByMonth.get(key)?.add(order.user_id);
+  }
+
+  for (const bucket of buckets) {
+    bucket.activeBuyers = activeBuyerByMonth.get(bucket.key)?.size ?? 0;
+  }
+
+  const maxValue = Math.max(
+    ...buckets.flatMap((bucket) => [bucket.newUsers, bucket.activeBuyers]),
+    1,
+  );
+
+  const customerSpend = new Map<string, number>();
+  const customerOrders = new Map<string, number>();
+  for (const order of orders) {
+    if (!order.user_id) {
+      continue;
+    }
+
+    customerSpend.set(order.user_id, (customerSpend.get(order.user_id) ?? 0) + Number(order.total_amount ?? 0));
+    customerOrders.set(order.user_id, (customerOrders.get(order.user_id) ?? 0) + 1);
+  }
+
+  const spendValues = Array.from(customerSpend.values()).sort((left, right) => left - right);
+  const vipThreshold = spendValues.length > 0 ? spendValues[Math.floor(spendValues.length * 0.9)] : Number.POSITIVE_INFINITY;
+
+  let frequentCount = 0;
+  let vipCount = 0;
+  let oneTimeCount = 0;
+
+  for (const [customerId, orderCount] of customerOrders.entries()) {
+    const spend = customerSpend.get(customerId) ?? 0;
+    if (spend >= vipThreshold && Number.isFinite(vipThreshold)) {
+      vipCount += 1;
+      continue;
+    }
+
+    if (orderCount >= 2) {
+      frequentCount += 1;
+    } else {
+      oneTimeCount += 1;
+    }
+  }
+
+  const totalSegment = Math.max(frequentCount + vipCount + oneTimeCount, 1);
+  const frequentPercent = Math.round((frequentCount / totalSegment) * 100);
+  const vipPercent = Math.round((vipCount / totalSegment) * 100);
+  const oneTimePercent = Math.max(0, 100 - frequentPercent - vipPercent);
+
+  const donutStyle = {
+    background: `conic-gradient(#10B981 0% ${frequentPercent}%, #F59E0B ${frequentPercent}% ${frequentPercent + vipPercent}%, #E5E7EB ${frequentPercent + vipPercent}% 100%)`,
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
-      {/* Line Chart: Customer Growth */}
-      <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm lg:col-span-2 flex flex-col">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-gray-900">Tăng trưởng Khách hàng</h3>
-          <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal className="w-5 h-5" /></button>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="font-bold text-gray-900">Tăng trưởng khách hàng (12 tháng)</h3>
+          <button type="button" className="text-gray-400 hover:text-gray-600" aria-label="chart options">
+            <MoreHorizontal className="h-5 w-5" />
+          </button>
         </div>
-        
-        <div className="flex-1 relative min-h-[250px] w-full">
-          {/* Mockup Line Chart using SVG */}
-          <div className="absolute inset-0 flex flex-col justify-between text-xs text-gray-400 pb-6">
-            {[700, 600, 500, 400, 300, 200, 100, 0].map((val) => (
-              <div key={val} className="flex items-center w-full">
-                <span className="w-8 text-right mr-3">{val}</span>
-                <div className="flex-1 border-b border-gray-100 border-dashed"></div>
+
+        <div className="grid min-h-[250px] flex-1 grid-cols-12 items-end gap-2">
+          {buckets.map((bucket) => {
+            const newUserHeight = Math.max(6, (bucket.newUsers / maxValue) * 100);
+            const activeBuyerHeight = Math.max(6, (bucket.activeBuyers / maxValue) * 100);
+
+            return (
+              <div key={bucket.key} className="flex flex-col items-center gap-2">
+                <div className="flex h-52 w-full items-end justify-center gap-1">
+                  <div
+                    className="w-2 rounded-t bg-emerald-500"
+                    style={{ height: `${newUserHeight}%` }}
+                    title={`Khách mới: ${bucket.newUsers}`}
+                  />
+                  <div
+                    className="w-2 rounded-t bg-blue-400"
+                    style={{ height: `${activeBuyerHeight}%` }}
+                    title={`Khách phát sinh đơn: ${bucket.activeBuyers}`}
+                  />
+                </div>
+                <span className="text-[10px] text-gray-500">{bucket.label}</span>
               </div>
-            ))}
+            );
+          })}
+        </div>
+
+        <div className="mt-4 flex items-center gap-6 text-xs text-gray-500">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            Khách mới
           </div>
-          <div className="absolute inset-0 ml-11 mb-6">
-            <svg viewBox="0 0 1000 250" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-              {/* Fill Gradient Area */}
-              <defs>
-                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <path 
-                d="M 0 200 L 90 180 L 180 160 L 270 120 L 360 140 L 450 100 L 540 80 L 630 60 L 720 10 L 810 -30 L 900 -70 L 1000 -120 L 1000 250 L 0 250 Z" 
-                fill="url(#chartGradient)" 
-              />
-              {/* The Line */}
-              <path 
-                d="M 0 200 C 45 190, 45 180, 90 180 C 135 180, 135 160, 180 160 C 225 160, 225 120, 270 120 C 315 120, 315 140, 360 140 C 405 140, 405 100, 450 100 C 495 100, 495 80, 540 80 C 585 80, 585 60, 630 60 C 675 60, 675 10, 720 10 C 765 10, 765 -30, 810 -30 C 855 -30, 855 -70, 900 -70 C 950 -70, 950 -120, 1000 -120" 
-                fill="none" 
-                stroke="#10b981" 
-                strokeWidth="3" 
-                strokeLinecap="round" 
-              />
-              {/* Data Points */}
-              {[
-                {x:0, y:200}, {x:90, y:180}, {x:180, y:160}, {x:270, y:120}, 
-                {x:360, y:140}, {x:450, y:100}, {x:540, y:80}, {x:630, y:60}, 
-                {x:720, y:10}, {x:810, y:-30}, {x:900, y:-70}, {x:1000, y:-120}
-              ].map((pt, i) => (
-                <circle key={i} cx={pt.x} cy={pt.y} r="4" fill="white" stroke="#10b981" strokeWidth="2" />
-              ))}
-            </svg>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+            Khách phát sinh đơn
           </div>
-          {/* X-Axis Labels */}
-          <div className="absolute bottom-0 left-11 right-0 flex justify-between text-xs text-gray-400">
-            {['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'].map((label) => (
-              <span key={label}>{label}</span>
-            ))}
-          </div>
+          {loading ? <span>Đang tải dữ liệu...</span> : null}
         </div>
       </div>
 
-      {/* Donut Chart: Customer Segments */}
-      <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-gray-900">Phân khúc Khách hàng</h3>
-          <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal className="w-5 h-5" /></button>
+      <div className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="font-bold text-gray-900">Phân khúc khách hàng</h3>
+          <button type="button" className="text-gray-400 hover:text-gray-600" aria-label="segment options">
+            <MoreHorizontal className="h-5 w-5" />
+          </button>
         </div>
-        
-        <div className="flex flex-col items-center justify-center flex-1">
-          {/* SVG Donut */}
-          <div className="relative w-48 h-48 mb-8">
-            <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-              {/* Gray Segment (15%) */}
-              <circle stroke="#e5e7eb" strokeWidth="6" fill="none" cx="18" cy="18" r="15" />
-              {/* Orange Segment (30%) */}
-              <circle stroke="#f59e0b" strokeWidth="6" strokeDasharray="45 100" strokeLinecap="butt" fill="none" cx="18" cy="18" r="15" />
-              {/* Green Segment (55%) */}
-              <circle stroke="#10b981" strokeWidth="6" strokeDasharray="55 100" strokeDashoffset="-45" strokeLinecap="butt" fill="none" cx="18" cy="18" r="15" />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold text-gray-900">12.5k</span>
-              <span className="text-xs text-gray-500">Total Users</span>
+
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <div className="relative mb-8 h-44 w-44 rounded-full" style={donutStyle}>
+            <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-white">
+              <span className="text-2xl font-bold text-gray-900">{totalSegment.toLocaleString("vi-VN")}</span>
+              <span className="text-xs text-gray-500">khách có đơn</span>
             </div>
           </div>
-          
-          {/* Legend */}
+
           <div className="w-full space-y-3">
-            <div className="flex justify-between items-center text-sm">
-              <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span><span className="text-gray-600">Khách thường xuyên</span></div>
-              <span className="font-bold text-gray-900">55%</span>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center">
+                <span className="mr-2 h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span className="text-gray-600">Khách thường xuyên</span>
+              </div>
+              <span className="font-bold text-gray-900">{frequentPercent}%</span>
             </div>
-            <div className="flex justify-between items-center text-sm">
-              <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 mr-2"></span><span className="text-gray-600">Khách VIP</span></div>
-              <span className="font-bold text-gray-900">30%</span>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center">
+                <span className="mr-2 h-2.5 w-2.5 rounded-full bg-orange-500" />
+                <span className="text-gray-600">Khách VIP (top 10% chi tiêu)</span>
+              </div>
+              <span className="font-bold text-gray-900">{vipPercent}%</span>
             </div>
-            <div className="flex justify-between items-center text-sm">
-              <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-gray-200 mr-2"></span><span className="text-gray-600">Khách mới (1 lần)</span></div>
-              <span className="font-bold text-gray-900">15%</span>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center">
+                <span className="mr-2 h-2.5 w-2.5 rounded-full bg-gray-300" />
+                <span className="text-gray-600">Khách một lần</span>
+              </div>
+              <span className="font-bold text-gray-900">{oneTimePercent}%</span>
             </div>
           </div>
         </div>
       </div>
-
     </div>
   );
 };

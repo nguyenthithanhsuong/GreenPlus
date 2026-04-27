@@ -1,201 +1,298 @@
-import React from 'react';
-import { Eye, Check, X, Image as ImageIcon, PlaySquare, AlignLeft } from 'lucide-react';
+"use client";
 
-// Mock Data
-const contentItems = [
-  {
-    id: 1,
-    title: 'Bữa sáng xanh mát...',
-    snippet: 'Sáng nay mình thử kết hợp bơ hữu cơ mua từ...',
-    thumbnail: 'https://images.unsplash.com/photo-1490645935967-10de6ba810e6?w=100&q=80',
-    type: 'Community',
-    author: 'Trần Ngọc Bích',
-    authorAvatar: 'https://i.pravatar.cc/150?u=11',
-    time: '10:30 AM',
-    date: '19/03/2026',
-    status: 'Pending',
-    violation: null,
-  },
-  {
-    id: 2,
-    title: 'Đập hộp thùng rau...',
-    snippet: 'Mọi người cùng xem rau tươi rói được giao đến...',
-    thumbnail: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=100&q=80',
-    type: 'Video',
-    author: 'Hoàng Nhật Huy',
-    authorAvatar: 'https://i.pravatar.cc/150?u=12',
-    time: '09:15 AM',
-    date: '19/03/2026',
-    status: 'Pending',
-    violation: null,
-  },
-  {
-    id: 3,
-    title: '5 lợi ích tuyệt vời...',
-    snippet: 'Bài viết cung cấp thông tin khoa học về hàm lượng...',
-    thumbnail: null, // Fallback to icon
-    type: 'Blog',
-    author: 'Chuyên gia Dinh dưỡng',
-    authorAvatar: 'https://i.pravatar.cc/150?u=13',
-    time: '15:20 PM',
-    date: '18/03/2026',
-    status: 'Approved',
-    violation: null,
-  },
-  {
-    id: 4,
-    title: 'Review nhà hàng...',
-    snippet: 'Đến đây ăn rất ngon, menu phong phú...',
-    thumbnail: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&q=80',
-    type: 'Community',
-    author: 'Vương Gia Hân',
-    authorAvatar: 'https://i.pravatar.cc/150?u=14',
-    time: '11:00 AM',
-    date: '17/03/2026',
-    status: 'Rejected',
-    violation: 'Vi phạm: Nội dung quảng cáo ngoài hệ...',
-  },
-];
+import { AlignLeft, Check, Eye, Image as ImageIcon, MessageSquareText, PlaySquare, Search, X } from "lucide-react";
+import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/community/greencreator-content.types";
 
-const renderTypeBadge = (type: string) => {
-  if (type === 'Community') return (
-    <span className="px-2.5 py-1.5 bg-orange-50 text-orange-700 rounded-md text-xs font-semibold flex items-center w-fit gap-1.5">
-      <ImageIcon className="w-3.5 h-3.5" /> Community
-    </span>
-  );
-  if (type === 'Video') return (
-    <span className="px-2.5 py-1.5 bg-purple-50 text-purple-700 rounded-md text-xs font-semibold flex items-center w-fit gap-1.5">
-      <PlaySquare className="w-3.5 h-3.5" /> Video
-    </span>
-  );
-  if (type === 'Blog') return (
-    <span className="px-2.5 py-1.5 bg-blue-50 text-blue-700 rounded-md text-xs font-semibold flex items-center w-fit gap-1.5">
-      <AlignLeft className="w-3.5 h-3.5" /> Blog
-    </span>
-  );
-  return null;
+type ContentStatusFilter = "all" | GreenCreatorPostStatus;
+
+type ContentTableProps = {
+  posts: GreenCreatorPostRow[];
+  loading: boolean;
+  savingPostId: string | null;
+  activeStatus: ContentStatusFilter;
+  searchValue: string;
+  onStatusChange: (value: ContentStatusFilter) => void;
+  onSearchChange: (value: string) => void;
+  onViewPost: (post: GreenCreatorPostRow) => void;
+  onApprovePost: (post: GreenCreatorPostRow) => void;
+  onRejectPost: (post: GreenCreatorPostRow) => void;
 };
 
-const ContentTable = () => {
+const statusTabs: Array<{ value: ContentStatusFilter; label: string }> = [
+  { value: "all", label: "Tất cả" },
+  { value: "pending", label: "Chờ duyệt" },
+  { value: "approved", label: "Đã duyệt" },
+  { value: "rejected", label: "Đã từ chối" },
+];
+
+const formatStatusLabel = (status: GreenCreatorPostStatus) => {
+  if (status === "approved") return "Approved";
+  if (status === "rejected") return "Rejected";
+  return "Pending";
+};
+
+const renderTypeBadge = (type: string) => {
+  if (type === "community") {
+    return (
+      <span className="flex w-fit items-center gap-1.5 rounded-md bg-orange-50 px-2.5 py-1.5 text-xs font-semibold text-orange-700">
+        <ImageIcon className="h-3.5 w-3.5" />
+        Community
+      </span>
+    );
+  }
+
+  if (type === "video") {
+    return (
+      <span className="flex w-fit items-center gap-1.5 rounded-md bg-purple-50 px-2.5 py-1.5 text-xs font-semibold text-purple-700">
+        <PlaySquare className="h-3.5 w-3.5" />
+        Video
+      </span>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      
-      {/* Table Top Controls: Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-50 gap-4">
-        <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg overflow-x-auto">
-          <button className="px-4 py-1.5 text-sm font-medium bg-white shadow-sm rounded-md text-gray-900 whitespace-nowrap">Tất cả</button>
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md whitespace-nowrap flex items-center gap-1.5">
-            Chờ duyệt
-            <span className="flex items-center justify-center px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full">24</span>
-          </button>
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md whitespace-nowrap">Đã duyệt</button>
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md whitespace-nowrap">Đã từ chối</button>
+    <span className="flex w-fit items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700">
+      <AlignLeft className="h-3.5 w-3.5" />
+      Blog
+    </span>
+  );
+};
+
+const VIDEO_EXTENSIONS = [".mp4", ".webm", ".ogg", ".mov", ".m4v", ".m3u8"];
+
+const isVideoUrl = (url: string | null | undefined) => {
+  if (!url) {
+    return false;
+  }
+
+  const rawPath = (() => {
+    try {
+      return new URL(url).pathname;
+    } catch {
+      return url;
+    }
+  })();
+
+  const normalizedPath = rawPath.split("?")[0].toLowerCase();
+  return VIDEO_EXTENSIONS.some((extension) => normalizedPath.endsWith(extension));
+};
+
+const ContentTable = ({
+  posts,
+  loading,
+  savingPostId,
+  activeStatus,
+  searchValue,
+  onStatusChange,
+  onSearchChange,
+  onViewPost,
+  onApprovePost,
+  onRejectPost,
+}: ContentTableProps) => {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-gray-50 p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-gray-50 p-1">
+          {statusTabs.map((tab) => {
+            const active = activeStatus === tab.value;
+
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => onStatusChange(tab.value)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  active ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-2">
-           <div className="h-9 w-32 border border-gray-200 rounded-lg bg-gray-50 hidden sm:block"></div>
-           <div className="h-9 w-32 border border-gray-200 rounded-lg bg-gray-50 hidden sm:block"></div>
-        </div>
+        <label className="flex min-w-0 items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500 lg:w-[360px]">
+          <Search className="h-4 w-4 shrink-0" />
+          <input
+            type="search"
+            value={searchValue}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Tìm theo tiêu đề, tác giả, bình luận..."
+            className="w-full bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
+          />
+        </label>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-gray-100 bg-gray-50/60 text-xs text-gray-500">
             <tr>
-              <th className="px-6 py-4 font-medium w-[30%]">Nội dung (Title & Snippet)</th>
-              <th className="px-6 py-4 font-medium">Loại (Type)</th>
-              <th className="px-6 py-4 font-medium">Tác giả (Author)</th>
-              <th className="px-6 py-4 font-medium">Ngày gửi</th>
+              <th className="w-[32%] px-6 py-4 font-medium">Nội dung</th>
+              <th className="px-6 py-4 font-medium">Loại</th>
+              <th className="px-6 py-4 font-medium">Tác giả</th>
+              <th className="px-6 py-4 font-medium">Tương tác</th>
               <th className="px-6 py-4 font-medium">Trạng thái</th>
-              <th className="px-6 py-4 font-medium text-right">Thao tác</th>
+              <th className="px-6 py-4 text-right font-medium">Thao tác</th>
             </tr>
           </thead>
+
           <tbody>
-            {contentItems.map((item) => (
-              <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-start gap-4">
-                    {item.thumbnail ? (
-                      <img src={item.thumbnail} alt={item.title} className="w-14 h-10 rounded-lg object-cover border border-gray-100 shrink-0" />
-                    ) : (
-                      <div className="w-14 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-400 border border-blue-100 shrink-0">
-                        <AlignLeft className="w-5 h-5" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-bold text-gray-900 mb-0.5">{item.title}</p>
-                      {item.violation ? (
-                        <p className="text-[11px] font-medium text-red-500 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                          {item.violation}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-gray-500 line-clamp-1">{item.snippet}</p>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 align-top">
-                  {renderTypeBadge(item.type)}
-                </td>
-                <td className="px-6 py-4 align-top">
-                  <div className="flex items-center gap-2">
-                    <img src={item.authorAvatar} alt={item.author} className="w-6 h-6 rounded-full object-cover" />
-                    <span className="font-semibold text-gray-800">{item.author}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 align-top">
-                  <p className="text-gray-500 text-xs mb-0.5">{item.time}</p>
-                  <p className="text-gray-400 text-xs">{item.date}</p>
-                </td>
-                <td className="px-6 py-4 align-top">
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'Approved' ? 'bg-[#059669]' : item.status === 'Pending' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
-                    <span className={`font-semibold text-[13px] ${item.status === 'Approved' ? 'text-[#059669]' : item.status === 'Pending' ? 'text-yellow-600' : 'text-red-500'}`}>
-                      {item.status}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right align-top">
-                  <div className="flex items-center justify-end gap-1 mt-0.5">
-                    <button className="p-1.5 text-gray-400 hover:text-gray-900 transition-colors" title="Xem chi tiết">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    {item.status === 'Pending' && (
-                      <>
-                        <button className="p-1.5 text-gray-400 hover:text-[#059669] hover:bg-emerald-50 rounded-full transition-colors" title="Duyệt">
-                          <Check className="w-4 h-4" strokeWidth={2.5} />
-                        </button>
-                        <button className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Từ chối">
-                          <X className="w-4 h-4" strokeWidth={2.5} />
-                        </button>
-                      </>
-                    )}
-                  </div>
+            {loading ? (
+              <tr>
+                <td className="px-6 py-12 text-center text-sm text-gray-500" colSpan={6}>
+                  Đang tải dữ liệu Green Creator...
                 </td>
               </tr>
-            ))}
+            ) : posts.length === 0 ? (
+              <tr>
+                <td className="px-6 py-12 text-center text-sm text-gray-500" colSpan={6}>
+                  Không có bài đăng phù hợp với bộ lọc hiện tại.
+                </td>
+              </tr>
+            ) : (
+              posts.map((post) => {
+                const status = post.status ?? "pending";
+                const saving = savingPostId === post.post_id;
+                const statusLabel = formatStatusLabel(status);
+                const firstMediaUrl = post.media[0]?.media_url ?? null;
+                const shouldRenderVideoThumb = post.type === "video" || isVideoUrl(firstMediaUrl);
+
+                return (
+                  <tr key={post.post_id} className="border-b border-gray-50 transition-colors hover:bg-gray-50/60">
+                    <td className="px-6 py-4 align-top">
+                      <div className="flex items-start gap-4">
+                        {firstMediaUrl ? (
+                          shouldRenderVideoThumb ? (
+                            <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-100 bg-gray-100">
+                              <video
+                                src={firstMediaUrl}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="h-full w-full object-cover"
+                              />
+                              <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+                                <PlaySquare className="h-4 w-4 text-white" />
+                              </span>
+                            </div>
+                          ) : (
+                            <img
+                              src={firstMediaUrl}
+                              alt={post.title}
+                              className="h-12 w-16 shrink-0 rounded-lg border border-gray-100 object-cover"
+                            />
+                          )
+                        ) : (
+                          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-400">
+                            <AlignLeft className="h-5 w-5" />
+                          </div>
+                        )}
+
+                        <div className="min-w-0">
+                          <p className="mb-0.5 truncate font-bold text-gray-900">{post.title}</p>
+                          <p className="line-clamp-2 text-xs text-gray-500">{post.content}</p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 align-top">{renderTypeBadge(post.type)}</td>
+
+                    <td className="px-6 py-4 align-top">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={post.author_image_url ?? "https://i.pravatar.cc/150?img=32"}
+                          alt={post.author_name ?? "Author"}
+                          className="h-7 w-7 rounded-full object-cover"
+                        />
+                        <div>
+                          <p className="font-semibold text-gray-800">{post.author_name ?? "N/A"}</p>
+                          <p className="text-xs text-gray-400">
+                            {post.created_at ? new Date(post.created_at).toLocaleString("vi-VN") : "Chưa có thời gian"}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 align-top">
+                      <div className="space-y-1 text-xs text-gray-500">
+                        <p className="flex items-center gap-1.5 font-medium text-gray-700">
+                          <MessageSquareText className="h-3.5 w-3.5 text-gray-400" />
+                          {post.comment_count.toLocaleString("vi-VN")} bình luận
+                        </p>
+                        <p>{post.interaction_count.toLocaleString("vi-VN")} tương tác</p>
+                        <p>{post.media_count.toLocaleString("vi-VN")} media</p>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 align-top">
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            status === "approved" ? "bg-emerald-500" : status === "rejected" ? "bg-red-500" : "bg-yellow-500"
+                          }`}
+                        />
+                        <span
+                          className={`text-[13px] font-semibold ${
+                            status === "approved"
+                              ? "text-emerald-600"
+                              : status === "rejected"
+                                ? "text-red-500"
+                                : "text-yellow-600"
+                          }`}
+                        >
+                          {statusLabel}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 align-top text-right">
+                      <div className="mt-0.5 flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onViewPost(post)}
+                          className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onApprovePost(post)}
+                          disabled={saving || status === "approved"}
+                          className="rounded-full p-2 text-gray-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          title="Duyệt"
+                        >
+                          <Check className="h-4 w-4" strokeWidth={2.5} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onRejectPost(post)}
+                          disabled={saving || status === "rejected"}
+                          className="rounded-full p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          title="Từ chối"
+                        >
+                          <X className="h-4 w-4" strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-        <span className="text-sm text-gray-500">
-          Hiển thị <span className="font-bold text-gray-900">1 - 4</span> trong tổng số <span className="font-bold text-gray-900">4,520</span> nội dung
+      <div className="flex flex-col gap-2 border-t border-gray-100 px-6 py-4 text-sm text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+        <span>
+          Hiển thị <span className="font-bold text-gray-900">{posts.length.toLocaleString("vi-VN")}</span> bài đăng
         </span>
-        
-        <div className="flex items-center gap-1">
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">&lt;</button>
-          <button className="w-8 h-8 flex items-center justify-center border border-[#059669] bg-[#059669] text-white rounded-lg text-sm font-medium">1</button>
-          <button className="w-8 h-8 flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium">2</button>
-          <button className="w-8 h-8 flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium">3</button>
-          <span className="px-1 text-gray-400">...</span>
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">&gt;</button>
-        </div>
+        <span>
+          Lọc theo trạng thái <span className="font-bold text-gray-900">{activeStatus === "all" ? "Tất cả" : formatStatusLabel(activeStatus)}</span>
+        </span>
       </div>
-
     </div>
   );
 };

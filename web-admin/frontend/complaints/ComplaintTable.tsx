@@ -1,225 +1,244 @@
-import React from 'react';
-import { CreditCard, RefreshCcw, MessageSquare, Package, Eye, Info } from 'lucide-react';
+"use client";
 
-// Mock Data
-const complaints = [
-  {
-    id: 1,
-    customer: 'Nguyễn Minh Trí',
-    avatar: 'https://i.pravatar.cc/150?u=21',
-    orderId: 'ORD-9981',
-    type: 'Hoàn tiền',
-    reasonTitle: 'Thực phẩm bị dập nát',
-    reasonDesc: 'Hộp cà chua cherry và dâu tây giao đến nơi bị dập nát chảy nước không sử dụng được. Yêu cầu hoà...',
-    time: '08:30 AM',
-    date: '20/03/2026',
-    statusText: 'Pending',
-    statusColor: 'text-red-500',
-    dotColor: 'bg-red-500',
-    actionType: 'primary', // Green button
-  },
-  {
-    id: 2,
-    customer: 'Trần Lan Ngọc',
-    avatar: 'https://i.pravatar.cc/150?u=22',
-    orderId: 'ORD-9982',
-    type: 'Đổi trả hàng',
-    reasonTitle: 'Giao nhầm sản phẩm',
-    reasonDesc: 'Mình đặt rau xà lách thủy canh nhưng shop lại giao cải thìa. Xin vui lòng đổi lại giúp mình.',
-    time: '19:15 PM',
-    date: '19/03/2026',
-    statusText: 'Pending',
-    statusColor: 'text-red-500',
-    dotColor: 'bg-red-500',
-    actionType: 'primary',
-  },
-  {
-    id: 3,
-    customer: 'Lê Hải Đăng',
-    avatar: 'https://i.pravatar.cc/150?u=23',
-    orderId: 'Phản hồi chung',
-    isGeneral: true,
-    type: 'Góp ý',
-    reasonTitle: 'Ứng dụng chậm',
-    reasonDesc: 'Khi tìm kiếm sản phẩm vào giờ cao điểm app load rất lâu, mong đội ngũ kỹ thuật tối ưu lại.',
-    time: '14:20 PM',
-    date: '19/03/2026',
-    statusText: 'Pending',
-    statusColor: 'text-yellow-600',
-    dotColor: 'bg-yellow-500',
-    actionType: 'secondary', // Gray button
-  },
-  {
-    id: 4,
-    customer: 'Phạm Băng',
-    avatar: 'https://i.pravatar.cc/150?u=24',
-    orderId: 'ORD-9910',
-    type: 'Hoàn tiền',
-    reasonTitle: 'Giao thiếu 1kg khoai tây Đà Lạt.',
-    reasonDesc: '',
-    time: '10:00 AM',
-    date: '18/03/2026',
-    statusText: 'Resolved',
-    statusColor: 'text-[#059669]',
-    dotColor: 'bg-[#059669]',
-    actionType: 'icon', // Eye icon
-  },
-  {
-    id: 5,
-    customer: 'Kiều Trinh',
-    avatar: 'https://i.pravatar.cc/150?u=25',
-    orderId: 'ORD-9950',
-    type: 'Đổi trả hàng',
-    reasonTitle: 'Rau héo không tươi như hình.',
-    reasonDesc: '',
-    violation: 'Bằng chứng không hợp lệ (hình mờ).',
-    time: '15:00 PM',
-    date: '17/03/2026',
-    statusText: 'Rejected',
-    statusColor: 'text-gray-500',
-    dotColor: 'bg-gray-400',
-    actionType: 'icon',
-  },
-];
+import { CreditCard, Eye, MessageSquare, Package, RefreshCcw, Search, XCircle, CircleCheck } from "lucide-react";
+import { ComplaintRow, ComplaintStatus } from "../../backend/modules/community/complaint-management.types";
 
-// Helper to render the Type Badge
-const renderTypeBadge = (type: string) => {
-  if (type === 'Hoàn tiền') return (
-    <span className="px-2.5 py-1.5 bg-red-50 text-red-600 rounded-md text-xs font-semibold flex items-center w-fit gap-1.5 border border-red-100">
-      <CreditCard className="w-3.5 h-3.5" /> Hoàn tiền
-    </span>
-  );
-  if (type === 'Đổi trả hàng') return (
-    <span className="px-2.5 py-1.5 bg-orange-50 text-orange-600 rounded-md text-xs font-semibold flex items-center w-fit gap-1.5 border border-orange-100">
-      <RefreshCcw className="w-3.5 h-3.5" /> Đổi trả hàng
-    </span>
-  );
-  if (type === 'Góp ý') return (
-    <span className="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-md text-xs font-semibold flex items-center w-fit gap-1.5 border border-blue-100">
-      <MessageSquare className="w-3.5 h-3.5" /> Góp ý
-    </span>
-  );
-  return null;
+type ComplaintStatusFilter = "all" | ComplaintStatus;
+
+type ComplaintTableProps = {
+  complaints: ComplaintRow[];
+  loading: boolean;
+  savingComplaintId: string | null;
+  activeStatus: ComplaintStatusFilter;
+  searchValue: string;
+  onStatusChange: (value: ComplaintStatusFilter) => void;
+  onSearchChange: (value: string) => void;
+  onViewComplaint: (complaint: ComplaintRow) => void;
+  onResolve: (complaint: ComplaintRow) => void;
+  onReject: (complaint: ComplaintRow) => void;
 };
 
-const ComplaintTable = () => {
+const statusTabs: Array<{ value: ComplaintStatusFilter; label: string }> = [
+  { value: "all", label: "Tất cả" },
+  { value: "pending", label: "Chờ xử lý" },
+  { value: "resolved", label: "Đã giải quyết" },
+  { value: "rejected", label: "Đã từ chối" },
+];
+
+const normalizeType = (type: string) => type.trim().toLowerCase();
+
+const renderTypeBadge = (type: string) => {
+  const normalized = normalizeType(type);
+  if (normalized.includes("hoàn") || normalized.includes("refund")) {
+    return (
+      <span className="flex w-fit items-center gap-1.5 rounded-md border border-red-100 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600">
+        <CreditCard className="h-3.5 w-3.5" /> Hoàn tiền
+      </span>
+    );
+  }
+
+  if (normalized.includes("đổi") || normalized.includes("trả") || normalized.includes("return")) {
+    return (
+      <span className="flex w-fit items-center gap-1.5 rounded-md border border-orange-100 bg-orange-50 px-2.5 py-1.5 text-xs font-semibold text-orange-600">
+        <RefreshCcw className="h-3.5 w-3.5" /> Đổi trả
+      </span>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      
-      {/* Table Top Controls: Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-50 gap-4">
-        <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg overflow-x-auto">
-          <button className="px-4 py-1.5 text-sm font-medium bg-white shadow-sm rounded-md text-gray-900 whitespace-nowrap">Tất cả</button>
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md whitespace-nowrap flex items-center gap-1.5">
-            Chờ xử lý
-            <span className="flex items-center justify-center px-1.5 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded-full">5</span>
-          </button>
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md whitespace-nowrap">Đã giải quyết</button>
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md whitespace-nowrap">Đã từ chối</button>
+    <span className="flex w-fit items-center gap-1.5 rounded-md border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-600">
+      <MessageSquare className="h-3.5 w-3.5" /> {type}
+    </span>
+  );
+};
+
+const statusUi = (status: ComplaintStatus) => {
+  if (status === "resolved") {
+    return { label: "Resolved", textClassName: "text-emerald-600", dotClassName: "bg-emerald-500" };
+  }
+
+  if (status === "rejected") {
+    return { label: "Rejected", textClassName: "text-gray-500", dotClassName: "bg-gray-400" };
+  }
+
+  return { label: "Pending", textClassName: "text-red-500", dotClassName: "bg-red-500" };
+};
+
+const ComplaintTable = ({
+  complaints,
+  loading,
+  savingComplaintId,
+  activeStatus,
+  searchValue,
+  onStatusChange,
+  onSearchChange,
+  onViewComplaint,
+  onResolve,
+  onReject,
+}: ComplaintTableProps) => {
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-gray-50 p-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center space-x-1 overflow-x-auto rounded-lg bg-gray-50 p-1">
+          {statusTabs.map((tab) => {
+            const active = tab.value === activeStatus;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => onStatusChange(tab.value)}
+                className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${
+                  active ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-2">
-           <div className="h-9 w-32 border border-gray-200 rounded-lg bg-gray-50 hidden sm:block"></div>
-           <div className="h-9 w-32 border border-gray-200 rounded-lg bg-gray-50 hidden sm:block"></div>
-        </div>
+        <label className="flex min-w-0 items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500 md:w-[320px]">
+          <Search className="h-4 w-4 shrink-0" />
+          <input
+            type="search"
+            value={searchValue}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Tìm theo khách hàng, mô tả, mã đơn..."
+            className="w-full bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
+          />
+        </label>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-gray-100 bg-gray-50/50 text-xs text-gray-500">
             <tr>
-              <th className="px-6 py-4 font-medium">Khách hàng / Mã Đơn</th>
-              <th className="px-6 py-4 font-medium">Phân loại (Type)</th>
-              <th className="px-6 py-4 font-medium w-1/3">Nội dung (Reason)</th>
-              <th className="px-6 py-4 font-medium">Ngày gửi</th>
+              <th className="px-6 py-4 font-medium">Khách hàng / Mã đơn</th>
+              <th className="px-6 py-4 font-medium">Loại khiếu nại</th>
+              <th className="w-1/3 px-6 py-4 font-medium">Nội dung</th>
+              <th className="px-6 py-4 font-medium">Thời gian</th>
               <th className="px-6 py-4 font-medium">Trạng thái</th>
-              <th className="px-6 py-4 font-medium text-right">Thao tác</th>
+              <th className="px-6 py-4 text-right font-medium">Thao tác</th>
             </tr>
           </thead>
+
           <tbody>
-            {complaints.map((item) => (
-              <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <img src={item.avatar} alt={item.customer} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                    <div>
-                      <p className="font-bold text-gray-900 mb-0.5">{item.customer}</p>
-                      <p className={`text-[11px] font-medium flex items-center gap-1 ${item.isGeneral ? 'text-gray-500' : 'text-[#059669]'}`}>
-                        {!item.isGeneral && <Package className="w-3 h-3" />}
-                        {item.orderId}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 align-top pt-5">
-                  {renderTypeBadge(item.type)}
-                </td>
-                <td className="px-6 py-4 align-top">
-                  <p className="font-bold text-gray-800 mb-1">{item.reasonTitle}</p>
-                  {item.reasonDesc && (
-                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{item.reasonDesc}</p>
-                  )}
-                  {item.violation && (
-                    <p className="text-[11px] font-medium text-red-500 flex items-center gap-1 mt-1">
-                      <Info className="w-3.5 h-3.5" />
-                      {item.violation}
-                    </p>
-                  )}
-                </td>
-                <td className="px-6 py-4 align-top pt-5">
-                  <p className="text-gray-500 text-xs mb-0.5">{item.time}</p>
-                  <p className="text-gray-400 text-xs">{item.date}</p>
-                </td>
-                <td className="px-6 py-4 align-top pt-5">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${item.dotColor}`}></span>
-                    <span className={`font-semibold text-[13px] ${item.statusColor}`}>
-                      {item.statusText}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right align-top pt-4">
-                  <div className="flex items-center justify-end">
-                    {item.actionType === 'primary' && (
-                      <button className="px-4 py-1.5 bg-[#059669] hover:bg-[#047857] text-white rounded-md text-xs font-semibold transition-colors shadow-sm">
-                        Xử lý ngay
-                      </button>
-                    )}
-                    {item.actionType === 'secondary' && (
-                      <button className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-xs font-semibold transition-colors shadow-sm">
-                        Xem & Đóng
-                      </button>
-                    )}
-                    {item.actionType === 'icon' && (
-                      <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors" title="Xem chi tiết">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
+            {loading ? (
+              <tr>
+                <td className="px-6 py-12 text-center text-sm text-gray-500" colSpan={6}>
+                  Đang tải danh sách khiếu nại...
                 </td>
               </tr>
-            ))}
+            ) : complaints.length === 0 ? (
+              <tr>
+                <td className="px-6 py-12 text-center text-sm text-gray-500" colSpan={6}>
+                  Không có khiếu nại phù hợp với bộ lọc hiện tại.
+                </td>
+              </tr>
+            ) : (
+              complaints.map((item) => {
+                const status = statusUi(item.status);
+                const saving = savingComplaintId === item.complaint_id;
+
+                return (
+                  <tr key={item.complaint_id} className="border-b border-gray-50 transition-colors hover:bg-gray-50/50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={item.user_image_url ?? "https://i.pravatar.cc/150?img=36"}
+                          alt={item.user_name ?? "Customer"}
+                          className="h-10 w-10 shrink-0 rounded-full object-cover"
+                        />
+                        <div>
+                          <p className="mb-0.5 font-bold text-gray-900">{item.user_name ?? "Khách hàng ẩn danh"}</p>
+                          <p className={`flex items-center gap-1 text-[11px] font-medium ${item.order_id ? "text-[#059669]" : "text-gray-500"}`}>
+                            {item.order_id ? <Package className="h-3 w-3" /> : null}
+                            {item.order_id ?? "Không gắn đơn hàng"}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 align-top pt-5">{renderTypeBadge(item.type)}</td>
+
+                    <td className="px-6 py-4 align-top">
+                      <p className="line-clamp-2 text-sm font-medium leading-relaxed text-gray-700">{item.description}</p>
+                      {item.reject_reason ? (
+                        <p className="mt-2 flex items-start gap-1 text-[11px] font-medium text-red-500">
+                          <XCircle className="mt-0.5 h-3.5 w-3.5" />
+                          Lý do từ chối: {item.reject_reason}
+                        </p>
+                      ) : null}
+                    </td>
+
+                    <td className="px-6 py-4 align-top pt-5">
+                      <p className="text-xs text-gray-500">
+                        {item.created_at ? new Date(item.created_at).toLocaleString("vi-VN") : "Không có thời gian"}
+                      </p>
+                    </td>
+
+                    <td className="px-6 py-4 align-top pt-5">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 rounded-full ${status.dotClassName}`} />
+                        <span className={`text-[13px] font-semibold ${status.textClassName}`}>{status.label}</span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 align-top pt-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-100"
+                          onClick={() => onViewComplaint(item)}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <Eye className="h-3.5 w-3.5" />
+                            Chi tiết
+                          </span>
+                        </button>
+
+                        {item.status === "pending" ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={saving}
+                              onClick={() => onResolve(item)}
+                              className="rounded-md bg-[#059669] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <span className="inline-flex items-center gap-1">
+                                <CircleCheck className="h-3.5 w-3.5" />
+                                Resolve
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={saving}
+                              onClick={() => onReject(item)}
+                              className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-        <span className="text-sm text-gray-500">
-          Hiển thị <span className="font-bold text-gray-900">1 - 5</span> trong tổng số <span className="font-bold text-gray-900">138</span> khiếu nại
+      <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-sm text-gray-500">
+        <span>
+          Hiển thị <span className="font-bold text-gray-900">{complaints.length.toLocaleString("vi-VN")}</span> khiếu nại
         </span>
-        
-        <div className="flex items-center gap-1">
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">&lt;</button>
-          <button className="w-8 h-8 flex items-center justify-center border border-[#059669] bg-[#059669] text-white rounded-lg text-sm font-medium">1</button>
-          <button className="w-8 h-8 flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium">2</button>
-          <button className="w-8 h-8 flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium">3</button>
-          <span className="px-1 text-gray-400">...</span>
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">&gt;</button>
-        </div>
+        <span>
+          Trạng thái hiện tại: <span className="font-bold text-gray-900">{activeStatus === "all" ? "Tất cả" : activeStatus}</span>
+        </span>
       </div>
-
     </div>
   );
 };

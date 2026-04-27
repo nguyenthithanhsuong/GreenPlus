@@ -83,6 +83,44 @@ export class UserManagementRepository {
     return (data as UserRow | null) ?? null;
   }
 
+  async findByEmail(email: string): Promise<UserRow | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      return null;
+    }
+
+    const { data, error } = await this.supabase
+      .from("users")
+      .select(`
+  user_id,
+  role_id,
+  name,
+  email,
+  password,
+  phone,
+  address,
+  status,
+  created_at,
+  image_url,
+  roles(
+    role_name,
+    is_customer,
+    is_admin,
+    is_manager,
+    is_employee,
+    is_shipper
+  )
+`)
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data as UserRow | null) ?? null;
+  }
+
   async createUser(input: CreateUserInput & { passwordHash: string }): Promise<UserRow> {
     const { data, error } = await this.supabase
       .from("users")

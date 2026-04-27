@@ -1,7 +1,12 @@
+"use client";
+
 import React from 'react';
 import { Search, Bell } from 'lucide-react';
+import { useCurrentUserProfile } from '../shared/useCurrentUserProfile';
 
 const Header = () => {
+  const { profile } = useCurrentUserProfile();
+
   return (
     <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 md:px-8 shrink-0">
       <div className="relative w-full max-w-md">
@@ -27,12 +32,12 @@ const Header = () => {
         
         <div className="flex items-center gap-3 border-l border-gray-100 pl-6 cursor-pointer">
           <div className="hidden md:block text-right">
-            <p className="text-sm font-semibold text-gray-900 leading-tight">Thanh Sương</p>
-            <p className="text-xs text-gray-500">GreenFarm Củ Chi</p>
+            <p className="text-sm font-semibold text-gray-900 leading-tight">{profile?.name ?? "Người dùng"}</p>
+            <p className="text-xs text-gray-500">{profile?.roleName ?? "Admin"}</p>
           </div>
           <img 
-            src="https://i.pravatar.cc/150?u=a042581f4e29026704d" 
-            alt="User avatar" 
+            src={profile?.imageUrl ?? "https://i.pravatar.cc/150?u=greenplus-default-user"}
+            alt={profile ? `Avatar của ${profile.name}` : "User avatar"}
             className="w-9 h-9 rounded-full object-cover"
           />
         </div>

@@ -1,110 +1,120 @@
-import React from 'react';
-import { Store, Image as ImageIcon, PlaySquare, Check, X } from 'lucide-react';
+import Link from "next/link";
+import { Image as ImageIcon, PlaySquare, Store } from "lucide-react";
+import { SupplierRow } from "../../backend/modules/suppliers/supplier-management.types";
+import { GreenCreatorPostRow } from "../../backend/modules/community/greencreator-content.types";
 
-const ActionTables = () => {
+type ActionTablesProps = {
+  suppliers: SupplierRow[];
+  posts: GreenCreatorPostRow[];
+  loading: boolean;
+};
+
+const ActionTables = ({ suppliers, posts, loading }: ActionTablesProps) => {
+  const pendingSuppliers = suppliers.filter((supplier) => supplier.status === "pending").slice(0, 5);
+  const pendingPosts = posts.filter((post) => post.status === "pending").slice(0, 5);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Pending Partners Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex justify-between items-center p-5 border-b border-gray-50">
-          <h3 className="font-bold text-gray-900 flex items-center gap-2">
-            <Store className="w-4 h-4 text-gray-500" />
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-50 p-5">
+          <h3 className="flex items-center gap-2 font-bold text-gray-900">
+            <Store className="h-4 w-4 text-gray-500" />
             Đối tác chờ duyệt
           </h3>
-          <a href="#" className="text-sm text-emerald-600 font-medium hover:underline">Xem tất cả</a>
+          <Link href="/suppliers" className="text-sm font-medium text-emerald-600 hover:underline">Xem tất cả</Link>
         </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-gray-500 bg-gray-50 border-b border-gray-100">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-gray-100 bg-gray-50 text-xs text-gray-500">
               <tr>
                 <th className="px-5 py-3 font-medium">Tên nhà cung cấp</th>
                 <th className="px-5 py-3 font-medium">Chứng nhận</th>
-                <th className="px-5 py-3 font-medium text-right">Thao tác</th>
+                <th className="px-5 py-3 font-medium text-right">Điều hướng</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-gray-50">
-                <td className="px-5 py-3">
-                  <p className="font-semibold text-gray-900">Nông trại Rau Sạch Đà Lạt</p>
-                  <p className="text-xs text-gray-400">Đăng ký: 2 giờ trước</p>
-                </td>
-                <td className="px-5 py-3">
-                  <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-xs font-medium border border-emerald-100">VietGAP</span>
-                </td>
-                <td className="px-5 py-3 text-right">
-                  <button className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors">
-                    Kiểm duyệt
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-5 py-3">
-                  <p className="font-semibold text-gray-900">Trang trại Heo Hữu Cơ BAF</p>
-                  <p className="text-xs text-gray-400">Đăng ký: 1 ngày trước</p>
-                </td>
-                <td className="px-5 py-3">
-                  <span className="px-2 py-1 bg-teal-50 text-teal-600 rounded text-xs font-medium border border-teal-100">GlobalGAP</span>
-                </td>
-                <td className="px-5 py-3 text-right">
-                  <button className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors">
-                    Kiểm duyệt
-                  </button>
-                </td>
-              </tr>
+              {loading ? (
+                <tr>
+                  <td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">Đang tải đối tác...</td>
+                </tr>
+              ) : pendingSuppliers.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">Không có đối tác chờ duyệt.</td>
+                </tr>
+              ) : (
+                pendingSuppliers.map((supplier) => (
+                  <tr key={supplier.supplier_id} className="border-b border-gray-50 last:border-b-0">
+                    <td className="px-5 py-3">
+                      <p className="font-semibold text-gray-900">{supplier.name}</p>
+                      <p className="text-xs text-gray-400">
+                        Đăng ký: {supplier.created_at ? new Date(supplier.created_at).toLocaleString("vi-VN") : "N/A"}
+                      </p>
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="rounded border border-emerald-100 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-600">
+                        {supplier.certificate ?? "Chưa cung cấp"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <Link href="/suppliers" className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600">
+                        Kiểm duyệt
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Pending Content Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex justify-between items-center p-5 border-b border-gray-50">
-          <h3 className="font-bold text-gray-900 flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-gray-500" />
+      <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-50 p-5">
+          <h3 className="flex items-center gap-2 font-bold text-gray-900">
+            <ImageIcon className="h-4 w-4 text-gray-500" />
             Nội dung chờ duyệt
           </h3>
-          <a href="#" className="text-sm text-emerald-600 font-medium hover:underline">Xem tất cả</a>
+          <Link href="/greencreators" className="text-sm font-medium text-emerald-600 hover:underline">Xem tất cả</Link>
         </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-gray-500 bg-gray-50 border-b border-gray-100">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-gray-100 bg-gray-50 text-xs text-gray-500">
               <tr>
                 <th className="px-5 py-3 font-medium">Người dùng / Loại</th>
                 <th className="px-5 py-3 font-medium">Nội dung tóm tắt</th>
-                <th className="px-5 py-3 font-medium text-right">Thao tác</th>
+                <th className="px-5 py-3 font-medium text-right">Điều hướng</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-gray-50">
-                <td className="px-5 py-3">
-                  <p className="font-semibold text-gray-900">Nguyen Anh</p>
-                  <p className="text-xs text-blue-600 flex items-center gap-1"><PlaySquare className="w-3 h-3" /> Video</p>
-                </td>
-                <td className="px-5 py-3 text-gray-600 truncate max-w-[200px]">
-                  Cách làm Salad Keto với bơ và cà chua bi
-                </td>
-                <td className="px-5 py-3">
-                  <div className="flex items-center justify-end gap-2">
-                    <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><X className="w-4 h-4" /></button>
-                    <button className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"><Check className="w-4 h-4" /></button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-5 py-3">
-                  <p className="font-semibold text-gray-900">Trần Minh</p>
-                  <p className="text-xs text-purple-600 flex items-center gap-1"><ImageIcon className="w-3 h-3" /> Post</p>
-                </td>
-                <td className="px-5 py-3 text-gray-600 truncate max-w-[200px]">
-                  Review rau sạch mùa mưa từ nông trại Green
-                </td>
-                <td className="px-5 py-3">
-                  <div className="flex items-center justify-end gap-2">
-                    <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><X className="w-4 h-4" /></button>
-                    <button className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"><Check className="w-4 h-4" /></button>
-                  </div>
-                </td>
-              </tr>
+              {loading ? (
+                <tr>
+                  <td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">Đang tải nội dung...</td>
+                </tr>
+              ) : pendingPosts.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">Không có nội dung chờ duyệt.</td>
+                </tr>
+              ) : (
+                pendingPosts.map((post) => (
+                  <tr key={post.post_id} className="border-b border-gray-50 last:border-b-0">
+                    <td className="px-5 py-3">
+                      <p className="font-semibold text-gray-900">{post.author_name ?? "Người dùng ẩn danh"}</p>
+                      <p className="flex items-center gap-1 text-xs text-blue-600">
+                        {post.type === "video" ? <PlaySquare className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
+                        {post.type}
+                      </p>
+                    </td>
+                    <td className="max-w-[220px] truncate px-5 py-3 text-gray-600">{post.title}</td>
+                    <td className="px-5 py-3 text-right">
+                      <Link href="/greencreators" className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100">
+                        Xử lý
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

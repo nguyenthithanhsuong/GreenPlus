@@ -42,6 +42,27 @@ export class UserManagementService {
     return users.map((user) => this.toSummary(user));
   }
 
+  async findCurrentUser(input: { userId?: string; email?: string | null }): Promise<UserSummary | null> {
+    const userId = input.userId?.trim();
+    const email = input.email?.trim().toLowerCase();
+
+    if (userId) {
+      const byId = await this.repository.findById(userId);
+      if (byId) {
+        return this.toSummary(byId);
+      }
+    }
+
+    if (email) {
+      const byEmail = await this.repository.findByEmail(email);
+      if (byEmail) {
+        return this.toSummary(byEmail);
+      }
+    }
+
+    return null;
+  }
+
   async createUser(input: CreateUserInput): Promise<UserSummary> {
     const name = input.name.trim();
     const email = input.email.trim().toLowerCase();

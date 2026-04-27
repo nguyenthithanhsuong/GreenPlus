@@ -48,7 +48,7 @@ const navGroups = [
       { href: "/shippers", label: "Giao hàng", icon: Truck },
       { href: "/complaints", label: "Khiếu nại", icon: AlertCircle },
       { href: "/customers", label: "Phân tích khách hàng", icon: PieChart },
-      { href: "/greencreators", label: "Kiểm duyệt nội dung", icon: Image },
+      { href: "/greencreators", label: "Green Creator", icon: Image },
       { href: "/reports", label: "Báo cáo tài chính", icon: FileText },
     ],
   },

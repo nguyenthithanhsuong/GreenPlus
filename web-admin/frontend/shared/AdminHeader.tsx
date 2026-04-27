@@ -1,6 +1,11 @@
+"use client";
+
 import { Bell } from "lucide-react";
+import { useCurrentUserProfile } from "./useCurrentUserProfile";
 
 export default function AdminHeader() {
+  const { profile } = useCurrentUserProfile();
+
   return (
     <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 md:px-8 shrink-0">
       
@@ -21,15 +26,15 @@ export default function AdminHeader() {
 
         <div className="flex items-center gap-3 border-l border-gray-100 pl-6 cursor-pointer">
           <img
-            src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
-            alt="User avatar"
+            src={profile?.imageUrl ?? "https://i.pravatar.cc/150?u=greenplus-default-user"}
+            alt={profile ? `Avatar của ${profile.name}` : "User avatar"}
             className="w-9 h-9 rounded-full object-cover"
           />
           <div className="hidden md:block">
             <p className="text-sm font-semibold text-gray-900 leading-tight">
-              Thanh Sương
+              {profile?.name ?? "Người dùng"}
             </p>
-            <p className="text-xs text-gray-500">Admin</p>
+            <p className="text-xs text-gray-500">{profile?.roleName ?? "Admin"}</p>
           </div>
         </div>
       </div>

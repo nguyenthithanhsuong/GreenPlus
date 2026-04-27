@@ -19,6 +19,10 @@ export class UserManagementFacade {
     return this.service.listUsers();
   }
 
+  async findCurrentUser(input: { userId?: string; email?: string | null }): Promise<UserSummary | null> {
+    return this.service.findCurrentUser(input);
+  }
+
   async createUser(input: CreateUserInput): Promise<UserSummary> {
     const created = await this.service.createUser(input);
     await this.subject.notify({ type: "user_created", userId: created.user_id, actor: "admin" });

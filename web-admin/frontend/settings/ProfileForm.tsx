@@ -1,7 +1,42 @@
+"use client";
+
 import React from 'react';
 import { Camera, Home, Save } from 'lucide-react';
+import { useCurrentUserProfile } from '../shared/useCurrentUserProfile';
 
 const ProfileForm = () => {
+  const { profile } = useCurrentUserProfile();
+  const [formValues, setFormValues] = React.useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'Admin',
+    address: '',
+  });
+
+  React.useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    setFormValues({
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      role: profile.roleName,
+      address: profile.address,
+    });
+  }, [profile]);
+
+  const handleChange =
+    (field: keyof typeof formValues) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormValues((previous) => ({
+        ...previous,
+        [field]: event.target.value,
+      }));
+    };
+
   return (
     <div className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8">
       
@@ -17,7 +52,7 @@ const ProfileForm = () => {
       <div className="flex items-center gap-6 mb-8">
         <div className="relative">
           <img 
-            src="https://i.pravatar.cc/150?u=a042581f4e29026704d" 
+            src={profile?.imageUrl ?? 'https://i.pravatar.cc/150?u=greenplus-default-user'}
             alt="Avatar" 
             className="w-20 h-20 rounded-full object-cover border border-gray-200"
           />
@@ -26,8 +61,11 @@ const ProfileForm = () => {
           </button>
         </div>
         <div>
-          <h3 className="text-base font-bold text-gray-900">Thanh Sương</h3>
-          <p className="text-sm text-gray-500 mb-2">Manager tại <span className="font-semibold text-gray-700">GreenFarm Củ Chi</span></p>
+          <h3 className="text-base font-bold text-gray-900">{profile?.name ?? 'Người dùng'}</h3>
+          <p className="text-sm text-gray-500 mb-2">
+            {formValues.role || 'Admin'}
+            {profile?.status ? <span className="font-semibold text-gray-700"> • {profile.status}</span> : null}
+          </p>
           <div className="flex items-center gap-3">
             <button className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
               Đổi ảnh
@@ -45,7 +83,8 @@ const ProfileForm = () => {
           <label className="block text-sm font-bold text-gray-700 mb-2">Họ và tên</label>
           <input 
             type="text" 
-            defaultValue="Thanh Sương" 
+            value={formValues.name}
+            onChange={handleChange('name')}
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
           />
         </div>
@@ -53,7 +92,8 @@ const ProfileForm = () => {
           <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
           <input 
             type="email" 
-            defaultValue="suongmanager@gmail.com" 
+            value={formValues.email}
+            onChange={handleChange('email')}
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
           />
         </div>
@@ -61,7 +101,8 @@ const ProfileForm = () => {
           <label className="block text-sm font-bold text-gray-700 mb-2">Số điện thoại</label>
           <input 
             type="text" 
-            defaultValue="0987 654 321" 
+            value={formValues.phone}
+            onChange={handleChange('phone')}
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
           />
         </div>
@@ -69,7 +110,7 @@ const ProfileForm = () => {
           <label className="block text-sm font-bold text-gray-700 mb-2">Vai trò (Role)</label>
           <input 
             type="text" 
-            defaultValue="Manager (Quản lý cửa hàng)" 
+            value={formValues.role}
             disabled
             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 cursor-not-allowed"
           />
@@ -90,7 +131,8 @@ const ProfileForm = () => {
           <label className="block text-sm font-bold text-gray-700 mb-2">Tên Cửa hàng / Kho vận</label>
           <input 
             type="text" 
-            defaultValue="GreenFarm Củ Chi" 
+            value={formValues.role ? `${formValues.role} workspace` : 'Admin workspace'}
+            readOnly
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
           />
         </div>
@@ -98,8 +140,10 @@ const ProfileForm = () => {
           <label className="block text-sm font-bold text-gray-700 mb-2">Địa chỉ cửa hàng</label>
           <textarea 
             rows={3}
+            value={formValues.address}
+            onChange={handleChange('address')}
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors resize-none"
-          ></textarea>
+          />
         </div>
       </div>
 
