@@ -70,5 +70,13 @@ export async function GET(request: Request) {
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });
 
+  response.cookies.set("gp_role_name", payload.role, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+
   return response;
 }

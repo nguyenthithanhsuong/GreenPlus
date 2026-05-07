@@ -10,6 +10,17 @@ import {
 } from 'lucide-react';
 import { SCREEN_MAX_WIDTH_PX } from '../shared/screen.styles';
 
+type OrderCardProps = {
+  orderId: string;
+  deliveryStatus: string;
+  paymentStatus: string;
+  paymentType: string;
+  customerName: string;
+  address: string;
+  codAmount: string;
+  orderDetails: string;
+};
+
 const OrderCard = ({ 
   orderId, 
   deliveryStatus, 
@@ -19,7 +30,7 @@ const OrderCard = ({
   address, 
   codAmount, 
   orderDetails 
-}) => {
+}: OrderCardProps) => {
   return (
     <div className="bg-white rounded-xl p-4 mb-4 shadow-sm mx-4">
       {/* Top Header */}

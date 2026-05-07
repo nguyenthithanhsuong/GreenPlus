@@ -131,6 +131,22 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
         const isCustomer = roleName === "customer";
 
         if (sessionId && userId && payload.user) {
+          const syncResponse = await fetch("/api/auth/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              access_token: sessionId,
+              role_name: roleName,
+            }),
+          });
+
+          if (!syncResponse.ok) {
+            const syncError = (await syncResponse.json().catch(() => null)) as
+              | { error?: string }
+              | null;
+            throw new Error(syncError?.error ?? "Unable to sync login session");
+          }
+
           if (isCustomer) {
             setAuth({
               session: {

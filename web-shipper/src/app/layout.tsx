@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AppProviders } from "./providers";
 
 export const metadata: Metadata = {
   title: "GreenPlus - Web Shipper",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

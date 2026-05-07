@@ -27,46 +27,21 @@ export function AppProviders({ children }: AppProvidersProps) {
   useEffect(() => {
     let mounted = true;
 
-    const readSessionCookieStatus = async () => {
-      const response = await fetch("/api/auth/sync", { method: "GET" });
-      if (!response.ok) {
-        throw new Error("Unable to read auth cookie status");
-      }
-
-      const payload = (await response.json()) as {
-        hasAccessToken?: boolean;
-        hasPortalSession?: boolean;
-      };
-
-      return {
-        hasAccessToken: Boolean(payload.hasAccessToken),
-        hasPortalSession: Boolean(payload.hasPortalSession),
-      };
-    };
-
     const syncSessionCookie = async (accessToken: string | null) => {
-      if (!accessToken) {
-        try {
-          const { hasPortalSession } = await readSessionCookieStatus();
-          if (hasPortalSession) {
-            // Keep the handoff session intact when Supabase has no local client session.
-            return;
-          }
-
+      try {
+        if (!accessToken) {
           await fetch("/api/auth/sync", { method: "DELETE" }).catch(() => undefined);
-        } catch {
-          // Avoid destructive cleanup when cookie inspection fails.
           return;
         }
 
+        await fetch("/api/auth/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ access_token: accessToken }),
+        }).catch(() => undefined);
+      } catch {
         return;
       }
-
-      await fetch("/api/auth/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token: accessToken }),
-      }).catch(() => undefined);
     };
 
     void supabase.auth.getSession().then(({ data }) => {
@@ -91,7 +66,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     };
   }, []);
 
-  // Periodically validate the user's role and redirect to web-client login
+  // Periodically validate role (allow only admin or shipper for web-shipper)
   useEffect(() => {
     let cancelled = false;
 
@@ -119,7 +94,6 @@ export function AppProviders({ children }: AppProvidersProps) {
             }
           }
 
-          // If we cannot fetch the user profile treat as unauthorized
           state.clearAuth();
           if (!cancelled) window.location.replace(`${CLIENT_LOGIN_URL}/login`);
           return;
@@ -128,8 +102,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         const payload = (await res.json()) as { item?: { role_name?: string } };
         const roleName = (payload.item?.role_name ?? "").toString().trim().toLowerCase();
 
-        const allowedForThisApp =
-          roleName === "admin" || roleName === "employee";
+        const allowedForThisApp = roleName === "admin" || roleName === "shipper";
 
         if (!allowedForThisApp) {
           state.clearAuth();
@@ -141,7 +114,6 @@ export function AppProviders({ children }: AppProvidersProps) {
       }
     }
 
-    // Run immediately then every 10s
     validateRole();
     const id = setInterval(validateRole, 10_000);
     return () => {

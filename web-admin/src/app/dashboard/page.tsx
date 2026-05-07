@@ -1,3 +1,29 @@
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import Dashboard from "../../../frontend/dashboard/Dashboard";
 
-export default Dashboard;
+const CLIENT_LOGIN_URL = process.env.NEXT_PUBLIC_WEB_CLIENT_URL ?? "http://localhost:3000";
+
+export const metadata: Metadata = {
+	title: "Admin Dashboard",
+};
+
+export default async function Page() {
+	const cookieStore = await cookies();
+	const roleName = cookieStore.get("gp_role_name")?.value?.trim().toLowerCase() ?? "";
+
+	if (roleName === "customer") {
+		redirect(`${CLIENT_LOGIN_URL}/login`);
+	}
+
+	if (roleName && roleName !== "admin" && roleName !== "employee") {
+		redirect(`${CLIENT_LOGIN_URL}/login`);
+	}
+
+	if (roleName !== "admin" && roleName !== "employee") {
+		redirect(`${CLIENT_LOGIN_URL}/login`);
+	}
+
+	return <Dashboard />;
+}
