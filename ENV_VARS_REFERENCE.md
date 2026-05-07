@@ -24,6 +24,11 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ### Optional (Recommended)
 
 ```env
+# Cross-app auth handoff (shared by web-client, web-admin, web-shipper)
+AUTH_HANDOFF_SECRET=choose-a-long-random-secret
+NEXT_PUBLIC_WEB_ADMIN_URL=http://localhost:3001
+NEXT_PUBLIC_WEB_SHIPPER_URL=http://localhost:3002
+
 # Better Stack logging
 BETTER_STACK_SOURCE_TOKEN=your-better-stack-token
 
@@ -45,6 +50,9 @@ NODE_ENV=production
 PORT=3000
 NEXT_PUBLIC_SUPABASE_URL=https://...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_WEB_ADMIN_URL=http://localhost:3001
+NEXT_PUBLIC_WEB_SHIPPER_URL=http://localhost:3002
+AUTH_HANDOFF_SECRET=choose-a-long-random-secret
 NEXT_PUBLIC_SENTRY_DSN=...
 BETTER_STACK_SOURCE_TOKEN=...
 ```
@@ -58,9 +66,21 @@ PORT=3001
 NEXT_PUBLIC_SUPABASE_URL=https://...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
+AUTH_HANDOFF_SECRET=choose-a-long-random-secret
 SENTRY_DSN=...
 NEXT_PUBLIC_SENTRY_DSN=...
 BETTER_STACK_SOURCE_TOKEN=...
+```
+
+### web-shipper
+
+```env
+# Via docker-compose.yml or .env.local
+NODE_ENV=production
+PORT=3002
+NEXT_PUBLIC_SUPABASE_URL=https://...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+AUTH_HANDOFF_SECRET=choose-a-long-random-secret
 ```
 
 ## By Environment
@@ -72,6 +92,9 @@ BETTER_STACK_SOURCE_TOKEN=...
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_WEB_ADMIN_URL=http://localhost:3001
+NEXT_PUBLIC_WEB_SHIPPER_URL=http://localhost:3002
+AUTH_HANDOFF_SECRET=choose-a-long-random-secret
 BETTER_STACK_SOURCE_TOKEN=your-token
 NEXT_PUBLIC_SENTRY_DSN=your-dsn
 SENTRY_DSN=your-dsn
@@ -114,6 +137,10 @@ SENTRY_AUTH_TOKEN
 | `NEXT_PUBLIC_SUPABASE_URL` | Public | Yes | `https://abc123.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Yes | `eyJhbGc...` (56 chars) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Secret | Yes (admin) | `eyJhbGc...` (longer key) |
+| `AUTH_HANDOFF_SECRET` | Secret | Yes (cross-app login) | `at-least-32-random-chars` |
+
+| `NEXT_PUBLIC_WEB_ADMIN_URL` | Public | No | `http://localhost:3001` |
+| `NEXT_PUBLIC_WEB_SHIPPER_URL` | Public | No | `http://localhost:3002` |
 
 **Get these from:** Supabase Dashboard → Settings → API
 

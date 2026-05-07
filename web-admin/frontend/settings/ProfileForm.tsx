@@ -5,7 +5,8 @@ import { Camera, Home, Save } from 'lucide-react';
 import { useCurrentUserProfile } from '../shared/useCurrentUserProfile';
 
 const ProfileForm = () => {
-  const { profile } = useCurrentUserProfile();
+  const { profile, loading, initialized, refreshProfile } = useCurrentUserProfile();
+  const avatarInputRef = React.useRef<HTMLInputElement | null>(null);
   const [formValues, setFormValues] = React.useState({
     name: '',
     email: '',
@@ -13,6 +14,12 @@ const ProfileForm = () => {
     role: 'Admin',
     address: '',
   });
+  const [imageUrl, setImageUrl] = React.useState('');
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
+  const [saveMessage, setSaveMessage] = React.useState<string | null>(null);
+  const [saveError, setSaveError] = React.useState<string | null>(null);
+  const [avatarError, setAvatarError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!profile) {
@@ -20,13 +27,140 @@ const ProfileForm = () => {
     }
 
     setFormValues({
-      name: profile.name,
-      email: profile.email,
-      phone: profile.phone,
-      role: profile.roleName,
-      address: profile.address,
+      name: profile.name ?? '',
+      email: profile.email ?? '',
+      phone: profile.phone ?? '',
+      role: profile.roleName ?? 'Admin',
+      address: profile.address ?? '',
     });
+    setImageUrl(profile.imageUrl ?? '');
   }, [profile]);
+
+  const currentAvatarSrc = imageUrl || profile?.imageUrl || 'https://i.pravatar.cc/150?u=greenplus-default-user';
+
+  const openAvatarPicker = () => {
+    avatarInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0] ?? null;
+    event.target.value = '';
+
+    if (!selectedFile) {
+      return;
+    }
+
+    if (!profile?.userId) {
+      setAvatarError('Không tìm thấy tài khoản để cập nhật ảnh đại diện.');
+      return;
+    }
+
+    if (!selectedFile.type.startsWith('image/')) {
+      setAvatarError('Chỉ hỗ trợ tệp ảnh cho ảnh đại diện.');
+      return;
+    }
+
+    const maxBytes = 5 * 1024 * 1024;
+    if (selectedFile.size > maxBytes) {
+      setAvatarError('Ảnh đại diện phải nhỏ hơn 5MB.');
+      return;
+    }
+
+    setAvatarError(null);
+    setSaveMessage(null);
+    setIsUploadingAvatar(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('userId', profile.userId);
+      formData.append('file', selectedFile);
+
+      const response = await fetch('/api/users/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as { publicUrl?: string; error?: string };
+
+      if (!response.ok || !payload.publicUrl) {
+        throw new Error(payload.error ?? 'Không thể upload ảnh đại diện.');
+      }
+
+      setImageUrl(payload.publicUrl);
+      setSaveMessage("Upload ảnh đại diện thành công. Nhấn 'Lưu thay đổi' để cập nhật hồ sơ.");
+      setSaveError(null);
+      refreshProfile();
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : 'Không thể upload ảnh đại diện.');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!profile?.userId) {
+      setSaveError('Không tìm thấy tài khoản hiện tại để lưu.');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage(null);
+    setSaveError(null);
+    setAvatarError(null);
+
+    try {
+      const response = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formValues.name,
+          email: formValues.email,
+          phone: formValues.phone,
+          address: formValues.address,
+          imageUrl: imageUrl || profile.imageUrl || '',
+        }),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        item?: {
+          userId?: string;
+          name?: string;
+          email?: string;
+          phone?: string | null;
+          address?: string | null;
+          imageUrl?: string | null;
+          roleName?: string | null;
+          status?: string;
+        };
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? 'Không thể lưu thay đổi');
+      }
+
+      const updatedProfile = payload.item;
+      if (updatedProfile) {
+        setFormValues({
+          name: updatedProfile.name ?? '',
+          email: updatedProfile.email ?? '',
+          phone: updatedProfile.phone ?? '',
+          role: updatedProfile.roleName ?? 'Admin',
+          address: updatedProfile.address ?? '',
+        });
+        setImageUrl(updatedProfile.imageUrl ?? '');
+      }
+
+      refreshProfile();
+      setSaveMessage('Đã lưu thay đổi thành công.');
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Không thể lưu thay đổi');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleChange =
     (field: keyof typeof formValues) =>
@@ -38,7 +172,7 @@ const ProfileForm = () => {
     };
 
   return (
-    <div className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8">
+    <form className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8" onSubmit={handleSubmit}>
       
       {/* Form Header */}
       <div className="mb-8 border-b border-gray-100 pb-4">
@@ -48,17 +182,48 @@ const ProfileForm = () => {
         </p>
       </div>
 
+      {saveMessage ? (
+        <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {saveMessage}
+        </div>
+      ) : null}
+
+      {saveError ? (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {saveError}
+        </div>
+      ) : null}
+
+      {avatarError ? (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {avatarError}
+        </div>
+      ) : null}
+
       {/* Avatar Section */}
       <div className="flex items-center gap-6 mb-8">
         <div className="relative">
           <img 
-            src={profile?.imageUrl ?? 'https://i.pravatar.cc/150?u=greenplus-default-user'}
+            src={currentAvatarSrc}
             alt="Avatar" 
             className="w-20 h-20 rounded-full object-cover border border-gray-200"
           />
-          <button className="absolute bottom-0 right-0 p-1.5 bg-[#059669] text-white rounded-full border-2 border-white hover:bg-[#047857] transition-colors">
+          <button
+            type="button"
+            onClick={openAvatarPicker}
+            disabled={isUploadingAvatar}
+            className="absolute bottom-0 right-0 p-1.5 bg-[#059669] text-white rounded-full border-2 border-white hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+          >
             <Camera className="w-3.5 h-3.5" />
           </button>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+            disabled={isUploadingAvatar}
+          />
         </div>
         <div>
           <h3 className="text-base font-bold text-gray-900">{profile?.name ?? 'Người dùng'}</h3>
@@ -67,10 +232,23 @@ const ProfileForm = () => {
             {profile?.status ? <span className="font-semibold text-gray-700"> • {profile.status}</span> : null}
           </p>
           <div className="flex items-center gap-3">
-            <button className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
-              Đổi ảnh
+            <button
+              type="button"
+              onClick={openAvatarPicker}
+              disabled={isUploadingAvatar}
+              className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isUploadingAvatar ? 'Đang upload...' : 'Đổi ảnh'}
             </button>
-            <button className="px-3 py-1.5 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors">
+            <button
+              type="button"
+              onClick={() => {
+                setImageUrl('');
+                setAvatarError(null);
+                setSaveMessage('Đã xóa ảnh hiển thị tạm thời. Nhấn “Lưu thay đổi” để áp dụng.');
+              }}
+              className="px-3 py-1.5 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+            >
               Xóa
             </button>
           </div>
@@ -149,13 +327,17 @@ const ProfileForm = () => {
 
       {/* Save Action */}
       <div className="flex justify-end pt-4 border-t border-gray-100">
-        <button className="flex items-center gap-2 px-6 py-2.5 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm font-bold transition-colors shadow-sm">
+        <button
+          type="submit"
+          disabled={isSaving || loading || !initialized || isUploadingAvatar}
+          className="flex items-center gap-2 px-6 py-2.5 bg-[#059669] hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
+        >
           <Save className="w-4 h-4" />
-          Lưu thay đổi
+          {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
         </button>
       </div>
 
-    </div>
+    </form>
   );
 };
 
