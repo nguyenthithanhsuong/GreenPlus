@@ -61,13 +61,5 @@ export async function DELETE(request: Request) {
     });
   }
 
-  res.cookies.set("gp_role_name", "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
-
   return res;
 }

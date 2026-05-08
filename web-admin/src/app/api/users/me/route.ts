@@ -133,32 +133,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "User profile not found" }, { status: 404 });
     }
 
-    // Enforce app-level role restrictions: determine which app made the request
-    const host = request.headers.get("host") ?? "";
-    const adminOrigin = (process.env.NEXT_PUBLIC_WEB_ADMIN_URL ?? "http://localhost:3001").replace(/^https?:\/\//, "");
-    const clientOrigin = (process.env.NEXT_PUBLIC_WEB_CLIENT_URL ?? "http://localhost:3000").replace(/^https?:\/\//, "");
-    const shipperOrigin = (process.env.NEXT_PUBLIC_WEB_SHIPPER_URL ?? "http://localhost:3002").replace(/^https?:\/\//, "");
-
-    const roleName = (user.role_name ?? "").toString().trim().toLowerCase();
-
-    let appType: "admin" | "client" | "shipper" | null = null;
-    if (host.includes(adminOrigin)) appType = "admin";
-    else if (host.includes(shipperOrigin)) appType = "shipper";
-    else if (host.includes(clientOrigin)) appType = "client";
-
-    if (appType) {
-      const allowed =
-        appType === "admin"
-          ? roleName === "admin" || roleName === "employee"
-          : appType === "shipper"
-          ? roleName === "admin" || roleName === "shipper"
-          : roleName === "admin" || roleName === "customer";
-
-      if (!allowed) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-    }
-
     return NextResponse.json({ item: user }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
