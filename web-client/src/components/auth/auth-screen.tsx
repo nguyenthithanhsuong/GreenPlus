@@ -8,7 +8,6 @@ import { useAuthStore } from "@/lib/stores/authStore";
 import { Eye, EyeOff } from "lucide-react";
 
 const ADMIN_APP_URL = process.env.NEXT_PUBLIC_WEB_ADMIN_URL ?? "http://localhost:3001";
-const SHIPPER_APP_URL = process.env.NEXT_PUBLIC_WEB_SHIPPER_URL ?? "http://localhost:3002";
 
 type AuthMode = "login" | "register";
 
@@ -153,29 +152,8 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
             return;
           }
 
-          const targetApp = roleName === "shipper" ? "shipper" : "admin";
-          const handoffResponse = await fetch("/api/auth/handoff", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId,
-              email: payload.user.email ?? email,
-              roleName,
-              targetApp,
-            }),
-          });
-
-          if (!handoffResponse.ok) {
-            const handoffError = (await handoffResponse.json().catch(() => null)) as
-              | { error?: string }
-              | null;
-            throw new Error(handoffError?.error ?? "Unable to establish shared login session");
-          }
-
-          const handoffPayload = (await handoffResponse.json()) as { redirectUrl?: string };
-          const fallbackUrl = targetApp === "shipper" ? SHIPPER_APP_URL : ADMIN_APP_URL;
           useAuthStore.getState().clearAuth();
-          window.location.replace(handoffPayload.redirectUrl ?? fallbackUrl);
+          window.location.replace(ADMIN_APP_URL);
         }
       }
     } catch (submitError) {

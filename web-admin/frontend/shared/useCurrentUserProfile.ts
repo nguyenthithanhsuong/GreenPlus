@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "../../src/lib/stores/authStore";
 import { UserSummary } from "../../backend/modules/users/user-management.types";
 
+type ApiItemsResponse<T> = {
+  items?: T[];
+  error?: string;
+};
+
 export type CurrentUserProfile = {
   userId: string;
   name: string;
@@ -24,27 +29,23 @@ export function useCurrentUserProfile() {
 
   const [dbUser, setDbUser] = useState<UserSummary | null>(null);
   const [loading, setLoading] = useState(false);
-  const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
     let active = true;
 
     const loadUserProfile = async () => {
-      if (!initialized) {
+      if (!initialized || !user || !session?.access_token) {
         setDbUser((previous) => (previous === null ? previous : null));
         return;
       }
 
       setLoading(true);
       try {
-        const headers: Record<string, string> = {};
-        if (session?.access_token) {
-          headers.Authorization = `Bearer ${session.access_token}`;
-        }
-
         const response = await fetch("/api/users/me", {
           cache: "no-store",
-          headers,
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         });
         const payload = (await response.json()) as { item?: UserSummary; error?: string };
         if (!response.ok) {
@@ -89,21 +90,21 @@ export function useCurrentUserProfile() {
     return () => {
       active = false;
     };
-  }, [initialized, session?.access_token, refreshToken]);
+  }, [initialized, session?.access_token, user]);
 
   const profile = useMemo<CurrentUserProfile | null>(() => {
-    if (!user && !dbUser) {
+    if (!user) {
       return null;
     }
 
-    const metadata = user?.user_metadata ?? {};
-    const appMetadata = user?.app_metadata ?? {};
+    const metadata = user.user_metadata ?? {};
+    const appMetadata = user.app_metadata ?? {};
 
     const name =
       dbUser?.name?.trim() ||
       (typeof metadata.full_name === "string" ? metadata.full_name : "") ||
       (typeof metadata.name === "string" ? metadata.name : "") ||
-      (user?.email ? user.email.split("@")[0] : "Người dùng");
+      (user.email ? user.email.split("@")[0] : "Người dùng");
 
     const imageUrl =
       dbUser?.image_url ||
@@ -117,9 +118,9 @@ export function useCurrentUserProfile() {
       "Admin";
 
     return {
-      userId: dbUser?.user_id ?? user?.id ?? "",
+      userId: dbUser?.user_id ?? user.id,
       name,
-      email: dbUser?.email ?? user?.email ?? "",
+      email: dbUser?.email ?? user.email ?? "",
       phone: dbUser?.phone ?? "",
       address: dbUser?.address ?? "",
       imageUrl,
@@ -132,6 +133,5 @@ export function useCurrentUserProfile() {
     initialized,
     loading,
     profile,
-    refreshProfile: () => setRefreshToken((value) => value + 1),
   };
 }
