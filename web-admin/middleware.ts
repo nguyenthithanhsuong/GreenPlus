@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const CLIENT_LOGIN_URL = process.env.NEXT_PUBLIC_WEB_CLIENT_URL ?? 'http://localhost:3000';
-const PUBLIC_PATHS = ['/login', '/register', '/api/auth', '/_next', '/favicon.ico', '/public'];
-
-function hasAuthCookie(request: NextRequest): boolean {
-  return Boolean(
-    request.cookies.get('gp_access_token') || request.cookies.get('gp_portal_session')
-  );
-}
+/**
+ * Edge middleware for request logging to Better Stack
+ * Logs all requests, response times, and errors
+ */
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -26,11 +22,12 @@ export function middleware(request: NextRequest) {
   if (sourceToken && pathname.startsWith('/api/')) {
     const requestInfo = {
       method: request.method,
-      path: pathname,
+      path: request.nextUrl.pathname,
       query: request.nextUrl.search,
       timestamp: new Date().toISOString(),
     };
 
+    // Log via HTTP to Better Stack asynchronously (don't await to avoid blocking)
     fetch('https://in.betterstack.com/api/v1/logs', {
       method: 'POST',
       headers: {
@@ -40,11 +37,12 @@ export function middleware(request: NextRequest) {
       body: JSON.stringify({
         dt: new Date().toISOString(),
         level: 'INFO',
-        message: `API Request: ${request.method} ${pathname}`,
+        message: `API Request: ${request.method} ${request.nextUrl.pathname}`,
         source: 'web-admin-middleware',
         context: requestInfo,
       }),
     }).catch((err) => {
+      // Silently fail to prevent logging from affecting request
       console.error('[BetterStack Middleware] Log send error:', err);
     });
   }
@@ -57,5 +55,14 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+  ],
 };

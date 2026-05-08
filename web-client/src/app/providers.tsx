@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabaseClient";
 import { useAuthStore } from "@/lib/stores/authStore";
-
-const CLIENT_LOGIN_URL = process.env.NEXT_PUBLIC_WEB_CLIENT_URL ?? "http://localhost:3000";
 
 type AppProvidersProps = {
   children: React.ReactNode;

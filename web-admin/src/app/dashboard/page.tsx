@@ -1,6 +1,3 @@
-import type { Metadata } from "next";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import Dashboard from "../../../frontend/dashboard/Dashboard";
 
 const CLIENT_LOGIN_URL = process.env.NEXT_PUBLIC_WEB_CLIENT_URL ?? "http://localhost:3000";

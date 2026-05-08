@@ -11,16 +11,6 @@ type InventoryDbRow = {
   quantity_available: number;
   quantity_reserved: number | null;
   last_updated: string | null;
-  batches?: {
-    batch_id?: string | null;
-    status?: string | null;
-    products?: {
-      name?: string | null;
-    } | null;
-    suppliers?: {
-      name?: string | null;
-    } | null;
-  } | null;
 };
 
 type InventoryTransactionDbRow = {
@@ -38,20 +28,31 @@ export class InventoryManagementRepository {
   async listInventories(): Promise<InventoryRow[]> {
     const { data, error } = await this.supabase
       .from("inventory")
-      .select("inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,status,products(name),suppliers(name))")
-      .order("last_updated", { ascending: false, nullsFirst: false });
+      .select(
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated"
+      )
+      .order("last_updated", {
+        ascending: false,
+        nullsFirst: false,
+      });
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as InventoryDbRow[]).map((row) => this.toInventoryRow(row));
+    return ((data ?? []) as InventoryDbRow[]).map((row) =>
+      this.toInventoryRow(row)
+    );
   }
 
-  async findInventoryById(inventoryId: string): Promise<InventoryRow | null> {
+  async findInventoryById(
+    inventoryId: string
+  ): Promise<InventoryRow | null> {
     const { data, error } = await this.supabase
       .from("inventory")
-      .select("inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,status,products(name),suppliers(name))")
+      .select(
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated"
+      )
       .eq("inventory_id", inventoryId)
       .maybeSingle();
 
@@ -62,10 +63,14 @@ export class InventoryManagementRepository {
     return data ? this.toInventoryRow(data as InventoryDbRow) : null;
   }
 
-  async findInventoryByBatchId(batchId: string): Promise<InventoryRow | null> {
+  async findInventoryByBatchId(
+    batchId: string
+  ): Promise<InventoryRow | null> {
     const { data, error } = await this.supabase
       .from("inventory")
-      .select("inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,status,products(name),suppliers(name))")
+      .select(
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated"
+      )
       .eq("batch_id", batchId)
       .maybeSingle();
 
@@ -79,18 +84,20 @@ export class InventoryManagementRepository {
   async updateInventory(input: {
     inventoryId: string;
     quantityAvailable: number;
-    quantityReserved: number;
+    quantityReserved?: number | null;
     lastUpdated: string;
   }): Promise<InventoryRow | null> {
     const { data, error } = await this.supabase
       .from("inventory")
       .update({
         quantity_available: input.quantityAvailable,
-        quantity_reserved: input.quantityReserved,
+        quantity_reserved: input.quantityReserved ?? null,
         last_updated: input.lastUpdated,
       })
       .eq("inventory_id", input.inventoryId)
-      .select("inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,status,products(name),suppliers(name))")
+      .select(
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated"
+      )
       .maybeSingle();
 
     if (error) {
@@ -112,8 +119,29 @@ export class InventoryManagementRepository {
       throw new Error(error.message);
     }
 
-    return Boolean((data as { inventory_id?: string } | null)?.inventory_id);
+    return Boolean(
+      (data as { inventory_id?: string } | null)?.inventory_id
+    );
   }
+
+  async listTransactions(): Promise<InventoryTransactionRow[]> {
+  const { data, error } = await this.supabase
+    .from("inventory_transactions")
+    .select(
+      "transaction_id,batch_id,type,quantity,note,created_at"
+    )
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as InventoryTransactionDbRow[]).map(
+    (row) => this.toTransactionRow(row)
+  );
+}
 
   async createTransaction(input: {
     batchId: string;
@@ -129,7 +157,9 @@ export class InventoryManagementRepository {
         quantity: input.quantity,
         note: input.note?.trim() || null,
       })
-      .select("transaction_id,batch_id,type,quantity,note,created_at")
+      .select(
+        "transaction_id,batch_id,type,quantity,note,created_at"
+      )
       .single();
 
     if (error) {
@@ -139,10 +169,14 @@ export class InventoryManagementRepository {
     return this.toTransactionRow(data as InventoryTransactionDbRow);
   }
 
-  async listTransactionsByBatchId(batchId: string): Promise<InventoryTransactionRow[]> {
+  async listTransactionsByBatchId(
+    batchId: string
+  ): Promise<InventoryTransactionRow[]> {
     const { data, error } = await this.supabase
       .from("inventory_transactions")
-      .select("transaction_id,batch_id,type,quantity,note,created_at")
+      .select(
+        "transaction_id,batch_id,type,quantity,note,created_at"
+      )
       .eq("batch_id", batchId)
       .order("created_at", { ascending: false });
 
@@ -150,25 +184,28 @@ export class InventoryManagementRepository {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as InventoryTransactionDbRow[]).map((row) => this.toTransactionRow(row));
+    return ((data ?? []) as InventoryTransactionDbRow[]).map((row) =>
+      this.toTransactionRow(row)
+    );
   }
 
   private toInventoryRow(row: InventoryDbRow): InventoryRow {
     return {
       inventory_id: row.inventory_id,
       batch_id: row.batch_id,
-      product_name: row.batches?.products?.name ?? null,
-      supplier_name: row.batches?.suppliers?.name ?? null,
-      batch_status: row.batches?.status ?? null,
       quantity_available: row.quantity_available,
-      quantity_reserved: row.quantity_reserved ?? 0,
+      quantity_reserved: row.quantity_reserved,
       last_updated: row.last_updated,
     };
   }
 
-  private toTransactionRow(row: InventoryTransactionDbRow): InventoryTransactionRow {
+  private toTransactionRow(
+    row: InventoryTransactionDbRow
+  ): InventoryTransactionRow {
     const normalizedType: InventoryTransactionType =
-      row.type === "stock_in" || row.type === "stock_out" || row.type === "adjustment"
+      row.type === "stock_in" ||
+      row.type === "stock_out" ||
+      row.type === "adjustment"
         ? row.type
         : "adjustment";
 

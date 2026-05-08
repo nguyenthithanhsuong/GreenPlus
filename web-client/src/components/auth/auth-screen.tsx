@@ -8,7 +8,6 @@ import { useAuthStore } from "@/lib/stores/authStore";
 import { Eye, EyeOff } from "lucide-react";
 
 const ADMIN_APP_URL = process.env.NEXT_PUBLIC_WEB_ADMIN_URL ?? "http://localhost:3001";
-const SHIPPER_APP_URL = process.env.NEXT_PUBLIC_WEB_SHIPPER_URL ?? "http://localhost:3002";
 
 type AuthMode = "login" | "register";
 
