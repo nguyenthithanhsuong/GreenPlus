@@ -19,13 +19,6 @@ type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "unknown";
 type PaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer" | "unknown";
 type ComplaintType = "quality" | "damaged" | "missing_items" | "wrong_item" | "late_delivery" | "other";
 
-type OrderTrackingEntry = {
-  tracking_id: string;
-  status: string;
-  note: string | null;
-  created_at: string;
-};
-
 type OrderItemDetail = {
   order_item_id: string;
   product_id: string;
@@ -45,7 +38,6 @@ type OrderDetailResponse = {
   shipping_status: string;
   payment_status: PaymentStatus;
   payment_method: PaymentMethod;
-  tracking_history: OrderTrackingEntry[];
   items: OrderItemDetail[];
   total_amount: number;
   delivery_address: string;
@@ -712,27 +704,19 @@ export default function OrderDetail() {
   }, [detail]);
 
   const timelineRows = useMemo(() => {
-    const byStatus = new Map<string, OrderTrackingEntry>();
-    (detail?.tracking_history ?? []).forEach((row) => {
-      if (!byStatus.has(row.status)) {
-        byStatus.set(row.status, row);
-      }
-    });
-
     return STEP_FLOW.map((step, index) => {
-      const row = byStatus.get(step.key);
       const isCompleted = detail?.order_status === "cancelled" ? false : index < currentStepIndex;
       const isActive = detail?.order_status !== "cancelled" && index === currentStepIndex;
 
       return {
         key: step.key,
         title: step.label,
-        meta: row?.created_at ? `${formatDateTime(row.created_at)}${row.note ? ` • ${row.note}` : ""}` : step.defaultMeta,
+        meta: step.defaultMeta,
         isCompleted,
         isActive,
       };
     });
-  }, [currentStepIndex, detail?.order_status, detail?.tracking_history]);
+  }, [currentStepIndex, detail?.order_status]);
 
   const activeLineHeight = useMemo(() => {
     if (!detail || detail.order_status === "cancelled") {

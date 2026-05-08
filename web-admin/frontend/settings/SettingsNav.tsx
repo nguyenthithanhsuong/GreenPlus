@@ -1,7 +1,35 @@
+"use client";
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { User, Shield, Bell, LogOut } from 'lucide-react';
+import { supabase } from '../../src/lib/supabaseClient';
+import { useAuthStore } from '../../src/lib/stores/authStore';
 
 const SettingsNav = () => {
+  const router = useRouter();
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+    const CLIENT_APP_URL = process.env.NEXT_PUBLIC_WEB_CLIENT_URL ?? 'http://localhost:3000';
+
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      clearAuth();
+      await fetch('/api/auth/sync?portal=1', { method: 'DELETE' }).catch(() => undefined);
+      setIsLoggingOut(false);
+      // Keep logout on the admin origin so the admin session stays local.
+      window.location.replace('/login');
+    }
+  };
+
   return (
     <div className="w-full lg:w-64 shrink-0 flex flex-col gap-2">
       {/* Active Link */}
@@ -24,9 +52,14 @@ const SettingsNav = () => {
       {/* Separator & Logout */}
       <div className="my-2 border-t border-gray-200"></div>
       
-      <button className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl font-medium text-sm transition-colors text-left">
+      <button
+        type="button"
+        onClick={handleLogout}
+        disabled={isLoggingOut}
+        className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl font-medium text-sm transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+      >
         <LogOut className="w-4 h-4" />
-        Đăng xuất
+        {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
       </button>
     </div>
   );

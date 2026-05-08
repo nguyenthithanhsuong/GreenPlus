@@ -30,14 +30,6 @@ export type OrderItemImageRow = {
   products: RelObj;
 };
 
-export type TrackingRow = {
-  tracking_id: string;
-  order_id: string;
-  status: string;
-  note: string | null;
-  created_at: string;
-};
-
 export class OrderRepository {
   async listOrdersByUser(userId: string): Promise<OrderRow[]> {
     const { data, error } = await supabaseServer
@@ -95,20 +87,6 @@ export class OrderRepository {
     }
 
     return (data ?? []) as OrderItemImageRow[];
-  }
-
-  async listTracking(orderId: string): Promise<TrackingRow[]> {
-    const { data, error } = await supabaseServer
-      .from("orders")
-      .select("order_id,status,note,created_at")
-      .eq("order_id", orderId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return (data ?? []) as TrackingRow[];
   }
 
   async findPaymentStatus(orderId: string): Promise<string | null> {
