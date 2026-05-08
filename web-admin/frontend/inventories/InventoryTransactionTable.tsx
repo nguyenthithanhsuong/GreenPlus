@@ -1,18 +1,17 @@
 import React from "react";
-import { ArrowLeftRight, Search, Trash2 } from "lucide-react";
-import type { InventoryRow } from "../../backend/modules/inventory/inventory-management.types";
+import { Search } from "lucide-react";
+import type {
+  InventoryTransactionRow,
+} from "../../backend/modules/inventory/inventory-management.types";
 
-type InventoryTableProps = {
-  items: InventoryRow[];
+type InventoryTransactionTableProps = {
+  items: InventoryTransactionRow[];
   loading: boolean;
-  saving: boolean;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
-  onUpdate: (item: InventoryRow) => void;
-  onDelete: (item: InventoryRow) => void;
 };
 
-const formatLastUpdated = (value: string | null) => {
+const formatDate = (value: string | null) => {
   if (!value) {
     return "-";
   }
@@ -29,33 +28,57 @@ const formatLastUpdated = (value: string | null) => {
   }).format(date);
 };
 
-const quantityClassName = (value: number) => {
-  if (value === 0) {
-    return "bg-gray-100 text-gray-500 border-gray-200";
-  }
+const getTypeClassName = (type: string) => {
+  switch (type) {
+    case "stock_in":
+      return "bg-emerald-50 text-emerald-700 border-emerald-100";
 
-  if (value < 10) {
-    return "bg-orange-50 text-orange-600 border-orange-100";
-  }
+    case "stock_out":
+      return "bg-red-50 text-red-700 border-red-100";
 
-  return "bg-emerald-50 text-emerald-600 border-emerald-100";
+    default:
+      return "bg-amber-50 text-amber-700 border-amber-100";
+  }
 };
 
-const InventoryTable = ({
+const getQuantityDisplay = (
+  type: string,
+  quantity: number
+) => {
+  if (type === "stock_out") {
+    return `- ${quantity}`;
+  }
+
+  if (type === "stock_in") {
+    return `+ ${quantity}`;
+  }
+
+  return quantity;
+};
+
+const InventoryTransactionTable = ({
   items,
   loading,
-  saving,
   searchQuery,
   onSearchQueryChange,
-  onUpdate,
-  onDelete,
-}: InventoryTableProps) => {
+}: InventoryTransactionTableProps) => {
   const totalItems = items.length;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      {/* Filters */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center p-5 border-b border-gray-50 gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            Lịch sử giao dịch tồn kho
+          </h2>
+
+          <p className="text-sm text-gray-500 mt-1">
+            Theo dõi toàn bộ thay đổi số lượng tồn kho
+          </p>
+        </div>
+
+        {/* Search */}
         <div className="flex items-center gap-3 md:ml-auto w-full md:w-auto">
           <div className="relative w-full md:w-[28rem] max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -66,7 +89,7 @@ const InventoryTable = ({
                 onSearchQueryChange(event.target.value)
               }
               type="text"
-              placeholder="Tìm inventory ID hoặc batch ID..."
+              placeholder="Tìm transaction ID, batch ID, ghi chú..."
               className="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
@@ -79,7 +102,11 @@ const InventoryTable = ({
           <thead className="text-xs text-gray-500 bg-white border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 font-medium">
-                Inventory ID
+                Thời gian
+              </th>
+
+              <th className="px-6 py-4 font-medium">
+                Transaction ID
               </th>
 
               <th className="px-6 py-4 font-medium">
@@ -87,27 +114,15 @@ const InventoryTable = ({
               </th>
 
               <th className="px-6 py-4 font-medium text-center">
-                Tồn thực tế
-                <br />
-                <span className="font-normal">
-                  (Available)
-                </span>
+                Loại
               </th>
 
               <th className="px-6 py-4 font-medium text-center">
-                Chờ giao
-                <br />
-                <span className="font-normal">
-                  (Reserved)
-                </span>
+                Số lượng
               </th>
 
               <th className="px-6 py-4 font-medium">
-                Cập nhật lần cuối
-              </th>
-
-              <th className="px-6 py-4 font-medium text-right">
-                Thao tác
+                Ghi chú
               </th>
             </tr>
           </thead>
@@ -119,7 +134,7 @@ const InventoryTable = ({
                   className="px-6 py-10 text-center text-gray-500"
                   colSpan={6}
                 >
-                  Đang tải dữ liệu tồn kho...
+                  Đang tải lịch sử giao dịch...
                 </td>
               </tr>
             ) : items.length === 0 ? (
@@ -129,74 +144,65 @@ const InventoryTable = ({
                   colSpan={6}
                 >
                   {searchQuery.trim()
-                    ? "Không tìm thấy dữ liệu tồn kho phù hợp."
-                    : "Chưa có dữ liệu tồn kho."}
+                    ? "Không tìm thấy giao dịch phù hợp."
+                    : "Chưa có lịch sử giao dịch."}
                 </td>
               </tr>
             ) : (
               items.map((item) => (
                 <tr
-                  key={item.inventory_id}
+                  key={item.transaction_id}
                   className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
                 >
+                  {/* Time */}
+                  <td className="px-6 py-4 text-gray-700 whitespace-nowrap">
+                    {formatDate(item.created_at)}
+                  </td>
+
+                  {/* Transaction ID */}
                   <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-gray-900">
-                        {item.inventory_id}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4 text-gray-600 font-medium">
-                    {item.batch_id ?? "-"}
-                  </td>
-
-                  <td className="px-6 py-4 text-center">
-                    <span
-                      className={`inline-flex items-center justify-center px-4 py-1.5 rounded font-bold border ${quantityClassName(
-                        item.quantity_available
-                      )}`}
-                    >
-                      {item.quantity_available}
+                    <span className="font-semibold text-gray-900">
+                      {item.transaction_id}
                     </span>
                   </td>
 
-                  <td className="px-6 py-4 text-center font-bold text-gray-900">
-                    {item.quantity_reserved ?? 0}
+                  {/* Batch ID */}
+                  <td className="px-6 py-4 text-gray-600">
+                    {item.batch_id ?? "-"}
                   </td>
 
-                  <td className="px-6 py-4 text-gray-600 font-medium">
-                    {formatLastUpdated(
-                      item.last_updated
-                    )}
+                  {/* Type */}
+                  <td className="px-6 py-4 text-center">
+                    <span
+                      className={`inline-flex items-center justify-center px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wide ${getTypeClassName(
+                        item.type
+                      )}`}
+                    >
+                      {item.type.replace("_", " ")}
+                    </span>
                   </td>
 
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onUpdate(item)}
-                        disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-bold transition-colors bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
-                      >
-                        <ArrowLeftRight className="w-3.5 h-3.5" />
-                        Cập nhật
-                      </button>
+                  {/* Quantity */}
+                  <td className="px-6 py-4 text-center">
+                    <span
+                      className={`font-bold ${
+                        item.type === "stock_out"
+                          ? "text-red-600"
+                          : item.type === "stock_in"
+                          ? "text-emerald-600"
+                          : "text-amber-600"
+                      }`}
+                    >
+                      {getQuantityDisplay(
+                        item.type,
+                        item.quantity
+                      )}
+                    </span>
+                  </td>
 
-                      <button
-                        type="button"
-                        onClick={() => onDelete(item)}
-                        disabled={
-                          saving ||
-                          item.quantity_available > 0 ||
-                          (item.quantity_reserved ?? 0) > 0
-                        }
-                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                  {/* Note */}
+                  <td className="px-6 py-4 text-gray-600">
+                    {item.note ?? "-"}
                   </td>
                 </tr>
               ))
@@ -216,7 +222,7 @@ const InventoryTable = ({
           <span className="font-bold text-gray-900">
             {totalItems}
           </span>{" "}
-          inventory
+          giao dịch
         </span>
 
         <div className="flex items-center gap-1">
@@ -229,4 +235,4 @@ const InventoryTable = ({
   );
 };
 
-export default InventoryTable;
+export default InventoryTransactionTable;

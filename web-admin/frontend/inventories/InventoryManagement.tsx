@@ -5,8 +5,12 @@ import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import InventoryStats from "./InventoryStats";
 import InventoryTable from "./InventoryTable";
+import InventoryTransactionTable from "./InventoryTransactionTable";
 import InventoryDrawer, { InventoryDrawerMode, InventoryFormValues } from "./InventoryDrawer";
-import type { InventoryRow } from "../../backend/modules/inventory/inventory-management.types";
+import type {
+  InventoryRow,
+  InventoryTransactionRow,
+} from "../../backend/modules/inventory/inventory-management.types";
 import { inventorySearchStrategy } from "../shared/searchStrategies";
 
 const emptyForm = (): InventoryFormValues => ({
@@ -27,6 +31,19 @@ const InventoryManagement = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryRow | null>(null);
   const [form, setForm] = useState<InventoryFormValues>(emptyForm());
   const [drawerError, setDrawerError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"inventory" | "transactions">(
+  "inventory"
+);
+
+const [transactions, setTransactions] = useState<
+  InventoryTransactionRow[]
+>([]);
+
+const [transactionsLoading, setTransactionsLoading] =
+  useState(false);
+
+const [transactionSearchQuery, setTransactionSearchQuery] =
+  useState("");
 
   const loadInventory = useCallback(async () => {
     setLoading(true);
@@ -49,14 +66,81 @@ const InventoryManagement = () => {
     }
   }, []);
 
+  const loadTransactions = useCallback(async () => {
+  setTransactionsLoading(true);
+
+  try {
+    const response = await fetch(
+      "/api/inventory/transactions",
+      {
+        cache: "no-store",
+      }
+    );
+
+    const data = (await response.json()) as {
+      items?: InventoryTransactionRow[];
+      error?: string;
+    };
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ??
+          "Không thể tải lịch sử giao dịch"
+      );
+    }
+
+    setTransactions(
+      Array.isArray(data.items)
+        ? data.items
+        : []
+    );
+  } catch (requestError) {
+    setError(
+      requestError instanceof Error
+        ? requestError.message
+        : "Không thể tải lịch sử giao dịch"
+    );
+
+    setTransactions([]);
+  } finally {
+    setTransactionsLoading(false);
+  }
+}, []);
+
   useEffect(() => {
     void loadInventory();
-  }, [loadInventory]);
+    void loadTransactions();
+  }, [loadInventory, loadTransactions]);
 
   const filteredItems = useMemo(
     () => inventorySearchStrategy.filter(items, searchQuery),
     [items, searchQuery]
   );
+
+  const filteredTransactions = useMemo(() => {
+  const query = transactionSearchQuery
+    .trim()
+    .toLowerCase();
+
+  if (!query) {
+    return transactions;
+  }
+
+  return transactions.filter((item) => {
+    return (
+      item.transaction_id
+        .toLowerCase()
+        .includes(query) ||
+      (item.batch_id ?? "")
+        .toLowerCase()
+        .includes(query) ||
+      (item.note ?? "")
+        .toLowerCase()
+        .includes(query) ||
+      item.type.toLowerCase().includes(query)
+    );
+  });
+}, [transactions, transactionSearchQuery]);
 
   const stats = useMemo(() => {
     const totalAvailable = items.reduce((sum, item) => sum + item.quantity_available, 0);
@@ -170,7 +254,10 @@ const InventoryManagement = () => {
       }
 
       closeDrawer();
-      await loadInventory();
+      await Promise.all([
+  loadInventory(),
+  loadTransactions(),
+]);
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "Thao tác thất bại";
       setDrawerError(message);
@@ -203,17 +290,52 @@ const InventoryManagement = () => {
           {error}
         </div>
       )}
+      <div className="flex items-center gap-2">
+  <button
+    type="button"
+    onClick={() => setViewMode("inventory")}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+      viewMode === "inventory"
+        ? "bg-emerald-600 text-white"
+        : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+    }`}
+  >
+    Tồn kho hiện tại
+  </button>
 
+  <button
+    type="button"
+    onClick={() => setViewMode("transactions")}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+      viewMode === "transactions"
+        ? "bg-emerald-600 text-white"
+        : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+    }`}
+  >
+    Lịch sử giao dịch
+  </button>
+</div>
       <InventoryStats {...stats} />
-      <InventoryTable
-        items={filteredItems}
-        loading={loading}
-        saving={saving}
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
-        onUpdate={openEditDrawer}
-        onDelete={openDeleteDrawer}
-      />
+      {viewMode === "inventory" ? (
+  <InventoryTable
+    items={filteredItems}
+    loading={loading}
+    saving={saving}
+    searchQuery={searchQuery}
+    onSearchQueryChange={setSearchQuery}
+    onUpdate={openEditDrawer}
+    onDelete={openDeleteDrawer}
+  />
+) : (
+  <InventoryTransactionTable
+    items={filteredTransactions}
+    loading={transactionsLoading}
+    searchQuery={transactionSearchQuery}
+    onSearchQueryChange={
+      setTransactionSearchQuery
+    }
+  />
+)}
 
       <InventoryDrawer
         isOpen={drawerOpen}

@@ -21,12 +21,17 @@ class InUseInventoryState implements InventoryState {
   }
 }
 
-export function createInventoryState(quantityAvailable: number, quantityReserved: number): InventoryState {
-  if (quantityAvailable < 0 || quantityReserved < 0) {
+export function createInventoryState(
+  quantityAvailable: number,
+  quantityReserved: number | null
+): InventoryState {
+  const reserved = quantityReserved ?? 0;
+
+  if (quantityAvailable < 0 || reserved < 0) {
     throw new AppError("Invalid inventory quantities", 400);
   }
 
-  if (quantityAvailable === 0 && quantityReserved === 0) {
+  if (quantityAvailable === 0 && reserved === 0) {
     return new ClearInventoryState();
   }
 

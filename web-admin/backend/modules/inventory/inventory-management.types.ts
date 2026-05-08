@@ -1,13 +1,13 @@
-export type InventoryTransactionType = "stock_in" | "stock_out" | "adjustment";
+export type InventoryTransactionType =
+  | "stock_in"
+  | "stock_out"
+  | "adjustment";
 
 export type InventoryRow = {
   inventory_id: string;
   batch_id: string | null;
-  product_name: string | null;
-  supplier_name: string | null;
-  batch_status: string | null;
   quantity_available: number;
-  quantity_reserved: number;
+  quantity_reserved: number | null;
   last_updated: string | null;
 };
 
@@ -23,7 +23,7 @@ export type InventoryTransactionRow = {
 export type UpdateInventoryInput = {
   inventoryId: string;
   quantityAvailable: number;
-  quantityReserved?: number;
+  quantityReserved?: number | null;
   note?: string;
   type?: InventoryTransactionType;
 };
