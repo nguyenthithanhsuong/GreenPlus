@@ -51,7 +51,8 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const initialized = useAuthStore((state) => state.initialized);
   const setAuth = useAuthStore((state) => state.setAuth);
   const [showPassword, setShowPassword] = useState(false);
-const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [portalRedirecting, setPortalRedirecting] = useState(false);
 
   useEffect(() => {
     if (initialized && isAuthenticated && isLogin) {
@@ -131,23 +132,23 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
         const isCustomer = roleName === "customer";
 
         if (sessionId && userId && payload.user) {
-          const syncResponse = await fetch("/api/auth/sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              access_token: sessionId,
-              role_name: roleName,
-            }),
-          });
-
-          if (!syncResponse.ok) {
-            const syncError = (await syncResponse.json().catch(() => null)) as
-              | { error?: string }
-              | null;
-            throw new Error(syncError?.error ?? "Unable to sync login session");
-          }
-
           if (isCustomer) {
+            const syncResponse = await fetch("/api/auth/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                access_token: sessionId,
+                role_name: roleName,
+              }),
+            });
+
+            if (!syncResponse.ok) {
+              const syncError = (await syncResponse.json().catch(() => null)) as
+                | { error?: string }
+                | null;
+              throw new Error(syncError?.error ?? "Unable to sync login session");
+            }
+
             setAuth({
               session: {
                 session_id: sessionId,
@@ -169,7 +170,10 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
             return;
           }
 
+          // Show redirecting screen immediately for admin/shipper before API calls
           const targetApp = roleName === "shipper" ? "shipper" : "admin";
+          setPortalRedirecting(true);
+          
           const handoffResponse = await fetch("/api/auth/handoff", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -191,10 +195,19 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
           const handoffPayload = (await handoffResponse.json()) as { redirectUrl?: string };
           const fallbackUrl = targetApp === "shipper" ? SHIPPER_APP_URL : ADMIN_APP_URL;
           useAuthStore.getState().clearAuth();
-          window.location.replace(handoffPayload.redirectUrl ?? fallbackUrl);
+          
+          // Use requestIdleCallback for smoother, non-blocking redirect
+          if (typeof requestIdleCallback !== "undefined") {
+            requestIdleCallback(() => {
+              window.location.replace(handoffPayload.redirectUrl ?? fallbackUrl);
+            }, { timeout: 100 });
+          } else {
+            window.location.replace(handoffPayload.redirectUrl ?? fallbackUrl);
+          }
         }
       }
     } catch (submitError) {
+      setPortalRedirecting(false);
       setSuccess(null);
       setError(
         submitError instanceof Error
@@ -205,6 +218,21 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
       setLoading(false);
     }
   };
+
+  if (portalRedirecting) {
+    return (
+      <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.12)_1px,transparent_1px)] bg-[size:28px_28px] opacity-50" />
+        <div className="relative mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6">
+          <div className="w-full max-w-lg rounded-[1.5rem] border border-white/80 bg-white/90 p-10 text-center shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-700">GreenPlus</p>
+            <h2 className="mt-3 text-2xl font-semibold text-slate-950">Redirecting to your portal...</h2>
+            <p className="mt-3 text-sm text-slate-600">Please wait while we securely hand off your session.</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">

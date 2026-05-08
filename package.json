@@ -6,7 +6,6 @@
     "web-admin",
     "web-client",
     "web-shipper",
-    "supabase-playground",
     "packages/*"
   ],
   "scripts": {
@@ -14,7 +13,6 @@
     "dev:admin": "turbo dev --filter=web-admin",
     "dev:client": "turbo dev --filter=web-client",
     "dev:shipper": "turbo dev --filter=web-shipper",
-    "dev:playground": "turbo dev --filter=supabase-playground",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo run typecheck"

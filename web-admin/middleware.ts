@@ -11,12 +11,17 @@ function hasAuthCookie(request: NextRequest): boolean {
 }
 
 export function middleware(request: NextRequest) {
-  const sourceToken = process.env.BETTER_STACK_SOURCE_TOKEN;
   const pathname = request.nextUrl.pathname;
 
-  if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
-    return NextResponse.redirect(`${CLIENT_LOGIN_URL}${pathname}`);
+  if (pathname.startsWith('/register')) {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
+
+  if (PUBLIC_PATHS.some((prefix) => pathname.startsWith(prefix))) {
+    return NextResponse.next();
+  }
+
+  const sourceToken = process.env.BETTER_STACK_SOURCE_TOKEN;
 
   if (sourceToken && pathname.startsWith('/api/')) {
     const requestInfo = {
@@ -44,12 +49,8 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  if (PUBLIC_PATHS.some((prefix) => pathname.startsWith(prefix))) {
-    return NextResponse.next();
-  }
-
   if (!hasAuthCookie(request)) {
-    return NextResponse.redirect(`${CLIENT_LOGIN_URL}/login`);
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();

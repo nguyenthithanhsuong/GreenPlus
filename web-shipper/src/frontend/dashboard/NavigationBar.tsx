@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { List, ScanLine, UserCircle } from "lucide-react";
 import { SCREEN_MAX_WIDTH_PX, SCREEN_SIDE_PADDING_PX } from "../shared/screen.styles";
 
@@ -27,6 +27,7 @@ const navItems = [
 
 export default function NavigationBar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <nav
@@ -47,7 +48,13 @@ export default function NavigationBar() {
 
           if (item.href === "/scan") {
             return (
-              <button key={item.label} className="relative -top-4 flex flex-col items-center group" type="button">
+              <button
+                key={item.label}
+                className="relative -top-4 flex flex-col items-center group"
+                type="button"
+                onClick={() => router.push(item.href)}
+                aria-label={item.label}
+              >
                 <div className="w-14 h-14 bg-[#2A303C] rounded-full flex items-center justify-center text-white border-4 border-[#F8F9FA] shadow-lg group-active:scale-95 transition-transform">
                   <Icon className="w-6 h-6" />
                 </div>

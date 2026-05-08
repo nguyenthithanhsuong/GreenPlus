@@ -25,12 +25,6 @@ export type OrderSummary = {
   preview_images: string[];
 };
 
-export type OrderTrackingEntry = {
-  tracking_id: string;
-  status: string;
-  note: string | null;
-  created_at: string;
-};
 
 export type OrderItemDetail = {
   order_item_id: string;
@@ -51,12 +45,11 @@ export type OrderDetail = {
   shipping_status: ShippingStatus;
   payment_status: PaymentStatus;
   payment_method: PaymentMethod | "unknown";
-  tracking_history: OrderTrackingEntry[];
-  items: OrderItemDetail[];
   total_amount: number;
   delivery_address: string;
   delivery_fee: number;
   note: string | null;
+  items: OrderItemDetail[];
 };
 
 export type CreateOrderInput = {

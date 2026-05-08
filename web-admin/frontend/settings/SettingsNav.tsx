@@ -25,9 +25,8 @@ const SettingsNav = () => {
       clearAuth();
       await fetch('/api/auth/sync?portal=1', { method: 'DELETE' }).catch(() => undefined);
       setIsLoggingOut(false);
-      // Redirect to the shared portal login (web client). Use a full navigation
-      // so the other app can handle any session/state cleanup.
-      window.location.replace(CLIENT_APP_URL);
+      // Keep logout on the admin origin so the admin session stays local.
+      window.location.replace('/login');
     }
   };
 

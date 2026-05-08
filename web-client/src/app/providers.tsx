@@ -27,6 +27,8 @@ export function AppProviders({ children }: AppProvidersProps) {
   useEffect(() => {
     let mounted = true;
 
+    useAuthStore.getState().restoreAuth();
+
     const readSessionCookieStatus = async () => {
       const response = await fetch("/api/auth/sync", { method: "GET" });
       if (!response.ok) {
@@ -92,6 +94,20 @@ export function AppProviders({ children }: AppProvidersProps) {
   useEffect(() => {
     let cancelled = false;
 
+    const isAuthRoute = () => {
+      if (typeof window === "undefined") return false;
+      const path = window.location.pathname;
+      return path === "/login" || path === "/register";
+    };
+
+    const redirectToLoginIfNeeded = () => {
+      if (cancelled || isAuthRoute()) {
+        return;
+      }
+
+      window.location.replace(`${CLIENT_LOGIN_URL}/login`);
+    };
+
     async function validateRole() {
       const state = useAuthStore.getState();
       if (!state.initialized) return;
@@ -116,28 +132,71 @@ export function AppProviders({ children }: AppProvidersProps) {
 
             if (syncPayload.hasAccessToken) {
               state.clearAuth();
-              if (!cancelled) window.location.replace(`${CLIENT_LOGIN_URL}/login`);
+              redirectToLoginIfNeeded();
               return;
             }
           }
 
           state.clearAuth();
-          if (!cancelled) window.location.replace(`${CLIENT_LOGIN_URL}/login`);
+          redirectToLoginIfNeeded();
           return;
         }
 
-        const payload = (await res.json()) as { item?: { role_name?: string } };
+        const payload = (await res.json()) as {
+          item?: {
+            role_name?: string;
+            user_id?: string;
+            email?: string;
+            name?: string;
+            phone?: string | null;
+            address?: string | null;
+            image_url?: string | null;
+            status?: string;
+          };
+        };
         const roleName = (payload.item?.role_name ?? "").toString().trim().toLowerCase();
 
         const allowedForThisApp = roleName === "admin" || roleName === "customer";
 
         if (!allowedForThisApp) {
           state.clearAuth();
-          if (!cancelled) window.location.replace(`${CLIENT_LOGIN_URL}/login`);
+          redirectToLoginIfNeeded();
+          return;
+        }
+
+        const userId = (payload.item?.user_id ?? "").toString().trim();
+        const email = (payload.item?.email ?? "").toString().trim();
+
+        if (userId && email) {
+          const nextName = (payload.item?.name ?? "").toString().trim() || email;
+          const shouldHydrateAuth =
+            !state.isAuthenticated ||
+            state.user?.user_id !== userId ||
+            state.user?.email !== email;
+
+          if (shouldHydrateAuth) {
+            state.setAuth({
+              session: {
+                session_id: state.token ?? `portal:${userId}`,
+                user_id: userId,
+                login_time: new Date().toISOString(),
+              },
+              user: {
+                user_id: userId,
+                name: nextName,
+                email,
+                phone: payload.item?.phone ?? null,
+                address: payload.item?.address ?? null,
+                image_url: payload.item?.image_url ?? null,
+                status: payload.item?.status ?? "active",
+              },
+              token: state.token ?? `portal:${userId}`,
+            });
+          }
         }
       } catch {
         useAuthStore.getState().clearAuth();
-        if (!cancelled) window.location.replace(`${CLIENT_LOGIN_URL}/login`);
+        redirectToLoginIfNeeded();
       }
     }
 

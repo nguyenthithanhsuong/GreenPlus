@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { supabase } from "@/lib/supabaseClient";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -323,9 +324,23 @@ export default function Profile() {
     [displayAddress, displayEmail, displayPhone, displayStatus, profile?.user_id, user?.user_id],
   );
 
-  const handleLogout = () => {
-    clearAuth();
-    router.replace("/login");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      clearAuth();
+      await fetch("/api/auth/sync", { method: "DELETE" }).catch(() => undefined);
+      setIsLoggingOut(false);
+      router.replace("/login");
+    }
   };
 
   return (

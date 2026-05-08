@@ -145,15 +145,13 @@ export class OrderService {
       throw new AppError("Access denied for this order", 403);
     }
 
-    let trackingRows: Awaited<ReturnType<OrderRepository["listTracking"]>> = [];
     let itemRows: Awaited<ReturnType<OrderRepository["listOrderItems"]>> = [];
     let paymentStatus: string | null = null;
     let paymentMethod: string | null = null;
     let shippingStatus: string | null = null;
 
     try {
-      [trackingRows, itemRows, shippingStatus] = await Promise.all([
-        this.repository.listTracking(order.order_id),
+      [itemRows, shippingStatus] = await Promise.all([
         this.repository.listOrderItems(order.order_id),
         this.repository.findDeliveryStatus(order.order_id),
       ]);
@@ -190,12 +188,6 @@ export class OrderService {
       shipping_status: this.normalizeShippingStatus(shippingStatus),
       payment_status: effectivePaymentStatus,
       payment_method: this.normalizePaymentMethod(paymentMethod),
-      tracking_history: trackingRows.map((row) => ({
-        tracking_id: String(row.tracking_id),
-        status: String(row.status),
-        note: row.note,
-        created_at: String(row.created_at),
-      })),
       items,
       total_amount: Number(order.total_amount),
       delivery_address: order.delivery_address,
@@ -352,12 +344,6 @@ export class OrderService {
         });
       }
 
-      await this.repository.insertTracking({
-        orderId: created.order_id,
-        status: "pending",
-        note: "Đã tạo đơn từ Đơn hàng",
-      });
-
       await this.repository.insertPayment({
         orderId: created.order_id,
         method: paymentMethod,
@@ -432,12 +418,6 @@ export class OrderService {
           paymentDate: null,
         });
       }
-
-      await this.repository.insertTracking({
-        orderId: order.order_id,
-        status: "cancelled",
-        note: (input.note ?? "").trim() || "Order cancelled by customer",
-      });
     } catch (error) {
       throw new AppError(error instanceof Error ? error.message : "Failed to cancel order", 500);
     }
@@ -511,12 +491,6 @@ export class OrderService {
         transactionId: null,
         paymentDate: new Date().toISOString(),
       });
-
-      await this.repository.insertTracking({
-        orderId: order.order_id,
-        status: nextOrderStatus,
-        note: "Khách hàng đã trả tiền",
-      });
     } catch (error) {
       throw new AppError(error instanceof Error ? error.message : "Failed to confirm payment", 500);
     }
@@ -577,11 +551,6 @@ export class OrderService {
         deliveryAddress: hasDeliveryAddress ? input.deliveryAddress?.trim() : undefined,
         deliveryFee: normalizedDeliveryFee,
         note: hasNote ? (input.note ?? "").trim() || null : undefined,
-      });
-      await this.repository.insertTracking({
-        orderId: order.order_id,
-        status: order.status,
-        note: "Order details updated",
       });
     } catch (error) {
       throw new AppError(error instanceof Error ? error.message : "Failed to update order", 500);

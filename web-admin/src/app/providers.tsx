@@ -5,8 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuthStore } from "@/lib/stores/authStore";
 
-const CLIENT_LOGIN_URL = process.env.NEXT_PUBLIC_WEB_CLIENT_URL ?? "http://localhost:3000";
-
 type AppProvidersProps = {
   children: React.ReactNode;
 };
@@ -91,9 +89,23 @@ export function AppProviders({ children }: AppProvidersProps) {
     };
   }, []);
 
-  // Periodically validate the user's role and redirect to web-client login
+  // Periodically validate the user's role and keep the admin app on localhost:3001
   useEffect(() => {
     let cancelled = false;
+
+    const isAuthRoute = () => {
+      if (typeof window === "undefined") return false;
+      const path = window.location.pathname;
+      return path === "/login" || path === "/register";
+    };
+
+    const redirectToLocalLoginIfNeeded = () => {
+      if (cancelled || isAuthRoute()) {
+        return;
+      }
+
+      window.location.replace("/login");
+    };
 
     async function validateRole() {
       const state = useAuthStore.getState();
@@ -114,14 +126,14 @@ export function AppProviders({ children }: AppProvidersProps) {
 
             if (syncPayload.hasAccessToken || syncPayload.hasPortalSession) {
               state.clearAuth();
-              if (!cancelled) window.location.replace(`${CLIENT_LOGIN_URL}/login`);
+              redirectToLocalLoginIfNeeded();
               return;
             }
           }
 
           // If we cannot fetch the user profile treat as unauthorized
           state.clearAuth();
-          if (!cancelled) window.location.replace(`${CLIENT_LOGIN_URL}/login`);
+          redirectToLocalLoginIfNeeded();
           return;
         }
 
@@ -133,11 +145,11 @@ export function AppProviders({ children }: AppProvidersProps) {
 
         if (!allowedForThisApp) {
           state.clearAuth();
-          if (!cancelled) window.location.replace(`${CLIENT_LOGIN_URL}/login`);
+          redirectToLocalLoginIfNeeded();
         }
       } catch {
         useAuthStore.getState().clearAuth();
-        if (!cancelled) window.location.replace(`${CLIENT_LOGIN_URL}/login`);
+        redirectToLocalLoginIfNeeded();
       }
     }
 

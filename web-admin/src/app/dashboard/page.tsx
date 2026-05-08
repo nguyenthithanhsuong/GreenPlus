@@ -13,16 +13,20 @@ export default async function Page() {
 	const cookieStore = await cookies();
 	const roleName = cookieStore.get("gp_role_name")?.value?.trim().toLowerCase() ?? "";
 
+	if (!roleName) {
+		redirect("/login");
+	}
+
 	if (roleName === "customer") {
 		redirect(`${CLIENT_LOGIN_URL}/login`);
 	}
 
 	if (roleName && roleName !== "admin" && roleName !== "employee") {
-		redirect(`${CLIENT_LOGIN_URL}/login`);
+		redirect("/login");
 	}
 
 	if (roleName !== "admin" && roleName !== "employee") {
-		redirect(`${CLIENT_LOGIN_URL}/login`);
+		redirect("/login");
 	}
 
 	return <Dashboard />;
