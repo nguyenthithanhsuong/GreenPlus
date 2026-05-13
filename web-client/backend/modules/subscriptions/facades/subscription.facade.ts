@@ -3,6 +3,7 @@ import {
   CancelSubscriptionResult,
   CreateSubscriptionInput,
   CreateSubscriptionResult,
+  UpdateSubscriptionInput,
   SubscriptionService,
   SubscriptionSummary,
 } from "../subscription.service";
@@ -50,6 +51,20 @@ export class SubscriptionFacade {
     });
 
     return cancelled;
+  }
+
+  async updateSubscription(input: UpdateSubscriptionInput): Promise<SubscriptionSummary> {
+    const updated = await this.service.updateSubscription(input);
+
+    this.subject.notify({
+      subscriptionId: updated.subscriptionId,
+      userId: updated.userId,
+      productId: updated.productId,
+      event: "updated",
+      changedAt: new Date().toISOString(),
+    });
+
+    return updated;
   }
 }
 

@@ -31,6 +31,7 @@ export type ProductDetail = {
   productId: string;
   name: string;
   description: string | null;
+  nutrition: string | null;
   images: string[];
   availablePrice: number | null;
   category: {

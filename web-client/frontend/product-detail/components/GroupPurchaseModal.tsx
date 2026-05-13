@@ -24,7 +24,7 @@ type GroupPurchaseModalProps = {
   regularPrice: number | null;
   onClose: () => void;
   onSubmit: (groupId: string, quantity: number) => Promise<void>;
-    onCreateGroup?: () => void;
+  onCreateGroup?: () => void;
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -240,10 +240,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "14px",
     fontWeight: 600,
     cursor: "pointer",
-    disabled: {
-      opacity: 0.6,
-      cursor: "not-allowed",
-    },
   },
   sectionLabel: {
     margin: 0,
@@ -265,15 +261,7 @@ function formatPrice(value: number | null): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
 }
 
-export default function GroupPurchaseModal({ isOpen, productId, productName, regularPrice, onClose, onSubmit }: GroupPurchaseModalProps) {
-    const handleCreateGroup = () => {
-      setShowGroupPurchaseModal(false);
-      onCreateGroup?.();
-    };
-
-    const setShowGroupPurchaseModal = (val: boolean) => {
-      if (!val) onClose();
-    };
+export default function GroupPurchaseModal({ isOpen, productId, productName, regularPrice, onClose, onSubmit, onCreateGroup }: GroupPurchaseModalProps) {
   const [groups, setGroups] = useState<GroupBuy[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -359,7 +347,10 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
             <p style={styles.emptyText}>Chưa có nhóm mua chung nào</p>
             <button
               type="button"
-              onClick={handleCreateGroup}
+              onClick={() => {
+                onClose();
+                onCreateGroup?.();
+              }}
               style={{
                 padding: "12px 16px",
                 borderRadius: "12px",
@@ -459,7 +450,8 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
                 type="button"
                 style={{
                   ...styles.submitButton,
-                  ...(joining || !selectedGroup ? (styles.submitButton.disabled as React.CSSProperties) : {}),
+                  opacity: joining || !selectedGroup ? 0.6 : 1,
+                  cursor: joining || !selectedGroup ? "not-allowed" : "pointer",
                 }}
                 onClick={() => void handleSubmit()}
                 disabled={joining || !selectedGroup}

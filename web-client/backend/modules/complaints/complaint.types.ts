@@ -23,4 +23,6 @@ export type ComplaintCreatedResult = {
   description: string;
   status: ComplaintStatus;
   createdAt: string;
+  resolvedAt: string | null;
+  rejectReason: string | null;
 };

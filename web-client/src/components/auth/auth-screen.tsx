@@ -7,8 +7,6 @@ import { useState } from "react";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Eye, EyeOff } from "lucide-react";
 
-const ADMIN_APP_URL = process.env.NEXT_PUBLIC_WEB_ADMIN_URL ?? "http://localhost:3001";
-
 type AuthMode = "login" | "register";
 
 type AuthScreenProps = {
@@ -49,16 +47,9 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const initialized = useAuthStore((state) => state.initialized);
   const setAuth = useAuthStore((state) => state.setAuth);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [portalRedirecting, setPortalRedirecting] = useState(false);
-
-  useEffect(() => {
-    if (initialized && isAuthenticated && isLogin) {
-      router.replace("/dashboard");
-    }
-  }, [initialized, isAuthenticated, isLogin, router]);
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -67,6 +58,62 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (initialized && isAuthenticated && isLogin) {
+      router.replace("/dashboard");
+    }
+  }, [initialized, isAuthenticated, isLogin, router]);
+
+  const applyLoginResponse = (data: unknown) => {
+    if (typeof data !== "object" || data === null) {
+      throw new Error("Invalid login response");
+    }
+
+    const payload = data as {
+      session?: {
+        session_id?: string;
+        user_id?: string;
+        login_time?: string;
+      } | null;
+      user?: {
+        user_id?: string;
+        name?: string;
+        email?: string;
+        phone?: string | null;
+        address?: string | null;
+        image_url?: string | null;
+        status?: string;
+      } | null;
+    };
+
+    const sessionId = payload.session?.session_id?.trim() ?? "";
+    const userId = payload.session?.user_id?.trim() ?? payload.user?.user_id?.trim() ?? "";
+
+    if (!sessionId || !userId || !payload.user) {
+      throw new Error("Invalid login response");
+    }
+
+    setAuth({
+      session: {
+        session_id: sessionId,
+        user_id: userId,
+        login_time: payload.session?.login_time ?? new Date().toISOString(),
+      },
+      user: {
+        user_id: payload.user.user_id ?? userId,
+        name: payload.user.name ?? "",
+        email: payload.user.email ?? "",
+        phone: payload.user.phone ?? null,
+        address: payload.user.address ?? null,
+        image_url: payload.user.image_url ?? null,
+        status: payload.user.status ?? "active",
+      },
+      token: sessionId,
+    });
+
+    router.replace("/dashboard");
+  };
+
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -74,23 +121,79 @@ export function AuthScreen({ mode }: AuthScreenProps) {
     setSuccess(null);
 
     try {
-      const response = await fetch(
-        isLogin ? "/api/auth/sign-in" : "/api/auth/register",
-        {
+      if (isLogin) {
+        const signInResponse = await fetch("/api/auth/sign-in", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(
-            isLogin
-              ? { email, password }
-              : {
-                  name,
-                  email,
-                  password,
-                  confirmPassword,
-                }
-          ),
+          body: JSON.stringify({ email, password }),
+        });
+
+        const signInData = (await signInResponse.json().catch(() => null)) as unknown;
+
+        if (!signInResponse.ok) {
+          const message =
+            typeof signInData === "object" && signInData !== null && "error" in signInData
+              ? String((signInData as { error: string }).error)
+              : "Login request failed";
+
+          if (message.includes("account is not active")) {
+            const shouldUnlock = window.confirm("Tài khoản đang bị khóa. Mở khóa và đăng nhập lại?");
+
+            if (shouldUnlock) {
+              const unlockResponse = await fetch("/api/auth/unlock", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+              });
+
+              const unlockData = (await unlockResponse.json().catch(() => null)) as unknown;
+              if (!unlockResponse.ok) {
+                const unlockMessage =
+                  typeof unlockData === "object" && unlockData !== null && "error" in unlockData
+                    ? String((unlockData as { error: string }).error)
+                    : "Không thể mở khóa tài khoản.";
+                throw new Error(unlockMessage);
+              }
+
+              const retryResponse = await fetch("/api/auth/sign-in", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+              });
+
+              const retryData = (await retryResponse.json().catch(() => null)) as unknown;
+              if (!retryResponse.ok) {
+                const retryMessage =
+                  typeof retryData === "object" && retryData !== null && "error" in retryData
+                    ? String((retryData as { error: string }).error)
+                    : "Login request failed";
+                throw new Error(retryMessage);
+              }
+
+              setSuccess("Tài khoản đã được mở khóa và đăng nhập thành công.");
+              applyLoginResponse(retryData);
+              return;
+            }
+          }
+
+          throw new Error(message);
         }
-      );
+
+        setSuccess("Signed in successfully.");
+        applyLoginResponse(signInData);
+        return;
+      }
+
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          confirmPassword,
+        }),
+      });
 
       const data = (await response.json().catch(() => null)) as unknown;
 
@@ -98,140 +201,18 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         const message =
           typeof data === "object" && data !== null && "error" in data
             ? String((data as { error: string }).error)
-            : isLogin
-            ? "Login request failed"
             : "Register request failed";
         throw new Error(message);
       }
 
-      setSuccess(
-        isLogin
-          ? "Signed in successfully."
-          : "Account created successfully."
-      );
-
-      if (isLogin && typeof data === "object" && data !== null) {
-        const payload = data as {
-          role_name?: string | null;
-          session?: { session_id?: string; user_id?: string; login_time?: string } | null;
-          user?: {
-            user_id?: string;
-            name?: string;
-            email?: string;
-            phone?: string | null;
-            address?: string | null;
-            image_url?: string | null;
-            status?: string;
-          } | null;
-        };
-
-        const sessionId = payload.session?.session_id?.trim() ?? "";
-        const userId = payload.session?.user_id?.trim() ?? payload.user?.user_id?.trim() ?? "";
-        const roleName = payload.role_name?.trim().toLowerCase() ?? "";
-        const isCustomer = roleName === "customer";
-
-        if (sessionId && userId && payload.user) {
-          if (isCustomer) {
-            const syncResponse = await fetch("/api/auth/sync", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                access_token: sessionId,
-                role_name: roleName,
-              }),
-            });
-
-            if (!syncResponse.ok) {
-              const syncError = (await syncResponse.json().catch(() => null)) as
-                | { error?: string }
-                | null;
-              throw new Error(syncError?.error ?? "Unable to sync login session");
-            }
-
-            setAuth({
-              session: {
-                session_id: sessionId,
-                user_id: userId,
-                login_time: payload.session?.login_time ?? new Date().toISOString(),
-              },
-              user: {
-                user_id: payload.user.user_id ?? userId,
-                name: payload.user.name ?? "",
-                email: payload.user.email ?? "",
-                phone: payload.user.phone ?? null,
-                address: payload.user.address ?? null,
-                image_url: payload.user.image_url ?? null,
-                status: payload.user.status ?? "active",
-              },
-              token: sessionId,
-            });
-            router.replace("/dashboard");
-            return;
-          }
-
-          // Show redirecting screen immediately for admin/shipper before API calls
-          const targetApp = roleName === "shipper" ? "shipper" : "admin";
-          setPortalRedirecting(true);
-          
-          const handoffResponse = await fetch("/api/auth/handoff", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId,
-              email: payload.user.email ?? email,
-              roleName,
-              targetApp,
-            }),
-          });
-
-          if (!handoffResponse.ok) {
-            const handoffError = (await handoffResponse.json().catch(() => null)) as
-              | { error?: string }
-              | null;
-            throw new Error(handoffError?.error ?? "Unable to establish shared login session");
-          }
-
-          const handoffPayload = (await handoffResponse.json()) as { redirectUrl?: string };
-          const fallbackUrl = targetApp === "shipper" ? SHIPPER_APP_URL : ADMIN_APP_URL;
-          useAuthStore.getState().clearAuth();
-          
-          // Use requestIdleCallback for smoother, non-blocking redirect
-          if (typeof requestIdleCallback !== "undefined") {
-            requestIdleCallback(() => {
-              window.location.replace(handoffPayload.redirectUrl ?? fallbackUrl);
-            }, { timeout: 100 });
-          } else {
-            window.location.replace(handoffPayload.redirectUrl ?? fallbackUrl);
-          }
-        }
-      }
+      setSuccess("Account created successfully.");
     } catch (submitError) {
-      setPortalRedirecting(false);
       setSuccess(null);
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Unexpected error"
-      );
+      setError(submitError instanceof Error ? submitError.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
   };
-
-  if (portalRedirecting) {
-    return (
-      <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.12)_1px,transparent_1px)] bg-[size:28px_28px] opacity-50" />
-        <div className="relative mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6">
-          <div className="w-full max-w-lg rounded-[1.5rem] border border-white/80 bg-white/90 p-10 text-center shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-700">GreenPlus</p>
-            <h2 className="mt-3 text-2xl font-semibold text-slate-950">Redirecting to your portal...</h2>
-            <p className="mt-3 text-sm text-slate-600">Please wait while we securely hand off your session.</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">

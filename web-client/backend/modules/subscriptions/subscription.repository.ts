@@ -116,4 +116,40 @@ export class SubscriptionRepository {
 
     return (data as SubscriptionRow | null) ?? null;
   }
+
+  async updateSubscription(input: {
+    userId: string;
+    subscriptionId: string;
+    schedule?: string;
+    status?: string;
+    startDate?: string;
+  }): Promise<SubscriptionRow | null> {
+    const updatePayload: Record<string, string> = {};
+
+    if (input.schedule) {
+      updatePayload.schedule = input.schedule;
+    }
+
+    if (input.status) {
+      updatePayload.status = input.status;
+    }
+
+    if (input.startDate) {
+      updatePayload.start_date = input.startDate;
+    }
+
+    const { data, error } = await supabaseServer
+      .from("subscriptions")
+      .update(updatePayload)
+      .eq("user_id", input.userId)
+      .eq("subscription_id", input.subscriptionId)
+      .select("subscription_id,user_id,product_id,schedule,status,start_date")
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data as SubscriptionRow | null) ?? null;
+  }
 }

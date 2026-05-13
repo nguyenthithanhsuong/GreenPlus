@@ -135,8 +135,8 @@ export class ComplaintManagementRepository {
       created_at: row.created_at,
       resolved_at: row.resolved_at,
       reject_reason: row.reject_reason,
-      user_name: this.pickUserField(row.users, "name"),
-      user_image_url: this.pickUserField(row.users, "image_url"),
+      user_name: this.pickUserField(row.users ?? null, "name"),
+      user_image_url: this.pickUserField(row.users ?? null, "image_url"),
     };
   }
 

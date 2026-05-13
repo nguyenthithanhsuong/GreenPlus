@@ -30,6 +30,7 @@ export async function PUT(request: Request) {
     const body = (await request.json()) as {
       userId?: string;
       name?: string;
+      email?: string;
       phone?: string;
       address?: string;
       imageUrl?: string;
@@ -38,6 +39,7 @@ export async function PUT(request: Request) {
     const data = await authFacade.updateProfile({
       userId: body.userId ?? "",
       name: body.name ?? "",
+      email: body.email ?? "",
       phone: body.phone ?? "",
       address: body.address,
       imageUrl: body.imageUrl,

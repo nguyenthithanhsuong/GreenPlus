@@ -11,7 +11,7 @@ export default async function HomePage() {
 	}
 
 	if (roleName === "customer") {
-		redirect(`${CLIENT_LOGIN_URL}/login`);
+		redirect("/login");
 	}
 
 	if (roleName && roleName !== "admin" && roleName !== "employee") {

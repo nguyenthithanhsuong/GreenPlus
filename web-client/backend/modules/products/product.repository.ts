@@ -8,6 +8,7 @@ export type ProductRow = {
   category_id: string | null;
   name: string;
   description: string | null;
+  nutrition: string | null;
   unit: string;
   image_url: string | null;
   status: ProductStatus;
@@ -34,7 +35,7 @@ export class ProductRepository {
   async listActiveProducts(): Promise<ProductRow[]> {
     const { data, error } = await supabaseServer
       .from("products")
-      .select("product_id,category_id,name,description,unit,image_url,status,created_at,categories(name)")
+      .select("product_id,category_id,name,description,nutrition,unit,image_url,status,created_at,categories(name)")
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
@@ -48,7 +49,7 @@ export class ProductRepository {
   async getProductById(productId: string): Promise<ProductRow | null> {
     const { data, error } = await supabaseServer
       .from("products")
-      .select("product_id,category_id,name,description,unit,image_url,status,created_at,categories(name)")
+      .select("product_id,category_id,name,description,nutrition,unit,image_url,status,created_at,categories(name)")
       .eq("product_id", productId)
       .maybeSingle();
 

@@ -68,14 +68,24 @@ export class AuthRepository {
     const { data, error } = await supabaseServer
       .from("roles")
       .select("role_id")
-      .eq("role_name", "customer")
+      .eq("is_customer", true)
       .maybeSingle();
 
-    if (error) {
+    if (!error && data?.role_id) {
+      return String(data.role_id);
+    }
+
+    const { data: fallbackData, error: fallbackError } = await supabaseServer
+      .from("roles")
+      .select("role_id")
+      .ilike("role_name", "customer")
+      .maybeSingle();
+
+    if (fallbackError) {
       return null;
     }
 
-    return data?.role_id ? String(data.role_id) : null;
+    return fallbackData?.role_id ? String(fallbackData.role_id) : null;
   }
 
   async createUser(input: {
@@ -84,15 +94,26 @@ export class AuthRepository {
     email: string;
     passwordHash: string;
   }): Promise<UserRow> {
+    const insertPayload: {
+      role_id?: string;
+      name: string;
+      email: string;
+      password: string;
+      status: "active";
+    } = {
+      name: input.name,
+      email: input.email,
+      password: input.passwordHash,
+      status: "active",
+    };
+
+    if (input.roleId) {
+      insertPayload.role_id = input.roleId;
+    }
+
     const { data, error } = await supabaseServer
       .from("users")
-      .insert({
-        role_id: input.roleId,
-        name: input.name,
-        email: input.email,
-        password: input.passwordHash,
-        status: "active",
-      })
+      .insert(insertPayload)
       .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
       .single();
 
@@ -106,6 +127,7 @@ export class AuthRepository {
   async updateProfile(input: {
     userId: string;
     name: string;
+    email: string;
     phone: string;
     address: string;
     imageUrl: string;
@@ -114,11 +136,27 @@ export class AuthRepository {
       .from("users")
       .update({
         name: input.name,
+        email: input.email,
         phone: input.phone,
         address: input.address,
         image_url: input.imageUrl,
       })
       .eq("user_id", input.userId)
+      .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data as UserRow;
+  }
+
+  async updateStatus(userId: string, status: UserStatus): Promise<UserRow> {
+    const { data, error } = await supabaseServer
+      .from("users")
+      .update({ status })
+      .eq("user_id", userId)
       .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
       .single();
 

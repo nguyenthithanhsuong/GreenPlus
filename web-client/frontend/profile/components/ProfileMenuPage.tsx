@@ -32,10 +32,11 @@ const menuItems: MenuItem[] = [
   { title: "Quét QR Batch", href: "/profile/scan-batch" },
   { title: "Profile của tôi", href: "/profile/my-profile" },
   { title: "Đổi mật khẩu", href: "/profile/change-password" },
-  { title: "Phương thức thanh toán", href: "/profile/payment-method" },
-  { title: "Lịch sử điểm thưởng", href: "/profile/score-history" },
-  { title: "Cài đặt thông báo", href: "/profile/notification-setting" },
-  { title: "Trợ giúp & Hỗ trợ", href: "/profile/help" },
+  // { title: "Phương thức thanh toán", href: "/profile/payment-method" },
+  // { title: "Cài đặt thông báo", href: "/profile/notification-setting" },
+  { title: "Phản hồi & Khiếu nại", href: "/profile/complaints" },
+  // { title: "Trợ giúp & Hỗ trợ", href: "/profile/help" },
+  { title: "Khóa tài khoản", href: "/profile/lock-account" },
   { title: "Đăng xuất", href: "/login", destructive: true },
 ];
 

@@ -104,6 +104,7 @@ export class ProductDetailService {
       productId: product.product_id,
       name: product.name,
       description: product.description,
+      nutrition: product.nutrition,
       images: product.image_url ? [product.image_url] : [],
       availablePrice: latestPrice,
       category: {

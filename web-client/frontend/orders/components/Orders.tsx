@@ -842,6 +842,14 @@ export default function Orders() {
     setCancelTarget(order);
   };
 
+  const handleOpenComplaintPage = (orderId: string) => {
+    void router.push(`/complaints?orderId=${encodeURIComponent(orderId)}`);
+  };
+
+  const handleOpenReviewFromOrder = (orderId: string) => {
+    void router.push(`/orders/${encodeURIComponent(orderId)}?mode=review`);
+  };
+
   const handleCloseCancelPrompt = () => {
     if (saving) {
       return;
@@ -979,38 +987,45 @@ export default function Orders() {
                 gap: "12px",
               }}
             >
-              {item.product_image_url ? (
-                <img
-                  src={item.product_image_url}
-                  alt={item.product_name}
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "8px",
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "8px",
-                    background: "#F3F4F6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#9CA3AF",
-                  }}
-                >
-                  No Image
-                </div>
-              )}
+              <Link href={`/product-detail/${item.product_id}`} style={{ textDecoration: "none" }} aria-label={`Xem chi tiết ${item.product_name}`}>
+                {item.product_image_url ? (
+                  <img
+                    src={item.product_image_url}
+                    alt={item.product_name}
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "8px",
+                      objectFit: "cover",
+                      cursor: "pointer",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "8px",
+                      background: "#F3F4F6",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#9CA3AF",
+                      cursor: "pointer",
+                    }}
+                  >
+                    No Image
+                  </div>
+                )}
+              </Link>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div>
-                  <p style={{ margin: "0 0 4px 0", fontSize: "14px", fontWeight: 600, color: "#111827" }}>
+                  <Link
+                    href={`/product-detail/${item.product_id}`}
+                    style={{ margin: "0 0 4px 0", fontSize: "14px", fontWeight: 600, color: "#111827", textDecoration: "none", display: "inline-block" }}
+                  >
                     {item.product_name}
-                  </p>
+                  </Link>
                   <p style={{ margin: 0, fontSize: "12px", color: "#6B7280" }}>
                     Số lượng: {item.quantity}
                   </p>
@@ -1266,10 +1281,27 @@ export default function Orders() {
                 event.stopPropagation();
                 if (status === "pending" || status === "confirmed") {
                   handleOpenCancelPrompt(order);
+                  return;
+                }
+
+                if (status === "completed") {
+                  handleOpenReviewFromOrder(order.order_id);
                 }
               }}
             >
               {actions.left}
+            </button>
+          ) : null}
+          {status === "completed" ? (
+            <button
+              type="button"
+              style={styles.actionButton}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleOpenComplaintPage(order.order_id);
+              }}
+            >
+              Khiếu nại
             </button>
           ) : null}
           <button
@@ -1277,10 +1309,13 @@ export default function Orders() {
             style={{
               ...styles.actionButton,
               ...(actions.mutedRight ? styles.actionButtonMuted : styles.actionButtonPrimary),
-              flex: actions.left ? 1 : 2,
+              flex: actions.left || status === "completed" ? 1 : 2,
             }}
             onClick={(event) => {
               event.stopPropagation();
+              if (status === "completed" || status === "cancelled") {
+                void router.push("/dashboard");
+              }
             }}
           >
             {actions.right}
@@ -1326,6 +1361,43 @@ export default function Orders() {
               Đơn Hàng
             </button>
           </div>
+        </section>
+
+        <section
+          style={{
+            margin: "12px 16px 0",
+            padding: "14px 16px",
+            borderRadius: "16px",
+            border: "1px solid #BBF7D0",
+            background: "linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <p style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#1A4331" }}>Đơn đặt định kỳ</p>
+            <p style={{ margin: 0, fontSize: "13px", color: "#166534" }}>
+              Quản lý lịch giao, trạng thái và hủy các đơn mua lặp lại của bạn.
+            </p>
+          </div>
+          <Link
+            href="/subscriptions"
+            style={{
+              padding: "10px 14px",
+              borderRadius: "12px",
+              background: "#51B788",
+              color: "#FFFFFF",
+              fontSize: "14px",
+              fontWeight: 700,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Mở quản lý
+          </Link>
         </section>
 
         {mainTab === "cart" ? renderCartSection() : renderOrdersSection()}

@@ -43,12 +43,14 @@ export class DeliveryTrackingFacade {
 
   async assignShipper(input: AssignShipperInput): Promise<DeliveryTrackingDetailRow> {
     const detail = await this.service.assignShipper(input);
-    await this.subject.notify({
-      type: "shipper_assigned",
-      orderId: detail.order_id,
-      actor: "manager",
-      employeeId: detail.employee_id,
-    });
+    if (detail.employee_id) {
+      await this.subject.notify({
+        type: "shipper_assigned",
+        orderId: detail.order_id,
+        actor: "manager",
+        employeeId: detail.employee_id,
+      });
+    }
 
     return detail;
   }

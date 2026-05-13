@@ -324,7 +324,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderTop: "1px solid #F3F4F6",
     paddingTop: "16px",
   },
-  noteInput: {
+  noteInputCompact: {
     width: "100%",
     boxSizing: "border-box",
     border: "1px solid #E5E7EB",
@@ -814,13 +814,17 @@ export default function Payment() {
                           : {}),
                       }}
                     >
-                      {item.product_image_url ? (
-                        <img src={item.product_image_url} alt={item.product_name} style={styles.itemThumb} />
-                      ) : (
-                        <div style={styles.itemThumbFallback}>No img</div>
-                      )}
+                      <Link href={`/product-detail/${item.product_id}`} style={{ textDecoration: "none" }} aria-label={`Xem chi tiết ${item.product_name}`}>
+                        {item.product_image_url ? (
+                          <img src={item.product_image_url} alt={item.product_name} style={{ ...styles.itemThumb, cursor: "pointer" }} />
+                        ) : (
+                          <div style={{ ...styles.itemThumbFallback, cursor: "pointer" }}>No img</div>
+                        )}
+                      </Link>
                       <div style={styles.itemBody}>
-                        <p style={styles.itemName}>{item.product_name}</p>
+                        <Link href={`/product-detail/${item.product_id}`} style={{ ...styles.itemName, textDecoration: "none", display: "inline-block" }}>
+                          {item.product_name}
+                        </Link>
                         <p style={styles.itemMeta}>Sản phẩm hữu cơ GreenPlus</p>
                         <div style={styles.itemPriceRow}>
                           <p style={styles.itemPrice}>{formatPrice(Number(item.subtotal))}</p>
@@ -847,7 +851,7 @@ export default function Payment() {
                                 void handleSaveNote(item);
                               }
                             }}
-                            style={styles.noteInput}
+                            style={styles.noteInputCompact}
                             placeholder="Thêm ghi chú cho sản phẩm này"
                             disabled={savingNoteItemId === item.cart_item_id}
                           />
@@ -901,7 +905,7 @@ export default function Payment() {
                     type="text"
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
-                    style={styles.noteInput}
+                    style={styles.noteInputCompact}
                     placeholder="Ghi chú cho cửa hàng (vd: chọn rau non...)"
                   />
                 </div>

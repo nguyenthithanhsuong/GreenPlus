@@ -39,7 +39,7 @@ type CategoryProductsProps = {
   initialSort?: string;
 };
 
-type ProductSort = "newest" | "price_asc" | "price_desc";
+type ProductSort = "newest" | "price_asc" | "price_desc" | "oldest";
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -400,6 +400,10 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
         return "price_desc";
       }
 
+      if (current === "price_desc") {
+        return "oldest";
+      }
+
       return "newest";
     });
   };
@@ -411,6 +415,10 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
 
     if (sortValue === "price_desc") {
       return "Giá cao";
+    }
+
+    if (sortValue === "oldest") {
+      return "Cũ nhất";
     }
 
     return "Mới nhất";

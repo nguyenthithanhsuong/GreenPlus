@@ -14,6 +14,7 @@ export type ProductRow = {
   product_id: string;
   name: string;
   status: "active" | "inactive";
+  image_url: string | null;
 };
 
 export type SupplierRow = {
@@ -41,7 +42,7 @@ export class TraceabilityRepository {
   async findProductById(productId: string): Promise<ProductRow | null> {
     const { data, error } = await supabaseServer
       .from("products")
-      .select("product_id,name,status")
+      .select("product_id,name,status,image_url")
       .eq("product_id", productId)
       .maybeSingle();
 

@@ -292,6 +292,8 @@ export default function ProfileMine() {
   const [profile, setProfile] = useState<ProfileResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nameInput, setNameInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
   const [addressInput, setAddressInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -335,6 +337,8 @@ export default function ProfileMine() {
 
         const nextProfile = data as ProfileResult;
         setProfile(nextProfile);
+        setNameInput(nextProfile.name ?? "");
+        setEmailInput(nextProfile.email ?? "");
         setPhoneInput(nextProfile.phone ?? "");
         setAddressInput(nextProfile.address ?? "");
         setImageUrlInput(nextProfile.image_url ?? "");
@@ -409,9 +413,13 @@ export default function ProfileMine() {
       return;
     }
 
-    const nameForUpdate = (profile?.name ?? user?.name ?? "").trim();
-    if (!nameForUpdate) {
+    if (!nameInput.trim()) {
       setSaveMessage("Không thể cập nhật do thiếu tên tài khoản.");
+      return;
+    }
+
+    if (!emailInput.trim()) {
+      setSaveMessage("Không thể cập nhật do thiếu email.");
       return;
     }
 
@@ -426,7 +434,8 @@ export default function ProfileMine() {
         },
         body: JSON.stringify({
           userId,
-          name: nameForUpdate,
+          name: nameInput,
+          email: emailInput,
           phone: phoneInput,
           address: addressInput,
           imageUrl: imageUrlInput || profile?.image_url || user?.image_url || "",
@@ -441,6 +450,8 @@ export default function ProfileMine() {
 
       const nextProfile = data as ProfileResult;
       setProfile(nextProfile);
+      setNameInput(nextProfile.name ?? "");
+      setEmailInput(nextProfile.email ?? "");
       setPhoneInput(nextProfile.phone ?? "");
       setAddressInput(nextProfile.address ?? "");
       setImageUrlInput(nextProfile.image_url ?? "");
@@ -452,7 +463,7 @@ export default function ProfileMine() {
         image_url: nextProfile.image_url,
         status: nextProfile.status,
       });
-      setSaveMessage("Đã cập nhật số điện thoại và địa chỉ.");
+      setSaveMessage("Đã cập nhật tên, email, số điện thoại và địa chỉ.");
     } catch (requestError) {
       setSaveMessage(requestError instanceof Error ? requestError.message : "Không thể cập nhật hồ sơ.");
     } finally {
@@ -581,6 +592,26 @@ export default function ProfileMine() {
 
                 <div style={styles.formGrid}>
                   <div style={styles.inputGroup}>
+                    <p style={styles.inputLabel}>Tên</p>
+                    <input
+                      type="text"
+                      value={nameInput}
+                      onChange={(event) => setNameInput(event.target.value)}
+                      style={styles.textInput}
+                      placeholder="Nhập tên hiển thị"
+                    />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <p style={styles.inputLabel}>Email</p>
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(event) => setEmailInput(event.target.value)}
+                      style={styles.textInput}
+                      placeholder="Nhập email"
+                    />
+                  </div>
+                  <div style={styles.inputGroup}>
                     <p style={styles.inputLabel}>Số điện thoại</p>
                     <input
                       type="tel"
@@ -605,9 +636,7 @@ export default function ProfileMine() {
                     </button>
                     {saveMessage ? <p style={styles.infoText}>{saveMessage}</p> : null}
                   </div>
-                  
                 </div>
-                
               </section>
             </>
           )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuthStore } from "../../../src/lib/stores/authStore";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import {
   SCREEN_BACKGROUND_GRADIENT,
@@ -10,8 +11,6 @@ import {
   SCREEN_MAX_WIDTH_PX,
   SCREEN_SIDE_PADDING_PX,
 } from "../../shared/screen.styles";
-
-const BACKEND_TEST_USER_STORAGE_KEY = "backend-testing-user-id";
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -61,9 +60,8 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default function ProfileChangePassword() {
-  // User ID State
-  const [userIdInput, setUserIdInput] = useState("");
-  const [activeUserId, setActiveUserId] = useState("");
+  // Get current user from auth store
+  const { user } = useAuthStore();
 
   // Password Form State
   const [currentPassword, setCurrentPassword] = useState("");
@@ -75,23 +73,13 @@ export default function ProfileChangePassword() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ updated?: boolean; error?: string } | null>(null);
 
-  // Initialize User ID from Local Storage
-  useEffect(() => {
-    const savedUserId = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
-    setActiveUserId(savedUserId);
-    setUserIdInput(savedUserId);
-  }, []);
-
-  // Resolve User ID Logic
-  const resolveUserId = (): string => {
-    const normalized = userIdInput.trim() || activeUserId.trim();
-    if (!normalized) {
-      throw new Error("Please sign in first or provide userId");
-    }
-    return normalized;
-  };
-
   const changePassword = async () => {
+    // Check if user is authenticated
+    if (!user?.user_id) {
+      setError("Please sign in first");
+      return;
+    }
+
     // Basic pre-validation
     if (newPassword !== confirmPassword) {
       setError("New password and confirm password do not match.");
@@ -103,14 +91,11 @@ export default function ProfileChangePassword() {
     setResult(null);
 
     try {
-      // This will throw an error and jump to catch if no user ID is found
-      const userId = resolveUserId(); 
-      
       const response = await fetch("/api/account/change-password", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
+          userId: user.user_id,
           currentPassword,
           newPassword,
           confirmPassword,

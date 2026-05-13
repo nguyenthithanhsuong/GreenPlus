@@ -27,8 +27,8 @@ export class CategoryManagementService {
 
     return this.repository.createCategory({
       name,
-      description: input.description?.trim() || null,
-      imageUrl: input.imageUrl?.trim() || null,
+      description: input.description?.trim() || undefined,
+      imageUrl: input.imageUrl?.trim() || undefined,
     });
   }
 

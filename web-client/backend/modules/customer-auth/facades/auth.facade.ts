@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto";
 import { AppError } from "../../../core/errors";
-import { isUsingServiceRoleKey } from "../../../core/supabase";
+// import { isUsingServiceRoleKey } from "../../../core/supabase";
 import { AuthAuditObserver, AuthSubject } from "../observers/auth.observer";
-import { AuthRepository } from "../auth.repository";
+import { AuthRepository, type UserRow } from "../auth.repository";
 import { createAccountState } from "../states/account.state";
 import {
   ChangePasswordInput,
@@ -11,6 +11,8 @@ import {
   SignInInput,
   UploadProfileImageInput,
   UploadProfileImageResult,
+  UnlockAccountInput,
+  UpdateAccountStatusInput,
   UpdateProfileInput,
   UserStatus,
 } from "../auth.types";
@@ -46,6 +48,52 @@ export class AuthFacade {
 
   private isPbkdf2Hash(value: string): boolean {
     return value.startsWith("pbkdf2$");
+  }
+
+  private async resolveUserForCredentials(input: SignInInput): Promise<UserRow> {
+    const email = input.email.trim().toLowerCase();
+
+    if (email.length === 0) {
+      throw new AppError("MSG1: email is required", 400);
+    }
+
+    if (input.password.length === 0) {
+      throw new AppError("MSG2: password is required", 400);
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      throw new AppError("MSG3: invalid email format", 400);
+    }
+
+    const user = await this.repository.findUserByEmail(email);
+    if (!user) {
+      // if (!isUsingServiceRoleKey) {
+      //   throw new AppError(
+      //     "MSG4: account not found (backend is using anon key; if RLS is enabled, user rows may be hidden). Set SUPABASE_SERVICE_ROLE_KEY.",
+      //     404
+      //   );
+      // }
+      throw new AppError("MSG4: account not found", 404);
+    }
+
+    let isValidPassword = false;
+
+    if (this.isPbkdf2Hash(user.password)) {
+      isValidPassword = await this.hasher.compare(input.password, user.password);
+    } else {
+      // Ho tro du lieu cu luu plaintext: cho phep dang nhap 1 lan roi nang cap len hash.
+      isValidPassword = input.password === user.password;
+      if (isValidPassword) {
+        const upgradedHash = await this.hasher.hash(input.password);
+        await this.repository.updatePassword(user.user_id, upgradedHash);
+      }
+    }
+
+    if (!isValidPassword) {
+      throw new AppError("MSG5: invalid credentials", 400);
+    }
+
+    return user;
   }
 
   async register(input: RegisterInput) {
@@ -100,47 +148,7 @@ export class AuthFacade {
   }
 
   async signIn(input: SignInInput): Promise<{ session: SessionInfo; user: Record<string, unknown>; role_name: string | null }> {
-    const email = input.email.trim().toLowerCase();
-
-    if (email.length === 0) {
-      throw new AppError("MSG1: email is required", 400);
-    }
-
-    if (input.password.length === 0) {
-      throw new AppError("MSG2: password is required", 400);
-    }
-
-    if (!EMAIL_REGEX.test(email)) {
-      throw new AppError("MSG3: invalid email format", 400);
-    }
-
-    const user = await this.repository.findUserByEmail(email);
-    if (!user) {
-      if (!isUsingServiceRoleKey) {
-        throw new AppError(
-          "MSG4: account not found (backend is using anon key; if RLS is enabled, user rows may be hidden). Set SUPABASE_SERVICE_ROLE_KEY.",
-          404
-        );
-      }
-      throw new AppError("MSG4: account not found", 404);
-    }
-
-    let isValidPassword = false;
-
-    if (this.isPbkdf2Hash(user.password)) {
-      isValidPassword = await this.hasher.compare(input.password, user.password);
-    } else {
-      // Ho tro du lieu cu luu plaintext: cho phep dang nhap 1 lan roi nang cap len hash.
-      isValidPassword = input.password === user.password;
-      if (isValidPassword) {
-        const upgradedHash = await this.hasher.hash(input.password);
-        await this.repository.updatePassword(user.user_id, upgradedHash);
-      }
-    }
-
-    if (!isValidPassword) {
-      throw new AppError("MSG5: invalid credentials", 400);
-    }
+    const user = await this.resolveUserForCredentials(input);
 
     this.ensureActiveStatus(user.status);
 
@@ -173,6 +181,42 @@ export class AuthFacade {
     };
   }
 
+  async unlockAccount(input: UnlockAccountInput): Promise<{ unlocked: true }> {
+    const user = await this.resolveUserForCredentials(input);
+
+    if (user.status === "active") {
+      return { unlocked: true };
+    }
+
+    const updated = await this.repository.updateStatus(user.user_id, "active");
+
+    await this.authSubject.notify({
+      type: "profile_updated",
+      userId: updated.user_id,
+    });
+
+    return { unlocked: true };
+  }
+
+  async updateAccountStatus(input: UpdateAccountStatusInput): Promise<{ updated: true; status: UserStatus }> {
+    if (input.userId.trim().length === 0) {
+      throw new AppError("userId is required", 400);
+    }
+
+    if (input.status.trim().length === 0) {
+      throw new AppError("status is required", 400);
+    }
+
+    const updated = await this.repository.updateStatus(input.userId, input.status);
+
+    await this.authSubject.notify({
+      type: "profile_updated",
+      userId: updated.user_id,
+    });
+
+    return { updated: true, status: updated.status };
+  }
+
   async getProfile(userId: string) {
     if (userId.trim().length === 0) {
       throw new AppError("userId is required", 400);
@@ -203,17 +247,33 @@ export class AuthFacade {
       throw new AppError("MSG1: name is required", 400);
     }
 
+    if (input.email.trim().length === 0) {
+      throw new AppError("MSG2: email is required", 400);
+    }
+
+    const normalizedEmail = input.email.trim().toLowerCase();
+
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      throw new AppError("MSG3: invalid email format", 400);
+    }
+
     if (input.phone.trim().length === 0) {
-      throw new AppError("MSG2: phone is required", 400);
+      throw new AppError("MSG4: phone is required", 400);
     }
 
     if (!PHONE_REGEX.test(input.phone.trim())) {
-      throw new AppError("MSG3: invalid phone format", 400);
+      throw new AppError("MSG5: invalid phone format", 400);
+    }
+
+    const existing = await this.repository.findUserByEmail(normalizedEmail);
+    if (existing && existing.user_id !== input.userId) {
+      throw new AppError("MSG6: email already exists", 400);
     }
 
     const updated = await this.repository.updateProfile({
       userId: input.userId,
       name: input.name.trim(),
+      email: normalizedEmail,
       phone: input.phone.trim(),
       address: (input.address ?? "").trim(),
       imageUrl: (input.imageUrl ?? "").trim(),

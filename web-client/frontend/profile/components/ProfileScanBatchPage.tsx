@@ -13,7 +13,9 @@ import {
 } from "../../shared/screen.styles";
 
 type BatchOriginResult = {
+  product_id: string;
   product_name: string;
+  image_url: string | null;
   supplier_name: string | null;
   production_location: string | null;
   harvest_date: string;
@@ -168,17 +170,84 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#B91C1C",
   },
   resultCard: {
-    borderRadius: "12px",
+    borderRadius: "16px",
     border: "1px solid #D1FAE5",
     background: "#ECFDF5",
-    padding: "10px",
-    display: "grid",
-    gap: "6px",
+    padding: "16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "14px",
   },
-  resultLine: {
-    margin: 0,
+  resultImage: {
+    width: "100%",
+    height: "180px",
+    borderRadius: "12px",
+    objectFit: "cover",
+    background: "#F0F2F5",
+  },
+  resultPlaceholderImage: {
+    width: "100%",
+    height: "180px",
+    borderRadius: "12px",
+    background: "#D1E8DC",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#059669",
     fontSize: "12px",
+  },
+  resultProductName: {
+    margin: 0,
+    fontSize: "16px",
+    fontWeight: 700,
     color: "#065F46",
+  },
+  resultInfoGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+  resultInfoItem: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "3px",
+  },
+  resultInfoLabel: {
+    margin: 0,
+    fontSize: "11px",
+    fontWeight: 700,
+    color: "#047857",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  resultInfoValue: {
+    margin: 0,
+    fontSize: "13px",
+    color: "#065F46",
+    lineHeight: "1.4",
+  },
+  resultFullWidth: {
+    gridColumn: "1 / -1",
+  },
+  resultButtonGroup: {
+    display: "flex",
+    gap: "8px",
+  },
+  resultButton: {
+    flex: 1,
+    borderRadius: "12px",
+    border: "none",
+    background: "#10B981",
+    color: "#FFFFFF",
+    fontWeight: 700,
+    fontSize: "13px",
+    padding: "12px 16px",
+    cursor: "pointer",
+    textDecoration: "none",
+    textAlign: "center" as const,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
 };
 
@@ -503,13 +572,43 @@ export default function ProfileScanBatchPage() {
 
             {scanResult && (
               <div style={styles.resultCard}>
-                <p style={styles.resultLine}><strong>Batch:</strong> {scanResult.batch_number}</p>
-                <p style={styles.resultLine}><strong>Sản phẩm:</strong> {scanResult.product_name}</p>
-                <p style={styles.resultLine}><strong>Nhà cung cấp:</strong> {scanResult.supplier_name ?? "Đang cập nhật"}</p>
-                <p style={styles.resultLine}><strong>Nơi sản xuất:</strong> {scanResult.production_location ?? "Đang cập nhật"}</p>
-                <p style={styles.resultLine}><strong>Ngày thu hoạch:</strong> {scanResult.harvest_date}</p>
-                <p style={styles.resultLine}><strong>Hạn sử dụng:</strong> {scanResult.expire_date}</p>
-                <p style={styles.resultLine}><strong>Chứng nhận:</strong> {scanResult.certification ?? "Không có"}</p>
+                {scanResult.image_url ? (
+                  <img src={scanResult.image_url} alt={scanResult.product_name} style={styles.resultImage} />
+                ) : (
+                  <div style={styles.resultPlaceholderImage}>Không có ảnh</div>
+                )}
+                <h3 style={styles.resultProductName}>{scanResult.product_name}</h3>
+                <div style={styles.resultInfoGrid}>
+                  <div style={styles.resultInfoItem}>
+                    <span style={styles.resultInfoLabel}>Batch</span>
+                    <span style={styles.resultInfoValue}>{scanResult.batch_number}</span>
+                  </div>
+                  <div style={styles.resultInfoItem}>
+                    <span style={styles.resultInfoLabel}>Nhà cung cấp</span>
+                    <span style={styles.resultInfoValue}>{scanResult.supplier_name ?? "Đang cập nhật"}</span>
+                  </div>
+                  <div style={styles.resultInfoItem}>
+                    <span style={styles.resultInfoLabel}>Nơi sản xuất</span>
+                    <span style={styles.resultInfoValue}>{scanResult.production_location ?? "Đang cập nhật"}</span>
+                  </div>
+                  <div style={styles.resultInfoItem}>
+                    <span style={styles.resultInfoLabel}>Thu hoạch</span>
+                    <span style={styles.resultInfoValue}>{scanResult.harvest_date}</span>
+                  </div>
+                  <div style={styles.resultInfoItem}>
+                    <span style={styles.resultInfoLabel}>Hạn sử dụng</span>
+                    <span style={styles.resultInfoValue}>{scanResult.expire_date}</span>
+                  </div>
+                  <div style={styles.resultInfoItem}>
+                    <span style={styles.resultInfoLabel}>Chứng nhận</span>
+                    <span style={styles.resultInfoValue}>{scanResult.certification ?? "Không có"}</span>
+                  </div>
+                </div>
+                <div style={styles.resultButtonGroup}>
+                  <Link href={`/product-detail/${scanResult.product_id}`} style={styles.resultButton}>
+                    Xem sản phẩm
+                  </Link>
+                </div>
               </div>
             )}
           </section>

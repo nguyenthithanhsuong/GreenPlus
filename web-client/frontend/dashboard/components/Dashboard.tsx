@@ -208,6 +208,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: "14px",
     lineHeight: "20px",
+    textDecoration: "none",
+    cursor: "pointer",
   },
   categoryGrid: {
     display: "grid",
@@ -603,6 +605,11 @@ const Dashboard = () => {
   const twoRowCategories = useMemo(() => displayCategories.slice(0, categoryColumns * 2), [displayCategories, categoryColumns]);
   const freshProducts = useMemo(() => products.slice(0, 2), [products]);
   const dealProducts = useMemo(() => products.slice(2, 4), [products]);
+  const allProductsHref = `/category-products/all?${new URLSearchParams({
+    name: "Tất cả",
+    backTo: "/dashboard",
+    sort: "newest",
+  }).toString()}`;
 
   const formatPrice = (value: number | null): string => {
     if (value === null) {
@@ -694,7 +701,9 @@ const Dashboard = () => {
           <section>
             <div style={styles.sectionHeader}>
               <h3 style={styles.sectionTitle}>Danh mục</h3>
-              <span style={styles.sectionAction}>Xem thêm</span>
+              <Link href="/category" style={styles.sectionAction}>
+                Xem thêm
+              </Link>
             </div>
 
             {loadingCategories && <p style={styles.infoText}>Đang tải danh mục...</p>}
@@ -747,7 +756,9 @@ const Dashboard = () => {
           <section>
             <div style={styles.sectionHeader}>
               <h3 style={styles.sectionTitle}>Nông sản tươi ngon</h3>
-              <span style={styles.sectionAction}>Xem thêm</span>
+              <Link href={allProductsHref} style={styles.sectionAction}>
+                Xem thêm
+              </Link>
             </div>
             {loadingProducts && <p style={styles.infoText}>Đang tải sản phẩm...</p>}
             {!loadingProducts && productsError && <p style={styles.errorText}>{productsError}</p>}
@@ -795,7 +806,9 @@ const Dashboard = () => {
           <section>
             <div style={styles.sectionHeader}>
               <h3 style={styles.sectionTitle}>Ưu đãi hôm nay</h3>
-              <span style={styles.sectionAction}>Xem thêm</span>
+              <Link href={allProductsHref} style={styles.sectionAction}>
+                Xem thêm
+              </Link>
             </div>
             {!loadingProducts && !productsError && dealProducts.length === 0 && <p style={styles.infoText}>Không có sản phẩm ưu đãi.</p>}
             <div style={styles.productRow}>

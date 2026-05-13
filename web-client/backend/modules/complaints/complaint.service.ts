@@ -55,6 +55,8 @@ export class ComplaintService {
       description: string;
       status: "pending" | "resolved" | "rejected";
       created_at: string;
+      resolved_at: string | null;
+      reject_reason: string | null;
     };
 
     try {
@@ -76,6 +78,8 @@ export class ComplaintService {
       description: String(created.description),
       status: created.status,
       createdAt: String(created.created_at),
+      resolvedAt: created.resolved_at,
+      rejectReason: created.reject_reason,
     };
   }
 }

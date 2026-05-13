@@ -9,6 +9,8 @@ type ComplaintInsertRow = {
   description: string;
   status: ComplaintStatus;
   created_at: string;
+  resolved_at: string | null;
+  reject_reason: string | null;
 };
 
 export class ComplaintRepository {
@@ -41,7 +43,7 @@ export class ComplaintRepository {
         type: input.type,
         description: input.description,
       })
-      .select("complaint_id,user_id,order_id,type,description,status,created_at")
+      .select("complaint_id,user_id,order_id,type,description,status,created_at,resolved_at,reject_reason")
       .single();
 
     if (error) {

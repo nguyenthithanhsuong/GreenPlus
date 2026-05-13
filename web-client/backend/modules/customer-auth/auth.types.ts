@@ -15,6 +15,7 @@ export type SignInInput = {
 export type UpdateProfileInput = {
   userId: string;
   name: string;
+  email: string;
   phone: string;
   address?: string;
   imageUrl?: string;
@@ -35,6 +36,16 @@ export type ChangePasswordInput = {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
+};
+
+export type UpdateAccountStatusInput = {
+  userId: string;
+  status: UserStatus;
+};
+
+export type UnlockAccountInput = {
+  email: string;
+  password: string;
 };
 
 export type SessionInfo = {

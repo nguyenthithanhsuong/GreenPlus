@@ -38,6 +38,7 @@ type ProductDetailData = {
   productId: string;
   name: string;
   description: string | null;
+  nutrition: string | null;
   images: string[];
   availablePrice: number | null;
   category: {
@@ -761,6 +762,7 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
 
   const resolvedName = product?.name ?? null;
   const resolvedDescription = product?.description ?? null;
+  const resolvedNutrition = product?.nutrition ?? null;
   const resolvedPrice = product ? formatPrice(product.availablePrice) : null;
   const effectiveAvailability = useMemo(() => {
     if (!product) {
@@ -1092,7 +1094,7 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
               <span>Dinh dưỡng</span>
               <span>{expanded.nutrition ? "▲" : "▼"}</span>
             </button>
-            {expanded.nutrition && <p style={styles.accordionBody}>Thông tin dinh dưỡng chưa có trong backend.</p>}
+            {expanded.nutrition && <p style={styles.accordionBody}>{resolvedNutrition ?? "Thông tin dinh dưỡng chưa có trong backend."}</p>}
 
             <button style={styles.accordionHeader} onClick={() => setExpanded((prev) => ({ ...prev, origin: !prev.origin }))}>
               <span>Nguồn gốc</span>
@@ -1191,7 +1193,7 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
           regularPrice={product?.availablePrice ?? null}
           onClose={() => setShowGroupPurchaseModal(false)}
           onSubmit={handleGroupPurchase}
-           onCreateGroup={handleCreateGroup}
+                  onCreateGroup={handleCreateGroup}
         />
 
         <NavigationBar />

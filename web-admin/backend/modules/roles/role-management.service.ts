@@ -23,7 +23,7 @@ export class RoleManagementService {
 
     return this.repository.createRole({
       roleName,
-      description: input.description?.trim() || null,
+      description: input.description?.trim() || undefined,
       isCustomer: input.isCustomer,
       isAdmin: input.isAdmin,
       isManager: input.isManager,

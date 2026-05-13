@@ -22,6 +22,8 @@ type CategoriesResponse = {
   items: CategoryItem[];
 };
 
+type CategorySort = "name_asc" | "name_desc";
+
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
@@ -105,15 +107,26 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#111827",
   },
   filterButton: {
-    width: "48px",
+    minWidth: "124px",
     height: "48px",
-    border: "1px solid #51B788",
+    padding: "0 12px",
     borderRadius: "16px",
+    border: "1px solid #51B788",
     background: "#FFFFFF",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    color: "#51B788",
     cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    boxSizing: "border-box" as const,
+    whiteSpace: "nowrap" as const,
+  },
+  filterButtonLabel: {
+    fontSize: "13px",
+    fontWeight: 700,
+    lineHeight: "16px",
+    color: "#166534",
   },
   categorySection: {
     display: "flex",
@@ -197,6 +210,7 @@ const styles: Record<string, React.CSSProperties> = {
 
 const Category = () => {
   const [searchValue, setSearchValue] = useState("");
+  const [sortValue, setSortValue] = useState<CategorySort>("name_asc");
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -210,7 +224,7 @@ const Category = () => {
       setError(null);
 
       try {
-        const response = await fetch("/api/categories?sort=name_asc", { signal: controller.signal });
+        const response = await fetch(`/api/categories?sort=${sortValue}`, { signal: controller.signal });
         const data = (await response.json()) as CategoriesResponse | { error?: string };
 
         if (!response.ok) {
@@ -236,7 +250,15 @@ const Category = () => {
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [sortValue]);
+
+  const handleCycleSort = () => {
+    setSortValue((current) => (current === "name_asc" ? "name_desc" : "name_asc"));
+  };
+
+  const sortLabel = useMemo(() => {
+    return sortValue === "name_asc" ? "A-Z" : "Z-A";
+  }, [sortValue]);
 
   const filteredCategories = useMemo(() => {
     const allCategory: CategoryItem = {
@@ -288,10 +310,8 @@ const Category = () => {
                 style={styles.searchInput}
               />
             </div>
-            <button type="button" style={styles.filterButton}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M4 6H20M4 12H20M4 18H20" stroke="#51B788" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+            <button type="button" style={styles.filterButton} onClick={handleCycleSort} aria-label={`Đổi kiểu sắp xếp: ${sortLabel}`}>
+              <span style={styles.filterButtonLabel}>{sortLabel}</span>
             </button>
           </div>
 

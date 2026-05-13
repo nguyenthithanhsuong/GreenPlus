@@ -2,7 +2,7 @@ export type SubscriptionChangedEvent = {
   subscriptionId: string;
   userId: string;
   productId?: string;
-  event: "created" | "cancelled";
+  event: "created" | "updated" | "cancelled";
   changedAt: string;
 };
 

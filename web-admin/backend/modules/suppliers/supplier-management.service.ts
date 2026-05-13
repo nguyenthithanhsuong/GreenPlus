@@ -28,8 +28,8 @@ export class SupplierManagementService {
     return this.repository.createSupplier({
       name: input.name.trim(),
       address: input.address.trim(),
-      certificate: input.certificate?.trim() || null,
-      description: input.description?.trim() || null,
+      certificate: input.certificate?.trim() || undefined,
+      description: input.description?.trim() || undefined,
       status: this.statusStrategy.normalize(input.status),
     });
   }

@@ -255,7 +255,27 @@ export default function OrderPaymentPage() {
       return false;
     }
 
-    return detail.payment_status === "pending" && detail.order_status !== "cancelled";
+    return detail.order_status !== "cancelled" && detail.payment_status !== "paid" && detail.payment_status !== "cancelled";
+  }, [detail]);
+
+  const paymentStatusLabel = useMemo(() => {
+    if (!detail) {
+      return "Không xác định";
+    }
+
+    if (detail.payment_status === "paid") {
+      return "Đã thanh toán";
+    }
+
+    if (detail.payment_status === "cancelled") {
+      return "Đã hủy thanh toán";
+    }
+
+    if (detail.payment_status === "failed") {
+      return "Thanh toán lỗi";
+    }
+
+    return "Chưa thanh toán";
   }, [detail]);
 
   const handlePay = async () => {
@@ -316,8 +336,8 @@ export default function OrderPaymentPage() {
               </p>
               <p style={styles.row}>
                 <span>Trạng thái</span>
-                <span style={detail.payment_status === "paid" ? styles.statusPaid : styles.statusPending}>
-                  {detail.payment_status === "paid" ? "Đã thanh toán" : "Chưa thanh toán"}
+                <span style={detail?.payment_status === "paid" ? styles.statusPaid : styles.statusPending}>
+                  {paymentStatusLabel}
                 </span>
               </p>
               <p style={styles.total}>
@@ -333,7 +353,7 @@ export default function OrderPaymentPage() {
         {!loading && detail && (
           <div style={styles.bottomBar}>
             <button type="button" style={styles.actionBtn} onClick={() => void handlePay()} disabled={!canPay || paying}>
-              {paying ? "Đang xử lý..." : canPay ? "Thanh toán ngay" : "Đã thanh toán"}
+              {paying ? "Đang xử lý..." : canPay ? "Thanh toán ngay" : detail.payment_status === "paid" ? "Đã thanh toán" : "Không thể thanh toán"}
             </button>
           </div>
         )}

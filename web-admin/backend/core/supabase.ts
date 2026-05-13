@@ -1,38 +1,32 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-function requireEnv(name: string, value: string | undefined): string {
-  if (!value) {
-    throw new Error(`Missing ${name}`);
-  }
-  return value;
+// CLIENT (user token)
+export function createAnonSupabaseClient(accessToken?: string) {
+  return createClient(supabaseUrl, anonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    global: {
+      headers: accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : {},
+    },
+  });
 }
 
-export function createAnonSupabaseClient() {
-  return createClient(
-    requireEnv("NEXT_PUBLIC_SUPABASE_URL", supabaseUrl),
-    requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", anonKey),
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
+// SERVER (admin DB access)
+export const supabaseServer = createClient(supabaseUrl, serviceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
 
 export function createServiceRoleSupabaseClient() {
-  return createClient(
-    requireEnv("NEXT_PUBLIC_SUPABASE_URL", supabaseUrl),
-    requireEnv("SUPABASE_SERVICE_ROLE_KEY", serviceRoleKey),
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+  return supabaseServer;
 }

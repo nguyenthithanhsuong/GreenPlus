@@ -41,6 +41,14 @@ export type CancelSubscriptionResult = {
   status: string;
 };
 
+export type UpdateSubscriptionInput = {
+  userId: string;
+  subscriptionId: string;
+  frequency?: string;
+  status?: string;
+  startDate?: string;
+};
+
 export class SubscriptionService {
   private readonly repository = new SubscriptionRepository();
 
@@ -195,6 +203,62 @@ export class SubscriptionService {
       productId: String(updated.product_id),
       status: String(updated.status),
     };
+  }
+
+  async updateSubscription(input: UpdateSubscriptionInput): Promise<SubscriptionSummary> {
+    if (!input.userId || !input.subscriptionId) {
+      throw new AppError("userId and subscriptionId are required", 400);
+    }
+
+    const schedule = input.frequency?.trim().toLowerCase();
+    const status = input.status?.trim().toLowerCase();
+    const startDate = input.startDate?.trim();
+
+    if (!schedule && !status && !startDate) {
+      throw new AppError("frequency, status or startDate is required", 400);
+    }
+
+    if (schedule) {
+      createSubscriptionStrategy(schedule);
+    }
+
+    if (status && !["active", "paused", "cancelled"].includes(status)) {
+      throw new AppError("status must be one of: active, paused, cancelled", 400);
+    }
+
+    if (startDate) {
+      const parsed = new Date(startDate);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new AppError("startDate must be a valid date", 400);
+      }
+    }
+
+    let updated: {
+      subscription_id: string;
+      user_id: string;
+      product_id: string;
+      schedule: string;
+      status: string;
+      start_date: string;
+    } | null = null;
+
+    try {
+      updated = await this.repository.updateSubscription({
+        userId: input.userId,
+        subscriptionId: input.subscriptionId,
+        schedule,
+        status,
+        startDate,
+      });
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to update subscription", 500);
+    }
+
+    if (!updated) {
+      throw new AppError("Subscription not found", 404);
+    }
+
+    return this.toSummary(updated);
   }
 }
 

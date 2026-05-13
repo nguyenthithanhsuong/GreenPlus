@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import ConfirmationDialog from "../../shared/components/ConfirmationDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
@@ -17,7 +17,13 @@ import {
 type OrderStatus = "pending" | "confirmed" | "preparing" | "delivering" | "completed" | "cancelled";
 type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "unknown";
 type PaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer" | "unknown";
-type ComplaintType = "quality" | "damaged" | "missing_items" | "wrong_item" | "late_delivery" | "other";
+
+type ReviewPayload = {
+  userId: string;
+  productId: string;
+  rating: number;
+  comment: string;
+};
 
 type OrderItemDetail = {
   order_item_id: string;
@@ -518,16 +524,42 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "10px",
     marginTop: "4px",
   },
+  reviewStars: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  reviewStarButton: {
+    border: "none",
+    background: "transparent",
+    padding: 0,
+    margin: 0,
+    fontSize: "24px",
+    lineHeight: "28px",
+    cursor: "pointer",
+    color: "#D1D5DB",
+  },
+  reviewStarButtonActive: {
+    color: "#F59E0B",
+  },
+  inlineItemAction: {
+    marginTop: "8px",
+    border: "1px solid #A7F3D0",
+    background: "#ECFDF5",
+    color: "#065F46",
+    fontSize: "12px",
+    fontWeight: 700,
+    borderRadius: "10px",
+    padding: "6px 10px",
+    cursor: "pointer",
+    alignSelf: "flex-start",
+  },
+  inlineItemActionMuted: {
+    background: "#F3F4F6",
+    border: "1px solid #E5E7EB",
+    color: "#6B7280",
+  },
 };
-
-const COMPLAINT_OPTIONS: Array<{ value: ComplaintType; label: string }> = [
-  { value: "quality", label: "Chất lượng sản phẩm" },
-  { value: "damaged", label: "Sản phẩm bị hư hỏng" },
-  { value: "missing_items", label: "Thiếu sản phẩm" },
-  { value: "wrong_item", label: "Giao sai sản phẩm" },
-  { value: "late_delivery", label: "Giao hàng trễ" },
-  { value: "other", label: "Vấn đề khác" },
-];
 
 function formatPrice(value: number): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
@@ -611,6 +643,7 @@ const STEP_FLOW: Array<{ key: OrderStatus; label: string; defaultMeta: string }>
 export default function OrderDetail() {
   const router = useRouter();
   const params = useParams<{ orderId: string }>();
+  const searchParams = useSearchParams();
   const initialized = useAuthStore((state) => state.initialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
@@ -622,11 +655,13 @@ export default function OrderDetail() {
   const [message, setMessage] = useState<string | null>(null);
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
   const [cancelPromptOpen, setCancelPromptOpen] = useState(false);
-  const [complaintOpen, setComplaintOpen] = useState(false);
-  const [complaintType, setComplaintType] = useState<ComplaintType>("quality");
-  const [complaintDescription, setComplaintDescription] = useState("");
-  const [complaintError, setComplaintError] = useState<string | null>(null);
-  const [complaintSaving, setComplaintSaving] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<OrderItemDetail | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [reviewedProductIds, setReviewedProductIds] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!initialized) {
@@ -773,7 +808,7 @@ export default function OrderDetail() {
       return;
     }
 
-    const canOpenPayment = detail.payment_status !== "paid" && detail.order_status !== "cancelled";
+    const canOpenPayment = detail.payment_status !== "paid" && detail.payment_status !== "cancelled" && detail.order_status !== "cancelled";
     if (canOpenPayment) {
       router.push(`/orders/${encodeURIComponent(detail.order_id)}/payment`);
       return;
@@ -782,52 +817,91 @@ export default function OrderDetail() {
     router.push("/orders");
   };
 
-  const handleOpenComplaintModal = () => {
-    setComplaintError(null);
-    setComplaintDescription("");
-    setComplaintType("quality");
-    setComplaintOpen(true);
+  const handleOpenComplaintPage = () => {
+    if (!detail) {
+      return;
+    }
+
+    void router.push(`/complaints?orderId=${encodeURIComponent(detail.order_id)}`);
   };
 
-  const handleSubmitComplaint = async () => {
-    if (!user?.user_id || !detail) {
+  const handleOpenReview = (item: OrderItemDetail) => {
+    if (!detail || detail.order_status !== "completed") {
       return;
     }
 
-    const normalizedDescription = complaintDescription.trim();
-    if (normalizedDescription.length < 10) {
-      setComplaintError("Mô tả khiếu nại cần ít nhất 10 ký tự.");
+    setReviewTarget(item);
+    setReviewRating(5);
+    setReviewComment("");
+    setReviewError(null);
+    setReviewOpen(true);
+  };
+
+  useEffect(() => {
+    if (!detail || detail.order_status !== "completed") {
       return;
     }
 
-    setComplaintSaving(true);
-    setComplaintError(null);
+    if (searchParams.get("mode") !== "review") {
+      return;
+    }
+
+    if (detail.items.length === 0) {
+      return;
+    }
+
+    setReviewTarget(detail.items[0]);
+    setReviewRating(5);
+    setReviewComment("");
+    setReviewError(null);
+    setReviewOpen(true);
+  }, [detail, searchParams]);
+
+  const handleSubmitReview = async () => {
+    if (!user?.user_id || !reviewTarget) {
+      return;
+    }
+
+    const normalizedComment = reviewComment.trim();
+    if (reviewRating < 1 || reviewRating > 5) {
+      setReviewError("Điểm đánh giá phải từ 1 đến 5 sao.");
+      return;
+    }
+
+    const payload: ReviewPayload = {
+      userId: user.user_id,
+      productId: reviewTarget.product_id,
+      rating: reviewRating,
+      comment: normalizedComment,
+    };
+
+    setReviewSaving(true);
+    setReviewError(null);
 
     try {
-      const response = await fetch("/api/complaints", {
+      const response = await fetch("/api/reviews", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          userId: user.user_id,
-          orderId: detail.order_id,
-          type: complaintType,
-          description: normalizedDescription,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = (await response.json()) as { error?: string; complaintId?: string };
+      const data = (await response.json()) as { error?: string; reviewId?: string };
       if (!response.ok) {
-        throw new Error(String(data.error ?? "Không thể gửi khiếu nại."));
+        throw new Error(String(data.error ?? "Không thể gửi đánh giá."));
       }
 
-      setComplaintOpen(false);
-      setMessage("Đã gửi khiếu nại thành công. Bộ phận CSKH sẽ phản hồi sớm nhất.");
+      setReviewedProductIds((current) => ({
+        ...current,
+        [reviewTarget.product_id]: true,
+      }));
+      setReviewOpen(false);
+      setMessage("Đánh giá của bạn đã được gửi thành công.");
     } catch (requestError) {
-      setComplaintError(requestError instanceof Error ? requestError.message : "Không thể gửi khiếu nại.");
+      setReviewError(requestError instanceof Error ? requestError.message : "Không thể gửi đánh giá.");
     } finally {
-      setComplaintSaving(false);
+      setReviewSaving(false);
     }
   };
 
@@ -961,6 +1035,19 @@ export default function OrderDetail() {
                         <p style={styles.itemQty}>x{item.quantity}</p>
                         <p style={styles.itemPrice}>{formatPrice(item.price * item.quantity)}</p>
                       </div>
+                      {detail.order_status === "completed" ? (
+                        <button
+                          type="button"
+                          style={{
+                            ...styles.inlineItemAction,
+                            ...(reviewedProductIds[item.product_id] ? styles.inlineItemActionMuted : {}),
+                          }}
+                          onClick={() => handleOpenReview(item)}
+                          disabled={reviewSaving || Boolean(reviewedProductIds[item.product_id])}
+                        >
+                          {reviewedProductIds[item.product_id] ? "Đã đánh giá" : "Đánh giá sản phẩm"}
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -989,7 +1076,7 @@ export default function OrderDetail() {
                   <p style={styles.paymentText}>{getMethodLabel(detail.payment_method)}</p>
                   <span style={{ ...styles.paymentBadge, ...getPaymentBadgeStyle(detail.payment_status) }}>{getPaymentStatusLabel(detail.payment_status)}</span>
                 </div>
-                {detail.payment_status !== "paid" && detail.order_status !== "cancelled" ? (
+                {detail.payment_status !== "paid" && detail.payment_status !== "cancelled" && detail.order_status !== "cancelled" ? (
                   <button type="button" style={styles.paymentActionBtn} onClick={handlePrimaryAction} disabled={saving}>
                     Thanh toán
                   </button>
@@ -1006,7 +1093,7 @@ export default function OrderDetail() {
             <button
               type="button"
               style={{ ...styles.actionBtn, ...styles.actionBtnDanger }}
-              onClick={handleOpenComplaintModal}
+              onClick={handleOpenComplaintPage}
               disabled={saving}
             >
               Khiếu nại
@@ -1025,17 +1112,17 @@ export default function OrderDetail() {
               onClick={handlePrimaryAction}
               disabled={saving}
             >
-              {detail.payment_status !== "paid" && detail.order_status !== "cancelled" ? "Thanh toán" : "Quay lại đơn hàng"}
+              {detail.payment_status !== "paid" && detail.payment_status !== "cancelled" && detail.order_status !== "cancelled" ? "Thanh toán" : "Quay lại đơn hàng"}
             </button>
           </div>
         )}
 
-        {complaintOpen && detail ? (
+        {reviewOpen && reviewTarget ? (
           <div
             style={styles.complaintOverlay}
             onClick={() => {
-              if (!complaintSaving) {
-                setComplaintOpen(false);
+              if (!reviewSaving) {
+                setReviewOpen(false);
               }
             }}
           >
@@ -1045,46 +1132,51 @@ export default function OrderDetail() {
                 event.stopPropagation();
               }}
             >
-              <h3 style={styles.complaintTitle}>Gửi khiếu nại đơn hàng</h3>
-              <p style={styles.complaintHint}>Đơn #{detail.order_id.slice(0, 8).toUpperCase()}</p>
+              <h3 style={styles.complaintTitle}>Đánh giá sản phẩm</h3>
+              <p style={styles.complaintHint}>{reviewTarget.product_name ?? "Sản phẩm"}</p>
 
-              <label>
-                <p style={styles.complaintLabel}>Loại khiếu nại</p>
-                <select
-                  style={styles.complaintSelect}
-                  value={complaintType}
-                  onChange={(event) => setComplaintType(event.target.value as ComplaintType)}
-                  disabled={complaintSaving}
-                >
-                  {COMPLAINT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
+              <div>
+                <p style={styles.complaintLabel}>Số sao</p>
+                <div style={styles.reviewStars}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      style={{
+                        ...styles.reviewStarButton,
+                        ...(star <= reviewRating ? styles.reviewStarButtonActive : {}),
+                      }}
+                      onClick={() => setReviewRating(star)}
+                      disabled={reviewSaving}
+                      aria-label={`Đánh giá ${star} sao`}
+                    >
+                      ★
+                    </button>
                   ))}
-                </select>
-              </label>
+                </div>
+              </div>
 
               <label>
-                <p style={styles.complaintLabel}>Mô tả chi tiết</p>
+                <p style={styles.complaintLabel}>Nhận xét</p>
                 <textarea
                   style={styles.complaintTextarea}
-                  placeholder="Mô tả vấn đề bạn gặp phải để chúng tôi hỗ trợ nhanh hơn..."
-                  value={complaintDescription}
-                  onChange={(event) => setComplaintDescription(event.target.value)}
-                  disabled={complaintSaving}
+                  placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm (không bắt buộc)..."
+                  value={reviewComment}
+                  onChange={(event) => setReviewComment(event.target.value)}
+                  disabled={reviewSaving}
                 />
               </label>
 
-              {complaintError ? <p style={{ ...styles.errorText, padding: 0 }}>{complaintError}</p> : null}
+              {reviewError ? <p style={{ ...styles.errorText, padding: 0 }}>{reviewError}</p> : null}
 
               <div style={styles.complaintActions}>
                 <button
                   type="button"
                   style={styles.actionBtn}
-                  disabled={complaintSaving}
+                  disabled={reviewSaving}
                   onClick={() => {
-                    if (!complaintSaving) {
-                      setComplaintOpen(false);
+                    if (!reviewSaving) {
+                      setReviewOpen(false);
                     }
                   }}
                 >
@@ -1093,10 +1185,10 @@ export default function OrderDetail() {
                 <button
                   type="button"
                   style={{ ...styles.actionBtn, ...styles.actionBtnPrimary }}
-                  disabled={complaintSaving}
-                  onClick={() => void handleSubmitComplaint()}
+                  disabled={reviewSaving}
+                  onClick={() => void handleSubmitReview()}
                 >
-                  {complaintSaving ? "Đang gửi..." : "Gửi khiếu nại"}
+                  {reviewSaving ? "Đang gửi..." : "Gửi đánh giá"}
                 </button>
               </div>
             </section>

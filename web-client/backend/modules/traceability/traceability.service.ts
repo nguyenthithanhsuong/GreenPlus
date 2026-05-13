@@ -1,9 +1,11 @@
 import { AppError } from "../../core/errors";
 import { createQrParseStrategy } from "./qr-parser.strategy";
-import { TraceabilityRepository } from "./traceability.repository";
+import { ProductRow, TraceabilityRepository } from "./traceability.repository";
 
 export type ProductOriginInfo = {
+  product_id: string;
   product_name: string;
+  image_url: string | null;
   supplier_name: string | null;
   production_location: string | null;
   harvest_date: string;
@@ -22,12 +24,7 @@ export class TraceabilityService {
     harvest_date: string;
     expire_date: string;
   }): Promise<ProductOriginInfo> {
-    let productData: {
-      product_id: string;
-      name: string;
-      status: "active" | "inactive";
-      suppliers: Record<string, unknown> | Record<string, unknown>[] | null;
-    } | null = null;
+    let productData: ProductRow | null = null;
 
     try {
       productData = await this.repository.findProductById(batchData.product_id);
@@ -61,7 +58,9 @@ export class TraceabilityService {
     }
 
     return {
+      product_id: productData.product_id,
       product_name: productData.name,
+      image_url: productData.image_url,
       supplier_name: supplierData.name,
       production_location: supplierData.address,
       harvest_date: batchData.harvest_date,

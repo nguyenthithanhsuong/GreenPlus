@@ -28,6 +28,7 @@ export default function BackendProfileTestPage() {
 
   const [userIdInput, setUserIdInput] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -71,6 +72,7 @@ export default function BackendProfileTestPage() {
       const profile = data as ProfileResult;
       setResult(profile);
       setName(profile.name ?? "");
+      setEmail(profile.email ?? "");
       setPhone(profile.phone ?? "");
       setAddress(profile.address ?? "");
       setImageUrl(profile.image_url ?? "");
@@ -97,6 +99,7 @@ export default function BackendProfileTestPage() {
         body: JSON.stringify({
           userId,
           name,
+          email,
           phone,
           address,
           imageUrl,
@@ -160,6 +163,7 @@ export default function BackendProfileTestPage() {
     setResult(fakeProfile);
     setUserIdInput(fakeProfile.user_id);
     setName(fakeProfile.name);
+    setEmail(fakeProfile.email);
     setPhone(fakeProfile.phone ?? "");
     setAddress(fakeProfile.address ?? "");
     setImageUrl(fakeProfile.image_url ?? "");
@@ -167,6 +171,7 @@ export default function BackendProfileTestPage() {
 
   const previewImageSrc = imageUrl.trim() || fakeProfile.image_url || "https://placehold.co/160x160?text=No+Image";
   const previewName = name.trim() || fakeProfile.name;
+  const previewEmail = email.trim() || fakeProfile.email;
   const previewAddress = address.trim() || fakeProfile.address || "No address";
   const previewPhone = phone.trim() || fakeProfile.phone || "No phone";
 
@@ -204,6 +209,12 @@ export default function BackendProfileTestPage() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="name"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="email"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
             <input
@@ -266,6 +277,7 @@ export default function BackendProfileTestPage() {
               />
               <div className="space-y-1">
                 <p className="text-xl font-bold text-slate-900">{previewName}</p>
+                <p className="text-sm text-slate-600">{previewEmail}</p>
                 <p className="text-sm text-slate-600">{previewPhone}</p>
                 <p className="text-sm text-slate-600">{previewAddress}</p>
               </div>

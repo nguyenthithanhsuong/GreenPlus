@@ -8,6 +8,10 @@ type SubscriptionBody = {
   productId?: string;
   product_id?: string;
   frequency?: string;
+  schedule?: string;
+  status?: string;
+  startDate?: string;
+  start_date?: string;
   subscriptionId?: string;
   subscription_id?: string;
 };
@@ -72,6 +76,37 @@ export async function DELETE(request: Request) {
     const result = await subscriptionFacade.unsubscribe({
       userId,
       subscriptionId,
+    });
+
+    return NextResponse.json(result, { status: 200 });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
+
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = (await request.json()) as SubscriptionBody;
+    const userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    const subscriptionId = body.subscriptionId?.trim() ?? body.subscription_id?.trim() ?? "";
+    const frequency = body.frequency?.trim() ?? body.schedule?.trim() ?? "";
+    const status = body.status?.trim() ?? "";
+    const startDate = body.startDate?.trim() ?? body.start_date?.trim() ?? "";
+
+    if (!userId || !subscriptionId) {
+      return NextResponse.json({ error: "userId and subscriptionId are required" }, { status: 400 });
+    }
+
+    const result = await subscriptionFacade.updateSubscription({
+      userId,
+      subscriptionId,
+      frequency: frequency || undefined,
+      status: status || undefined,
+      startDate: startDate || undefined,
     });
 
     return NextResponse.json(result, { status: 200 });
