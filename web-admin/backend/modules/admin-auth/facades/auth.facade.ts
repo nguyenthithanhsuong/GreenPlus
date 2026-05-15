@@ -124,7 +124,50 @@ export class AuthFacade {
       // }
       throw new AppError("MSG4: account not found", 404);
     }
+    console.log("========== LOGIN DEBUG ==========");
 
+console.log("INPUT EMAIL:", email);
+console.log("INPUT PASSWORD (RAW):", input.password);
+
+console.log("USER FOUND:", {
+  user_id: user?.user_id,
+  email: user?.email,
+  role_id: user?.role_id,
+  status: user?.status,
+});
+
+console.log("STORED PASSWORD:", user?.password);
+
+console.log(
+  "IS PBKDF2 HASH:",
+  user?.password?.startsWith("pbkdf2$")
+);
+
+if (user?.password?.startsWith("pbkdf2$")) {
+  const [algorithm, iterationText, salt, hashHex] =
+    user.password.split("$");
+
+  console.log("HASH PARTS:", {
+    algorithm,
+    iterationText,
+    salt,
+    hashLength: hashHex?.length,
+  });
+
+  const compareResult = await this.hasher.compare(
+    input.password,
+    user.password
+  );
+
+  console.log("COMPARE RESULT:", compareResult);
+} else {
+  console.log(
+    "PLAINTEXT MATCH:",
+    input.password === user?.password
+  );
+}
+
+console.log("=================================");
     let isValidPassword = false;
 
     if (this.isPbkdf2Hash(user.password)) {

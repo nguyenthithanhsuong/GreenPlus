@@ -1,4 +1,4 @@
-import { pbkdf2Sync, randomBytes } from "node:crypto";
+import { pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 
 export interface UserPasswordStrategy {
   hash(raw: string): string;
@@ -6,7 +6,7 @@ export interface UserPasswordStrategy {
 }
 
 class Pbkdf2UserPasswordStrategy implements UserPasswordStrategy {
-  private readonly iterations = 120000;
+  private readonly iterations = 100000;
   private readonly keylen = 64;
   private readonly digest = "sha512";
 
@@ -37,15 +37,24 @@ class Pbkdf2UserPasswordStrategy implements UserPasswordStrategy {
 
     if (!iterations) return false;
 
-    const derivedKey = pbkdf2Sync(
+    const computed = pbkdf2Sync(
       raw,
       salt,
       iterations,
       this.keylen,
       this.digest
-    ).toString("hex");
+    );
+    const original = Buffer.from(originalHash, "hex");
 
-    return derivedKey === originalHash;
+    if (computed.length !== original.length) {
+      return false;
+    }
+
+    try {
+      return timingSafeEqual(computed, original);
+    } catch {
+      return false;
+    }
   }
 }
 

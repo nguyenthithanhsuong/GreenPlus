@@ -1,33 +1,32 @@
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
-import { createAnonSupabaseClient } from "../../../../../backend/core/supabase";
+import { authFacade } from "../../../../../backend/modules/admin-auth/facades/auth.facade";
+
+const ALLOWED_ROLES = new Set(["admin", "manager", "employee"]);
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const email = typeof body?.email === "string" ? body.email : "";
+    const password = typeof body?.password === "string" ? body.password : "";
 
-    const supabase = createAnonSupabaseClient();
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: body.email,
-      password: body.password,
-    });
-
-    if (error || !data.session || !data.user) {
-      throw new AppError("Invalid credentials", 401);
+    if (!email || !password) {
+      throw new AppError("Email and password are required", 400);
     }
 
-    // get role from DB
-    const { data: profile } = await supabase
-      .from("users")
-      .select("role_name, user_id, name, email, phone, address, image_url, status")
-      .eq("user_id", data.user.id)
-      .single();
+    const data = await authFacade.signIn({
+      email,
+      password,
+    });
+    const roleName = typeof data.role_name === "string" ? data.role_name.toLowerCase() : "";
+    if (!roleName || !ALLOWED_ROLES.has(roleName)) {
+      throw new AppError("Only admin, manager, or employee can access this portal", 403);
+    }
 
     return NextResponse.json({
       session: data.session,
-      user: profile,
-      role_name: profile?.role_name ?? null,
+      user: data.user,
+      role_name: roleName || null,
     });
   } catch (error) {
     if (error instanceof AppError) {

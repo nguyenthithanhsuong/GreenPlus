@@ -106,6 +106,7 @@ export class AuthRepository {
   async updateProfile(input: {
     userId: string;
     name: string;
+    email: string;
     phone: string;
     address: string;
     imageUrl: string;
@@ -114,6 +115,7 @@ export class AuthRepository {
       .from("users")
       .update({
         name: input.name,
+        email: input.email,
         phone: input.phone,
         address: input.address,
         image_url: input.imageUrl,

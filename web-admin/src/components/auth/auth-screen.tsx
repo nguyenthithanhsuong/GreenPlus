@@ -22,7 +22,7 @@ function getAuthCopy(mode: AuthMode) {
         submitLabel: "Sign In",
         toggleLabel: "Create an account",
         toggleHref: "/register",
-        routeLabel: "Client Login",
+        routeLabel: "Admin Login",
         panelHeadline: "Fast access for returning teams",
         panelText:
           "Use your existing credentials to jump back into dashboards, orders, and account tools.",
@@ -34,7 +34,7 @@ function getAuthCopy(mode: AuthMode) {
         submitLabel: "Sign Up",
         toggleLabel: "Back to login",
         toggleHref: "/login",
-        routeLabel: "Client Register",
+        routeLabel: "Admin Register",
         panelHeadline: "Onboard the right way",
         panelText:
           "Capture a name, email, password, and role so the first session starts with the right context.",
@@ -45,7 +45,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const isLogin = mode === "login";
   const copy = getAuthCopy(mode);
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAuthenticated = useAuthStore((state) => Boolean(state.session));
   const initialized = useAuthStore((state) => state.initialized);
   const setAuth = useAuthStore((state) => state.setAuth);
   const [showPassword, setShowPassword] = useState(false);
@@ -113,19 +113,17 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
   const session = payload.session;
   const user = payload.user;
-  const roleName = payload.role_name?.toLowerCase();
+  const roleName = String(payload.role_name ?? "")
+  .trim()
+  .toLowerCase();
 
-  const allowedRoles = ["admin", "employee"];
+  const allowedRoles = ["admin", "manager", "employee"];
 
   if (!allowedRoles.includes(roleName)) {
-    throw new Error("Only admin or employee can access this portal");
+    throw new Error("Only admin, manager, or employee can access this portal");
   }
 
-  setAuth({
-    session,
-    user,
-    token: session.access_token,
-  });
+  setAuth(session ?? null);
 
   router.replace("/dashboard");
 }
