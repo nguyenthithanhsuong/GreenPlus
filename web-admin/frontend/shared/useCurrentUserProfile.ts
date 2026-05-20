@@ -35,12 +35,17 @@ export function useCurrentUserProfile() {
         return;
       }
 
+      const accessToken = typeof session?.access_token === "string" ? session.access_token.trim() : "";
+
+      if (!accessToken) {
+        setDbUser((previous) => (previous === null ? previous : null));
+        return;
+      }
+
       setLoading(true);
       try {
         const headers: Record<string, string> = {};
-        if (session?.access_token) {
-          headers.Authorization = `Bearer ${session.access_token}`;
-        }
+        headers.Authorization = `Bearer ${accessToken}`;
 
         const response = await fetch("/api/users/me", {
           cache: "no-store",
@@ -96,32 +101,29 @@ export function useCurrentUserProfile() {
       return null;
     }
 
-    const metadata = user?.user_metadata ?? {};
-    const appMetadata = user?.app_metadata ?? {};
+    const storedUser = user ?? null;
 
     const name =
       dbUser?.name?.trim() ||
-      (typeof metadata.full_name === "string" ? metadata.full_name : "") ||
-      (typeof metadata.name === "string" ? metadata.name : "") ||
-      (user?.email ? user.email.split("@")[0] : "Người dùng");
+      storedUser?.name?.trim() ||
+      (storedUser?.email ? storedUser.email.split("@")[0] : "Người dùng");
 
     const imageUrl =
       dbUser?.image_url ||
-      (typeof metadata.avatar_url === "string" ? metadata.avatar_url : null) ||
-      (typeof metadata.picture === "string" ? metadata.picture : null) ||
+      storedUser?.image_url ||
       FALLBACK_AVATAR;
 
     const roleName =
       dbUser?.role_name ||
-      (typeof appMetadata.role === "string" ? appMetadata.role : "") ||
+      storedUser?.role_name ||
       "Admin";
 
     return {
-      userId: dbUser?.user_id ?? user?.id ?? "",
+      userId: dbUser?.user_id ?? storedUser?.user_id ?? "",
       name,
-      email: dbUser?.email ?? user?.email ?? "",
-      phone: dbUser?.phone ?? "",
-      address: dbUser?.address ?? "",
+      email: dbUser?.email ?? storedUser?.email ?? "",
+      phone: dbUser?.phone ?? storedUser?.phone ?? "",
+      address: dbUser?.address ?? storedUser?.address ?? "",
       imageUrl,
       roleName,
       status: dbUser?.status ?? "active",

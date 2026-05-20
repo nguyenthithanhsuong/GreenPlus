@@ -109,24 +109,62 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       );
 
       if (isLogin && typeof data === "object" && data !== null) {
-  const payload = data as any;
+        const payload = data as {
+          session?: {
+            session_id: string;
+            user_id: string;
+            login_time: string;
+            role_name?: string | null;
+            access_token?: string;
+          };
+          user?: {
+            user_id: string;
+            name: string;
+            email: string;
+            phone?: string | null;
+            address?: string | null;
+            image_url?: string | null;
+            status?: string;
+            role_name?: string | null;
+          };
+          role_name?: string | null;
+        };
 
-  const session = payload.session;
-  const user = payload.user;
-  const roleName = String(payload.role_name ?? "")
-  .trim()
-  .toLowerCase();
+        const session = payload.session ?? null;
+        const user = payload.user ?? null;
+        const roleName = String(payload.role_name ?? user?.role_name ?? "")
+          .trim()
+          .toLowerCase();
 
-  const allowedRoles = ["admin", "manager", "employee"];
+        const allowedRoles = ["admin", "manager", "employee"];
 
-  if (!allowedRoles.includes(roleName)) {
-    throw new Error("Only admin, manager, or employee can access this portal");
-  }
+        if (!allowedRoles.includes(roleName)) {
+          throw new Error("Only admin, manager, or employee can access this portal");
+        }
 
-  setAuth(session ?? null);
+        if (!session || !user) {
+          throw new Error("Login response is missing session data");
+        }
 
-  router.replace("/dashboard");
-}
+        setAuth(
+          {
+            ...session,
+            role_name: roleName,
+          },
+          {
+            user_id: user.user_id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone ?? null,
+            address: user.address ?? null,
+            image_url: user.image_url ?? null,
+            status: user.status ?? "active",
+            role_name: roleName,
+          }
+        );
+
+        router.replace("/dashboard");
+      }
     } catch (submitError) {
       setSuccess(null);
       setError(

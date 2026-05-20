@@ -407,7 +407,7 @@ export default function Complaints() {
             </button>
           </section>
 
-          <section style={styles.card}>
+          {/* <section style={styles.card}>
             <h2 style={styles.sectionTitle}>Thông tin dữ liệu khiếu nại</h2>
             <ul style={styles.infoList}>
               <li>Khóa chính: complaint_id (uuid), liên kết với users.user_id và orders.order_id.</li>
@@ -415,7 +415,7 @@ export default function Complaints() {
               <li>Mốc thời gian: created_at, resolved_at.</li>
               <li>Lý do từ chối được lưu ở reject_reason khi trạng thái rejected.</li>
             </ul>
-          </section>
+          </section> */}
         </main>
 
         <NavigationBar />

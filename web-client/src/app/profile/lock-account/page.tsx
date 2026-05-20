@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import NavigationBar from "../../../../frontend/dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { supabase } from "@/lib/supabaseClient";
+import ConfirmActionDialog from '../../../../frontend/shared/ConfirmActionDialog';
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -164,6 +165,7 @@ export default function LockAccountPage() {
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!initialized) {
@@ -197,12 +199,6 @@ export default function LockAccountPage() {
     if (processing || !user?.user_id) {
       return;
     }
-
-    const confirmed = window.confirm("Bạn muốn khóa tài khoản này và đăng xuất ngay bây giờ?");
-    if (!confirmed) {
-      return;
-    }
-
     setProcessing(true);
     setError(null);
     setMessage(null);
@@ -271,7 +267,7 @@ export default function LockAccountPage() {
               <button
                 type="button"
                 style={styles.primaryButton}
-                onClick={() => void handleLockAndLogout()}
+                onClick={() => setConfirmOpen(true)}
                 disabled={processing}
               >
                 {processing ? "Đang xử lý..." : "Khóa tài khoản và đăng xuất"}
@@ -289,6 +285,20 @@ export default function LockAccountPage() {
         </main>
 
         <NavigationBar />
+
+        <ConfirmActionDialog
+          open={confirmOpen}
+          title="Xác nhận khóa tài khoản"
+          message="Bạn chắc chắn muốn khóa tài khoản này và đăng xuất ngay bây giờ? Hành động này sẽ đặt trạng thái tài khoản về 'inactive'."
+          confirmLabel="Khóa và đăng xuất"
+          confirmVariant="danger"
+          loading={processing}
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={async () => {
+            setConfirmOpen(false);
+            await handleLockAndLogout();
+          }}
+        />
       </div>
     </div>
   );

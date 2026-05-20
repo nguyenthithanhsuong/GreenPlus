@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useState } from "react";
+import ConfirmActionDialog from "../../../frontend/shared/ConfirmActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -57,6 +58,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [unlockDialogOpen, setUnlockDialogOpen] = useState(false);
 
   useEffect(() => {
     if (initialized && isAuthenticated && isLogin) {
@@ -137,43 +139,8 @@ export function AuthScreen({ mode }: AuthScreenProps) {
               : "Login request failed";
 
           if (message.includes("account is not active")) {
-            const shouldUnlock = window.confirm("Tài khoản đang bị khóa. Mở khóa và đăng nhập lại?");
-
-            if (shouldUnlock) {
-              const unlockResponse = await fetch("/api/auth/unlock", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-              });
-
-              const unlockData = (await unlockResponse.json().catch(() => null)) as unknown;
-              if (!unlockResponse.ok) {
-                const unlockMessage =
-                  typeof unlockData === "object" && unlockData !== null && "error" in unlockData
-                    ? String((unlockData as { error: string }).error)
-                    : "Không thể mở khóa tài khoản.";
-                throw new Error(unlockMessage);
-              }
-
-              const retryResponse = await fetch("/api/auth/sign-in", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-              });
-
-              const retryData = (await retryResponse.json().catch(() => null)) as unknown;
-              if (!retryResponse.ok) {
-                const retryMessage =
-                  typeof retryData === "object" && retryData !== null && "error" in retryData
-                    ? String((retryData as { error: string }).error)
-                    : "Login request failed";
-                throw new Error(retryMessage);
-              }
-
-              setSuccess("Tài khoản đã được mở khóa và đăng nhập thành công.");
-              applyLoginResponse(retryData);
-              return;
-            }
+            setUnlockDialogOpen(true);
+            return;
           }
 
           throw new Error(message);
@@ -213,6 +180,52 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       setLoading(false);
     }
   };
+
+  async function handleConfirmUnlock() {
+    setUnlockDialogOpen(false);
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const unlockResponse = await fetch("/api/auth/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const unlockData = (await unlockResponse.json().catch(() => null)) as unknown;
+      if (!unlockResponse.ok) {
+        const unlockMessage =
+          typeof unlockData === "object" && unlockData !== null && "error" in unlockData
+            ? String((unlockData as { error: string }).error)
+            : "Không thể mở khóa tài khoản.";
+        throw new Error(unlockMessage);
+      }
+
+      const retryResponse = await fetch("/api/auth/sign-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const retryData = (await retryResponse.json().catch(() => null)) as unknown;
+      if (!retryResponse.ok) {
+        const retryMessage =
+          typeof retryData === "object" && retryData !== null && "error" in retryData
+            ? String((retryData as { error: string }).error)
+            : "Login request failed";
+        throw new Error(retryMessage);
+      }
+
+      setSuccess("Tài khoản đã được mở khóa và đăng nhập thành công.");
+      applyLoginResponse(retryData);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">
@@ -388,6 +401,16 @@ export function AuthScreen({ mode }: AuthScreenProps) {
               )}
             </div>
           </section>
+          <ConfirmActionDialog
+            open={unlockDialogOpen}
+            title="Tài khoản bị khóa"
+            message="Tài khoản đang bị khóa. Mở khóa và đăng nhập lại?"
+            confirmLabel="Mở khóa và đăng nhập"
+            confirmVariant="warning"
+            loading={loading}
+            onCancel={() => setUnlockDialogOpen(false)}
+            onConfirm={() => void handleConfirmUnlock()}
+          />
         </div>
       </div>
     </main>

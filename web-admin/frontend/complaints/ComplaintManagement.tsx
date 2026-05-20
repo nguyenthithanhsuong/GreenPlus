@@ -5,6 +5,8 @@ import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import ComplaintStats from "./ComplaintStats";
 import ComplaintTable from "./ComplaintTable";
+import ComplaintDrawer from "./ComplaintDrawer";
+import RejectReasonDialog from "./RejectReasonDialog";
 import { ComplaintRow, ComplaintStatus } from "../../backend/modules/community/complaint-management.types";
 
 type ComplaintStatusFilter = "all" | ComplaintStatus;
@@ -121,12 +123,8 @@ const ComplaintManagement = () => {
 
   const handleReject = useCallback(
     (complaint: ComplaintRow) => {
-      const reason = window.prompt("Nhập lý do từ chối khiếu nại:");
-      if (!reason?.trim()) {
-        return;
-      }
-
-      void updateStatus(complaint, "rejected", reason);
+      setSelectedComplaint(complaint);
+      setRejectOpen(true);
     },
     [updateStatus]
   );
@@ -142,21 +140,13 @@ const ComplaintManagement = () => {
     [updateStatus]
   );
 
-  const handleView = useCallback((complaint: ComplaintRow) => {
-    const lines = [
-      `Mã khiếu nại: ${complaint.complaint_id}`,
-      `Khách hàng: ${complaint.user_name ?? "Khách hàng ẩn danh"}`,
-      `Mã đơn: ${complaint.order_id ?? "Không gắn đơn"}`,
-      `Loại: ${complaint.type}`,
-      `Trạng thái: ${complaint.status}`,
-      `Tạo lúc: ${complaint.created_at ? new Date(complaint.created_at).toLocaleString("vi-VN") : "N/A"}`,
-      complaint.resolved_at ? `Giải quyết lúc: ${new Date(complaint.resolved_at).toLocaleString("vi-VN")}` : "",
-      complaint.reject_reason ? `Lý do từ chối: ${complaint.reject_reason}` : "",
-      "",
-      `Nội dung: ${complaint.description}`,
-    ].filter(Boolean);
+  const [selectedComplaint, setSelectedComplaint] = useState<ComplaintRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
 
-    window.alert(lines.join("\n"));
+  const handleView = useCallback((complaint: ComplaintRow) => {
+    setSelectedComplaint(complaint);
+    setDrawerOpen(true);
   }, []);
 
   const pageActions = (
@@ -196,8 +186,23 @@ const ComplaintManagement = () => {
         onResolve={handleResolve}
         onReject={handleReject}
       />
+
+      <ComplaintDrawer open={drawerOpen} complaint={selectedComplaint} onClose={() => setDrawerOpen(false)} />
+
+      <RejectReasonDialog
+        open={rejectOpen}
+        loading={Boolean(savingComplaintId)}
+        initial={selectedComplaint?.reject_reason ?? ""}
+        onCancel={() => setRejectOpen(false)}
+        onConfirm={(reason) => {
+          if (!selectedComplaint) return;
+          setRejectOpen(false);
+          void updateStatus(selectedComplaint, "rejected", reason);
+        }}
+      />
     </AdminShell>
   );
 };
 
 export default ComplaintManagement;
+ 

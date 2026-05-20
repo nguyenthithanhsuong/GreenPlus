@@ -25,7 +25,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       session: data.session,
-      user: data.user,
+      user: {
+        ...data.user,
+        role_name: roleName,
+      },
       role_name: roleName || null,
     });
   } catch (error) {
