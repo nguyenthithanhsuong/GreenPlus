@@ -48,7 +48,6 @@ export default function ProductReviewTestPage() {
           setProductId((current) => current || products[0].product_id);
         }
       } catch {
-        // Khong chan test page neu options load that bai.
       }
     };
 

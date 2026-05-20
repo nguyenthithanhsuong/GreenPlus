@@ -153,10 +153,8 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
       
-      {/* Table Top Controls: Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-50 gap-4">
         <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg overflow-x-auto">
-  {/* Tab Tất cả */}
   <button
     type="button"
     onClick={() => setActiveTab("all")}
@@ -167,7 +165,6 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
     Tất cả
   </button>
 
-  {/* Tab Đang hoạt động */}
   <button
     type="button"
     onClick={() => setActiveTab("approved")}
@@ -181,7 +178,6 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
     </span>
   </button>
 
-  {/* Tab Chờ duyệt */}
   <button
     type="button"
     onClick={() => setActiveTab("pending")}
@@ -195,7 +191,6 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
     </span>
   </button>
 
-  {/* Tab Đã từ chối */}
   <button
     type="button"
     onClick={() => setActiveTab("rejected")}
@@ -224,7 +219,6 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
@@ -321,8 +315,7 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
           </tbody>
         </table>
       </div>
-
-      {/* Pagination Footer */}
+      
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
         <span className="text-sm text-gray-500">
           Hiển thị <span className="font-bold text-gray-900">{startItem} - {endItem}</span> trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>

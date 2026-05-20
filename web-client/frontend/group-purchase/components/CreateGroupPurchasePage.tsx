@@ -198,8 +198,6 @@ export default function CreateGroupPurchasePage() {
 
     void loadData();
   }, []);
-
-  // Set default deadline to tomorrow
   useEffect(() => {
     if (!deadline) {
       const tomorrow = new Date();
@@ -313,7 +311,6 @@ export default function CreateGroupPurchasePage() {
               <p style={styles.hint}>Nhập thông tin để tạo một nhóm mua chung mới.</p>
 
               <form onSubmit={(e) => void handleSubmit(e)}>
-              {/* Product Selection */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="product">
                   Sản phẩm *
@@ -338,7 +335,6 @@ export default function CreateGroupPurchasePage() {
                 )}
               </div>
 
-              {/* Target Quantity */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="targetQuantity">
                   Số lượng mục tiêu *
@@ -356,7 +352,6 @@ export default function CreateGroupPurchasePage() {
                 <p style={styles.hint}>Số lượng cần đạt để hoàn thành đơn hàng</p>
               </div>
 
-              {/* Min Quantity */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="minQuantity">
                   Số lượng tối thiểu *
@@ -374,7 +369,6 @@ export default function CreateGroupPurchasePage() {
                 <p style={styles.hint}>Số lượng tối thiểu để giao hàng</p>
               </div>
 
-              {/* Discount Price */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="discountPrice">
                   Giá ưu đãi (VNĐ)
@@ -392,7 +386,6 @@ export default function CreateGroupPurchasePage() {
                 <p style={styles.hint}>Giá ưu đãi nếu đạt số lượng mục tiêu (không bắt buộc)</p>
               </div>
 
-              {/* Deadline */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="deadline">
                   Hạn chót *
@@ -408,14 +401,12 @@ export default function CreateGroupPurchasePage() {
                 <p style={styles.hint}>Thời gian kết thúc nhóm mua chung</p>
               </div>
 
-              {/* Messages */}
               {message && (
                 <div style={message.type === "success" ? styles.messageSuccess : styles.messageError}>
                   {message.text}
                 </div>
               )}
 
-              {/* Buttons */}
               <div style={styles.buttonGroup}>
                 <button
                   type="button"

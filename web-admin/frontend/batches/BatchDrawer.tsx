@@ -121,11 +121,6 @@ const BatchDrawer = ({ open, saving, batch, form, products, suppliers, onChange,
                 </div>
               </div>
 
-              {/* <div>
-                <label className="mb-1.5 block text-sm font-bold text-gray-800">QR Code</label>
-                <input value={form.qrCode} onChange={(event) => onChange({ qrCode: event.target.value })} type="text" placeholder="Mã QR hoặc đường dẫn in tem" className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]" />
-              </div> */}
-
               <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
                 <button type="button" onClick={onClose} disabled={saving} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
                   Hủy

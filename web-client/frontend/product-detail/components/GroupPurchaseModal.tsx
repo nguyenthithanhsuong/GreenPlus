@@ -284,7 +284,6 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
           throw new Error(data.error || "Không thể tải danh sách mua chung");
         }
 
-        // Filter groups for this product
         const filteredGroups = (data.groups ?? []).filter((g) => g.product_id === productId && g.status === "open");
         setGroups(filteredGroups);
 

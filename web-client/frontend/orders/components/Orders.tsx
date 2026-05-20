@@ -602,7 +602,6 @@ export default function Orders() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   
-  // Cart state
   const [cartItems, setCartItems] = useState<CartItemView[]>([]);
   const [cartTotal, setCartTotal] = useState(0);
   const [cartId, setCartId] = useState<string>("");
@@ -610,7 +609,6 @@ export default function Orders() {
   const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   
-  // Orders state
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
@@ -633,7 +631,6 @@ export default function Orders() {
       setMessage(null);
 
       try {
-        // Load both cart and orders in parallel
         const [cartResponse, ordersResponse] = await Promise.all([
           fetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, { signal: controller.signal }),
           fetch(`/api/orders?userId=${encodeURIComponent(user.user_id)}`, { signal: controller.signal }),

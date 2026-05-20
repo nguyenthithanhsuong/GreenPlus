@@ -190,7 +190,6 @@ export default function Home() {
 
     if (!sourceField) return rows;
 
-    // Filter rows where the foreign key field matches the selected related ID
     return rows.filter((row) => {
       const fieldValue = String(row[sourceField] || "");
       return fieldValue === selectedRelatedId;
@@ -370,7 +369,6 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-          {/* Main Feature Sidebar */}
           <aside className="rounded-xl border border-slate-800 bg-slate-900 p-3 lg:col-span-1">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-300">
               Client Features
@@ -392,7 +390,6 @@ export default function Home() {
             </div>
           </aside>
 
-          {/* Relationships Sub-Sidebar */}
           <aside
             className={`rounded-xl border transition-all duration-300 lg:col-span-1 ${
               expandedRelationships || tableRelationships
@@ -410,13 +407,11 @@ export default function Home() {
 
               {(expandedRelationships || tableRelationships) && tableRelationships && (
                 <div className="space-y-3 text-xs">
-                  {/* Category */}
                   <div className="rounded-md border border-slate-700 bg-slate-800/50 p-2">
                     <p className="font-semibold text-cyan-300">{tableRelationships.category}</p>
                     <p className="mt-1 text-slate-300">{tableRelationships.table}</p>
                   </div>
 
-                  {/* Outgoing Relationships */}
                   {tableRelationships.outgoing.length > 0 && (
                     <div className="space-y-2">
                       <p className="font-semibold text-amber-300">Referenced Tables</p>
@@ -446,7 +441,6 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Incoming Relationships */}
                   {tableRelationships.incoming.length > 0 && (
                     <div className="space-y-2">
                       <p className="font-semibold text-emerald-300">Referenced By</p>

@@ -279,7 +279,6 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
   const [cartActionLoading, setCartActionLoading] = useState(false);
 
   useEffect(() => {
-    // Add animation styles globally
     const style = document.createElement("style");
     style.innerHTML = `
       @keyframes slideUp {
@@ -376,7 +375,6 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
         throw new Error(data.error || "Không thể thêm sản phẩm vào giỏ hàng.");
       }
 
-      // Find product name for the notification
       const product = products.find((p) => p.productId === productId);
       const productName = product?.name || "sản phẩm";
       setCartActionMessage(`Đã thêm ${productName} vào Giỏ hàng!`);

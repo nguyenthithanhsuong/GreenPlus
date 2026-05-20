@@ -275,7 +275,6 @@ const BatchTable = ({ batches, loading, saving, onEdit, onDelete }: BatchTablePr
               <th className="px-6 py-4 font-medium">Thu hoạch</th>
               <th className="px-6 py-4 font-medium">Hạn dùng</th>
               <th className="px-6 py-4 font-medium text-center">Số lượng</th>
-              {/* <th className="px-6 py-4 font-medium">QR Code</th> */}
               <th className="px-6 py-4 font-medium">Trạng thái</th>
               <th className="px-6 py-4 font-medium text-right">Thao tác</th>
             </tr>

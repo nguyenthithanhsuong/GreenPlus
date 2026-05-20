@@ -1,6 +1,5 @@
 import { randomUUID } from "crypto";
 import { AppError } from "../../../core/errors";
-// import { isUsingServiceRoleKey } from "../../../core/supabase";
 import { AuthAuditObserver, AuthSubject } from "../observers/auth.observer";
 import { AuthRepository, type UserRow } from "../auth.repository";
 import { createAccountState } from "../states/account.state";
@@ -25,7 +24,6 @@ import { createProfileImageStorageStrategy } from "../strategies/profile-image.s
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
 
-// Facade pattern: gom toan bo luong dang ky/dang nhap/quan ly tai khoan vao mot diem vao.
 export class AuthFacade {
   private readonly repository: AuthRepository;
   private readonly hasher: PasswordHasherStrategy;
@@ -67,12 +65,6 @@ export class AuthFacade {
 
     const user = await this.repository.findUserByEmail(email);
     if (!user) {
-      // if (!isUsingServiceRoleKey) {
-      //   throw new AppError(
-      //     "MSG4: account not found (backend is using anon key; if RLS is enabled, user rows may be hidden). Set SUPABASE_SERVICE_ROLE_KEY.",
-      //     404
-      //   );
-      // }
       throw new AppError("MSG4: account not found", 404);
     }
     
@@ -82,7 +74,6 @@ export class AuthFacade {
     if (this.isPbkdf2Hash(user.password)) {
       isValidPassword = await this.hasher.compare(input.password, user.password);
     } else {
-      // Ho tro du lieu cu luu plaintext: cho phep dang nhap 1 lan roi nang cap len hash.
       isValidPassword = input.password === user.password;
       if (isValidPassword) {
         const upgradedHash = await this.hasher.hash(input.password);

@@ -664,7 +664,6 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
         await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
       }
     } catch {
-      // user cancelled
     }
   };
 

@@ -234,7 +234,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur xl:grid-cols-[1.05fr_0.95fr]">
           
-          {/* LEFT PANEL */}
           <section className="hidden flex-col justify-between bg-[linear-gradient(160deg,_#0f172a_0%,_#115e59_55%,_#10b981_100%)] p-10 text-white xl:flex">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-200">
@@ -247,20 +246,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 {copy.panelText}
               </p>
             </div>
-
-            {/* <div className="grid gap-4 rounded-[1.5rem] border border-white/15 bg-white/10 p-5 shadow-lg shadow-black/10 backdrop-blur-sm">
-              <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-emerald-100/80">
-                  Route
-                </p>
-                <p className="mt-2 text-lg font-semibold">
-                  {copy.routeLabel}
-                </p>
-              </div>
-            </div> */}
-          </section>
-
-          {/* FORM PANEL */}
           <section className="p-6 sm:p-10 lg:p-12">
             <div className="mx-auto max-w-xl">
               <div className="flex items-center justify-between gap-4">
@@ -373,7 +358,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 </button>
               </form>
 
-              {/* SINGLE TOGGLE (BOTTOM ONLY) */}
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-600">
                   {isLogin

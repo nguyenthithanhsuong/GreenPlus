@@ -9,12 +9,6 @@ export default function AdminHeader() {
   return (
     <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 md:px-8 shrink-0">
       
-      {/* LEFT SIDE */}
-      <div>
-        {/* Put logo / title here if needed */}
-      </div>
-
-      {/* RIGHT SIDE */}
       <div className="flex items-center gap-6">
         <button
           className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors"

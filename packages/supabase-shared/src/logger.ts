@@ -1,7 +1,4 @@
-/**
- * Better Stack Logger Utility
- * Sends logs to Better Stack via HTTP source
- */
+
 
 interface BetterStackLogPayload {
   message: string;
@@ -21,16 +18,10 @@ class BetterStackLogger {
     this.sourceUrl = 'https://in.betterstack.com/api/v1/logs';
   }
 
-  /**
-   * Check if Better Stack is configured
-   */
   isEnabled(): boolean {
     return !!this.sourceToken;
   }
 
-  /**
-   * Send log to Better Stack
-   */
   private async send(payload: BetterStackLogPayload): Promise<void> {
     if (!this.isEnabled()) {
       return;
@@ -58,7 +49,7 @@ class BetterStackLogger {
         console.error(`[BetterStack] Failed to send log: ${response.status}`);
       }
     } catch (error) {
-      // Silently fail to prevent logging from crashing the app
+      
       console.error('[BetterStack] Error sending log:', error);
     }
   }
@@ -84,5 +75,5 @@ class BetterStackLogger {
   }
 }
 
-// Export singleton instance
+
 export const logger = new BetterStackLogger();

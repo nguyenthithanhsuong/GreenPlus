@@ -38,8 +38,7 @@ export class AuthAuditObserver implements AuthObserver {
   async update(event: AuthDomainEvent): Promise<void> {
     const eventType = event.type;
     const userId = event.userId;
-
-    // Placeholder for app logging/auditing side effects.
+    
     void eventType;
     void userId;
 

@@ -91,7 +91,6 @@ export class InventoryManagementService {
       );
     }
 
-    // Create inventory transaction
     if (updated.batch_id) {
       const transactionType =
         typeof input.type !== "undefined"
@@ -108,7 +107,6 @@ export class InventoryManagementService {
           existing.quantity_available
       );
 
-      // Only create transaction when quantity changed
       if (delta > 0) {
         await this.repository.createTransaction({
           batchId: updated.batch_id,
@@ -241,10 +239,6 @@ export class InventoryManagementService {
           currentReserved -
             item.quantity
         );
-
-      // IMPORTANT:
-      // Reuse updateInventory()
-      // so transaction history is created
       await this.updateInventory({
         inventoryId:
           inventory.inventory_id,

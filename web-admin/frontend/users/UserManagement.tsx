@@ -234,7 +234,7 @@ const UserManagement = () => {
   }, []);
 
   const requestToggleBanStatus = useCallback((user: UserViewModel) => {
-    // If active, ban them. If banned, unban them (restore to active).
+
     const type = user.status === "active" ? "ban" : "unban";
     setConfirmState({ type, user });
   }, []);
@@ -302,7 +302,6 @@ const UserManagement = () => {
         closeDrawer();
       }
     } catch {
-      // Error state is already handled by withSaving.
     }
   }, [
     closeDrawer,
@@ -386,7 +385,6 @@ const UserManagement = () => {
 
       setConfirmState(null);
     } catch {
-      // Error state is already handled by withSaving.
     }
   }, [closeDrawer, confirmState, handleDeleteUser, handleToggleBanStatus, selectedUser]);
 

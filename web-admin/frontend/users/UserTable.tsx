@@ -27,7 +27,6 @@ type UserTableProps = {
   onRequestDeleteUser: (user: UserViewModel) => void;
 };
 
-// Helper to render role badges with specific colors
 const renderRoleBadge = (role: string) => {
   const styles: Record<string, string> = {
     Admin: 'bg-purple-100 text-purple-700',
@@ -156,16 +155,13 @@ const UserTable = ({
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
       
-      {/* Table Top Controls: Tabs & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-50 gap-4">
-        {/* Tabs */}
         <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg">
           <button onClick={() => setActiveTab('all')} className={`px-4 py-1.5 text-sm font-medium rounded-md ${activeTab === 'all' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>Tất cả</button>
           <button onClick={() => setActiveTab('customer')} className={`px-4 py-1.5 text-sm font-medium rounded-md ${activeTab === 'customer' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>Khách hàng</button>
           <button onClick={() => setActiveTab('staff')} className={`px-4 py-1.5 text-sm font-medium rounded-md ${activeTab === 'staff' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>Nhân viên & Quản trị</button>
         </div>
 
-        {/* Filters (Placeholders) */}
         <div className="flex items-center gap-2">
           <div className="relative hidden sm:block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -189,7 +185,6 @@ const UserTable = ({
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
@@ -274,7 +269,6 @@ const UserTable = ({
         </table>
       </div>
 
-      {/* Pagination Footer */}
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
         <span className="text-sm text-gray-500">
           Hiển thị <span className="font-bold text-gray-900">{startItem} - {endItem}</span> trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>

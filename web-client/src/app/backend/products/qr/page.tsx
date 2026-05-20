@@ -55,7 +55,6 @@ export default function ProductQrTestPage() {
           setProductId(products[0].product_id);
         }
       } catch {
-        // Khong chan test page neu options load that bai.
       }
     };
 

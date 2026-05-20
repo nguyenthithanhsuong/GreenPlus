@@ -13,7 +13,6 @@ export type BackendTestingOptions = {
   batches: BatchOption[];
 };
 
-// Facade cho backend testing: gom options can thiet de render dropdown ID.
 export class TestingOptionsFacade {
   private readonly repository = new TestingOptionsRepository();
 
