@@ -18,7 +18,7 @@ export class CategoryFilterStrategy implements ProductFilterStrategy {
     return items.filter((item) => item.categoryId === criteria.categoryId);
   }
 }
- class CertificationFilterStrategy implements ProductFilterStrategy {
+export class CertificationFilterStrategy implements ProductFilterStrategy {
   apply(items: ProductBrowseItem[], criteria: SearchCriteria): ProductBrowseItem[] {
     const certification = criteria.certification?.trim().toLowerCase();
     if (!certification) return items;

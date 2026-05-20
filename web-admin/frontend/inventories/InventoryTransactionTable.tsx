@@ -31,9 +31,11 @@ const formatDate = (value: string | null) => {
 const getTypeClassName = (type: string) => {
   switch (type) {
     case "stock_in":
+    case "adjust_in":
       return "bg-emerald-50 text-emerald-700 border-emerald-100";
 
     case "stock_out":
+    case "adjust_out":
       return "bg-red-50 text-red-700 border-red-100";
 
     default:
@@ -53,7 +55,30 @@ const getQuantityDisplay = (
     return `+ ${quantity}`;
   }
 
+  if (type === "adjust_out") {
+    return `- ${quantity}`;
+  }
+
+  if (type === "adjust_in") {
+    return `+ ${quantity}`;
+  }
+
   return quantity;
+};
+
+const getTypeLabel = (type: string) => {
+  switch (type) {
+    case "stock_in":
+      return "Nhập kho";
+    case "stock_out":
+      return "Xuất kho";
+    case "adjust_in":
+      return "Điều chỉnh tăng";
+    case "adjust_out":
+      return "Điều chỉnh giảm";
+    default:
+      return "Điều chỉnh";
+  }
 };
 
 const InventoryTransactionTable = ({
@@ -171,16 +196,16 @@ const InventoryTransactionTable = ({
                         item.type
                       )}`}
                     >
-                      {item.type.replace("_", " ")}
+                      {getTypeLabel(item.type)}
                     </span>
                   </td>
 
                   <td className="px-6 py-4 text-center">
                     <span
                       className={`font-bold ${
-                        item.type === "stock_out"
+                        item.type === "stock_out" || item.type === "adjust_out"
                           ? "text-red-600"
-                          : item.type === "stock_in"
+                          : item.type === "stock_in" || item.type === "adjust_in"
                           ? "text-emerald-600"
                           : "text-amber-600"
                       }`}

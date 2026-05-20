@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
+import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
+import ConfirmActionDialog from "./ConfirmActionDialog";
 import BatchDrawer, { BatchFormValues } from "./BatchDrawer";
 import BatchStats from "./BatchStats";
 import BatchTable from "./BatchTable";
@@ -40,6 +42,10 @@ const deriveBatchStatus = (batch: BatchRow): BatchRow["status"] => {
     return "pending";
   }
 
+  if (batch.status === "rejected") {
+    return "rejected";
+  }
+
   if (batch.quantity <= 0) {
     return "sold_out";
   }
@@ -61,6 +67,15 @@ const BatchManagement = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<BatchRow | null>(null);
   const [form, setForm] = useState<BatchFormValues>(emptyForm());
+  const [confirmState, setConfirmState] = useState<
+    | {
+        type: "approve" | "reject" | "restore" | "delete";
+        batch: BatchRow;
+      }
+    | null
+  >(null);
+  const { profile } = useCurrentUserProfile();
+  const canForceManageApproved = (profile?.roleName ?? "").trim().toLowerCase() === "admin";
 
   const loadBatches = useCallback(async () => {
     setLoading(true);
@@ -180,6 +195,89 @@ const BatchManagement = () => {
     await Promise.all([loadBatches(), loadProducts(), loadSuppliers()]);
   }, [loadBatches, loadProducts, loadSuppliers]);
 
+  const requestApproveBatch = useCallback((batch: BatchRow) => {
+    setConfirmState({ type: "approve", batch });
+  }, []);
+
+  const requestRejectBatch = useCallback((batch: BatchRow) => {
+    setConfirmState({ type: "reject", batch });
+  }, []);
+
+  const requestRestoreBatch = useCallback((batch: BatchRow) => {
+    setConfirmState({ type: "restore", batch });
+  }, []);
+
+  const requestDeleteBatch = useCallback((batch: BatchRow) => {
+    setConfirmState({ type: "delete", batch });
+  }, []);
+
+  const closeConfirmDialog = useCallback(() => {
+    setConfirmState(null);
+  }, []);
+
+  const handleConfirmAction = useCallback(async () => {
+    if (!confirmState) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      if (confirmState.type === "approve") {
+        const response = await fetch(`/api/batches/${encodeURIComponent(confirmState.batch.batch_id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "available" }),
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể duyệt batch");
+        }
+      } else if (confirmState.type === "reject") {
+        const response = await fetch(`/api/batches/${encodeURIComponent(confirmState.batch.batch_id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "rejected" }),
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể từ chối batch");
+        }
+      } else if (confirmState.type === "restore") {
+        const response = await fetch(`/api/batches/${encodeURIComponent(confirmState.batch.batch_id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "pending" }),
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể đưa batch về chờ duyệt");
+        }
+      } else {
+        const force = confirmState.batch.status === "available" && canForceManageApproved;
+        const response = await fetch(`/api/batches/${encodeURIComponent(confirmState.batch.batch_id)}${force ? "?force=true" : ""}`, {
+          method: "DELETE",
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? (force ? "Không thể force xóa batch" : "Không thể xóa batch"));
+        }
+      }
+
+      closeConfirmDialog();
+      await reloadData();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể xử lý batch");
+    } finally {
+      setSaving(false);
+    }
+  }, [canForceManageApproved, closeConfirmDialog, confirmState, reloadData]);
+
   const submitDrawer = useCallback(async () => {
     if (!form.productId.trim()) {
       setError("Sản phẩm là bắt buộc");
@@ -210,6 +308,7 @@ const BatchManagement = () => {
     setError(null);
 
     try {
+      const force = Boolean(selectedBatch && selectedBatch.status === "available" && canForceManageApproved);
       const response = await fetch(selectedBatch ? `/api/batches/${encodeURIComponent(selectedBatch.batch_id)}` : "/api/batches", {
         method: selectedBatch ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -221,6 +320,7 @@ const BatchManagement = () => {
           quantity: form.quantity,
           qrCode: form.qrCode,
           status: selectedBatch ? form.status : undefined,
+          force,
         }),
       });
 
@@ -237,31 +337,11 @@ const BatchManagement = () => {
     } finally {
       setSaving(false);
     }
-  }, [closeDrawer, form, reloadData, selectedBatch]);
+  }, [canForceManageApproved, closeDrawer, form, reloadData, selectedBatch]);
 
-  const deleteBatch = useCallback(async (batch: BatchRow) => {
-    if (!window.confirm(`Xóa batch "${batch.batch_id}"?`)) {
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/batches/${encodeURIComponent(batch.batch_id)}`, { method: "DELETE" });
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể xóa batch");
-      }
-
-      await reloadData();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể xóa batch");
-    } finally {
-      setSaving(false);
-    }
-  }, [reloadData]);
+  const deleteBatch = useCallback((batch: BatchRow) => {
+    requestDeleteBatch(batch);
+  }, [requestDeleteBatch]);
 
   return (
     <AdminShell
@@ -295,7 +375,17 @@ const BatchManagement = () => {
 
       <BatchStats {...stats} />
 
-      <BatchTable batches={batches} loading={loading} saving={saving} onEdit={openEditDrawer} onDelete={deleteBatch} />
+      <BatchTable
+        batches={batches}
+        loading={loading}
+        saving={saving}
+        canForceManageApproved={canForceManageApproved}
+        onApprove={requestApproveBatch}
+        onReject={requestRejectBatch}
+        onRestore={requestRestoreBatch}
+        onEdit={openEditDrawer}
+        onDelete={deleteBatch}
+      />
 
       <BatchDrawer
         open={drawerOpen}
@@ -307,6 +397,49 @@ const BatchManagement = () => {
         onChange={patchForm}
         onClose={closeDrawer}
         onSubmit={submitDrawer}
+      />
+
+      <ConfirmActionDialog
+        open={Boolean(confirmState)}
+        title={
+          confirmState?.type === "approve"
+            ? "Xác nhận duyệt batch"
+            : confirmState?.type === "reject"
+              ? "Xác nhận từ chối batch"
+              : confirmState?.type === "restore"
+                ? "Xác nhận quay lại chờ duyệt"
+                : "Xác nhận xóa batch"
+        }
+        message={
+          confirmState
+            ? confirmState.type === "approve"
+              ? `Bạn có chắc muốn duyệt batch ${confirmState.batch.batch_id}? Batch sẽ chuyển sang trạng thái khả dụng.`
+              : confirmState.type === "reject"
+                ? `Bạn có chắc muốn từ chối batch ${confirmState.batch.batch_id}? Batch sẽ chuyển sang trạng thái từ chối.`
+                : confirmState.type === "restore"
+                  ? `Bạn có chắc muốn đưa batch ${confirmState.batch.batch_id} quay lại chờ duyệt?`
+                  : confirmState.batch.status === "available" && canForceManageApproved
+                    ? `Bạn có chắc muốn force xóa batch ${confirmState.batch.batch_id}? Hành động này không thể hoàn tác.`
+                    : `Bạn có chắc muốn xóa batch ${confirmState.batch.batch_id}? Hành động này không thể hoàn tác.`
+            : ""
+        }
+        confirmLabel={
+          confirmState?.type === "approve"
+            ? "Duyệt batch"
+            : confirmState?.type === "reject"
+              ? "Từ chối batch"
+              : confirmState?.type === "restore"
+                ? "Quay lại chờ duyệt"
+                : confirmState?.batch.status === "available" && canForceManageApproved
+                  ? "Force xóa batch"
+                  : "Xóa batch"
+        }
+        confirmVariant={confirmState?.type === "approve" || confirmState?.type === "restore" ? "warning" : "danger"}
+        loading={saving}
+        onCancel={closeConfirmDialog}
+        onConfirm={() => {
+          void handleConfirmAction();
+        }}
       />
     </AdminShell>
   );

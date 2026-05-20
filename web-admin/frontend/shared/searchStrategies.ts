@@ -113,7 +113,7 @@ class BatchSearchStrategy extends BaseSearchStrategy<{
   expire_date: string;
   qr_code: string | null;
   quantity: number;
-  status: "pending" | "available" | "expired" | "sold_out";
+  status: "pending" | "available" | "rejected" | "expired" | "sold_out";
   created_at: string;
   updated_at: string;
 }> {
@@ -127,7 +127,7 @@ class BatchSearchStrategy extends BaseSearchStrategy<{
     expire_date: string;
     qr_code: string | null;
     quantity: number;
-    status: "pending" | "available" | "expired" | "sold_out";
+    status: "pending" | "available" | "rejected" | "expired" | "sold_out";
     created_at: string;
     updated_at: string;
   }): Array<string | number | null | undefined> {

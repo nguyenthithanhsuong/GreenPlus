@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, RefreshCw } from "lucide-react";
 import UserStats from "./UserStats";
 import UserTable, { UserViewModel } from "./UserTable";
 import UserDrawer, { UserDrawerMode, UserFormValues } from "./UserDrawer";
@@ -388,11 +389,37 @@ const UserManagement = () => {
     }
   }, [closeDrawer, confirmState, handleDeleteUser, handleToggleBanStatus, selectedUser]);
 
+  const reloadData = useCallback(async () => {
+    await Promise.all([loadUsers(), loadRoles()]);
+  }, [loadUsers, loadRoles]);
+
   return (
     <AdminShell
       title="Quản lý người dùng"
       description="Quản trị danh sách tài khoản, phân quyền và trạng thái hoạt động trên hệ thống."
       searchPlaceholder="Tìm kiếm người dùng bằng tên, email..."
+      pageActions={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void reloadData()}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+            disabled={loading || saving}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Tải lại
+          </button>
+          <button
+            type="button"
+            onClick={openCreateDrawer}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-60"
+            disabled={loading || saving}
+          >
+            <Plus className="h-4 w-4" />
+            Thêm User
+          </button>
+        </div>
+      }
     >
       {error ? (
         <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -409,7 +436,6 @@ const UserManagement = () => {
         loading={loading}
         saving={saving}
         customerRoleId={customerRoleId}
-        onAddUser={openCreateDrawer}
         onViewUser={openDetailDrawer}
         onEditUser={openEditDrawer}
         onRequestDisableUser={requestToggleBanStatus}

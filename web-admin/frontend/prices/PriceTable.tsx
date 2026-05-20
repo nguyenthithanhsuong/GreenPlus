@@ -1,16 +1,19 @@
 import React from "react";
-import { Edit2, Package, Plus, Search, Trash2 } from "lucide-react";
+import { CheckCircle2, Edit2, Package, Plus, Search, XCircle, Trash2 } from "lucide-react";
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 
 type PriceTableProps = {
   items: PriceRow[];
   loading: boolean;
   saving: boolean;
+  canForceManagePrice: boolean;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   onCreate: () => void;
   onUpdate: (item: PriceRow) => void;
   onDelete: (item: PriceRow) => void;
+  onQuickApprove: (item: PriceRow) => void;
+  onQuickReject: (item: PriceRow) => void;
 };
 
 const formatCurrency = (value: number): string => {
@@ -54,15 +57,22 @@ const canDelete = (status: PriceRow["status"]) => {
   return status === "pending" || status === "inactive";
 };
 
+const canQuickModerate = (status: PriceRow["status"]) => {
+  return status === "pending";
+};
+
 const PriceTable = ({
   items,
   loading,
   saving,
+  canForceManagePrice,
   searchQuery,
   onSearchQueryChange,
   onCreate,
   onUpdate,
   onDelete,
+  onQuickApprove,
+  onQuickReject,
 }: PriceTableProps) => {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -119,7 +129,9 @@ const PriceTable = ({
               </tr>
             ) : (
               items.map((item) => {
-                const deletable = canDelete(item.status);
+                const deletable = canDelete(item.status) || (item.status === "active" && canForceManagePrice);
+                const canEdit = item.status !== "active" || canForceManagePrice;
+                const canModerate = canQuickModerate(item.status);
 
                 return (
                   <tr key={item.price_id} className="border-b border-gray-50 hover:bg-gray-50/50">
@@ -170,15 +182,48 @@ const PriceTable = ({
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
+                        {canModerate ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => onQuickApprove(item)}
+                              disabled={saving}
+                              className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                              title="Duyệt nhanh"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              Duyệt
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => onQuickReject(item)}
+                              disabled={saving}
+                              className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11px] font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                              title="Từ chối nhanh"
+                            >
+                              <XCircle className="h-4 w-4" />
+                              Từ chối
+                            </button>
+                          </>
+                        ) : null}
+
                         <button
+                          type="button"
                           onClick={() => onUpdate(item)}
-                          disabled={saving}
-                          className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded"
+                          disabled={saving || !canEdit}
+                          className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-40"
+                          title={
+                            canEdit
+                              ? "Sửa"
+                              : "Chỉ admin mới có thể force chỉnh sửa giá đang áp dụng"
+                          }
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
 
                         <button
+                          type="button"
                           onClick={() => onDelete(item)}
                           disabled={saving || !deletable}
                           className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-40"

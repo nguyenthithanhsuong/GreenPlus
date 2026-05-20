@@ -595,7 +595,12 @@ const Dashboard = () => {
 
   const displayCategories = useMemo(
     () => [
-      { categoryId: "all", name: "Tất cả", description: null, imageUrl: null },
+      {
+        categoryId: "all",
+        name: "Tất cả",
+        description: null,
+        imageUrl: "https://ujgnuwlljslwokblmrwi.supabase.co/storage/v1/object/public/General/products%20(1).png",
+      },
       ...categories,
     ],
     [categories],
@@ -719,7 +724,7 @@ const Dashboard = () => {
                 }}
               >
                 {twoRowCategories.map((category) => {
-                  const hasImage = Boolean(category.imageUrl) && category.categoryId !== "all" && !brokenImageIds[category.categoryId];
+                  const hasImage = Boolean(category.imageUrl) && !brokenImageIds[category.categoryId];
                   const categoryHref = `/category-products/${category.categoryId}?name=${encodeURIComponent(category.name)}&backTo=${encodeURIComponent("/dashboard")}`;
 
                   return (

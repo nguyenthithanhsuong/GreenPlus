@@ -10,7 +10,7 @@ class PendingBatchState implements BatchStatusState {
   readonly name: BatchStatus = "pending";
 
   canTransitionTo(next: BatchStatus): boolean {
-    return next === "pending" || next === "available" || next === "expired" || next === "sold_out";
+    return next === "pending" || next === "available" || next === "rejected";
   }
 }
 
@@ -18,7 +18,15 @@ class AvailableBatchState implements BatchStatusState {
   readonly name: BatchStatus = "available";
 
   canTransitionTo(next: BatchStatus): boolean {
-    return next === "available" || next === "pending" || next === "expired" || next === "sold_out";
+    return next === "available";
+  }
+}
+
+class RejectedBatchState implements BatchStatusState {
+  readonly name: BatchStatus = "rejected";
+
+  canTransitionTo(next: BatchStatus): boolean {
+    return next === "rejected" || next === "pending";
   }
 }
 
@@ -47,6 +55,10 @@ export function createBatchStatusState(status: string): BatchStatusState {
 
   if (normalized === "available") {
     return new AvailableBatchState();
+  }
+
+  if (normalized === "rejected") {
+    return new RejectedBatchState();
   }
 
   if (normalized === "expired") {

@@ -16,7 +16,7 @@ export class DefaultInventoryTransactionStrategy
   implements InventoryTransactionStrategy
 {
   private readonly supportedTypes: InventoryTransactionType[] =
-    ["stock_in", "stock_out", "adjustment"];
+    ["stock_in", "stock_out", "adjust_in", "adjust_out", "adjustment"];
 
   normalize(
     type?: string | null
@@ -56,11 +56,11 @@ export class DefaultInventoryTransactionStrategy
     }
 
     if (nextQuantity > previousQuantity) {
-      return "stock_in";
+      return "adjust_in";
     }
 
     if (nextQuantity < previousQuantity) {
-      return "stock_out";
+      return "adjust_out";
     }
 
     return "adjustment";

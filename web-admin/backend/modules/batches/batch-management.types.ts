@@ -1,4 +1,4 @@
-export type BatchStatus = "pending" | "available" | "expired" | "sold_out";
+export type BatchStatus = "pending" | "available" | "rejected" | "expired" | "sold_out";
 
 export type BatchRow = {
   batch_id: string;
@@ -34,4 +34,5 @@ export type UpdateBatchInput = {
   quantity?: number;
   qrCode?: string | null;
   status?: BatchStatus;
+  force?: boolean;
 };

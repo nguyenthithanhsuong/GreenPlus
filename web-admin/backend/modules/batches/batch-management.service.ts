@@ -129,6 +129,10 @@ export class BatchManagementService {
       throw new AppError("Batch not found", 404);
     }
 
+    if (existing.status === "available" && !input.force) {
+      throw new AppError("Batch đã duyệt không thể chỉnh sửa", 400);
+    }
+
     const nextProductId = typeof input.productId !== "undefined" ? input.productId.trim() : existing.product_id;
     const nextSupplierId = typeof input.supplierId !== "undefined" ? input.supplierId.trim() : existing.supplier_id;
     const nextHarvestDate = typeof input.harvestDate !== "undefined" ? input.harvestDate.trim() : existing.harvest_date;
@@ -211,9 +215,18 @@ export class BatchManagementService {
     return updated;
   }
 
-  async deleteBatch(batchId: string): Promise<void> {
+  async deleteBatch(batchId: string, force = false): Promise<void> {
     if (!batchId.trim()) {
       throw new AppError("batchId is required", 400);
+    }
+
+    const existing = await this.repository.findById(batchId);
+    if (!existing) {
+      throw new AppError("Batch not found", 404);
+    }
+
+    if (existing.status === "available" && !force) {
+      throw new AppError("Batch đã duyệt không thể xóa", 400);
     }
 
     const deleted = await this.repository.deleteBatch(batchId);

@@ -5,7 +5,6 @@ import {
   InventoryTransactionRow,
   UpdateInventoryInput,
 } from "./inventory-management.types";
-import { createInventoryState } from "./states/inventory-state";
 import { DefaultInventoryTransactionStrategy } from "./strategies/inventory-transaction.strategy";
 
 export class InventoryManagementService {
@@ -92,22 +91,20 @@ export class InventoryManagementService {
     }
 
     if (updated.batch_id) {
-      const transactionType =
-        typeof input.type !== "undefined"
-          ? this.transactionStrategy.normalize(
-              input.type
-            )
-          : this.transactionStrategy.derive(
-              existing.quantity_available,
-              updated.quantity_available
-            );
-
       const delta = Math.abs(
         updated.quantity_available -
           existing.quantity_available
       );
 
       if (delta > 0) {
+        const transactionType =
+          typeof input.type !== "undefined" && input.type !== "adjustment"
+            ? this.transactionStrategy.normalize(input.type)
+            : this.transactionStrategy.derive(
+                existing.quantity_available,
+                updated.quantity_available
+              );
+
         await this.repository.createTransaction({
           batchId: updated.batch_id,
           type: transactionType,
@@ -145,15 +142,9 @@ export class InventoryManagementService {
       );
     }
 
-    const state = createInventoryState(
-      existing.quantity_available,
-      existing.quantity_reserved ?? 0
-    );
-
-    if (!state.canDelete()) {
-      throw new AppError(
-        "inventory cannot be deleted while quantities remain",
-        400
+    if (existing.batch_id) {
+      await this.repository.deleteTransactionsByBatchId(
+        existing.batch_id
       );
     }
 

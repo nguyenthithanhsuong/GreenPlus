@@ -191,7 +191,7 @@ export class BatchManagementRepository {
 
   private toRow(batch: BatchDbRow): BatchRow {
     const normalizedStatus: BatchStatus =
-      batch.status === "pending" || batch.status === "available" || batch.status === "expired" || batch.status === "sold_out"
+      batch.status === "pending" || batch.status === "available" || batch.status === "rejected" || batch.status === "expired" || batch.status === "sold_out"
         ? batch.status
         : "available";
 

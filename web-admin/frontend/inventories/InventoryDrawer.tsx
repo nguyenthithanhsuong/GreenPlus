@@ -1,20 +1,16 @@
 "use client";
 
 import React from "react";
-import { ArrowLeftRight, ClipboardList, Hash, Trash2, X } from "lucide-react";
-import type {
-  InventoryRow,
-  InventoryTransactionType,
-} from "../../backend/modules/inventory/inventory-management.types";
+import { ClipboardList, Hash, Trash2, X } from "lucide-react";
+import type { InventoryRow } from "../../backend/modules/inventory/inventory-management.types";
 
 export type InventoryFormValues = {
   quantityAvailable: string;
   quantityReserved: string;
   note: string;
-  type: InventoryTransactionType;
 };
 
-export type InventoryDrawerMode = "edit" | "delete";
+export type InventoryDrawerMode = "edit";
 
 type InventoryDrawerProps = {
   isOpen: boolean;
@@ -30,7 +26,6 @@ type InventoryDrawerProps = {
 
 const modeTitle: Record<InventoryDrawerMode, string> = {
   edit: "Cập nhật tồn kho",
-  delete: "Xóa bản ghi tồn kho",
 };
 
 const InventoryDrawer = ({
@@ -85,89 +80,68 @@ const InventoryDrawer = ({
               <p><span className="font-semibold">Supplier:</span> {selectedItem?.supplier_name ?? "-"}</p>
             </div>
 
-            {mode === "delete" ? (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">
-                  Chỉ xóa khi cả tồn khả dụng và reserved đều bằng 0. Hành động này không thể hoàn tác.
-                </div>
-                <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700">
-                  <p><span className="font-semibold">Khả dụng:</span> {selectedItem?.quantity_available ?? 0}</p>
-                  <p><span className="font-semibold">Reserved:</span> {selectedItem?.quantity_reserved ?? 0}</p>
+            <form
+              className="space-y-5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onSubmit();
+              }}
+            >
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                  Tồn khả dụng <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    value={form.quantityAvailable}
+                    onChange={(event) => onChange({ quantityAvailable: event.target.value })}
+                    type="number"
+                    min="0"
+                    step="1"
+                    className="w-full rounded-md border border-gray-300 px-10 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                  />
                 </div>
               </div>
-            ) : (
-              <form
-                className="space-y-5"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  onSubmit();
-                }}
-              >
-                <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">
-                    Tồn khả dụng <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      value={form.quantityAvailable}
-                      onChange={(event) => onChange({ quantityAvailable: event.target.value })}
-                      type="number"
-                      min="0"
-                      step="1"
-                      className="w-full rounded-md border border-gray-300 px-10 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">
-                    Số lượng reserved <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      value={form.quantityReserved}
-                      onChange={(event) => onChange({ quantityReserved: event.target.value })}
-                      type="number"
-                      min="0"
-                      step="1"
-                      className="w-full rounded-md border border-gray-300 px-10 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
-                    />
-                  </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                  Số lượng reserved <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    value={form.quantityReserved}
+                    onChange={(event) => onChange({ quantityReserved: event.target.value })}
+                    type="number"
+                    min="0"
+                    step="1"
+                    className="w-full rounded-md border border-gray-300 px-10 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                  />
                 </div>
+              </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">Loại giao dịch</label>
-                  <div className="relative">
-                    <ArrowLeftRight className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <select
-                      value={form.type}
-                      onChange={(event) => onChange({ type: event.target.value as InventoryTransactionType })}
-                      className="w-full appearance-none rounded-md border border-gray-300 bg-white px-10 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
-                    >
-                      <option value="adjustment">Điều chỉnh (adjustment)</option>
-                      <option value="stock_in">Nhập kho (stock_in)</option>
-                      <option value="stock_out">Xuất kho (stock_out)</option>
-                    </select>
-                  </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">Loại giao dịch</label>
+                <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                  Hệ thống tự xác định <span className="font-semibold">adjust_in</span> hoặc <span className="font-semibold">adjust_out</span> theo chênh lệch tồn khả dụng giữa giá trị mới và cũ.
                 </div>
+              </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">Ghi chú giao dịch</label>
-                  <div className="relative">
-                    <ClipboardList className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <textarea
-                      value={form.note}
-                      onChange={(event) => onChange({ note: event.target.value })}
-                      rows={4}
-                      placeholder="Mô tả lý do điều chỉnh tồn kho"
-                      className="w-full resize-none rounded-md border border-gray-300 px-10 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
-                    />
-                  </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">Ghi chú giao dịch</label>
+                <div className="relative">
+                  <ClipboardList className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <textarea
+                    value={form.note}
+                    onChange={(event) => onChange({ note: event.target.value })}
+                    rows={4}
+                    placeholder="Mô tả lý do điều chỉnh tồn kho"
+                    className="w-full resize-none rounded-md border border-gray-300 px-10 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                  />
                 </div>
-              </form>
-            )}
+              </div>
+            </form>
           </div>
 
           <div className="flex justify-end gap-3 border-t border-gray-100 bg-white p-6">
@@ -183,11 +157,11 @@ const InventoryDrawer = ({
               type="button"
               onClick={onSubmit}
               className={`rounded-md px-6 py-2.5 text-sm font-bold text-white transition-colors disabled:opacity-60 ${
-                mode === "delete" ? "bg-rose-600 hover:bg-rose-700" : "bg-[#1da453] hover:bg-[#168a44]"
+                "bg-[#1da453] hover:bg-[#168a44]"
               }`}
               disabled={saving}
             >
-              {saving ? "Đang xử lý..." : mode === "delete" ? "Xác nhận xóa" : "Cập nhật tồn kho"}
+              {saving ? "Đang xử lý..." : "Cập nhật tồn kho"}
             </button>
           </div>
         </div>

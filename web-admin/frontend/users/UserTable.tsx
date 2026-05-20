@@ -20,7 +20,6 @@ type UserTableProps = {
   loading: boolean;
   saving: boolean;
   customerRoleId: string | null;
-  onAddUser: () => void;
   onViewUser: (user: UserViewModel) => void;
   onEditUser: (user: UserViewModel) => void;
   onRequestDisableUser: (user: UserViewModel) => void;
@@ -90,7 +89,6 @@ const UserTable = ({
   loading,
   saving,
   customerRoleId,
-  onAddUser,
   onViewUser,
   onEditUser,
   onRequestDisableUser,
@@ -173,15 +171,6 @@ const UserTable = ({
               className="h-9 w-64 rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
-          <button
-            onClick={() => {
-              onAddUser();
-            }}
-            disabled={saving}
-            className="h-9 px-4 border border-emerald-600 rounded-lg bg-emerald-600 text-white text-sm font-semibold disabled:opacity-60"
-          >
-            Thêm User
-          </button>
         </div>
       </div>
 

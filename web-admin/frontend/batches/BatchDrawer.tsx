@@ -32,6 +32,7 @@ type BatchDrawerProps = {
 const statusLabel: Record<BatchStatus, string> = {
   pending: "Chờ duyệt",
   available: "Khả dụng",
+  rejected: "Từ chối",
   expired: "Hết hạn",
   sold_out: "Hết hàng",
 };
@@ -114,6 +115,7 @@ const BatchDrawer = ({ open, saving, batch, form, products, suppliers, onChange,
                   <select value={form.status} onChange={(event) => onChange({ status: event.target.value as BatchStatus })} disabled={!batch} className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500">
                     <option value="pending">{statusLabel.pending}</option>
                     <option value="available">{statusLabel.available}</option>
+                    <option value="rejected">{statusLabel.rejected}</option>
                     <option value="expired">{statusLabel.expired}</option>
                     <option value="sold_out">{statusLabel.sold_out}</option>
                   </select>

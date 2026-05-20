@@ -124,6 +124,20 @@ export class InventoryManagementRepository {
     );
   }
 
+  async deleteTransactionsByBatchId(batchId: string): Promise<number> {
+    const { data, error } = await this.supabase
+      .from("inventory_transactions")
+      .delete()
+      .eq("batch_id", batchId)
+      .select("transaction_id");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return Array.isArray(data) ? data.length : 0;
+  }
+
   async listTransactions(): Promise<InventoryTransactionRow[]> {
   const { data, error } = await this.supabase
     .from("inventory_transactions")
@@ -205,6 +219,8 @@ export class InventoryManagementRepository {
     const normalizedType: InventoryTransactionType =
       row.type === "stock_in" ||
       row.type === "stock_out" ||
+      row.type === "adjust_in" ||
+      row.type === "adjust_out" ||
       row.type === "adjustment"
         ? row.type
         : "adjustment";

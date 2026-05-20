@@ -13,7 +13,7 @@ export type BatchManagementEvent =
       type: "batch_status_changed";
       batchId: string;
       actor: "admin";
-      status: "pending" | "available" | "expired" | "sold_out";
+      status: "pending" | "available" | "rejected" | "expired" | "sold_out";
     }
   | {
       type: "batch_deleted";

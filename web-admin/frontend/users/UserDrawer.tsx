@@ -127,7 +127,7 @@ const UserDrawer = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Số điện thoại</p>
                     <p className="mt-1 text-sm text-gray-800">{selectedUser?.phone || "-"}</p>
@@ -155,10 +155,6 @@ const UserDrawer = ({
                   <p className="mt-1 text-sm text-gray-800">{selectedUser?.address || "-"}</p>
                 </div>
 
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Ảnh đại diện</p>
-                  <p className="mt-1 break-all text-sm text-gray-800">{selectedUser?.image_url || "-"}</p>
-                </div>
               </div>
             ) : (
               <form

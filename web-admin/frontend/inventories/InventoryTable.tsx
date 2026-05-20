@@ -184,11 +184,7 @@ const InventoryTable = ({
                       <button
                         type="button"
                         onClick={() => onDelete(item)}
-                        disabled={
-                          saving ||
-                          item.quantity_available > 0 ||
-                          (item.quantity_reserved ?? 0) > 0
-                        }
+                        disabled={saving}
                         className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
                         title="Xóa"
                       >

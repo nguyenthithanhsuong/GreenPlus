@@ -1,6 +1,8 @@
 export type InventoryTransactionType =
   | "stock_in"
   | "stock_out"
+  | "adjust_in"
+  | "adjust_out"
   | "adjustment";
 
 export type InventoryRow = {

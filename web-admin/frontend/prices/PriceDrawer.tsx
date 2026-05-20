@@ -4,6 +4,11 @@ import React from "react";
 import { CalendarDays, Package, Tag, Trash2, X } from "lucide-react";
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 
+export type BatchOption = {
+  batchId: string;
+  productName: string | null;
+};
+
 export type PriceFormValues = {
   batchId: string;
   price: string;
@@ -20,6 +25,7 @@ type PriceDrawerProps = {
   error: string | null;
   selectedPrice: PriceRow | null;
   form: PriceFormValues;
+  batchOptions: BatchOption[];
   onClose: () => void;
   onSubmit: () => void;
   onChange: (patch: Partial<PriceFormValues>) => void;
@@ -54,6 +60,7 @@ const PriceDrawer = ({
   error,
   selectedPrice,
   form,
+  batchOptions,
   onClose,
   onSubmit,
   onChange,
@@ -61,6 +68,8 @@ const PriceDrawer = ({
   if (!isOpen) {
     return null;
   }
+
+  const batchListId = "price-batch-options";
 
   return (
     <div className="fixed inset-0 z-50">
@@ -124,11 +133,24 @@ const PriceDrawer = ({
                     <input
                       value={form.batchId}
                       onChange={(event) => onChange({ batchId: event.target.value })}
+                      list={batchListId}
                       type="text"
-                      placeholder="Nhập batch_id hoặc để trống"
-                      className="w-full rounded-md border border-gray-300 px-10 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                      placeholder="Nhập batch_id hoặc chọn từ danh sách"
+                      className="w-full rounded-md border border-gray-300 bg-white px-10 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                     />
                   </div>
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    Bạn có thể gõ batch_id hoặc chọn nhanh từ danh sách gợi ý theo batch và tên sản phẩm.
+                  </p>
+                  <datalist id={batchListId}>
+                    <option value="">Áp dụng chung cho toàn bộ bảng giá</option>
+                    {batchOptions.map((batch) => (
+                      <option key={batch.batchId} value={batch.batchId} label={`${batch.batchId}${batch.productName ? ` - ${batch.productName}` : ""}`}>
+                        {batch.batchId}
+                        {batch.productName ? ` - ${batch.productName}` : ""}
+                      </option>
+                    ))}
+                  </datalist>
                 </div>
 
                 <div>
@@ -169,8 +191,12 @@ const PriceDrawer = ({
                     Trạng thái
                   </label>
                   <select
-                    value={form.status}
-                    onChange={(event) => onChange({ status: event.target.value })}
+                    value={form.status ?? ""}
+                    onChange={(event) =>
+                      onChange({
+                        status: event.target.value as PriceRow["status"] | "",
+                      })
+                    }
                     className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                   >
                     <option value="">Chọn trạng thái</option>
@@ -189,6 +215,7 @@ const PriceDrawer = ({
                     <p><span className="font-semibold">Sản phẩm:</span> {selectedPrice.product_name ?? "Chưa gán sản phẩm"}</p>
                     <p><span className="font-semibold">Supplier:</span> {selectedPrice.supplier_name ?? "-"}</p>
                     <p><span className="font-semibold">Trạng thái:</span> {selectedPrice.status ?? "-"}</p>
+                  </div>
                 ) : null}
               </form>
             )}

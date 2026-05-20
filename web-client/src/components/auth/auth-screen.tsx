@@ -22,7 +22,7 @@ function getAuthCopy(mode: AuthMode) {
         submitLabel: "Sign In",
         toggleLabel: "Create an account",
         toggleHref: "/register",
-        routeLabel: "/login",
+        routeLabel: "Client Login",
         panelHeadline: "Fast access for returning teams",
         panelText:
           "Use your existing credentials to jump back into dashboards, orders, and account tools.",
@@ -34,7 +34,7 @@ function getAuthCopy(mode: AuthMode) {
         submitLabel: "Sign Up",
         toggleLabel: "Back to login",
         toggleHref: "/login",
-        routeLabel: "/register",
+        routeLabel: "Client Register",
         panelHeadline: "Onboard the right way",
         panelText:
           "Capture a name, email, password, and role so the first session starts with the right context.",
@@ -59,6 +59,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [unlockDialogOpen, setUnlockDialogOpen] = useState(false);
+  const [bannedDialogOpen, setBannedDialogOpen] = useState(false);
 
   useEffect(() => {
     if (initialized && isAuthenticated && isLogin) {
@@ -137,6 +138,22 @@ export function AuthScreen({ mode }: AuthScreenProps) {
             typeof signInData === "object" && signInData !== null && "error" in signInData
               ? String((signInData as { error: string }).error)
               : "Login request failed";
+
+          if (typeof signInData === "object" && signInData !== null && "status" in signInData) {
+            const status = (signInData as { status?: string }).status;
+            if (status === "banned") {
+              setBannedDialogOpen(true);
+              return;
+            } else if (status === "inactive" || status === "suspended") {
+              setUnlockDialogOpen(true);
+              return;
+            }
+          }
+
+          if (message.includes("banned")) {
+            setBannedDialogOpen(true);
+            return;
+          }
 
           if (message.includes("account is not active")) {
             setUnlockDialogOpen(true);
@@ -246,6 +263,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 {copy.panelText}
               </p>
             </div>
+          </section>
           <section className="p-6 sm:p-10 lg:p-12">
             <div className="mx-auto max-w-xl">
               <div className="flex items-center justify-between gap-4">
@@ -394,6 +412,16 @@ export function AuthScreen({ mode }: AuthScreenProps) {
             loading={loading}
             onCancel={() => setUnlockDialogOpen(false)}
             onConfirm={() => void handleConfirmUnlock()}
+          />
+          <ConfirmActionDialog
+            open={bannedDialogOpen}
+            title="Tài khoản bị cấm"
+            message="Tài khoản của bạn đã bị cấm và không thể đăng nhập. Vui lòng liên hệ với bộ phận hỗ trợ để biết thêm thông tin."
+            confirmLabel="Đóng"
+            confirmVariant="danger"
+            loading={false}
+            onCancel={() => setBannedDialogOpen(false)}
+            onConfirm={() => setBannedDialogOpen(false)}
           />
         </div>
       </div>
