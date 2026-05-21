@@ -22,6 +22,10 @@ const SettingsNav = () => {
     }`;
   };
 
+  const isExactOrNestedPath = (basePath: string) => {
+    return pathname === basePath || pathname.startsWith(`${basePath}/`);
+  };
+
   const handleLogout = async () => {
     if (isLoggingOut) {
       return;
@@ -52,16 +56,20 @@ const SettingsNav = () => {
       
       <button
         type="button"
-        onClick={() => goTo('/settings/stores')}
-        className={getItemClassName(pathname.startsWith('/settings/stores'))}
+        onClick={() => goTo('/settings/store')}
+        className={getItemClassName(isExactOrNestedPath('/settings/store'))}
       >
         <Building2 className="w-4 h-4" />
-        Cửa hàng
+        Cửa hàng của tôi
       </button>
       
-      <button className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-xl font-medium text-sm transition-colors text-left">
-        <Bell className="w-4 h-4" />
-        Cài đặt thông báo
+      <button
+        type="button"
+        onClick={() => goTo('/settings/stores')}
+        className={getItemClassName(isExactOrNestedPath('/settings/stores'))}
+      >
+        <Building2 className="w-4 h-4" />
+        Các cửa hàng
       </button>
       
       <div className="my-2 border-t border-gray-200"></div>
