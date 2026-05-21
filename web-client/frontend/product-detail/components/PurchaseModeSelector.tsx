@@ -44,7 +44,7 @@ export default function PurchaseModeSelector({ currentMode, onModeChange }: Purc
   const modes: { id: PurchaseMode; label: string; icon: string }[] = [
     { id: "cart", label: "Mua thường", icon: "🛒" },
     { id: "subscription", label: "Mua định kì", icon: "⏱" },
-    { id: "group", label: "Mua chung", icon: "👥" },
+    //{ id: "group", label: "Mua chung", icon: "👥" },
   ];
 
   return (

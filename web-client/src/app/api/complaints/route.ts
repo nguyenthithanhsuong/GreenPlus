@@ -44,3 +44,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
+
+export async function GET(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const userId = (url.searchParams.get("userId") ?? url.searchParams.get("user_id") ?? "").trim();
+
+    if (!userId) {
+      return NextResponse.json({ error: "userId is required" }, { status: 400 });
+    }
+
+    const items = await complaintFacade.listComplaintsByUser(userId);
+    return NextResponse.json({ items }, { status: 200 });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
+
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+  }
+}

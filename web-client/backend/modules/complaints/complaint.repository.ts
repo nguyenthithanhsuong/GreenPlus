@@ -52,4 +52,18 @@ export class ComplaintRepository {
 
     return data as ComplaintInsertRow;
   }
+
+  async listComplaintsByUser(userId: string): Promise<ComplaintInsertRow[]> {
+    const { data, error } = await supabaseServer
+      .from("complaints")
+      .select("complaint_id,user_id,order_id,type,description,status,created_at,resolved_at,reject_reason")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data as ComplaintInsertRow[]) ?? [];
+  }
 }

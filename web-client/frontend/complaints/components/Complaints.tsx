@@ -224,6 +224,10 @@ export default function Complaints() {
   const [orderId, setOrderId] = useState("");
   const [type, setType] = useState<ComplaintType>("quality");
   const [description, setDescription] = useState("");
+  const [loadingComplaints, setLoadingComplaints] = useState(true);
+  const [complaints, setComplaints] = useState<ComplaintResponse[]>([]);
+  const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (!initialized) {
@@ -285,6 +289,35 @@ export default function Complaints() {
     };
   }, [initialized, isAuthenticated, router, searchParams, user?.user_id]);
 
+  useEffect(() => {
+    if (!initialized) return;
+    if (!isAuthenticated || !user?.user_id) return;
+
+    const controller = new AbortController();
+
+    const loadComplaints = async () => {
+      setLoadingComplaints(true);
+      try {
+        const resp = await fetch(`/api/complaints?userId=${encodeURIComponent(user.user_id)}`, { signal: controller.signal });
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(String((data && data.error) || "Failed to load complaints"));
+        }
+
+        setComplaints((data.items ?? []) as ComplaintResponse[]);
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        console.error("loadComplaints error", err);
+      } finally {
+        setLoadingComplaints(false);
+      }
+    };
+
+    void loadComplaints();
+
+    return () => controller.abort();
+  }, [initialized, isAuthenticated, user?.user_id]);
+
   const selectedOrder = useMemo(() => orders.find((item) => item.order_id === orderId) ?? null, [orderId, orders]);
 
   const handleSubmit = async () => {
@@ -329,6 +362,16 @@ export default function Complaints() {
       const payload = data as ComplaintResponse;
       setSuccess(`Đã tạo khiếu nại #${payload.complaintId.slice(0, 8).toUpperCase()} (${payload.status}).`);
       setDescription("");
+      // reload complaints
+      try {
+        const resp = await fetch(`/api/complaints?userId=${encodeURIComponent(user.user_id)}`);
+        if (resp.ok) {
+          const d = await resp.json();
+          setComplaints((d.items ?? []) as ComplaintResponse[]);
+        }
+      } catch (e) {
+        // ignore reload errors
+      }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Không thể gửi khiếu nại.");
     } finally {
@@ -356,66 +399,132 @@ export default function Complaints() {
 
         <main style={styles.mainContent}>
           <section style={styles.card}>
-            <h2 style={styles.sectionTitle}>Tạo khiếu nại</h2>
-            <p style={styles.helperText}>Chúng tôi sẽ phản hồi theo trạng thái: pending, resolved hoặc rejected.</p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 style={styles.sectionTitle}>Tạo khiếu nại</h2>
+              <button
+                type="button"
+                aria-expanded={createOpen}
+                onClick={() => setCreateOpen((v) => !v)}
+                style={{
+                  ...styles.submitBtn,
+                  height: 32,
+                  borderRadius: 8,
+                  padding: "0 10px",
+                  fontSize: 13,
+                }}
+              >
+                {createOpen ? "Đóng" : "Mở tạo"}
+              </button>
+            </div>
 
-            {loadingOrders ? <p style={styles.helperText}>Đang tải đơn hàng đã giao...</p> : null}
-            {!loadingOrders && orders.length === 0 ? (
-              <p style={styles.helperText}>Bạn chưa có đơn hàng hoàn thành để gửi khiếu nại.</p>
-            ) : null}
+            {createOpen ? (
+              <>
+                <p style={styles.helperText}>Chúng tôi sẽ phản hồi theo trạng thái: pending, resolved hoặc rejected.</p>
 
-            <label>
-              <p style={styles.label}>Đơn hàng</p>
-              <select style={styles.select} value={orderId} onChange={(event) => setOrderId(event.target.value)} disabled={loadingOrders || orders.length === 0 || submitting}>
-                {orders.map((item) => (
-                  <option key={item.order_id} value={item.order_id}>
-                    #{item.order_id.slice(0, 8).toUpperCase()} - {formatPrice(item.total_amount)}
-                  </option>
-                ))}
-              </select>
-            </label>
+                {loadingOrders ? <p style={styles.helperText}>Đang tải đơn hàng đã giao...</p> : null}
+                {!loadingOrders && orders.length === 0 ? (
+                  <p style={styles.helperText}>Bạn chưa có đơn hàng hoàn thành để gửi khiếu nại.</p>
+                ) : null}
 
-            {selectedOrder ? <p style={styles.orderMeta}>Đơn đã đặt: {new Date(selectedOrder.order_date).toLocaleString("vi-VN")}</p> : null}
+                <label>
+                  <p style={styles.label}>Đơn hàng</p>
+                  <select style={styles.select} value={orderId} onChange={(event) => setOrderId(event.target.value)} disabled={loadingOrders || orders.length === 0 || submitting}>
+                    {orders.map((item) => (
+                      <option key={item.order_id} value={item.order_id}>
+                        #{item.order_id.slice(0, 8).toUpperCase()} - {formatPrice(item.total_amount)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label>
-              <p style={styles.label}>Loại khiếu nại</p>
-              <select style={styles.select} value={type} onChange={(event) => setType(event.target.value as ComplaintType)} disabled={submitting}>
-                {COMPLAINT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                {selectedOrder ? <p style={styles.orderMeta}>Đơn đã đặt: {new Date(selectedOrder.order_date).toLocaleString("vi-VN")}</p> : null}
 
-            <label>
-              <p style={styles.label}>Mô tả chi tiết</p>
-              <textarea
-                style={styles.textarea}
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Mô tả vấn đề bạn gặp phải để bộ phận CSKH hỗ trợ nhanh hơn..."
-                disabled={submitting}
-              />
-            </label>
+                <label>
+                  <p style={styles.label}>Loại khiếu nại</p>
+                  <select style={styles.select} value={type} onChange={(event) => setType(event.target.value as ComplaintType)} disabled={submitting}>
+                    {COMPLAINT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            {error ? <p style={styles.errorText}>{error}</p> : null}
-            {success ? <p style={styles.successText}>{success}</p> : null}
+                <label>
+                  <p style={styles.label}>Mô tả chi tiết</p>
+                  <textarea
+                    style={styles.textarea}
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    placeholder="Mô tả vấn đề bạn gặp phải để bộ phận CSKH hỗ trợ nhanh hơn..."
+                    disabled={submitting}
+                  />
+                </label>
 
-            <button type="button" style={styles.submitBtn} onClick={() => void handleSubmit()} disabled={submitting || loadingOrders || orders.length === 0}>
-              {submitting ? "Đang gửi..." : "Gửi khiếu nại"}
-            </button>
+                {error ? <p style={styles.errorText}>{error}</p> : null}
+                {success ? <p style={styles.successText}>{success}</p> : null}
+
+                <button type="button" style={styles.submitBtn} onClick={() => void handleSubmit()} disabled={submitting || loadingOrders || orders.length === 0}>
+                  {submitting ? "Đang gửi..." : "Gửi khiếu nại"}
+                </button>
+              </>
+            ) : (
+              <p style={styles.helperText}>Mở phần tạo khiếu nại để bắt đầu.</p>
+            )}
           </section>
 
-          {/* <section style={styles.card}>
-            <h2 style={styles.sectionTitle}>Thông tin dữ liệu khiếu nại</h2>
-            <ul style={styles.infoList}>
-              <li>Khóa chính: complaint_id (uuid), liên kết với users.user_id và orders.order_id.</li>
-              <li>Trạng thái hợp lệ: pending, resolved, rejected.</li>
-              <li>Mốc thời gian: created_at, resolved_at.</li>
-              <li>Lý do từ chối được lưu ở reject_reason khi trạng thái rejected.</li>
-            </ul>
-          </section> */}
+            <section style={styles.card}>
+              <h2 style={styles.sectionTitle}>Các khiếu nại của bạn</h2>
+              {loadingComplaints ? (
+                <p style={styles.helperText}>Đang tải các khiếu nại...</p>
+              ) : complaints.length === 0 ? (
+                <p style={styles.helperText}>Bạn chưa gửi khiếu nại nào.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {complaints.map((c) => (
+                    <div key={c.complaintId} style={{ border: "1px solid #E5E7EB", borderRadius: 10, padding: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <strong>#{c.complaintId.slice(0, 8).toUpperCase()}</strong>
+                          <div style={{ fontSize: 12, color: "#6B7280" }}>
+                            Đơn: {c.orderId ? `#${c.orderId.slice(0, 8).toUpperCase()}` : "-"} • {new Date(c.createdAt).toLocaleString("vi-VN")}
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: c.status === "pending" ? "#D97706" : c.status === "resolved" ? "#047857" : "#B91C1C" }}>
+                            {c.status}
+                          </div>
+                          <button
+                            onClick={() => setSelectedComplaintId(selectedComplaintId === c.complaintId ? null : c.complaintId)}
+                            style={{
+                              ...styles.submitBtn,
+                              height: 32,
+                              borderRadius: 8,
+                              padding: "0 12px",
+                              fontSize: 13,
+                            }}
+                          >
+                            {selectedComplaintId === c.complaintId ? "Thu gọn" : "Xem"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {selectedComplaintId === c.complaintId ? (
+                        <div style={{ marginTop: 8 }}>
+                          <p style={{ margin: 0, fontWeight: 600 }}>Loại: {c.type}</p>
+                          <p style={{ marginTop: 8 }}>{c.description}</p>
+                          {c.status === "rejected" && c.rejectReason ? (
+                            <p style={{ marginTop: 8, color: "#B91C1C" }}>Lý do từ chối: {c.rejectReason}</p>
+                          ) : null}
+                          {c.resolvedAt ? <p style={{ marginTop: 8, color: "#047857" }}>Đã xử lý: {new Date(c.resolvedAt).toLocaleString("vi-VN")}</p> : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
         </main>
 
         <NavigationBar />

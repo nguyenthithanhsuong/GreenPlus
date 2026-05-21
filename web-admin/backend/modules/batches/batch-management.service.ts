@@ -1,5 +1,6 @@
 import { AppError } from "../../core/errors";
 import { BatchManagementRepository } from "./batch-management.repository";
+import { SupplierManagementRepository } from "../suppliers/supplier-management.repository";
 import { BatchRow, CreateBatchInput, UpdateBatchInput } from "./batch-management.types";
 import { DefaultBatchStatusStrategy } from "./strategies/batch-status.strategy";
 
@@ -22,18 +23,21 @@ export class BatchManagementService {
     return this.repository.listBatches();
   }
 
-  private async ensureProductAndSupplier(input: { productId: string; supplierId: string }): Promise<void> {
-    const [hasProduct, hasSupplier] = await Promise.all([
-      this.repository.findProductById(input.productId),
-      this.repository.findSupplierById(input.supplierId),
-    ]);
+  private async ensureProductAndSupplier(input: { productId: string; supplierId: string }, force = false): Promise<void> {
+    const [hasProduct] = await Promise.all([this.repository.findProductById(input.productId)]);
 
     if (!hasProduct) {
       throw new AppError("Product not found", 404);
     }
 
-    if (!hasSupplier) {
+    const supplierRepo = new SupplierManagementRepository();
+    const supplier = await supplierRepo.findById(input.supplierId);
+    if (!supplier) {
       throw new AppError("Supplier not found", 404);
+    }
+
+    if (!force && supplier.status === "rejected") {
+      throw new AppError("Selected supplier has been rejected", 400);
     }
   }
 
@@ -110,7 +114,7 @@ export class BatchManagementService {
 
     this.ensureQuantity(input.quantity);
     this.ensureDates(harvestDate, expireDate);
-    await this.ensureProductAndSupplier({ productId, supplierId });
+    await this.ensureProductAndSupplier({ productId, supplierId }, Boolean(input.force));
 
     return this.repository.createBatch({
       productId,
@@ -159,7 +163,7 @@ export class BatchManagementService {
     this.ensureDates(nextHarvestDate, nextExpireDate);
 
     if (typeof input.productId !== "undefined" || typeof input.supplierId !== "undefined") {
-      await this.ensureProductAndSupplier({ productId: nextProductId, supplierId: nextSupplierId });
+      await this.ensureProductAndSupplier({ productId: nextProductId, supplierId: nextSupplierId }, Boolean(input.force));
     }
 
     let nextStatus = existing.status;

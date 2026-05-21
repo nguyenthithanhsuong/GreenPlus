@@ -23,6 +23,7 @@ export type CreateBatchInput = {
   quantity: number;
   qrCode?: string | null;
   status?: BatchStatus;
+  force?: boolean;
 };
 
 export type UpdateBatchInput = {

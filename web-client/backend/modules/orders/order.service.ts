@@ -7,6 +7,7 @@ import {
   CreateOrderInput,
   ConfirmPaymentInput,
   OrderDetail,
+  PaymentHistoryItem,
   OrderItemDetail,
   PaymentMethod,
   OrderStatus,
@@ -116,6 +117,31 @@ export class OrderService {
     return rows.map((row) => ({
       ...this.mapOrderSummary(statusStrategy, row),
       preview_images: imageMap.get(row.order_id) ?? [],
+    }));
+  }
+
+  async listMyPaymentHistory(userId: string): Promise<PaymentHistoryItem[]> {
+    if (!userId.trim()) {
+      throw new AppError("userId is required", 400);
+    }
+
+    let rows: Awaited<ReturnType<OrderRepository["listPaymentHistoryByUser"]>> = [];
+    try {
+      rows = await this.repository.listPaymentHistoryByUser(userId.trim());
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to load payment history", 500);
+    }
+
+    return rows.map((row) => ({
+      payment_id: String(row.payment_id),
+      order_id: String(row.order_id),
+      order_date: String(row.order_date),
+      order_status: row.order_status,
+      payment_method: row.method,
+      payment_status: this.normalizePaymentStatus(row.status),
+      amount: Number(row.amount),
+      transaction_id: row.transaction_id,
+      payment_date: row.payment_date,
     }));
   }
 

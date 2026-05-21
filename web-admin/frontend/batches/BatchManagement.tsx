@@ -159,7 +159,7 @@ const BatchManagement = () => {
   }, [batches]);
 
   const productOptions = useMemo<OptionRow[]>(() => products.map((product) => ({ id: product.product_id, label: product.name })), [products]);
-  const supplierOptions = useMemo<OptionRow[]>(() => suppliers.map((supplier) => ({ id: supplier.supplier_id, label: supplier.name })), [suppliers]);
+  const supplierOptions = useMemo<OptionRow[]>(() => suppliers.map((supplier) => ({ id: supplier.supplier_id, label: supplier.name + (supplier.status === "rejected" ? " (Rejected)" : "") })), [suppliers]);
 
   const openCreateDrawer = useCallback(() => {
     setSelectedBatch(null);
@@ -308,7 +308,22 @@ const BatchManagement = () => {
     setError(null);
 
     try {
-      const force = Boolean(selectedBatch && selectedBatch.status === "available" && canForceManageApproved);
+      // If supplier is rejected, only allow if admin and explicitly forcing
+      const chosenSupplier = suppliers.find((s) => s.supplier_id === form.supplierId);
+      let force = false;
+      if (chosenSupplier && chosenSupplier.status === "rejected") {
+        if (canForceManageApproved) {
+          force = true;
+        } else {
+          throw new Error("Nhà cung cấp đã bị từ chối và không thể được gán bởi tài khoản của bạn");
+        }
+      }
+
+      // Also keep existing force behavior for editing approved batches
+      if (!force && selectedBatch && selectedBatch.status === "available" && canForceManageApproved) {
+        force = true;
+      }
+
       const response = await fetch(selectedBatch ? `/api/batches/${encodeURIComponent(selectedBatch.batch_id)}` : "/api/batches", {
         method: selectedBatch ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },

@@ -32,6 +32,7 @@ const menuItems: MenuItem[] = [
   { title: "Quét QR Batch", href: "/profile/scan-batch" },
   { title: "Profile của tôi", href: "/profile/my-profile" },
   { title: "Đổi mật khẩu", href: "/profile/change-password" },
+  { title: "Lịch sử giao dịch", href: "/profile/transaction-history" },
   // { title: "Phương thức thanh toán", href: "/profile/payment-method" },
   // { title: "Cài đặt thông báo", href: "/profile/notification-setting" },
   { title: "Phản hồi & Khiếu nại", href: "/profile/complaints" },

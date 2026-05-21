@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       quantity: typeof body.quantity === "number" ? body.quantity : Number.NaN,
       qrCode: body.qrCode,
       status: body.status,
+      force: body.force === true,
     });
 
     return NextResponse.json(created, { status: 201 });

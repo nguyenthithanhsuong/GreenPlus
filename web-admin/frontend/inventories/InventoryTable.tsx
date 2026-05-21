@@ -84,6 +84,10 @@ const InventoryTable = ({
                 Batch ID
               </th>
 
+              <th className="px-6 py-4 font-medium">
+                Sản phẩm
+              </th>
+
               <th className="px-6 py-4 font-medium text-center">
                 Tồn thực tế
                 <br />
@@ -115,7 +119,7 @@ const InventoryTable = ({
               <tr>
                 <td
                   className="px-6 py-10 text-center text-gray-500"
-                  colSpan={6}
+                  colSpan={7}
                 >
                   Đang tải dữ liệu tồn kho...
                 </td>
@@ -124,7 +128,7 @@ const InventoryTable = ({
               <tr>
                 <td
                   className="px-6 py-10 text-center text-gray-500"
-                  colSpan={6}
+                  colSpan={7}
                 >
                   {searchQuery.trim()
                     ? "Không tìm thấy dữ liệu tồn kho phù hợp."
@@ -147,6 +151,14 @@ const InventoryTable = ({
 
                   <td className="px-6 py-4 text-gray-600 font-medium">
                     {item.batch_id ?? "-"}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-gray-900">
+                        {item.product_name ?? "-"}
+                      </span>
+                    </div>
                   </td>
 
                   <td className="px-6 py-4 text-center">
