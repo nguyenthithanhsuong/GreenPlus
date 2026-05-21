@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { PaymentStrategyFactory } from "@/lib/strategy";
 import { useAuthStore } from "@/lib/stores/authStore";
 import {
   SCREEN_CONTENT_PADDING_X,
@@ -13,13 +15,13 @@ import {
 
 type OrderStatus = "pending" | "confirmed" | "preparing" | "delivering" | "completed" | "cancelled";
 type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "unknown";
-type PaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer" | "unknown";
+type OrderPaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer" | "unknown";
 
 type OrderDetailResponse = {
   order_id: string;
   order_status: OrderStatus;
   payment_status: PaymentStatus;
-  payment_method: PaymentMethod;
+  payment_method: OrderPaymentMethod;
   total_amount: number;
 };
 
@@ -167,27 +169,21 @@ function formatPrice(value: number): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
 }
 
-function getMethodLabel(method: PaymentMethod): string {
-  if (method === "cod") {
-    return "Thanh toán khi nhận hàng (COD)";
+function getMethodLabel(method: OrderPaymentMethod): string {
+  try {
+    return PaymentStrategyFactory.getStrategy(method).getMethod().displayName;
+  } catch {
+    if (method === "bank_transfer") {
+      return "Chuyển khoản";
+    }
   }
-  if (method === "momo") {
-    return "Ví MoMo";
-  }
-  if (method === "vnpay") {
-    return "VNPay";
-  }
-  if (method === "bank_transfer") {
-    return "Chuyển khoản";
-  }
+
   return "Không xác định";
 }
 
-export default function OrderPaymentPage() {
+function OrderPaymentPageBase() {
   const router = useRouter();
   const params = useParams<{ orderId: string }>();
-  const initialized = useAuthStore((state) => state.initialized);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
   const [loading, setLoading] = useState(true);
@@ -197,12 +193,7 @@ export default function OrderPaymentPage() {
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
 
   useEffect(() => {
-    if (!initialized) {
-      return;
-    }
-
-    if (!isAuthenticated || !user?.user_id) {
-      router.replace("/login");
+    if (!user?.user_id) {
       return;
     }
 
@@ -248,7 +239,7 @@ export default function OrderPaymentPage() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, params?.orderId, router, user?.user_id]);
+  }, [params?.orderId, router, user?.user_id]);
 
   const canPay = useMemo(() => {
     if (!detail) {
@@ -361,3 +352,7 @@ export default function OrderPaymentPage() {
     </div>
   );
 }
+export default compose(
+  withErrorBoundary,
+  (Component) => withAuth(Component, "customer")
+)(OrderPaymentPageBase);

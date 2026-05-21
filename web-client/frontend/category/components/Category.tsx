@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import NavigationBar from "../../dashboard/components/NavigationBar";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -208,7 +209,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-const Category = () => {
+function BaseCategory() {
   const [searchValue, setSearchValue] = useState("");
   const [sortValue, setSortValue] = useState<CategorySort>("name_asc");
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -365,4 +366,6 @@ const Category = () => {
   );
 };
 
-export default Category;
+export default compose(
+  withErrorBoundary
+)(BaseCategory);

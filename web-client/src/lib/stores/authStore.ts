@@ -7,6 +7,7 @@ export type AuthUserProfile = {
   user_id: string;
   name: string;
   email: string;
+  role?: string | null;
   phone: string | null;
   address: string | null;
   image_url: string | null;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "@/lib/stores/authStore";
 import NavigationBar from "../../dashboard/components/NavigationBar";
+import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -270,7 +271,7 @@ function toMediaTypeFromType(type: PostType): "JPG" | "MP4" {
   return type === "video" ? "MP4" : "JPG";
 }
 
-export default function GreenUpload() {
+function BaseGreenUpload() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -553,3 +554,8 @@ export default function GreenUpload() {
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary,
+  (Component) => withAuth(Component, "user")
+)(BaseGreenUpload);

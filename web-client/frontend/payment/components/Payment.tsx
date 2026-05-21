@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/authStore";
+import CartService, {
+  CartResponse,
+  CartItemView,
+} from "@/lib/services/CartService";
+import CartAdapter from "@/lib/adapter/CartAdapter";
+import OrderService from "@/lib/services/OrderService";
+import OrderAdapter from "@/lib/adapter/OrderAdapter";
+import { PaymentStrategyFactory, type PaymentMethod } from "@/lib/strategy";
 import {
   SCREEN_CONTENT_PADDING_X,
   SCREEN_HEADER_PADDING_X,
@@ -11,34 +20,9 @@ import {
   SCREEN_SIDE_PADDING_PX,
 } from "../../shared/screen.styles";
 
-type CartItemView = {
-  cart_item_id: string;
-  product_id: string;
-  product_name: string;
-  product_image_url: string | null;
-  quantity: number;
-  note: string | null;
-  product_price: number | null;
-  subtotal: number;
-};
-
-type CartResponse = {
-  user_id: string;
-  cart_id: string;
-  items: CartItemView[];
-  cart_total: number;
-};
-
-type CreateOrderResponse = {
-  order_id: string;
-  status: "pending";
-  total_amount: number;
-};
-
-type PaymentMethod = "cod" | "momo" | "vnpay";
-
 const DELIVERY_FEE = 15000;
 const PROMOTION = 10000;
+type CheckoutPaymentMethod = "cod" | "momo" | "vnpay";
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -477,7 +461,8 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: "24px",
     fontWeight: 700,
     cursor: "pointer",
-    boxShadow: "0px 10px 15px -3px rgba(16, 185, 129, 0.3), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)",
+    boxShadow:
+      "0px 10px 15px -3px rgba(16, 185, 129, 0.3), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)",
   },
   infoText: {
     margin: 0,
@@ -501,10 +486,8 @@ function formatPrice(value: number): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
 }
 
-export default function Payment() {
+function PaymentBase() {
   const router = useRouter();
-  const initialized = useAuthStore((state) => state.initialized);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
   const [loading, setLoading] = useState(true);
@@ -513,39 +496,35 @@ export default function Payment() {
   const [message, setMessage] = useState<string | null>(null);
   const [cart, setCart] = useState<CartResponse | null>(null);
   const [note, setNote] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>("cod");
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
+  const availablePaymentMethods = useMemo<PaymentMethod[]>(
+    () =>
+      PaymentStrategyFactory.getAvailableMethods().filter((method) =>
+        ["cod", "momo", "vnpay"].includes(method.id),
+      ),
+    [],
+  );
+  const selectedPaymentStrategy = useMemo(
+    () => PaymentStrategyFactory.getStrategy(paymentMethod),
+    [paymentMethod],
+  );
+
   useEffect(() => {
-    if (!initialized) {
+    if (!user) {
       return;
     }
-
-    if (!isAuthenticated || !user) {
-      router.replace("/login");
-      return;
-    }
-
-    const controller = new AbortController();
 
     const loadCart = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, {
-          signal: controller.signal,
-        });
-        const data = (await response.json()) as CartResponse | { error?: string };
+        const cartData = await CartService.getCart(user.user_id);
 
-        if (!response.ok) {
-          const responseError = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
-          throw new Error(responseError || "Không thể tải dữ liệu thanh toán.");
-        }
-
-        const cartData = data as CartResponse;
         if ((cartData.items ?? []).length === 0) {
           router.replace("/cart");
           return;
@@ -553,36 +532,48 @@ export default function Payment() {
 
         setCart(cartData);
         setNoteDrafts(
-          (cartData.items ?? []).reduce<Record<string, string>>((drafts, item) => {
-            drafts[item.cart_item_id] = item.note ?? "";
-            return drafts;
-          }, {}),
+          (cartData.items ?? []).reduce<Record<string, string>>(
+            (drafts, item) => {
+              drafts[item.cart_item_id] = item.note ?? "";
+              return drafts;
+            },
+            {},
+          ),
         );
       } catch (requestError) {
-        if ((requestError as Error).name === "AbortError") {
-          return;
-        }
-
         setCart(null);
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu thanh toán.");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải dữ liệu thanh toán.",
+        );
       } finally {
         setLoading(false);
       }
     };
 
     void loadCart();
+  }, [router, user]);
 
-    return () => {
-      controller.abort();
-    };
-  }, [initialized, isAuthenticated, router, user]);
-
-  const itemTotal = useMemo(() => Number(cart?.cart_total ?? 0), [cart]);
+  const cartUIModel = useMemo(() => (cart ? CartAdapter.toUIModel(cart) : null), [cart]);
+  const itemTotal = useMemo(() => Number(cartUIModel?.total ?? 0), [cartUIModel]);
   const cartItems = useMemo(() => cart?.items ?? [], [cart]);
-  const cartQuantity = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
-  const shippingFee = useMemo(() => (itemTotal > 0 ? DELIVERY_FEE : 0), [itemTotal]);
-  const promoValue = useMemo(() => (itemTotal > 0 ? PROMOTION : 0), [itemTotal]);
-  const grandTotal = useMemo(() => Math.max(itemTotal + shippingFee - promoValue, 0), [itemTotal, shippingFee, promoValue]);
+  const cartQuantity = useMemo(
+    () => cartUIModel?.itemCount ?? 0,
+    [cartUIModel],
+  );
+  const shippingFee = useMemo(
+    () => (itemTotal > 0 ? DELIVERY_FEE : 0),
+    [itemTotal],
+  );
+  const promoValue = useMemo(
+    () => (itemTotal > 0 ? PROMOTION : 0),
+    [itemTotal],
+  );
+  const grandTotal = useMemo(
+    () => Math.max(itemTotal + shippingFee - promoValue, 0),
+    [itemTotal, shippingFee, promoValue],
+  );
 
   useEffect(() => {
     setNoteDrafts(
@@ -603,19 +594,10 @@ export default function Payment() {
     );
   };
 
-  const mutateCart = async (request: RequestInfo, init: RequestInit, fallbackMessage: string) => {
-    const response = await fetch(request, init);
-    const data = (await response.json()) as CartResponse | { error?: string };
-
-    if (!response.ok) {
-      const responseError = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
-      throw new Error(responseError || fallbackMessage);
-    }
-
-    refreshCart(data as CartResponse);
-  };
-
-  const handleChangeQuantity = async (item: CartItemView, nextQuantity: number) => {
+  const handleChangeQuantity = async (
+    item: CartItemView,
+    nextQuantity: number,
+  ) => {
     if (!user?.user_id) {
       return;
     }
@@ -628,21 +610,18 @@ export default function Payment() {
     setActiveItemId(item.cart_item_id);
 
     try {
-      await mutateCart(
-        "/api/cart",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.user_id,
-            productId: item.product_id,
-            quantity: nextQuantity,
-          }),
-        },
-        "Không thể cập nhật số lượng sản phẩm.",
-      );
+      const nextCart = await CartService.updateQuantity({
+        userId: user.user_id,
+        productId: item.product_id,
+        quantity: nextQuantity,
+      });
+      refreshCart(nextCart);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật số lượng sản phẩm.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể cập nhật số lượng sản phẩm.",
+      );
     } finally {
       setActiveItemId(null);
     }
@@ -656,20 +635,17 @@ export default function Payment() {
     setActiveItemId(item.cart_item_id);
 
     try {
-      await mutateCart(
-        "/api/cart",
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.user_id,
-            productId: item.product_id,
-          }),
-        },
-        "Không thể xóa sản phẩm khỏi giỏ hàng.",
-      );
+      const nextCart = await CartService.removeFromCart({
+        userId: user.user_id,
+        productId: item.product_id,
+      });
+      refreshCart(nextCart);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể xóa sản phẩm khỏi giỏ hàng.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể xóa sản phẩm khỏi giỏ hàng.",
+      );
     } finally {
       setActiveItemId(null);
     }
@@ -683,21 +659,18 @@ export default function Payment() {
     setSavingNoteItemId(item.cart_item_id);
 
     try {
-      await mutateCart(
-        "/api/cart/note",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.user_id,
-            cartItemId: item.cart_item_id,
-            note: (noteDrafts[item.cart_item_id] ?? "").trim(),
-          }),
-        },
-        "Không thể lưu ghi chú cho sản phẩm.",
-      );
+      const nextCart = await CartService.updateNote({
+        userId: user.user_id,
+        cartItemId: item.cart_item_id,
+        note: (noteDrafts[item.cart_item_id] ?? "").trim(),
+      });
+      refreshCart(nextCart);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể lưu ghi chú cho sản phẩm.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể lưu ghi chú cho sản phẩm.",
+      );
     } finally {
       setSavingNoteItemId(null);
     }
@@ -719,30 +692,57 @@ export default function Payment() {
     setPlacingOrder(true);
 
     try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user.user_id,
-          deliveryAddress,
-          deliveryFee: shippingFee,
-          note: note.trim(),
-          paymentMethod,
-        }),
+      const canProcessPayment = await selectedPaymentStrategy.validate({
+        amount: grandTotal,
+        currency: "VND",
+        orderId: "checkout",
+        customerEmail: user.email,
+        customerPhone: user.phone ?? undefined,
       });
 
-      const data = (await response.json()) as CreateOrderResponse | { error?: string };
-      if (!response.ok) {
-        const responseError = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
-        throw new Error(responseError || "Không thể tạo đơn hàng.");
+      if (!canProcessPayment) {
+        setMessage("Phương thức thanh toán đã chọn chưa đủ điều kiện xử lý.");
+        return;
       }
 
-      setMessage("Đặt hàng thành công.");
+      const createResult = await OrderService.createOrder({
+        userId: user.user_id,
+        deliveryAddress,
+        deliveryFee: shippingFee,
+        note: note.trim(),
+        paymentMethod,
+      });
+
+      // Apply OrderAdapter to get a typed UI model for the created order
+      const orderUIModel = OrderAdapter.toUIModel(createResult);
+      const paymentResult = await selectedPaymentStrategy.process({
+        amount: orderUIModel.total,
+        currency: "VND",
+        orderId: orderUIModel.id,
+        customerEmail: user.email,
+        customerPhone: user.phone ?? undefined,
+      });
+
+      if (!paymentResult.success) {
+        throw new Error(paymentResult.message);
+      }
+
+      setMessage(
+        `${paymentResult.message} (Đơn #${orderUIModel.id.slice(0, 8).toUpperCase()}).`,
+      );
+
+      if (paymentResult.redirectUrl) {
+        window.location.href = paymentResult.redirectUrl;
+        return;
+      }
+
       router.push("/orders");
     } catch (requestError) {
-      setMessage(requestError instanceof Error ? requestError.message : "Không thể tạo đơn hàng.");
+      setMessage(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tạo đơn hàng.",
+      );
     } finally {
       setPlacingOrder(false);
     }
@@ -752,26 +752,53 @@ export default function Payment() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.header}>
-          <Link href="/cart" style={styles.backLink} aria-label="Quay lại giỏ hàng">
+          <Link
+            href="/cart"
+            style={styles.backLink}
+            aria-label="Quay lại giỏ hàng"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1F2937" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1F2937"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.headerTitle}>Thanh Toán</h1>
         </header>
 
         <main style={styles.scrollBody}>
-          {!initialized && <p style={styles.infoText}>Đang kiểm tra phiên đăng nhập...</p>}
-          {initialized && isAuthenticated && loading && <p style={styles.infoText}>Đang tải thông tin thanh toán...</p>}
-          {initialized && isAuthenticated && error && <p style={styles.errorText}>{error}</p>}
+          {loading && (
+            <p style={styles.infoText}>Đang tải thông tin thanh toán...</p>
+          )}
+          {error && (
+            <p style={styles.errorText}>{error}</p>
+          )}
 
-          {initialized && isAuthenticated && !loading && cart && (
+          {!loading && cart && (
             <>
               <section style={styles.sectionCard}>
                 <div style={styles.sectionHeader}>
-                  <svg viewBox="0 0 24 24" fill="none" style={styles.sectionIcon}>
-                    <path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z" stroke="currentColor" strokeWidth="1.8" />
-                    <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.8" />
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    style={styles.sectionIcon}
+                  >
+                    <path
+                      d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    />
+                    <circle
+                      cx="12"
+                      cy="10"
+                      r="2.5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    />
                   </svg>
                   <h2 style={styles.sectionTitle}>Địa chỉ nhận hàng</h2>
                 </div>
@@ -779,10 +806,16 @@ export default function Payment() {
                 <div style={styles.addressRow}>
                   <div>
                     <p style={styles.nameRow}>
-                      <span style={styles.nameText}>{user?.name ?? "Người dùng"}</span>
-                      <span style={styles.phoneText}>{user?.phone ?? "Chưa cập nhật"}</span>
+                      <span style={styles.nameText}>
+                        {user?.name ?? "Người dùng"}
+                      </span>
+                      <span style={styles.phoneText}>
+                        {user?.phone ?? "Chưa cập nhật"}
+                      </span>
                     </p>
-                    <p style={styles.addressText}>{user?.address ?? "Chưa cập nhật địa chỉ"}</p>
+                    <p style={styles.addressText}>
+                      {user?.address ?? "Chưa cập nhật địa chỉ"}
+                    </p>
                   </div>
                   <p style={styles.editHint}>Sửa ở Hồ sơ</p>
                 </div>
@@ -790,17 +823,31 @@ export default function Payment() {
 
               <section style={styles.sectionCard}>
                 <div style={styles.sectionHeader}>
-                  <svg viewBox="0 0 24 24" fill="none" style={styles.sectionIcon}>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    style={styles.sectionIcon}
+                  >
                     <path d="M3 7h18" stroke="currentColor" strokeWidth="1.8" />
-                    <path d="M5 7l1.2-3h11.6L19 7" stroke="currentColor" strokeWidth="1.8" />
-                    <path d="M5 7v13h14V7" stroke="currentColor" strokeWidth="1.8" />
+                    <path
+                      d="M5 7l1.2-3h11.6L19 7"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    />
+                    <path
+                      d="M5 7v13h14V7"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    />
                     <path d="M9 11h6" stroke="currentColor" strokeWidth="1.8" />
                   </svg>
                   <h2 style={styles.sectionTitle}>Chi tiết đơn hàng</h2>
                 </div>
 
                 <div style={styles.itemList}>
-                  <p style={styles.itemMeta}>Có {cartQuantity} sản phẩm trong giỏ</p>
+                  <p style={styles.itemMeta}>
+                    Có {cartQuantity} sản phẩm trong giỏ
+                  </p>
                   {cart.items.map((item, index) => (
                     <div
                       key={item.cart_item_id}
@@ -814,26 +861,52 @@ export default function Payment() {
                           : {}),
                       }}
                     >
-                      <Link href={`/product-detail/${item.product_id}`} style={{ textDecoration: "none" }} aria-label={`Xem chi tiết ${item.product_name}`}>
+                      <Link
+                        href={`/product-detail/${item.product_id}`}
+                        style={{ textDecoration: "none" }}
+                        aria-label={`Xem chi tiết ${item.product_name}`}
+                      >
                         {item.product_image_url ? (
-                          <img src={item.product_image_url} alt={item.product_name} style={{ ...styles.itemThumb, cursor: "pointer" }} />
+                          <img
+                            src={item.product_image_url}
+                            alt={item.product_name}
+                            style={{ ...styles.itemThumb, cursor: "pointer" }}
+                          />
                         ) : (
-                          <div style={{ ...styles.itemThumbFallback, cursor: "pointer" }}>No img</div>
+                          <div
+                            style={{
+                              ...styles.itemThumbFallback,
+                              cursor: "pointer",
+                            }}
+                          >
+                            No img
+                          </div>
                         )}
                       </Link>
                       <div style={styles.itemBody}>
-                        <Link href={`/product-detail/${item.product_id}`} style={{ ...styles.itemName, textDecoration: "none", display: "inline-block" }}>
+                        <Link
+                          href={`/product-detail/${item.product_id}`}
+                          style={{
+                            ...styles.itemName,
+                            textDecoration: "none",
+                            display: "inline-block",
+                          }}
+                        >
                           {item.product_name}
                         </Link>
                         <p style={styles.itemMeta}>Sản phẩm hữu cơ GreenPlus</p>
                         <div style={styles.itemPriceRow}>
-                          <p style={styles.itemPrice}>{formatPrice(Number(item.subtotal))}</p>
+                          <p style={styles.itemPrice}>
+                            {formatPrice(Number(item.subtotal))}
+                          </p>
                           <p style={styles.itemQty}>x{item.quantity}</p>
                         </div>
                         <div style={styles.noteSection}>
                           <div style={styles.noteSectionHeader}>
                             <p style={styles.noteLabel}>Ghi chú cho món hàng</p>
-                            <span style={styles.itemMeta}>Bấm lưu để cập nhật</span>
+                            <span style={styles.itemMeta}>
+                              Bấm lưu để cập nhật
+                            </span>
                           </div>
                           <input
                             type="text"
@@ -860,17 +933,29 @@ export default function Payment() {
                               <button
                                 type="button"
                                 style={styles.quantityButton}
-                                onClick={() => void handleChangeQuantity(item, item.quantity - 1)}
+                                onClick={() =>
+                                  void handleChangeQuantity(
+                                    item,
+                                    item.quantity - 1,
+                                  )
+                                }
                                 disabled={activeItemId === item.cart_item_id}
                                 aria-label={`Giảm số lượng ${item.product_name}`}
                               >
                                 -
                               </button>
-                              <span style={styles.quantityValue}>{item.quantity}</span>
+                              <span style={styles.quantityValue}>
+                                {item.quantity}
+                              </span>
                               <button
                                 type="button"
                                 style={styles.quantityButton}
-                                onClick={() => void handleChangeQuantity(item, item.quantity + 1)}
+                                onClick={() =>
+                                  void handleChangeQuantity(
+                                    item,
+                                    item.quantity + 1,
+                                  )
+                                }
                                 disabled={activeItemId === item.cart_item_id}
                                 aria-label={`Tăng số lượng ${item.product_name}`}
                               >
@@ -892,7 +977,9 @@ export default function Payment() {
                             onClick={() => void handleSaveNote(item)}
                             disabled={savingNoteItemId === item.cart_item_id}
                           >
-                            {savingNoteItemId === item.cart_item_id ? "Đang lưu..." : "Cập nhật ghi chú"}
+                            {savingNoteItemId === item.cart_item_id
+                              ? "Đang lưu..."
+                              : "Cập nhật ghi chú"}
                           </button>
                         </div>
                       </div>
@@ -917,30 +1004,46 @@ export default function Payment() {
                 </div>
 
                 <div style={styles.paymentOptions}>
-                  {[
-                    { value: "cod" as const, label: "Thanh toán khi nhận hàng (COD)", color: "#059669", icon: "C" },
-                    { value: "momo" as const, label: "Ví MoMo", color: "#EC4899", icon: "M" },
-                    { value: "vnpay" as const, label: "VNPay", color: "#2563EB", icon: "V" },
-                  ].map((option) => {
-                    const isActive = paymentMethod === option.value;
+                  {availablePaymentMethods.map((method) => {
+                    const isActive = paymentMethod === method.id;
+                    const colorMap: Record<string, string> = {
+                      cod: "#059669",
+                      momo: "#EC4899",
+                      vnpay: "#2563EB",
+                    };
 
                     return (
                       <button
-                        key={option.value}
+                        key={method.id}
                         type="button"
                         style={{
                           ...styles.paymentOption,
                           ...(isActive ? styles.paymentOptionActive : {}),
                         }}
-                        onClick={() => setPaymentMethod(option.value)}
+                        onClick={() => setPaymentMethod(method.id as CheckoutPaymentMethod)}
                       >
                         <span style={styles.paymentLeft}>
                           <span style={styles.paymentIconWrap}>
-                            <span style={{ fontWeight: 700, color: option.color, fontSize: "13px" }}>{option.icon}</span>
+                            <span
+                              style={{
+                                fontWeight: 700,
+                                color: colorMap[method.id] || "#6B7280",
+                                fontSize: "13px",
+                              }}
+                            >
+                              {method.icon || method.id[0].toUpperCase()}
+                            </span>
                           </span>
-                          <span style={styles.paymentName}>{option.label}</span>
+                          <span style={styles.paymentName}>
+                            {method.displayName}
+                          </span>
                         </span>
-                        <span style={{ ...styles.radioOuter, ...(isActive ? styles.radioOuterActive : {}) }}>
+                        <span
+                          style={{
+                            ...styles.radioOuter,
+                            ...(isActive ? styles.radioOuterActive : {}),
+                          }}
+                        >
                           {isActive ? <span style={styles.radioInner} /> : null}
                         </span>
                       </button>
@@ -956,15 +1059,21 @@ export default function Payment() {
                 <div style={styles.summaryRows}>
                   <p style={styles.summaryRow}>
                     <span style={styles.summaryLabel}>Tổng tiền hàng</span>
-                    <span style={styles.summaryValue}>{formatPrice(itemTotal)}</span>
+                    <span style={styles.summaryValue}>
+                      {formatPrice(itemTotal)}
+                    </span>
                   </p>
                   <p style={styles.summaryRow}>
                     <span style={styles.summaryLabel}>Phí vận chuyển</span>
-                    <span style={styles.summaryValue}>{formatPrice(shippingFee)}</span>
+                    <span style={styles.summaryValue}>
+                      {formatPrice(shippingFee)}
+                    </span>
                   </p>
                   <p style={styles.summaryRow}>
                     <span style={styles.summaryPromo}>Khuyến mãi</span>
-                    <span style={styles.summaryPromo}>-{formatPrice(promoValue)}</span>
+                    <span style={styles.summaryPromo}>
+                      -{formatPrice(promoValue)}
+                    </span>
                   </p>
                 </div>
               </section>
@@ -979,7 +1088,12 @@ export default function Payment() {
             <span style={styles.payLabel}>Tổng thanh toán</span>
             <span style={styles.payValue}>{formatPrice(grandTotal)}</span>
           </p>
-          <button type="button" style={styles.orderButton} onClick={() => void handlePlaceOrder()} disabled={placingOrder || loading || !cart}>
+          <button
+            type="button"
+            style={styles.orderButton}
+            onClick={() => void handlePlaceOrder()}
+            disabled={placingOrder || loading || !cart}
+          >
             {placingOrder ? "Đang xử lý..." : "Đặt Hàng Ngay"}
           </button>
           {message ? <p style={styles.infoText}>{message}</p> : null}
@@ -988,3 +1102,8 @@ export default function Payment() {
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary,
+  (Component) => withAuth(Component, "customer")
+)(PaymentBase);

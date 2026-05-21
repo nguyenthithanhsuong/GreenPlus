@@ -1,10 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import { APP_USE_CASES, CLIENT_VISIBLE_TABLES, ROLE_POLICIES } from "@greenplus/supabase-shared/accessPolicy";
+import AccessPolicyAdapter from "@/lib/adapter/AccessPolicyAdapter";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 
-export default function ClientFrontendPage() {
-  const useCases = APP_USE_CASES["web-client"];
-  const customerPolicy = ROLE_POLICIES.find((policy) => policy.role === "customer");
+function BaseClientFrontendPage() {
+  const policyModel = AccessPolicyAdapter.toClientFrontendPolicyModel({
+    useCases: APP_USE_CASES["web-client"],
+    customerPolicy: ROLE_POLICIES.find((policy) => policy.role === "customer"),
+    visibleTables: CLIENT_VISIBLE_TABLES,
+  });
 
+  const useCases = policyModel.useCases;
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -42,7 +50,9 @@ export default function ClientFrontendPage() {
               <article key={item.key} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <h3 className="font-semibold text-slate-900">{item.title}</h3>
                 <p className="mt-1 text-sm text-slate-600">{item.description}</p>
-                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Tables</p>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Tables ({item.tableCount})
+                </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {item.tables.map((table) => (
                     <span key={table} className="rounded bg-slate-200 px-2 py-1 text-xs text-slate-800">
@@ -57,10 +67,10 @@ export default function ClientFrontendPage() {
 
         <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <h2 className="text-lg font-semibold">Customer Access Summary</h2>
-          {customerPolicy && (
+          {policyModel.customerPolicy && (
             <div className="mt-3 rounded-lg border border-blue-300 bg-blue-50 p-3 text-sm text-slate-700">
               <p className="font-semibold">Role: customer</p>
-              <p>{customerPolicy.description}</p>
+              <p>{policyModel.customerPolicy.description}</p>
               <p className="mt-1 text-xs">
                 Mutations should be limited to ownership rows by RLS (own profile/cart/orders/reviews/subscriptions).
               </p>
@@ -74,7 +84,7 @@ export default function ClientFrontendPage() {
             These are the tables intended to be queryable in client journeys, with ownership constraints for private data.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {CLIENT_VISIBLE_TABLES.map((table) => (
+            {policyModel.visibleTables.map((table) => (
               <span key={table} className="rounded bg-slate-200 px-2 py-1 text-xs text-slate-800">
                 {table}
               </span>
@@ -85,3 +95,5 @@ export default function ClientFrontendPage() {
     </main>
   );
 }
+
+export default compose(withErrorBoundary)(BaseClientFrontendPage);

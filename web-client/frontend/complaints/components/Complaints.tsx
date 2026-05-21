@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { compose, withAuth, withErrorBoundary } from "@/lib";
+import { FilterBuilder } from "@/lib/builder";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -209,11 +211,9 @@ function toStatus(value: string): OrderStatus {
   return "pending";
 }
 
-export default function Complaints() {
+function BaseComplaints() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialized = useAuthStore((state) => state.initialized);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -226,12 +226,7 @@ export default function Complaints() {
   const [description, setDescription] = useState("");
 
   useEffect(() => {
-    if (!initialized) {
-      return;
-    }
-
-    if (!isAuthenticated || !user?.user_id) {
-      router.replace("/login");
+    if (!user?.user_id) {
       return;
     }
 
@@ -252,9 +247,14 @@ export default function Complaints() {
           throw new Error(msg || "Không thể tải danh sách đơn hàng.");
         }
 
-        const completedOrders = ((data as OrdersResponse).items ?? [])
-          .map((item) => ({ ...item, status: toStatus(item.status) }))
-          .filter((item) => item.status === "completed");
+        const filterConfig = new FilterBuilder()
+          .addCondition("status", "equals", "completed")
+          .build();
+
+        const allOrders = ((data as OrdersResponse).items ?? []).map((item) => ({ ...item, status: toStatus(item.status) }));
+        const completedOrders = allOrders.filter((item) =>
+          filterConfig.conditions.every((cond) => String(item[cond.field as keyof typeof item]) === String(cond.value))
+        );
 
         setOrders(completedOrders);
 
@@ -283,7 +283,7 @@ export default function Complaints() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, searchParams, user?.user_id]);
+  }, [searchParams, user?.user_id]);
 
   const selectedOrder = useMemo(() => orders.find((item) => item.order_id === orderId) ?? null, [orderId, orders]);
 
@@ -423,3 +423,8 @@ export default function Complaints() {
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary,
+  (Component) => withAuth(Component, "user")
+)(BaseComplaints);

@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { communityPostFacade } from "../../../../../backend/modules/community-posts/facades/community-post.facade";
+import type { CommunityPostType } from "../../../../../backend/modules/community-posts/community-post.types";
+
+const COMMUNITY_POST_TYPES: CommunityPostType[] = ["blog", "video", "community"];
+
+function parseCommunityPostType(value: string): CommunityPostType | undefined {
+  return COMMUNITY_POST_TYPES.includes(value as CommunityPostType)
+    ? (value as CommunityPostType)
+    : undefined;
+}
 
 type CreateCommunityPostBody = {
   userId?: string;
@@ -21,18 +30,22 @@ export async function POST(request: Request) {
     const body = (await request.json()) as CreateCommunityPostBody;
     const userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
     const content = body.content ?? "";
-    const type = body.type?.trim() ?? "";
+    const rawType = body.type?.trim() ?? "";
+    const type = parseCommunityPostType(rawType);
     const mediaType = body.mediaType?.trim() ?? body.media_type?.trim() ?? "";
 
-    if (!userId || !content || (!type && !mediaType)) {
+    if (!userId || !content || (!rawType && !mediaType)) {
       return NextResponse.json({ error: "userId, content and either type or mediaType are required" }, { status: 400 });
+    }
+    if (rawType && !type) {
+      return NextResponse.json({ error: "type must be one of: blog, video, community" }, { status: 400 });
     }
 
     const result = await communityPostFacade.createPost({
       userId,
       title: body.title,
       content,
-      type: type || undefined,
+      type,
       mediaType: mediaType || undefined,
       mediaUrl: body.mediaUrl ?? body.media_url,
       mediaUrls: body.mediaUrls ?? body.media_urls,
@@ -103,11 +116,15 @@ export async function PUT(request: Request) {
     const userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
     const postId = body.postId?.trim() ?? body.post_id?.trim() ?? "";
     const content = body.content ?? "";
-    const type = body.type?.trim() ?? "";
+    const rawType = body.type?.trim() ?? "";
+    const type = parseCommunityPostType(rawType);
     const mediaType = body.mediaType?.trim() ?? body.media_type?.trim() ?? "";
 
-    if (!userId || !postId || !content || (!type && !mediaType)) {
+    if (!userId || !postId || !content || (!rawType && !mediaType)) {
       return NextResponse.json({ error: "userId, postId, content and either type or mediaType are required" }, { status: 400 });
+    }
+    if (rawType && !type) {
+      return NextResponse.json({ error: "type must be one of: blog, video, community" }, { status: 400 });
     }
 
     const result = await communityPostFacade.updatePost({
@@ -115,7 +132,7 @@ export async function PUT(request: Request) {
       postId,
       title: body.title,
       content,
-      type: type || undefined,
+      type,
       mediaType: mediaType || undefined,
       mediaUrl: body.mediaUrl ?? body.media_url,
       mediaUrls: body.mediaUrls ?? body.media_urls,

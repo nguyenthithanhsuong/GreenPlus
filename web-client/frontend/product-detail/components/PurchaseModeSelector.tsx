@@ -1,8 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
+import { FormBuilder } from "@/lib/builder";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 
 type PurchaseMode = "cart" | "subscription" | "group";
+type PurchaseModeOptionValue = { id: PurchaseMode; label: string; icon: string };
 
 type PurchaseModeSelectorProps = {
   currentMode: PurchaseMode;
@@ -40,12 +43,33 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function PurchaseModeSelector({ currentMode, onModeChange }: PurchaseModeSelectorProps) {
-  const modes: { id: PurchaseMode; label: string; icon: string }[] = [
-    { id: "cart", label: "Mua thường", icon: "🛒" },
-    { id: "subscription", label: "Mua định kì", icon: "⏱" },
-    { id: "group", label: "Mua chung", icon: "👥" },
-  ];
+function BasePurchaseModeSelector({ currentMode, onModeChange }: PurchaseModeSelectorProps) {
+  const modes = useMemo(() => {
+    const config = new FormBuilder()
+      .addField({
+        name: "purchaseMode",
+        type: "select",
+        label: "Purchase Mode",
+        options: [
+          {
+            label: "Mua thường",
+            value: { id: "cart", label: "Mua thường", icon: "🛒" },
+          },
+          {
+            label: "Mua định kì",
+            value: { id: "subscription", label: "Mua định kì", icon: "⏱" },
+          },
+          {
+            label: "Mua chung",
+            value: { id: "group", label: "Mua chung", icon: "👥" },
+          },
+        ],
+      })
+      .onSubmit(() => {})
+      .build();
+
+    return (config.fields[0]?.options ?? []).map((option) => option.value as PurchaseModeOptionValue);
+  }, []);
 
   return (
     <div style={styles.container}>
@@ -66,3 +90,5 @@ export default function PurchaseModeSelector({ currentMode, onModeChange }: Purc
     </div>
   );
 }
+
+export default compose(withErrorBoundary)(BasePurchaseModeSelector);

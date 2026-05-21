@@ -1,6 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import type React from "react";
+import { ModalBuilder } from "@/lib/builder";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 
 type ConfirmationDialogProps = {
   open: boolean;
@@ -8,7 +11,7 @@ type ConfirmationDialogProps = {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  confirmTone?: "danger" | "primary";
+  confirmTone?: "danger" | "primary" | "warning";
   busy?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -80,9 +83,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#FFFFFF",
     boxShadow: "0px 6px 14px -4px rgba(220, 38, 38, 0.45)",
   },
+  confirmWarning: {
+    border: "1px solid #D97706",
+    background: "#D97706",
+    color: "#FFFFFF",
+    boxShadow: "0px 6px 14px -4px rgba(217, 119, 6, 0.45)",
+  },
 };
 
-export default function ConfirmationDialog({
+function BaseConfirmationActionDialog({
   open,
   title,
   message,
@@ -93,33 +102,70 @@ export default function ConfirmationDialog({
   onConfirm,
   onCancel,
 }: ConfirmationDialogProps) {
+  const modalConfig = useMemo(
+    () =>
+      new ModalBuilder()
+        .setTitle(title)
+        .setContent(message)
+        .setSize("small")
+        .setCloseOnBackdropClick(true)
+        .setShowCloseButton(false)
+        .addButton(cancelLabel, "secondary", onCancel)
+        .addButton(
+          confirmLabel,
+          confirmTone === "danger" ? "danger" : "primary",
+          onConfirm,
+        )
+        .build(),
+    [title, message, cancelLabel, confirmLabel, confirmTone, onConfirm, onCancel],
+  );
+
+  const cancelButton = modalConfig.buttons[0];
+  const confirmButton = modalConfig.buttons[1];
+
   if (!open) {
     return null;
   }
 
   return (
-    <div style={styles.backdrop} role="dialog" aria-modal="true" aria-label={title}>
+    <div
+      style={styles.backdrop}
+      role="dialog"
+      aria-modal="true"
+      aria-label={modalConfig.title}
+    >
       <div style={styles.panel}>
-        <h3 style={styles.title}>{title}</h3>
-        <p style={styles.message}>{message}</p>
+        <h3 style={styles.title}>{modalConfig.title}</h3>
+        <p style={styles.message}>{String(modalConfig.children)}</p>
 
         <div style={styles.actions}>
-          <button type="button" style={styles.buttonBase} onClick={onCancel} disabled={busy}>
-            {cancelLabel}
+          <button
+            type="button"
+            style={styles.buttonBase}
+            onClick={cancelButton?.onClick ?? onCancel}
+            disabled={busy}
+          >
+            {cancelButton?.label ?? cancelLabel}
           </button>
           <button
             type="button"
             style={{
               ...styles.buttonBase,
-              ...(confirmTone === "danger" ? styles.confirmDanger : styles.confirmPrimary),
+              ...(confirmTone === "danger"
+                ? styles.confirmDanger
+                : confirmTone === "warning"
+                  ? styles.confirmWarning
+                  : styles.confirmPrimary),
             }}
-            onClick={onConfirm}
+            onClick={confirmButton?.onClick ?? onConfirm}
             disabled={busy}
           >
-            {busy ? "Đang xử lý..." : confirmLabel}
+            {busy ? "Đang xử lý..." : (confirmButton?.label ?? confirmLabel)}
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+export default compose(withErrorBoundary)(BaseConfirmationActionDialog);

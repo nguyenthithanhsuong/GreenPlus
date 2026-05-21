@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
-import ConfirmationDialog from "../../shared/components/ConfirmationDialog";
+import { DialogFactory } from "@/lib/factory/DialogFactory";
+import ConfirmationDialog from "../../shared/ConfirmationActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { compose, withAuth, withErrorBoundary } from "@/lib";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -14,7 +16,13 @@ import {
   SCREEN_SIDE_PADDING_PX,
 } from "../../shared/screen.styles";
 
-type OrderStatus = "pending" | "confirmed" | "preparing" | "delivering" | "completed" | "cancelled";
+type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "delivering"
+  | "completed"
+  | "cancelled";
 type MainTab = "cart" | "orders";
 
 type CartItemView = {
@@ -71,7 +79,14 @@ type TabValue = "all" | OrderStatus;
 
 const DELIVERY_FEE = 15000;
 
-const ORDER_STATUS_SEQUENCE: OrderStatus[] = ["delivering", "preparing", "confirmed", "pending", "completed", "cancelled"];
+const ORDER_STATUS_SEQUENCE: OrderStatus[] = [
+  "delivering",
+  "preparing",
+  "confirmed",
+  "pending",
+  "completed",
+  "cancelled",
+];
 
 const STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
   pending: {
@@ -127,6 +142,8 @@ const STATUS_TABS: Array<{ value: TabValue; label: string }> = [
   { value: "completed", label: STATUS_CONFIG.completed.label },
   { value: "cancelled", label: STATUS_CONFIG.cancelled.label },
 ];
+
+DialogFactory.registerDialog("confirmation", ConfirmationDialog);
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -488,7 +505,8 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #4EA96A",
     color: "#FFFFFF",
     fontWeight: 700,
-    boxShadow: "0px 4px 6px -1px rgba(78, 169, 106, 0.2), 0px 2px 4px -2px rgba(78, 169, 106, 0.2)",
+    boxShadow:
+      "0px 4px 6px -1px rgba(78, 169, 106, 0.2), 0px 2px 4px -2px rgba(78, 169, 106, 0.2)",
   },
   actionButtonMuted: {
     background: "#F3F4F6",
@@ -526,9 +544,12 @@ function toStatus(value: string): OrderStatus {
 }
 
 function buildPreviewTokens(orderId: string, count: number): string[] {
-  const seed = orderId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
+  const seed = orderId
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 6)
+    .toUpperCase();
   const tokens = [];
-  
+
   for (let i = 0; i < Math.min(count, 3); i++) {
     if (i === 2 && count > 3) {
       tokens.push(`+${count - 2}`);
@@ -538,7 +559,7 @@ function buildPreviewTokens(orderId: string, count: number): string[] {
       tokens.push(i === 0 ? "GP" : i === 1 ? "EC" : "+1");
     }
   }
-  
+
   return tokens;
 }
 
@@ -546,7 +567,11 @@ function buildPreviewImages(images: string[]): string[] {
   return images.filter((value) => value.trim().length > 0).slice(0, 3);
 }
 
-function getCardActions(status: OrderStatus): { left?: string; right: string; mutedRight?: boolean } {
+function getCardActions(status: OrderStatus): {
+  left?: string;
+  right: string;
+  mutedRight?: boolean;
+} {
   if (status === "pending" || status === "confirmed") {
     return { left: "Hủy đơn hàng", right: "Đang xử lý...", mutedRight: true };
   }
@@ -590,10 +615,8 @@ function getStatusGroupLabel(status: OrderStatus): string {
   return "Đơn đã hủy";
 }
 
-export default function Orders() {
+function BaseOrders() {
   const router = useRouter();
-  const initialized = useAuthStore((state) => state.initialized);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
   const [mainTab, setMainTab] = useState<MainTab>("cart");
@@ -601,7 +624,7 @@ export default function Orders() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  
+
   // Cart state
   const [cartItems, setCartItems] = useState<CartItemView[]>([]);
   const [cartTotal, setCartTotal] = useState(0);
@@ -609,19 +632,14 @@ export default function Orders() {
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
-  
+
   // Orders state
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
 
   useEffect(() => {
-    if (!initialized) {
-      return;
-    }
-
-    if (!isAuthenticated || !user) {
-      router.replace("/login");
+    if (!user?.user_id) {
       return;
     }
 
@@ -635,8 +653,12 @@ export default function Orders() {
       try {
         // Load both cart and orders in parallel
         const [cartResponse, ordersResponse] = await Promise.all([
-          fetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, { signal: controller.signal }),
-          fetch(`/api/orders?userId=${encodeURIComponent(user.user_id)}`, { signal: controller.signal }),
+          fetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, {
+            signal: controller.signal,
+          }),
+          fetch(`/api/orders?userId=${encodeURIComponent(user.user_id)}`, {
+            signal: controller.signal,
+          }),
         ]);
 
         if (!cartResponse.ok) {
@@ -647,26 +669,35 @@ export default function Orders() {
           throw new Error("Không thể tải danh sách đơn hàng.");
         }
 
-        const cartData = (await cartResponse.json()) as CartResponse | { error?: string };
-        const ordersData = (await ordersResponse.json()) as OrdersResponse | { error?: string };
+        const cartData = (await cartResponse.json()) as
+          | CartResponse
+          | { error?: string };
+        const ordersData = (await ordersResponse.json()) as
+          | OrdersResponse
+          | { error?: string };
 
         if ("items" in cartData) {
           setCartItems(cartData.items ?? []);
           setCartTotal(cartData.cart_total ?? 0);
           setCartId(cartData.cart_id ?? "");
           setNoteDrafts(
-            (cartData.items ?? []).reduce<Record<string, string>>((drafts, item) => {
-              drafts[item.cart_item_id] = item.note ?? "";
-              return drafts;
-            }, {}),
+            (cartData.items ?? []).reduce<Record<string, string>>(
+              (drafts, item) => {
+                drafts[item.cart_item_id] = item.note ?? "";
+                return drafts;
+              },
+              {},
+            ),
           );
         }
 
         if ("items" in ordersData) {
-          const nextOrders = ((ordersData as OrdersResponse).items ?? []).map((item) => ({
-            ...item,
-            status: toStatus(item.status),
-          }));
+          const nextOrders = ((ordersData as OrdersResponse).items ?? []).map(
+            (item) => ({
+              ...item,
+              status: toStatus(item.status),
+            }),
+          );
           setOrders(nextOrders);
         }
       } catch (requestError) {
@@ -676,7 +707,11 @@ export default function Orders() {
 
         setCartItems([]);
         setOrders([]);
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu.");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải dữ liệu.",
+        );
       } finally {
         setLoading(false);
       }
@@ -687,7 +722,7 @@ export default function Orders() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, user]);
+  }, [user?.user_id]);
 
   const filteredOrders = useMemo(() => {
     if (activeTab === "all") {
@@ -715,7 +750,10 @@ export default function Orders() {
   }, [filteredOrders]);
 
   const hasOrders = filteredOrders.length > 0;
-  const cartQuantity = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
+  const cartQuantity = useMemo(
+    () => cartItems.reduce((total, item) => total + item.quantity, 0),
+    [cartItems],
+  );
 
   useEffect(() => {
     setNoteDrafts(
@@ -738,12 +776,19 @@ export default function Orders() {
     );
   };
 
-  const mutateCart = async (request: RequestInfo, init: RequestInit, fallbackMessage: string) => {
+  const mutateCart = async (
+    request: RequestInfo,
+    init: RequestInit,
+    fallbackMessage: string,
+  ) => {
     const response = await fetch(request, init);
     const data = (await response.json()) as CartResponse | { error?: string };
 
     if (!response.ok) {
-      const responseError = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+      const responseError =
+        typeof data === "object" && data && "error" in data
+          ? String(data.error ?? "")
+          : "";
       throw new Error(responseError || fallbackMessage);
     }
 
@@ -771,13 +816,20 @@ export default function Orders() {
         "Không thể xóa sản phẩm khỏi giỏ hàng.",
       );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể xóa sản phẩm khỏi giỏ hàng.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể xóa sản phẩm khỏi giỏ hàng.",
+      );
     } finally {
       setActiveItemId(null);
     }
   };
 
-  const handleChangeQuantity = async (item: CartItemView, nextQuantity: number) => {
+  const handleChangeQuantity = async (
+    item: CartItemView,
+    nextQuantity: number,
+  ) => {
     if (!user?.user_id) {
       return;
     }
@@ -804,7 +856,11 @@ export default function Orders() {
         "Không thể cập nhật số lượng sản phẩm.",
       );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật số lượng sản phẩm.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể cập nhật số lượng sản phẩm.",
+      );
     } finally {
       setActiveItemId(null);
     }
@@ -832,7 +888,11 @@ export default function Orders() {
         "Không thể lưu ghi chú cho sản phẩm.",
       );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể lưu ghi chú cho sản phẩm.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể lưu ghi chú cho sản phẩm.",
+      );
     } finally {
       setSavingNoteItemId(null);
     }
@@ -868,16 +928,19 @@ export default function Orders() {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(cancelTarget.order_id)}/cancel`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(cancelTarget.order_id)}/cancel`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.user_id,
+            note: "Hủy từ danh sách đơn hàng",
+          }),
         },
-        body: JSON.stringify({
-          userId: user.user_id,
-          note: "Hủy từ danh sách đơn hàng",
-        }),
-      });
+      );
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -895,10 +958,16 @@ export default function Orders() {
             : item,
         ),
       );
-      setMessage(`Đã hủy đơn #${cancelTarget.order_id.slice(0, 8).toUpperCase()} thành công.`);
+      setMessage(
+        `Đã hủy đơn #${cancelTarget.order_id.slice(0, 8).toUpperCase()} thành công.`,
+      );
       setCancelTarget(null);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể hủy đơn hàng.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể hủy đơn hàng.",
+      );
     } finally {
       setSaving(false);
     }
@@ -935,16 +1004,25 @@ export default function Orders() {
         }),
       });
 
-      const data = (await response.json()) as CreateOrderResponse | { error?: string };
+      const data = (await response.json()) as
+        | CreateOrderResponse
+        | { error?: string };
       if (!response.ok) {
-        const errorMsg = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+        const errorMsg =
+          typeof data === "object" && data && "error" in data
+            ? String(data.error ?? "")
+            : "";
         throw new Error(errorMsg || "Không thể tạo đơn hàng.");
       }
 
       const orderData = data as CreateOrderResponse;
       void router.push(`/orders/${orderData.order_id}`);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tạo đơn hàng.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tạo đơn hàng.",
+      );
     } finally {
       setSaving(false);
     }
@@ -958,22 +1036,31 @@ export default function Orders() {
 
   const renderCartSection = () => (
     <main style={styles.mainContent}>
-      {!initialized && <p style={styles.infoText}>Đang kiểm tra phiên đăng nhập...</p>}
-      {initialized && isAuthenticated && loading && <p style={styles.infoText}>Đang tải giỏ hàng...</p>}
-      {initialized && isAuthenticated && error && <p style={styles.errorText}>{error}</p>}
-      {initialized && isAuthenticated && message && <p style={styles.infoText}>{message}</p>}
-      {initialized && isAuthenticated && !loading && !error && cartItems.length === 0 && (
-        <p style={styles.infoText}>Giỏ hàng của bạn trống.</p>
+      {loading && (
+        <p style={styles.infoText}>Đang tải giỏ hàng...</p>
       )}
+      {error && (
+        <p style={styles.errorText}>{error}</p>
+      )}
+      {message && (
+        <p style={styles.infoText}>{message}</p>
+      )}
+      {!loading &&
+        !error &&
+        cartItems.length === 0 && (
+          <p style={styles.infoText}>Giỏ hàng của bạn trống.</p>
+        )}
 
-      {initialized && isAuthenticated && !loading && cartItems.length > 0 && (
+      {!loading && cartItems.length > 0 && (
         <div style={styles.orderList}>
           <div style={styles.cartSummaryBanner}>
             <div>
               <p style={styles.cartSummaryLabel}>Số sản phẩm trong giỏ</p>
               <p style={styles.cartSummaryCount}>{cartQuantity}</p>
             </div>
-            <p style={{ margin: 0, fontSize: "13px", color: "#6B7280" }}>Chỉnh số lượng, xóa hoặc thêm ghi chú ngay tại đây.</p>
+            <p style={{ margin: 0, fontSize: "13px", color: "#6B7280" }}>
+              Chỉnh số lượng, xóa hoặc thêm ghi chú ngay tại đây.
+            </p>
           </div>
           {cartItems.map((item) => (
             <div
@@ -987,7 +1074,11 @@ export default function Orders() {
                 gap: "12px",
               }}
             >
-              <Link href={`/product-detail/${item.product_id}`} style={{ textDecoration: "none" }} aria-label={`Xem chi tiết ${item.product_name}`}>
+              <Link
+                href={`/product-detail/${item.product_id}`}
+                style={{ textDecoration: "none" }}
+                aria-label={`Xem chi tiết ${item.product_name}`}
+              >
                 {item.product_image_url ? (
                   <img
                     src={item.product_image_url}
@@ -1018,11 +1109,25 @@ export default function Orders() {
                   </div>
                 )}
               </Link>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
                 <div>
                   <Link
                     href={`/product-detail/${item.product_id}`}
-                    style={{ margin: "0 0 4px 0", fontSize: "14px", fontWeight: 600, color: "#111827", textDecoration: "none", display: "inline-block" }}
+                    style={{
+                      margin: "0 0 4px 0",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#111827",
+                      textDecoration: "none",
+                      display: "inline-block",
+                    }}
                   >
                     {item.product_name}
                   </Link>
@@ -1030,13 +1135,24 @@ export default function Orders() {
                     Số lượng: {item.quantity}
                   </p>
                 </div>
-                <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#111827" }}>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "#111827",
+                  }}
+                >
                   {formatPrice(item.subtotal)}
                 </p>
                 <div style={styles.noteSection}>
                   <div style={styles.noteSectionHeader}>
                     <p style={styles.noteLabel}>Ghi chú cho món hàng</p>
-                    <span style={{ margin: 0, fontSize: "12px", color: "#6B7280" }}>Bấm lưu để cập nhật</span>
+                    <span
+                      style={{ margin: 0, fontSize: "12px", color: "#6B7280" }}
+                    >
+                      Bấm lưu để cập nhật
+                    </span>
                   </div>
                   <input
                     type="text"
@@ -1063,7 +1179,9 @@ export default function Orders() {
                       <button
                         type="button"
                         style={styles.quantityButton}
-                        onClick={() => void handleChangeQuantity(item, item.quantity - 1)}
+                        onClick={() =>
+                          void handleChangeQuantity(item, item.quantity - 1)
+                        }
                         disabled={activeItemId === item.cart_item_id}
                         aria-label={`Giảm số lượng ${item.product_name}`}
                       >
@@ -1073,7 +1191,9 @@ export default function Orders() {
                       <button
                         type="button"
                         style={styles.quantityButton}
-                        onClick={() => void handleChangeQuantity(item, item.quantity + 1)}
+                        onClick={() =>
+                          void handleChangeQuantity(item, item.quantity + 1)
+                        }
                         disabled={activeItemId === item.cart_item_id}
                         aria-label={`Tăng số lượng ${item.product_name}`}
                       >
@@ -1095,7 +1215,9 @@ export default function Orders() {
                     onClick={() => void handleSaveNote(item)}
                     disabled={savingNoteItemId === item.cart_item_id}
                   >
-                    {savingNoteItemId === item.cart_item_id ? "Đang lưu..." : "Cập nhật ghi chú"}
+                    {savingNoteItemId === item.cart_item_id
+                      ? "Đang lưu..."
+                      : "Cập nhật ghi chú"}
                   </button>
                 </div>
               </div>
@@ -1111,13 +1233,29 @@ export default function Orders() {
               gap: "12px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "14px",
+              }}
+            >
               <span style={{ color: "#6B7280" }}>Tị̉n hàng:</span>
-              <span style={{ fontWeight: 600, color: "#111827" }}>{formatPrice(cartTotal)}</span>
+              <span style={{ fontWeight: 600, color: "#111827" }}>
+                {formatPrice(cartTotal)}
+              </span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "14px",
+              }}
+            >
               <span style={{ color: "#6B7280" }}>Phí giao hàng:</span>
-              <span style={{ fontWeight: 600, color: "#111827" }}>{formatPrice(DELIVERY_FEE)}</span>
+              <span style={{ fontWeight: 600, color: "#111827" }}>
+                {formatPrice(DELIVERY_FEE)}
+              </span>
             </div>
             <div
               style={{
@@ -1130,7 +1268,9 @@ export default function Orders() {
               }}
             >
               <span>Tổng cộng:</span>
-              <span style={{ color: "#4EA96A" }}>{formatPrice(cartTotal + DELIVERY_FEE)}</span>
+              <span style={{ color: "#4EA96A" }}>
+                {formatPrice(cartTotal + DELIVERY_FEE)}
+              </span>
             </div>
 
             <button
@@ -1174,15 +1314,20 @@ export default function Orders() {
       </section>
 
       <main style={styles.mainContent}>
-        {!initialized && <p style={styles.infoText}>Đang kiểm tra phiên đăng nhập...</p>}
-        {initialized && isAuthenticated && loading && <p style={styles.infoText}>Đang tải đơn hàng...</p>}
-        {initialized && isAuthenticated && error && <p style={styles.errorText}>{error}</p>}
-        {initialized && isAuthenticated && message && <p style={styles.infoText}>{message}</p>}
-        {initialized && isAuthenticated && !loading && !error && !hasOrders && (
+        {loading && (
+          <p style={styles.infoText}>Đang tải đơn hàng...</p>
+        )}
+        {error && (
+          <p style={styles.errorText}>{error}</p>
+        )}
+        {message && (
+          <p style={styles.infoText}>{message}</p>
+        )}
+        {!loading && !error && !hasOrders && (
           <p style={styles.infoText}>Bạn chưa có đơn hàng nào.</p>
         )}
 
-        {initialized && isAuthenticated && hasOrders && (
+        {hasOrders && (
           <>
             {ORDER_STATUS_SEQUENCE.map((status) => {
               if (activeTab !== "all" && activeTab !== status) {
@@ -1196,8 +1341,12 @@ export default function Orders() {
 
               return (
                 <section key={status} style={styles.statusSection}>
-                  <h2 style={styles.sectionTitle}>{getStatusGroupLabel(status)}</h2>
-                  <div style={styles.orderList}>{sectionOrders.map((order) => renderOrderCard(order))}</div>
+                  <h2 style={styles.sectionTitle}>
+                    {getStatusGroupLabel(status)}
+                  </h2>
+                  <div style={styles.orderList}>
+                    {sectionOrders.map((order) => renderOrderCard(order))}
+                  </div>
                 </section>
               );
             })}
@@ -1212,20 +1361,44 @@ export default function Orders() {
     const config = STATUS_CONFIG[status];
     const actions = getCardActions(status);
     const previewImages = buildPreviewImages(order.preview_images ?? []);
-    const previewTokens = buildPreviewTokens(order.order_id, previewImages.length);
+    const previewTokens = buildPreviewTokens(
+      order.order_id,
+      previewImages.length,
+    );
 
     return (
       <article
         key={order.order_id}
-        style={{ ...styles.orderCard, borderColor: config.cardBorder, opacity: status === "cancelled" ? 0.82 : 1 }}
+        style={{
+          ...styles.orderCard,
+          borderColor: config.cardBorder,
+          opacity: status === "cancelled" ? 0.82 : 1,
+        }}
         onClick={() => router.push(`/orders/${order.order_id}`)}
       >
         <div style={styles.orderTop}>
           <div style={styles.shopWrap}>
             <svg viewBox="0 0 24 24" fill="none" style={styles.shopIcon}>
-              <path d="M3 9.5V20h18V9.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M3 9.5L5.2 4h13.6L21 9.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M9 13h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path
+                d="M3 9.5V20h18V9.5"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M3 9.5L5.2 4h13.6L21 9.5"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M9 13h6"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
             </svg>
             <p style={styles.shopName}>GreenPlus Shop</p>
           </div>
@@ -1244,11 +1417,15 @@ export default function Orders() {
         <div style={styles.metaGroup}>
           <p style={styles.metaRow}>
             <span style={styles.metaLabel}>Mã đơn:</span>
-            <span style={styles.metaValue}>#{order.order_id.slice(0, 8).toUpperCase()}</span>
+            <span style={styles.metaValue}>
+              #{order.order_id.slice(0, 8).toUpperCase()}
+            </span>
           </p>
           <p style={styles.metaRow}>
             <span style={styles.metaLabel}>Đặt lúc:</span>
-            <span style={styles.metaValue}>{formatDateTime(order.order_date)}</span>
+            <span style={styles.metaValue}>
+              {formatDateTime(order.order_date)}
+            </span>
           </p>
         </div>
 
@@ -1258,13 +1435,23 @@ export default function Orders() {
 
             if (!imageUrl) {
               return (
-                <div key={`${order.order_id}-fallback-${index}`} style={styles.previewThumb}>
+                <div
+                  key={`${order.order_id}-fallback-${index}`}
+                  style={styles.previewThumb}
+                >
                   {fallbackToken}
                 </div>
               );
             }
 
-            return <img key={`${order.order_id}-img-${index}`} src={imageUrl} alt={`Sản phẩm ${index + 1}`} style={styles.previewThumb} />;
+            return (
+              <img
+                key={`${order.order_id}-img-${index}`}
+                src={imageUrl}
+                alt={`Sản phẩm ${index + 1}`}
+                style={styles.previewThumb}
+              />
+            );
           })}
           <div style={styles.previewSpacer}>
             <p style={styles.amountLabel}>Tổng tiền</p>
@@ -1308,7 +1495,9 @@ export default function Orders() {
             type="button"
             style={{
               ...styles.actionButton,
-              ...(actions.mutedRight ? styles.actionButtonMuted : styles.actionButtonPrimary),
+              ...(actions.mutedRight
+                ? styles.actionButtonMuted
+                : styles.actionButtonPrimary),
               flex: actions.left || status === "completed" ? 1 : 2,
             }}
             onClick={(event) => {
@@ -1329,12 +1518,24 @@ export default function Orders() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href="/dashboard" style={styles.backLink} aria-label="Quay lại dashboard">
+          <Link
+            href="/dashboard"
+            style={styles.backLink}
+            aria-label="Quay lại dashboard"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
-          <h1 style={styles.headerTitle}>{mainTab === "cart" ? "Giỏ hàng" : "Đơn hàng"}</h1>
+          <h1 style={styles.headerTitle}>
+            {mainTab === "cart" ? "Giỏ hàng" : "Đơn hàng"}
+          </h1>
           <div style={{ width: "24px" }} />
         </header>
 
@@ -1378,7 +1579,16 @@ export default function Orders() {
           }}
         >
           <div>
-            <p style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#1A4331" }}>Đơn đặt định kỳ</p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "15px",
+                fontWeight: 700,
+                color: "#1A4331",
+              }}
+            >
+              Đơn đặt định kỳ
+            </p>
             <p style={{ margin: 0, fontSize: "13px", color: "#166534" }}>
               Quản lý lịch giao, trạng thái và hủy các đơn mua lặp lại của bạn.
             </p>
@@ -1402,24 +1612,37 @@ export default function Orders() {
 
         {mainTab === "cart" ? renderCartSection() : renderOrdersSection()}
 
-        <ConfirmationDialog
-          open={Boolean(cancelTarget)}
-          title="Xác nhận hủy đơn hàng"
-          message={
-            cancelTarget
+        {(() => {
+          const CancelDialogResult = DialogFactory.createDialog({
+            type: "confirmation",
+            title: "Xác nhận hủy đơn hàng",
+            message: cancelTarget
               ? `Bạn có chắc muốn hủy đơn #${cancelTarget.order_id.slice(0, 8).toUpperCase()}? Hành động này sẽ cập nhật trạng thái đơn và thanh toán.`
-              : ""
-          }
-          confirmLabel="Hủy đơn"
-          cancelLabel="Giữ lại"
-          confirmTone="danger"
-          busy={saving}
-          onCancel={handleCloseCancelPrompt}
-          onConfirm={() => void handleConfirmCancelOrder()}
-        />
+              : "",
+            confirmLabel: "Hủy đơn",
+            cancelLabel: "Giữ lại",
+            confirmTone: "danger",
+            isLoading: saving,
+            onCancel: handleCloseCancelPrompt,
+            onConfirm: () => void handleConfirmCancelOrder(),
+          });
+
+          const CancelDialog = CancelDialogResult.component;
+          return (
+            <CancelDialog
+              {...CancelDialogResult.defaultProps}
+              open={Boolean(cancelTarget)}
+            />
+          );
+        })()}
 
         <NavigationBar />
       </div>
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary,
+  (Comp) => withAuth(Comp, "user")
+)(BaseOrders);

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useState } from "react";
-import ConfirmActionDialog from "../../../frontend/shared/ConfirmActionDialog";
+import ConfirmationActionDialog from "../../../frontend/shared/ConfirmationActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -401,13 +401,13 @@ export function AuthScreen({ mode }: AuthScreenProps) {
               )}
             </div>
           </section>
-          <ConfirmActionDialog
+          <ConfirmationActionDialog
             open={unlockDialogOpen}
             title="Tài khoản bị khóa"
             message="Tài khoản đang bị khóa. Mở khóa và đăng nhập lại?"
             confirmLabel="Mở khóa và đăng nhập"
-            confirmVariant="warning"
-            loading={loading}
+            confirmTone="warning"
+            busy={loading}
             onCancel={() => setUnlockDialogOpen(false)}
             onConfirm={() => void handleConfirmUnlock()}
           />

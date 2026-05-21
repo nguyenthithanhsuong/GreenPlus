@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { compose, withErrorBoundary } from "@/lib";
 
 type GroupBuy = {
   group_id: string;
@@ -261,7 +262,7 @@ function formatPrice(value: number | null): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
 }
 
-export default function GroupPurchaseModal({ isOpen, productId, productName, regularPrice, onClose, onSubmit, onCreateGroup }: GroupPurchaseModalProps) {
+function BaseGroupPurchaseModal({ isOpen, productId, productName, regularPrice, onClose, onSubmit, onCreateGroup }: GroupPurchaseModalProps) {
   const [groups, setGroups] = useState<GroupBuy[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -465,3 +466,5 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
     </div>
   );
 }
+
+export default compose(withErrorBoundary)(BaseGroupPurchaseModal);

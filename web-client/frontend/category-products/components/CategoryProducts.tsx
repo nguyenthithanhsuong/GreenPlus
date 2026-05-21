@@ -4,6 +4,7 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -262,7 +263,7 @@ function formatPrice(value: number | null): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
 }
 
-export default function CategoryProducts({ categoryId, categoryName, backHref, initialKeyword, initialSort }: CategoryProductsProps) {
+function BaseCategoryProducts({ categoryId, categoryName, backHref, initialKeyword, initialSort }: CategoryProductsProps) {
   const { isAuthenticated, user: authUser } = useAuthStore();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -526,3 +527,7 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary
+)(BaseCategoryProducts);

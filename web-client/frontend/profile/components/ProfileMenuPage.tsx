@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -126,17 +127,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function ProfileMenuPage() {
+function BaseProfileMenuPage() {
   const router = useRouter();
-  const initialized = useAuthStore((state) => state.initialized);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [profile, setProfile] = useState<ProfileResult | null>(null);
 
   useEffect(() => {
-    if (!initialized || !isAuthenticated || !user?.user_id) {
+    if (!user?.user_id) {
       return;
     }
 
@@ -175,7 +174,7 @@ export default function ProfileMenuPage() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, updateUser, user?.user_id]);
+  }, [updateUser, user?.user_id]);
 
   const displayName = profile?.name ?? user?.name ?? "Người dùng";
   const displayAvatar = profile?.image_url ?? user?.image_url ?? "";
@@ -234,3 +233,8 @@ export default function ProfileMenuPage() {
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary,
+  (Component) => withAuth(Component, "user")
+)(BaseProfileMenuPage);

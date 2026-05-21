@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { supabase } from "@/lib/supabaseClient";
+import { compose, withAuth, withErrorBoundary } from "@/lib";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -78,7 +79,8 @@ const styles: Record<string, React.CSSProperties> = {
   profileHero: {
     width: "100%",
     borderRadius: "24px",
-    background: "linear-gradient(160deg, #0f172a 0%, #115e59 60%, #10b981 100%)",
+    background:
+      "linear-gradient(160deg, #0f172a 0%, #115e59 60%, #10b981 100%)",
     color: "#FFFFFF",
     padding: "20px",
     display: "flex",
@@ -232,13 +234,14 @@ function getInitials(name: string): string {
     return "U";
   }
 
-  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("");
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
-export default function Profile() {
+function BaseProfile() {
   const router = useRouter();
-  const initialized = useAuthStore((state) => state.initialized);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const userId = user?.user_id;
@@ -250,12 +253,7 @@ export default function Profile() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!initialized) {
-      return;
-    }
-
-    if (!isAuthenticated || !userId) {
-      router.replace("/login");
+    if (!userId) {
       return;
     }
 
@@ -273,13 +271,21 @@ export default function Profile() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/account/profile?userId=${encodeURIComponent(userId)}`, {
-          signal: controller.signal,
-        });
-        const data = (await response.json()) as ProfileResult | { error?: string };
+        const response = await fetch(
+          `/api/account/profile?userId=${encodeURIComponent(userId)}`,
+          {
+            signal: controller.signal,
+          },
+        );
+        const data = (await response.json()) as
+          | ProfileResult
+          | { error?: string };
 
         if (!response.ok) {
-          const message = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+          const message =
+            typeof data === "object" && data && "error" in data
+              ? String(data.error ?? "")
+              : "";
           throw new Error(message || "Không thể tải hồ sơ.");
         }
 
@@ -292,7 +298,11 @@ export default function Profile() {
         }
 
         setProfile(null);
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải hồ sơ.");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải hồ sơ.",
+        );
         hasLoadedProfileRef.current = true;
       } finally {
         setLoading(false);
@@ -304,7 +314,7 @@ export default function Profile() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, userId]);
+  }, [userId]);
 
   const displayName = profile?.name ?? user?.name ?? "Người dùng";
   const displayEmail = profile?.email ?? user?.email ?? "";
@@ -315,13 +325,23 @@ export default function Profile() {
 
   const profileFields = useMemo(
     () => [
-      { label: "Mã người dùng", value: profile?.user_id ?? user?.user_id ?? "-" },
+      {
+        label: "Mã người dùng",
+        value: profile?.user_id ?? user?.user_id ?? "-",
+      },
       { label: "Email", value: displayEmail || "-" },
       { label: "Số điện thoại", value: displayPhone },
       { label: "Địa chỉ", value: displayAddress },
       { label: "Trạng thái", value: displayStatus },
     ],
-    [displayAddress, displayEmail, displayPhone, displayStatus, profile?.user_id, user?.user_id],
+    [
+      displayAddress,
+      displayEmail,
+      displayPhone,
+      displayStatus,
+      profile?.user_id,
+      user?.user_id,
+    ],
   );
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -337,7 +357,9 @@ export default function Profile() {
       await supabase.auth.signOut();
     } finally {
       clearAuth();
-      await fetch("/api/auth/sync", { method: "DELETE" }).catch(() => undefined);
+      await fetch("/api/auth/sync", { method: "DELETE" }).catch(
+        () => undefined,
+      );
       setIsLoggingOut(false);
       router.replace("/login");
     }
@@ -347,9 +369,19 @@ export default function Profile() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href="/dashboard" style={styles.backLink} aria-label="Quay lại dashboard">
+          <Link
+            href="/dashboard"
+            style={styles.backLink}
+            aria-label="Quay lại dashboard"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.headerTitle}>Tài Khoản</h1>
@@ -357,76 +389,108 @@ export default function Profile() {
         </header>
 
         <main style={styles.mainContent}>
-          {!initialized && <p style={styles.infoText}>Đang kiểm tra phiên đăng nhập...</p>}
-
-          {initialized && !isAuthenticated && (
-            <div style={styles.authCard}>
-              <p style={styles.headerTitle}>Vui lòng đăng nhập</p>
-              <p style={styles.infoText}>Tài khoản cá nhân sẽ được tải theo phiên đăng nhập hiện tại.</p>
-              <Link href="/login" style={styles.authLink}>
-                Đi tới đăng nhập
-              </Link>
-            </div>
-          )}
-
-          {initialized && isAuthenticated && (
-            <>
-              <section style={styles.profileHero}>
-                <div style={styles.avatarSection}>
-                  <div style={styles.avatar}>
-                    {displayAvatar ? (
-                      <img src={displayAvatar} alt={displayName} style={styles.avatarImage} />
-                    ) : (
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" strokeWidth="1.5">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
-                    )}
-                  </div>
+          <>
+            <section style={styles.profileHero}>
+              <div style={styles.avatarSection}>
+                <div style={styles.avatar}>
+                  {displayAvatar ? (
+                    <img
+                      src={displayAvatar}
+                      alt={displayName}
+                      style={styles.avatarImage}
+                    />
+                  ) : (
+                    <svg
+                      width="48"
+                      height="48"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#AAAAAA"
+                      strokeWidth="1.5"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  )}
                 </div>
-                <div>
-                  <p style={styles.infoLabel}>Hồ sơ của</p>
-                  <h2 style={{ margin: 0, fontSize: "24px", lineHeight: "30px", fontWeight: 800 }}>{displayName}</h2>
-                  <p style={{ margin: 0, fontSize: "14px", color: "rgba(236, 253, 245, 0.9)" }}>{displayEmail}</p>
+              </div>
+              <div>
+                <p style={styles.infoLabel}>Hồ sơ của</p>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "24px",
+                    lineHeight: "30px",
+                    fontWeight: 800,
+                  }}
+                >
+                  {displayName}
+                </h2>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "14px",
+                    color: "rgba(236, 253, 245, 0.9)",
+                  }}
+                >
+                  {displayEmail}
+                </p>
+              </div>
+            </section>
+
+            {loading && <p style={styles.infoText}>Đang tải hồ sơ...</p>}
+            {error && <p style={styles.errorText}>{error}</p>}
+
+            {!loading && !error && profileFields.length > 0 && (
+              <section style={styles.infoCard}>
+                <div style={styles.infoRow}>
+                  <div>
+                    <p style={styles.infoLabel}>Phiên hiện tại</p>
+                    <p style={styles.infoValue}>{user?.user_id}</p>
+                  </div>
+                  <button
+                    type="button"
+                    style={{
+                      ...styles.actionButton,
+                      ...styles.actionSecondary,
+                    }}
+                    onClick={handleLogout}
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+
+                <div style={styles.statGrid}>
+                  {profileFields.map((field) => (
+                    <div key={field.label} style={styles.statCard}>
+                      <p style={styles.statTitle}>{field.label}</p>
+                      <p style={styles.statValue}>{field.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={styles.actionRow}>
+                  <button
+                    type="button"
+                    style={{ ...styles.actionButton, ...styles.actionPrimary }}
+                    onClick={() => router.push("/cart")}
+                  >
+                    Xem giỏ hàng
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      ...styles.actionButton,
+                      ...styles.actionSecondary,
+                    }}
+                    onClick={() => router.push("/dashboard")}
+                  >
+                    Tiếp tục mua sắm
+                  </button>
                 </div>
               </section>
-
-              {loading && <p style={styles.infoText}>Đang tải hồ sơ...</p>}
-              {error && <p style={styles.errorText}>{error}</p>}
-
-              {!loading && !error && profileFields.length > 0 && (
-                <section style={styles.infoCard}>
-                  <div style={styles.infoRow}>
-                    <div>
-                      <p style={styles.infoLabel}>Phiên hiện tại</p>
-                      <p style={styles.infoValue}>{user?.user_id}</p>
-                    </div>
-                    <button type="button" style={{ ...styles.actionButton, ...styles.actionSecondary }} onClick={handleLogout}>
-                      Đăng xuất
-                    </button>
-                  </div>
-
-                  <div style={styles.statGrid}>
-                    {profileFields.map((field) => (
-                      <div key={field.label} style={styles.statCard}>
-                        <p style={styles.statTitle}>{field.label}</p>
-                        <p style={styles.statValue}>{field.value}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={styles.actionRow}>
-                    <button type="button" style={{ ...styles.actionButton, ...styles.actionPrimary }} onClick={() => router.push("/cart")}>
-                      Xem giỏ hàng
-                    </button>
-                    <button type="button" style={{ ...styles.actionButton, ...styles.actionSecondary }} onClick={() => router.push("/dashboard")}>
-                      Tiếp tục mua sắm
-                    </button>
-                  </div>
-                </section>
-              )}
-            </>
-          )}
+            )}
+          </>
         </main>
 
         <NavigationBar />
@@ -434,3 +498,7 @@ export default function Profile() {
     </div>
   );
 }
+
+export default compose(withErrorBoundary, (Component) =>
+  withAuth(Component, "user"),
+)(BaseProfile);
