@@ -5,6 +5,7 @@ import { userSearchStrategy } from '../shared/searchStrategies';
 export type UserViewModel = {
   user_id: string;
   role_id: string | null;
+  store_id: string | null;
   role_name: string | null;
   name: string;
   email: string;
@@ -20,6 +21,7 @@ type UserTableProps = {
   loading: boolean;
   saving: boolean;
   customerRoleId: string | null;
+  storeOptions: Array<{ storeId: string; storeName: string }>;
   onViewUser: (user: UserViewModel) => void;
   onEditUser: (user: UserViewModel) => void;
   onRequestDisableUser: (user: UserViewModel) => void;
@@ -89,6 +91,7 @@ const UserTable = ({
   loading,
   saving,
   customerRoleId,
+  storeOptions,
   onViewUser,
   onEditUser,
   onRequestDisableUser,
@@ -149,6 +152,10 @@ const UserTable = ({
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
   const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const storeNameById = React.useMemo(
+    () => new Map(storeOptions.map((store) => [store.storeId, store.storeName])),
+    [storeOptions]
+  );
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -181,6 +188,7 @@ const UserTable = ({
               <th className="px-6 py-4 font-medium">Tài khoản</th>
               <th className="px-6 py-4 font-medium">Số điện thoại</th>
               <th className="px-6 py-4 font-medium">Vai trò (Role)</th>
+              <th className="px-6 py-4 font-medium">Cửa hàng</th>
               <th className="px-6 py-4 font-medium">Ngày tham gia</th>
               <th className="px-6 py-4 font-medium">Trạng thái</th>
               <th className="px-6 py-4 font-medium text-right">Thao tác</th>
@@ -218,6 +226,7 @@ const UserTable = ({
                 </td>
                 <td className="px-6 py-4 text-gray-600">{user.phone ?? '-'}</td>
                 <td className="px-6 py-4">{renderRoleBadge(user.role_name ?? 'Customer')}</td>
+                <td className="px-6 py-4 text-gray-600">{user.store_id ? storeNameById.get(user.store_id) ?? 'Không gán' : 'Không gán'}</td>
                 <td className="px-6 py-4 text-gray-600">{formatDate(user.created_at)}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-1.5">

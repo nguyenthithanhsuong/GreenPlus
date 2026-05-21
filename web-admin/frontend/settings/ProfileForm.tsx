@@ -22,6 +22,40 @@ const ProfileForm = () => {
   const [saveMessage, setSaveMessage] = React.useState<string | null>(null);
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [avatarError, setAvatarError] = React.useState<string | null>(null);
+  const [storeName, setStoreName] = React.useState('Chưa gán cửa hàng');
+
+  React.useEffect(() => {
+    let active = true;
+
+    const loadStoreName = async () => {
+      if (!profile?.storeId) {
+        setStoreName('Chưa gán cửa hàng');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/stores', { cache: 'no-store' });
+        const payload = (await response.json().catch(() => ({}))) as { items?: Array<{ store_id?: string; name?: string }> };
+        const matchedStore = Array.isArray(payload.items)
+          ? payload.items.find((store) => store.store_id === profile.storeId)
+          : null;
+
+        if (active) {
+          setStoreName(matchedStore?.name?.trim() || profile.storeId || 'Chưa gán cửa hàng');
+        }
+      } catch {
+        if (active) {
+          setStoreName(profile.storeId || 'Chưa gán cửa hàng');
+        }
+      }
+    };
+
+    void loadStoreName();
+
+    return () => {
+      active = false;
+    };
+  }, [profile?.storeId]);
 
   React.useEffect(() => {
     if (!profile) {
@@ -302,26 +336,18 @@ const ProfileForm = () => {
         </div>
       </div>
 
-      <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-6 flex gap-3">
-        <Home className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-        <div>
-          <h4 className="text-sm font-bold text-blue-900">Thông tin Cơ sở</h4>
-          <p className="text-xs text-blue-700 mt-1">Đây là địa chỉ lấy hàng mặc định cho các Shipper thuộc quản lý của bạn.</p>
-        </div>
-      </div>
-
       <div className="space-y-6 mb-8">
-        {/* <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Tên Cửa hàng / Kho vận</label>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Cửa hàng phụ trách</label>
           <input 
             type="text" 
-            value={formValues.role ? `${formValues.role} workspace` : 'Admin workspace'}
+            value={storeName}
             readOnly
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 cursor-not-allowed"
           />
-        </div> */}
+        </div>
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Địa chỉ cửa hàng</label>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Địa chỉ</label>
           <textarea 
             rows={3}
             value={formValues.address}

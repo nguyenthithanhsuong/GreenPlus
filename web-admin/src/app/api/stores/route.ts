@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../backend/core/errors";
-import { userManagementFacade } from "../../../../backend/modules/users/facades/user-management.facade";
+import { storesManagementFacade } from "../../../../backend/modules/stores/facades/stores-management.facade";
 
 export async function GET() {
   try {
-    const items = await userManagementFacade.listUsers();
+    const items = await storesManagementFacade.listStores();
     return NextResponse.json({ items, total: items.length }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
@@ -21,27 +21,37 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as {
-      roleId?: string | null;
-      storeId?: string | null;
       name?: string;
-      email?: string;
-      password?: string;
-      phone?: string;
+      description?: string | null;
       address?: string;
-      imageUrl?: string;
-      status?: "active" | "inactive" | "banned";
+      ward?: string | null;
+      district?: string | null;
+      city?: string | null;
+      phone?: string | null;
+      email?: string | null;
+      managerId?: string;
+      status?: "active" | "inactive" | "closed";
+      latitude?: number | string | null;
+      longitude?: number | string | null;
+      openingTime?: string | null;
+      closingTime?: string | null;
     };
 
-    const created = await userManagementFacade.createUser({
-      roleId: body.roleId,
-      storeId: body.storeId,
+    const created = await storesManagementFacade.createStore({
       name: body.name ?? "",
-      email: body.email ?? "",
-      password: body.password ?? "",
+      description: body.description,
+      address: body.address ?? "",
+      ward: body.ward,
+      district: body.district,
+      city: body.city,
       phone: body.phone,
-      address: body.address,
-      imageUrl: body.imageUrl,
+      email: body.email,
+      managerId: body.managerId ?? "",
       status: body.status,
+      latitude: body.latitude,
+      longitude: body.longitude,
+      openingTime: body.openingTime,
+      closingTime: body.closingTime,
     });
 
     return NextResponse.json(created, { status: 201 });

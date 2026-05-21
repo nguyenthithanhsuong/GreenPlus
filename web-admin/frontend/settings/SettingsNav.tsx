@@ -1,15 +1,26 @@
 "use client";
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { User, Shield, Bell, LogOut } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Building2, Bell, LogOut, User } from 'lucide-react';
 import { supabase } from '../../src/lib/supabaseClient';
 import { useAuthStore } from '../../src/lib/stores/authStore';
 
 const SettingsNav = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  const goTo = (href: string) => {
+    router.push(href);
+  };
+
+  const getItemClassName = (isActive: boolean) => {
+    return `flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors text-left ${
+      isActive ? 'bg-emerald-50 text-[#059669]' : 'text-gray-600 hover:bg-gray-100'
+    }`;
+  };
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -17,7 +28,6 @@ const SettingsNav = () => {
     }
 
     setIsLoggingOut(true);
-    const CLIENT_APP_URL = process.env.NEXT_PUBLIC_WEB_CLIENT_URL ?? 'http://localhost:3000';
 
     try {
       await supabase.auth.signOut();
@@ -31,14 +41,22 @@ const SettingsNav = () => {
 
   return (
     <div className="w-full lg:w-64 shrink-0 flex flex-col gap-2">
-      <button className="flex items-center gap-3 px-4 py-3 bg-emerald-50 text-[#059669] rounded-xl font-bold text-sm transition-colors text-left">
+      <button
+        type="button"
+        onClick={() => goTo('/settings')}
+        className={getItemClassName(pathname === '/settings')}
+      >
         <User className="w-4 h-4" />
         Hồ sơ cá nhân
       </button>
       
-      <button className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-xl font-medium text-sm transition-colors text-left">
-        <Shield className="w-4 h-4" />
-        Bảo mật & Mật khẩu
+      <button
+        type="button"
+        onClick={() => goTo('/settings/stores')}
+        className={getItemClassName(pathname.startsWith('/settings/stores'))}
+      >
+        <Building2 className="w-4 h-4" />
+        Cửa hàng
       </button>
       
       <button className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-xl font-medium text-sm transition-colors text-left">

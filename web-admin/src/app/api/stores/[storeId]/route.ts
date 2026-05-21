@@ -1,37 +1,49 @@
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
-import { userManagementFacade } from "../../../../../backend/modules/users/facades/user-management.facade";
+import { storesManagementFacade } from "../../../../../backend/modules/stores/facades/stores-management.facade";
 
 type Context = {
   params: Promise<{
-    userId: string;
+    storeId: string;
   }>;
 };
 
 export async function PUT(request: Request, context: Context) {
   try {
-    const { userId } = await context.params;
+    const { storeId } = await context.params;
     const body = (await request.json()) as {
-      roleId?: string | null;
-      storeId?: string | null;
       name?: string;
-      email?: string;
-      phone?: string;
+      description?: string | null;
       address?: string;
-      imageUrl?: string;
-      status?: "active" | "inactive" | "banned";
+      ward?: string | null;
+      district?: string | null;
+      city?: string | null;
+      phone?: string | null;
+      email?: string | null;
+      managerId?: string;
+      status?: "active" | "inactive" | "closed";
+      latitude?: number | string | null;
+      longitude?: number | string | null;
+      openingTime?: string | null;
+      closingTime?: string | null;
     };
 
-    const updated = await userManagementFacade.updateUser({
-      userId,
-      roleId: body.roleId,
-      storeId: body.storeId,
+    const updated = await storesManagementFacade.updateStore({
+      storeId,
       name: body.name,
-      email: body.email,
-      phone: body.phone,
+      description: body.description,
       address: body.address,
-      imageUrl: body.imageUrl,
+      ward: body.ward,
+      district: body.district,
+      city: body.city,
+      phone: body.phone,
+      email: body.email,
+      managerId: body.managerId,
       status: body.status,
+      latitude: body.latitude,
+      longitude: body.longitude,
+      openingTime: body.openingTime,
+      closingTime: body.closingTime,
     });
 
     return NextResponse.json(updated, { status: 200 });
@@ -49,23 +61,17 @@ export async function PUT(request: Request, context: Context) {
 
 export async function PATCH(request: Request, context: Context) {
   try {
-    const { userId } = await context.params;
+    const { storeId } = await context.params;
     const body = (await request.json()) as {
-      action?: "disable";
-      status?: "active" | "inactive" | "banned";
+      status?: "active" | "inactive" | "closed";
     };
 
-    if (body.action === "disable") {
-      const disabled = await userManagementFacade.disableUser(userId);
-      return NextResponse.json(disabled, { status: 200 });
+    if (typeof body.status === "undefined") {
+      return NextResponse.json({ error: "status is required" }, { status: 400 });
     }
 
-    if (typeof body.status !== "undefined") {
-      const updated = await userManagementFacade.updateUser({ userId, status: body.status });
-      return NextResponse.json(updated, { status: 200 });
-    }
-
-    return NextResponse.json({ error: "action or status is required" }, { status: 400 });
+    const updated = await storesManagementFacade.changeStatus(storeId, body.status);
+    return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
@@ -80,8 +86,8 @@ export async function PATCH(request: Request, context: Context) {
 
 export async function DELETE(_: Request, context: Context) {
   try {
-    const { userId } = await context.params;
-    await userManagementFacade.deleteUser(userId);
+    const { storeId } = await context.params;
+    await storesManagementFacade.deleteStore(storeId);
     return NextResponse.json({ deleted: true }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
