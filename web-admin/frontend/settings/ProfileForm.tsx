@@ -3,9 +3,11 @@
 import React from 'react';
 import { Camera, Home, Save } from 'lucide-react';
 import { useCurrentUserProfile } from '../shared/useCurrentUserProfile';
+import { useAuthStore } from '../../src/lib/stores/authStore';
 
 const ProfileForm = () => {
   const { profile, loading, initialized, refreshProfile } = useCurrentUserProfile();
+  const accessToken = useAuthStore((state) => state.session?.access_token ?? '');
   const avatarInputRef = React.useRef<HTMLInputElement | null>(null);
   const [formValues, setFormValues] = React.useState({
     name: '',
@@ -111,9 +113,17 @@ const ProfileForm = () => {
     setAvatarError(null);
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+      }
+
       const response = await fetch('/api/users/me', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           name: formValues.name,
           email: formValues.email,
@@ -301,7 +311,7 @@ const ProfileForm = () => {
       </div>
 
       <div className="space-y-6 mb-8">
-        <div>
+        {/* <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Tên Cửa hàng / Kho vận</label>
           <input 
             type="text" 
@@ -309,7 +319,7 @@ const ProfileForm = () => {
             readOnly
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
           />
-        </div>
+        </div> */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Địa chỉ cửa hàng</label>
           <textarea 

@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { createHmac, randomUUID } from "crypto";
 import { AppError } from "../../../core/errors";
 import { AuthAuditObserver, AuthSubject } from "../observers/auth.observer";
 import { AuthRepository } from "../auth.repository";
@@ -21,6 +21,7 @@ import { createProfileImageStorageStrategy } from "../strategies/profile-image.s
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
+const CUSTOM_TOKEN_PREFIX = "gpv1";
 
 
 export class AuthFacade {
@@ -45,6 +46,29 @@ export class AuthFacade {
 
   private isPbkdf2Hash(value: string): boolean {
     return value.startsWith("pbkdf2$");
+  }
+
+  private getSessionSecret(): string {
+    const secret = process.env.AUTH_HANDOFF_SECRET || process.env.AUTH_SESSION_SECRET;
+
+    if (!secret) {
+      throw new AppError("Session secret is not configured", 500);
+    }
+
+    return secret;
+  }
+
+  private createAccessToken(input: {
+    userId: string;
+    email: string;
+    role: string;
+    sessionId: string;
+    loginTime: string;
+  }): string {
+    const payload = Buffer.from(JSON.stringify(input)).toString("base64url");
+    const signature = createHmac("sha256", this.getSessionSecret()).update(payload).digest("base64url");
+
+    return `${CUSTOM_TOKEN_PREFIX}.${payload}.${signature}`;
   }
 
   async register(input: RegisterInput) {
@@ -184,9 +208,17 @@ console.log("=================================");
       session_id: randomUUID(),
       user_id: user.user_id,
       login_time: new Date().toISOString(),
+      access_token: "",
     };
 
     const roleName = await this.repository.findRoleNameById(user.role_id);
+    session.access_token = this.createAccessToken({
+      userId: user.user_id,
+      email: user.email,
+      role: roleName || "",
+      sessionId: session.session_id,
+      loginTime: session.login_time,
+    });
 
     await this.authSubject.notify({
       type: "sign_in_succeeded",
