@@ -7,6 +7,7 @@ import type { PriceRow } from "../../backend/modules/prices/price-management.typ
 export type BatchOption = {
   batchId: string;
   productName: string | null;
+  importPrice: number | null;
 };
 
 export type PriceFormValues = {
@@ -33,6 +34,14 @@ type PriceDrawerProps = {
 
 const formatCurrency = (value: number): string => {
   return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(value)} đ`;
+};
+
+const formatCompactCurrency = (value: number | null): string => {
+  if (value === null) {
+    return "-";
+  }
+
+  return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(value)} đ`;
 };
 
 const titleByMode: Record<PriceDrawerMode, string> = {
@@ -70,6 +79,11 @@ const PriceDrawer = ({
   }
 
   const batchListId = "price-batch-options";
+  const selectedBatch = batchOptions.find((batch) => batch.batchId === form.batchId) ?? null;
+  const salePrice = Number(form.price);
+  const importPrice = selectedBatch?.importPrice ?? null;
+  const profit = importPrice !== null && Number.isFinite(salePrice) ? salePrice - importPrice : null;
+  const marginPercent = importPrice !== null && profit !== null && importPrice > 0 ? (profit / importPrice) * 100 : null;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -152,6 +166,34 @@ const PriceDrawer = ({
                     ))}
                   </datalist>
                 </div>
+
+                {mode === "create" ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Giá nhập lô hàng</p>
+                      <p className="mt-2 text-2xl font-bold text-gray-900">
+                        {selectedBatch ? formatCompactCurrency(selectedBatch.importPrice) : "-"}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {selectedBatch ? `Batch ${selectedBatch.batchId}${selectedBatch.productName ? ` - ${selectedBatch.productName}` : ""}` : "Chọn batch để xem giá nhập hiện tại."}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Lợi nhuận dự kiến</p>
+                      <p className={`mt-2 text-2xl font-bold ${profit === null ? "text-gray-900" : profit >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                        {profit === null ? "-" : formatCompactCurrency(profit)}
+                      </p>
+                      <p className="mt-1 text-xs text-emerald-700/80">
+                        {selectedBatch
+                          ? marginPercent === null
+                            ? "Không thể tính biên lợi nhuận khi giá nhập bằng 0."
+                            : `Biên lợi nhuận: ${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(marginPercent)}%`
+                          : "Nhập batch và giá bán để so sánh lợi nhuận."}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div>
                   <label className="mb-1.5 block text-sm font-bold text-gray-800">

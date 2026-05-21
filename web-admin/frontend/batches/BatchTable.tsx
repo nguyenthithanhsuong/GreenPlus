@@ -171,6 +171,14 @@ const formatCode = (value: string): string => {
   return `${value.slice(0, 8)}...${value.slice(-4)}`;
 };
 
+const formatPrice = (value: number | null): string => {
+  if (value === null) {
+    return "-";
+  }
+
+  return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(value)} đ`;
+};
+
 const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprove, onReject, onRestore, onEdit, onDelete }: BatchTableProps) => {
   const [activeTab, setActiveTab] = React.useState<BatchTab>("all");
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -298,6 +306,7 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
             <tr>
               <th className="px-6 py-4 font-medium">Mã lô</th>
               <th className="px-6 py-4 font-medium">Sản phẩm / NCC</th>
+              <th className="px-6 py-4 font-medium">Giá nhập</th>
               <th className="px-6 py-4 font-medium">Thu hoạch</th>
               <th className="px-6 py-4 font-medium">Hạn dùng</th>
               <th className="px-6 py-4 font-medium text-center">Số lượng</th>
@@ -308,13 +317,13 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">Đang tải danh sách batch...</td>
+                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">Đang tải danh sách batch...</td>
               </tr>
             )}
 
             {!loading && filteredBatches.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">Không có dữ liệu batch.</td>
+                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">Không có dữ liệu batch.</td>
               </tr>
             )}
 
@@ -338,6 +347,7 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
                     <p className="mb-0.5 font-bold text-gray-900">{batch.product_name ?? "Chưa gán sản phẩm"}</p>
                     <p className="text-[11px] text-gray-500">NCC: {batch.supplier_name ?? "Chưa gán nhà cung cấp"}</p>
                   </td>
+                  <td className="px-6 py-4 font-semibold text-gray-900">{formatPrice(batch.import_price)}</td>
                   <td className="px-6 py-4 text-gray-600">{formatDate(batch.harvest_date)}</td>
                   <td className="px-6 py-4">
                     <p className="mb-0.5 font-bold text-gray-800">{formatDate(batch.expire_date)}</p>

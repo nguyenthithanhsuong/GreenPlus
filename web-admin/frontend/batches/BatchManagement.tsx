@@ -26,6 +26,9 @@ const emptyForm = (): BatchFormValues => ({
   harvestDate: "",
   expireDate: "",
   quantity: 0,
+  pricingMode: "unit",
+  importPrice: "",
+  importTotalPrice: "",
   qrCode: "",
   status: "pending",
 });
@@ -207,6 +210,9 @@ const BatchManagement = () => {
       harvestDate: batch.harvest_date,
       expireDate: batch.expire_date,
       quantity: batch.quantity,
+      pricingMode: "unit",
+      importPrice: batch.import_price === null ? "" : String(batch.import_price),
+      importTotalPrice: batch.import_price === null ? "" : String(batch.import_price * batch.quantity),
       qrCode: batch.qr_code ?? "",
       status: batch.status,
     });
@@ -336,6 +342,24 @@ const BatchManagement = () => {
       return;
     }
 
+    const normalizedImportPrice = form.pricingMode === "unit" ? Number(form.importPrice) : Number(form.importTotalPrice) / form.quantity;
+    const normalizedImportTotalPrice = form.pricingMode === "unit" ? Number(form.importPrice) * form.quantity : Number(form.importTotalPrice);
+
+    if (form.pricingMode === "total" && form.quantity <= 0) {
+      setError("Số lượng phải lớn hơn 0 khi nhập giá tổng thể");
+      return;
+    }
+
+    if (!Number.isFinite(normalizedImportPrice) || normalizedImportPrice < 0) {
+      setError("Giá nhập phải là số hợp lệ không âm");
+      return;
+    }
+
+    if (!Number.isFinite(normalizedImportTotalPrice) || normalizedImportTotalPrice < 0) {
+      setError("Giá tổng thể phải là số hợp lệ không âm");
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
@@ -363,6 +387,7 @@ const BatchManagement = () => {
           harvestDate: form.harvestDate,
           expireDate: form.expireDate,
           quantity: form.quantity,
+          importPrice: normalizedImportPrice,
           qrCode: form.qrCode,
           status: selectedBatch ? form.status : undefined,
           force,

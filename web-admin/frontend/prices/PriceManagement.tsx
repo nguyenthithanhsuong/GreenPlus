@@ -78,6 +78,7 @@ const PriceManagement = () => {
         ? data.items.map((batch) => ({
             batchId: batch.batch_id,
             productName: batch.product_name,
+            importPrice: batch.import_price,
           }))
         : [];
 

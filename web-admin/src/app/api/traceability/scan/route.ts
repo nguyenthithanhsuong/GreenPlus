@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../../backend/core/errors";
-import { traceabilityFacade } from "../../../../../../backend/modules/traceability/facades/traceability.facade";
+import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
+import { traceabilityFacade } from "../../../../../backend/modules/traceability/facades/traceability.facade";
 
 type ScanBody = {
   qrCode?: string;

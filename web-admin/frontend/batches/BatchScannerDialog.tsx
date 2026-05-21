@@ -51,7 +51,7 @@ const formatDate = (value: string): string => {
 const BatchScannerDialog = ({ open, initialMode, onClose }: BatchScannerDialogProps) => {
   const [mode, setMode] = useState<ScanMode>(initialMode);
   const [batchIdInput, setBatchIdInput] = useState("");
-  const [qrInput, setQrInput] = useState("");
+  const [qrImageFile, setQrImageFile] = useState<File | null>(null);
   const [scanStatus, setScanStatus] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<BatchOriginResult | null>(null);
@@ -73,7 +73,7 @@ const BatchScannerDialog = ({ open, initialMode, onClose }: BatchScannerDialogPr
 
     setMode(initialMode);
     setBatchIdInput("");
-    setQrInput("");
+    setQrImageFile(null);
     setScanStatus(null);
     setScanError(null);
     setScanResult(null);
@@ -183,6 +183,64 @@ const BatchScannerDialog = ({ open, initialMode, onClose }: BatchScannerDialogPr
     }
   };
 
+  const decodeQrFromImageFile = async (file: File): Promise<string> => {
+    if (!file.type.startsWith("image/")) {
+      throw new Error("Vui lòng chọn một file ảnh hợp lệ.");
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+
+    try {
+      const image = new Image();
+      const imageLoaded = new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("Không thể đọc ảnh QR."));
+      });
+
+      image.src = objectUrl;
+      await imageLoaded;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) {
+        throw new Error("Không thể đọc dữ liệu ảnh QR.");
+      }
+
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      return decodeWithJsQr(imageData);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  const resolveQrImage = async (): Promise<void> => {
+    if (!qrImageFile) {
+      setScanError("Vui lòng chọn ảnh QR.");
+      return;
+    }
+
+    setScanStatus("Đang giải mã ảnh QR...");
+    setScanError(null);
+    setScanResult(null);
+
+    try {
+      const qrText = await decodeQrFromImageFile(qrImageFile);
+
+      if (!qrText) {
+        throw new Error("Không tìm thấy QR trong ảnh đã chọn.");
+      }
+
+      await resolveQrText(qrText);
+    } catch (requestError) {
+      setScanStatus(null);
+      setScanError(requestError instanceof Error ? requestError.message : "Không thể giải mã ảnh QR.");
+    }
+  };
+
   const startCamera = async () => {
     if (!cameraSupported) {
       setScanError("Trình duyệt không hỗ trợ camera hoặc cần HTTPS/localhost để sử dụng camera.");
@@ -281,7 +339,7 @@ const BatchScannerDialog = ({ open, initialMode, onClose }: BatchScannerDialogPr
 
   const modes: Array<{ key: ScanMode; label: string; icon: typeof Hash }> = [
     { key: "batch", label: "Nhập batch ID", icon: Hash },
-    { key: "qr", label: "Nhập QR", icon: ScanQrCode },
+    { key: "qr", label: "Ảnh QR", icon: ScanQrCode },
     { key: "camera", label: "Quét camera", icon: Camera },
   ];
 
@@ -342,18 +400,23 @@ const BatchScannerDialog = ({ open, initialMode, onClose }: BatchScannerDialogPr
 
               {mode === "qr" && (
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">Nội dung QR</label>
-                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                    <textarea
-                      value={qrInput}
-                      onChange={(event) => setQrInput(event.target.value)}
-                      rows={4}
-                      placeholder="Dán QR text ở đây"
-                      className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  <label className="block text-sm font-medium text-gray-700">Ảnh QR</label>
+                  <div className="space-y-3 rounded-2xl border border-dashed border-gray-200 bg-white p-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => setQrImageFile(event.target.files?.[0] ?? null)}
+                      className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-emerald-700"
                     />
-                    <button type="button" onClick={() => void resolveQrText(qrInput)} className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
-                      Giải mã
-                    </button>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-gray-600">
+                        {qrImageFile ? `Đã chọn: ${qrImageFile.name}` : "Chọn ảnh chứa mã QR để giải mã."}
+                      </p>
+                      <button type="button" onClick={() => void resolveQrImage()} className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
+                        Giải mã ảnh
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

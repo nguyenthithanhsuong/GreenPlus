@@ -60,6 +60,16 @@ export class BatchManagementService {
     }
   }
 
+  private ensureImportPrice(importPrice: number): void {
+    if (!Number.isFinite(importPrice)) {
+      throw new AppError("Import price must be a valid number", 400);
+    }
+
+    if (importPrice < 0) {
+      throw new AppError("Import price must be greater than or equal to zero", 400);
+    }
+  }
+
   private async initializeInventoryOnPendingToAvailable(input: {
     batchId: string;
     previousStatus: BatchRow["status"];
@@ -113,6 +123,7 @@ export class BatchManagementService {
     }
 
     this.ensureQuantity(input.quantity);
+    this.ensureImportPrice(input.importPrice);
     this.ensureDates(harvestDate, expireDate);
     await this.ensureProductAndSupplier({ productId, supplierId }, Boolean(input.force));
 
@@ -122,6 +133,7 @@ export class BatchManagementService {
       harvestDate,
       expireDate,
       quantity: input.quantity,
+      importPrice: input.importPrice,
       qrCode: input.qrCode?.trim() || null,
       status: "pending",
     });
@@ -142,6 +154,7 @@ export class BatchManagementService {
     const nextHarvestDate = typeof input.harvestDate !== "undefined" ? input.harvestDate.trim() : existing.harvest_date;
     const nextExpireDate = typeof input.expireDate !== "undefined" ? input.expireDate.trim() : existing.expire_date;
     const nextQuantity = typeof input.quantity !== "undefined" ? input.quantity : existing.quantity;
+    const nextImportPrice = typeof input.importPrice !== "undefined" ? input.importPrice : existing.import_price;
 
     if (!nextProductId) {
       throw new AppError("Product is required", 400);
@@ -160,6 +173,11 @@ export class BatchManagementService {
     }
 
     this.ensureQuantity(nextQuantity);
+    if (nextImportPrice === null) {
+      throw new AppError("Import price is required", 400);
+    }
+
+    this.ensureImportPrice(nextImportPrice);
     this.ensureDates(nextHarvestDate, nextExpireDate);
 
     if (typeof input.productId !== "undefined" || typeof input.supplierId !== "undefined") {
@@ -178,6 +196,7 @@ export class BatchManagementService {
       harvestDate: typeof input.harvestDate !== "undefined" ? nextHarvestDate : undefined,
       expireDate: typeof input.expireDate !== "undefined" ? nextExpireDate : undefined,
       quantity: typeof input.quantity !== "undefined" ? nextQuantity : undefined,
+      importPrice: typeof input.importPrice !== "undefined" ? nextImportPrice : undefined,
       qrCode: input.qrCode,
       status: nextStatus,
     });

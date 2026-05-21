@@ -2,12 +2,17 @@ import React from "react";
 import { X } from "lucide-react";
 import type { BatchRow, BatchStatus } from "../../backend/modules/batches/batch-management.types";
 
+export type BatchPricingMode = "unit" | "total";
+
 export type BatchFormValues = {
   productId: string;
   supplierId: string;
   harvestDate: string;
   expireDate: string;
   quantity: number;
+  pricingMode: BatchPricingMode;
+  importPrice: string;
+  importTotalPrice: string;
   qrCode: string;
   status: BatchStatus;
 };
@@ -37,10 +42,29 @@ const statusLabel: Record<BatchStatus, string> = {
   sold_out: "Hết hàng",
 };
 
+const formatPrice = (value: number): string => {
+  return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(value)} đ`;
+};
+
+const parsePrice = (value: string): number | null => {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const BatchDrawer = ({ open, saving, batch, form, products, suppliers, onChange, onClose, onSubmit }: BatchDrawerProps) => {
   if (!open) {
     return null;
   }
+
+  const unitImportPrice = Number(form.importPrice);
+  const totalImportPrice = Number(form.importTotalPrice);
+  const hasQuantity = Number.isInteger(form.quantity) && form.quantity > 0;
+  const derivedTotalPrice = form.pricingMode === "unit" && Number.isFinite(unitImportPrice) ? unitImportPrice * form.quantity : Number.isFinite(totalImportPrice) ? totalImportPrice : NaN;
+  const derivedUnitPrice = form.pricingMode === "total" && hasQuantity && Number.isFinite(totalImportPrice) ? totalImportPrice / form.quantity : Number.isFinite(unitImportPrice) ? unitImportPrice : NaN;
 
   return (
     <div className={`fixed inset-0 z-50 ${open ? "" : "pointer-events-none"}`}>
@@ -90,6 +114,88 @@ const BatchDrawer = ({ open, saving, batch, form, products, suppliers, onChange,
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">Giá nhập <span className="text-red-500">*</span></label>
+                <div className="mb-3 grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentUnitPrice = parsePrice(form.importPrice);
+                      onChange({
+                        pricingMode: "unit",
+                        importTotalPrice: currentUnitPrice !== null ? String(currentUnitPrice * form.quantity) : form.importTotalPrice,
+                      });
+                    }}
+                    className={`rounded-md border px-4 py-2 text-sm font-semibold transition-colors ${form.pricingMode === "unit" ? "border-[#1da453] bg-emerald-50 text-[#157a3d]" : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"}`}
+                  >
+                    Nhập giá đơn vị
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentTotalPrice = parsePrice(form.importTotalPrice);
+                      onChange({
+                        pricingMode: "total",
+                        importPrice: currentTotalPrice !== null && form.quantity > 0 ? String(currentTotalPrice / form.quantity) : form.importPrice,
+                      });
+                    }}
+                    className={`rounded-md border px-4 py-2 text-sm font-semibold transition-colors ${form.pricingMode === "total" ? "border-[#1da453] bg-emerald-50 text-[#157a3d]" : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"}`}
+                  >
+                    Nhập giá tổng thể
+                  </button>
+                </div>
+
+                {form.pricingMode === "unit" ? (
+                  <input
+                    value={form.importPrice}
+                    onChange={(event) => {
+                      const nextValue = event.target.value;
+                      const nextPrice = parsePrice(nextValue);
+                      onChange({
+                        importPrice: nextValue,
+                        importTotalPrice: nextPrice !== null ? String(nextPrice * form.quantity) : "",
+                      });
+                    }}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    inputMode="decimal"
+                    placeholder="0"
+                    className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                  />
+                ) : (
+                  <input
+                    value={form.importTotalPrice}
+                    onChange={(event) => {
+                      const nextValue = event.target.value;
+                      const nextTotalPrice = parsePrice(nextValue);
+                      onChange({
+                        importTotalPrice: nextValue,
+                        importPrice: nextTotalPrice !== null && form.quantity > 0 ? String(nextTotalPrice / form.quantity) : "",
+                      });
+                    }}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    inputMode="decimal"
+                    placeholder="0"
+                    className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                  />
+                )}
+
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                    <span className="font-semibold">Giá đơn vị:</span> {Number.isFinite(derivedUnitPrice) ? formatPrice(derivedUnitPrice) : "-"}
+                  </div>
+                  <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                    <span className="font-semibold">Giá tổng thể:</span> {Number.isFinite(derivedTotalPrice) ? formatPrice(derivedTotalPrice) : "-"}
+                  </div>
+                </div>
+
+                {!hasQuantity && form.pricingMode === "total" ? <p className="mt-1 text-xs text-amber-700">Cần số lượng lớn hơn 0 để quy đổi giá tổng thể sang giá đơn vị.</p> : null}
+                {batch ? <p className="mt-1 text-xs text-gray-500">Giá nhập hiện tại của batch sẽ được cập nhật theo chế độ bạn chọn.</p> : <p className="mt-1 text-xs text-gray-500">Chọn cách nhập phù hợp, hệ thống sẽ tự tính giá còn lại.</p>}
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
