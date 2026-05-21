@@ -3,6 +3,21 @@ import { SubscriptionRepository } from "./subscription.repository";
 import { createSubscriptionState } from "./states/subscription.state";
 import { createSubscriptionStrategy } from "./strategies/subscription.strategy";
 
+function formatVietnamDateKey(value: Date): string {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(value);
+  const year = parts.find((part) => part.type === "year")?.value ?? "0000";
+  const month = parts.find((part) => part.type === "month")?.value ?? "00";
+  const day = parts.find((part) => part.type === "day")?.value ?? "00";
+
+  return `${year}-${month}-${day}`;
+}
+
 export type CreateSubscriptionInput = {
   userId: string;
   productId: string;
@@ -70,7 +85,7 @@ export class SubscriptionService {
       const parsedStart = new Date(startDate);
       const state = createSubscriptionState((status as "active" | "paused" | "cancelled") ?? "cancelled");
       if (!Number.isNaN(parsedStart.getTime()) && state.canGenerateOrder()) {
-        nextDeliveryPreview = strategy.getNextDate(parsedStart).toISOString().slice(0, 10);
+        nextDeliveryPreview = formatVietnamDateKey(strategy.getNextDate(parsedStart));
       }
     } catch {
       nextDeliveryPreview = "not-schedulable";
@@ -148,7 +163,7 @@ export class SubscriptionService {
       schedule: String(data.schedule),
       status: String(data.status),
       startDate: String(data.start_date),
-      nextDeliveryPreview: state.canGenerateOrder() ? nextDelivery.toISOString().slice(0, 10) : "not-schedulable",
+      nextDeliveryPreview: state.canGenerateOrder() ? formatVietnamDateKey(nextDelivery) : "not-schedulable",
     };
   }
 

@@ -59,6 +59,20 @@ type CreateOrderResponse = {
   total_amount: number;
 };
 
+type SubscriptionSummaryItem = {
+  subscriptionId: string;
+  userId: string;
+  productId: string;
+  schedule: string;
+  status: string;
+  startDate: string;
+  nextDeliveryPreview: string;
+};
+
+type SubscriptionListResponse = {
+  subscriptions: SubscriptionSummaryItem[];
+};
+
 type StatusConfig = {
   label: string;
   cardBorder: string;
@@ -340,6 +354,55 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "flex-end",
   },
+  recurringNoticeBanner: {
+    borderRadius: "16px",
+    background: "linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%)",
+    border: "1px solid #FCD34D",
+    padding: "14px 16px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    flexWrap: "wrap",
+  },
+  recurringNoticeTitle: {
+    margin: 0,
+    fontSize: "15px",
+    lineHeight: "22px",
+    fontWeight: 800,
+    color: "#92400E",
+  },
+  recurringNoticeText: {
+    margin: "4px 0 0 0",
+    fontSize: "13px",
+    lineHeight: "18px",
+    color: "#B45309",
+  },
+  recurringNoticeBadge: {
+    borderRadius: "9999px",
+    padding: "6px 10px",
+    background: "#FFF7ED",
+    border: "1px solid #FDBA74",
+    color: "#9A3412",
+    fontSize: "12px",
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+  },
+  recurringNoticeButton: {
+    borderRadius: "12px",
+    padding: "10px 14px",
+    background: "#F97316",
+    color: "#FFFFFF",
+    border: "none",
+    fontSize: "14px",
+    fontWeight: 800,
+    cursor: "pointer",
+    boxShadow: "0px 8px 16px rgba(249, 115, 22, 0.18)",
+  },
+  recurringNoticeButtonDisabled: {
+    opacity: 0.7,
+    cursor: "not-allowed",
+  },
   cartSummaryBanner: {
     borderRadius: "16px",
     background: "#F9FAFB",
@@ -517,6 +580,21 @@ function formatDateTime(value: string): string {
   }).format(date);
 }
 
+function getVietnamDateKey(date: Date = new Date()): string {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value ?? "0000";
+  const month = parts.find((part) => part.type === "month")?.value ?? "00";
+  const day = parts.find((part) => part.type === "day")?.value ?? "00";
+
+  return `${year}-${month}-${day}`;
+}
+
 function toStatus(value: string): OrderStatus {
   if (ORDER_STATUS_SEQUENCE.includes(value as OrderStatus)) {
     return value as OrderStatus;
@@ -608,10 +686,80 @@ export default function Orders() {
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
-  
+  const [subscriptions, setSubscriptions] = useState<SubscriptionSummaryItem[]>([]);
+  const [autoOrdering, setAutoOrdering] = useState(false);
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
+
+  const loadData = async (signal?: AbortSignal) => {
+    if (!user?.user_id) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const [cartResponse, ordersResponse, subscriptionsResponse] = await Promise.all([
+        fetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, { signal, cache: "no-store" }),
+        fetch(`/api/orders?userId=${encodeURIComponent(user.user_id)}`, { signal, cache: "no-store" }),
+        fetch(`/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`, { signal, cache: "no-store" }),
+      ]);
+
+      if (!cartResponse.ok) {
+        throw new Error("Không thể tải giỏ hàng.");
+      }
+
+      if (!ordersResponse.ok) {
+        throw new Error("Không thể tải danh sách đơn hàng.");
+      }
+
+      const cartData = (await cartResponse.json()) as CartResponse | { error?: string };
+      const ordersData = (await ordersResponse.json()) as OrdersResponse | { error?: string };
+
+      if ("items" in cartData) {
+        setCartItems(cartData.items ?? []);
+        setCartTotal(cartData.cart_total ?? 0);
+        setCartId(cartData.cart_id ?? "");
+        setNoteDrafts(
+          (cartData.items ?? []).reduce<Record<string, string>>((drafts, item) => {
+            drafts[item.cart_item_id] = item.note ?? "";
+            return drafts;
+          }, {}),
+        );
+      }
+
+      if ("items" in ordersData) {
+        const nextOrders = ((ordersData as OrdersResponse).items ?? []).map((item) => ({
+          ...item,
+          status: toStatus(item.status),
+        }));
+        setOrders(nextOrders);
+      }
+
+      if (subscriptionsResponse.ok) {
+        const subscriptionsData = (await subscriptionsResponse.json()) as SubscriptionListResponse | { error?: string };
+        if ("subscriptions" in subscriptionsData) {
+          setSubscriptions(subscriptionsData.subscriptions ?? []);
+        }
+      } else {
+        setSubscriptions([]);
+      }
+    } catch (requestError) {
+      if (requestError instanceof DOMException && requestError.name === "AbortError") {
+        return;
+      }
+
+      setCartItems([]);
+      setOrders([]);
+      setSubscriptions([]);
+      setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!initialized) {
@@ -624,62 +772,7 @@ export default function Orders() {
     }
 
     const controller = new AbortController();
-
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      setMessage(null);
-
-      try {
-        const [cartResponse, ordersResponse] = await Promise.all([
-          fetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, { signal: controller.signal }),
-          fetch(`/api/orders?userId=${encodeURIComponent(user.user_id)}`, { signal: controller.signal }),
-        ]);
-
-        if (!cartResponse.ok) {
-          throw new Error("Không thể tải giỏ hàng.");
-        }
-
-        if (!ordersResponse.ok) {
-          throw new Error("Không thể tải danh sách đơn hàng.");
-        }
-
-        const cartData = (await cartResponse.json()) as CartResponse | { error?: string };
-        const ordersData = (await ordersResponse.json()) as OrdersResponse | { error?: string };
-
-        if ("items" in cartData) {
-          setCartItems(cartData.items ?? []);
-          setCartTotal(cartData.cart_total ?? 0);
-          setCartId(cartData.cart_id ?? "");
-          setNoteDrafts(
-            (cartData.items ?? []).reduce<Record<string, string>>((drafts, item) => {
-              drafts[item.cart_item_id] = item.note ?? "";
-              return drafts;
-            }, {}),
-          );
-        }
-
-        if ("items" in ordersData) {
-          const nextOrders = ((ordersData as OrdersResponse).items ?? []).map((item) => ({
-            ...item,
-            status: toStatus(item.status),
-          }));
-          setOrders(nextOrders);
-        }
-      } catch (requestError) {
-        if ((requestError as Error).name === "AbortError") {
-          return;
-        }
-
-        setCartItems([]);
-        setOrders([]);
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadData();
+    void loadData(controller.signal);
 
     return () => {
       controller.abort();
@@ -713,6 +806,10 @@ export default function Orders() {
 
   const hasOrders = filteredOrders.length > 0;
   const cartQuantity = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
+  const dueSubscriptions = useMemo(
+    () => subscriptions.filter((item) => item.status === "active" && item.nextDeliveryPreview === getVietnamDateKey()),
+    [subscriptions],
+  );
 
   useEffect(() => {
     setNoteDrafts(
@@ -944,6 +1041,59 @@ export default function Orders() {
       setError(requestError instanceof Error ? requestError.message : "Không thể tạo đơn hàng.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAutoOrderSubscriptions = async () => {
+    if (!user?.user_id || dueSubscriptions.length === 0) {
+      return;
+    }
+
+    setAutoOrdering(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      let addedCount = 0;
+      const failedItems: string[] = [];
+
+      for (const subscription of dueSubscriptions) {
+        const response = await fetch("/api/cart", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.user_id,
+            productId: subscription.productId,
+            quantity: 1,
+          }),
+        });
+
+        if (!response.ok) {
+          failedItems.push(subscription.subscriptionId);
+          continue;
+        }
+
+        addedCount += 1;
+      }
+
+      setMainTab("cart");
+      await loadData();
+
+      if (addedCount > 0) {
+        setMessage(
+          failedItems.length > 0
+            ? `Đã thêm ${addedCount} đơn định kỳ vào giỏ, còn ${failedItems.length} đơn chưa thêm được.`
+            : `Đã tự động thêm ${addedCount} đơn định kỳ vào giỏ hàng.`,
+        );
+      } else {
+        setError("Không thể thêm đơn định kỳ vào giỏ hàng.");
+      }
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể tự động đặt đơn định kỳ.");
+    } finally {
+      setAutoOrdering(false);
     }
   };
 
@@ -1396,6 +1546,44 @@ export default function Orders() {
             Mở quản lý
           </Link>
         </section>
+
+        {dueSubscriptions.length > 0 ? (
+          <section
+            style={{
+              margin: "12px 16px 0",
+              padding: "14px 16px",
+              borderRadius: "16px",
+              border: "1px solid #FCD34D",
+              background: "linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <p style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "#92400E" }}>Có đơn định kỳ đến hạn hôm nay</p>
+              <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#B45309" }}>
+                Bạn có {dueSubscriptions.length} đơn định kỳ đã đến lịch giao. Bấm Auto đặt để thêm toàn bộ vào giỏ hàng ngay.
+              </p>
+            </div>
+            <div style={styles.buttonRow}>
+              <span style={styles.recurringNoticeBadge}>{dueSubscriptions.length} đơn chờ</span>
+              <button
+                type="button"
+                style={{
+                  ...styles.recurringNoticeButton,
+                  ...(autoOrdering ? styles.recurringNoticeButtonDisabled : {}),
+                }}
+                onClick={() => void handleAutoOrderSubscriptions()}
+                disabled={autoOrdering}
+              >
+                {autoOrdering ? "Đang thêm..." : "Auto đặt"}
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         {mainTab === "cart" ? renderCartSection() : renderOrdersSection()}
 

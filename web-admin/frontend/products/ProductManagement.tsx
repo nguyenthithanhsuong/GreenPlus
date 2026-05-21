@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { AlertTriangle, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import ProductDrawer, { ProductFormValues } from "./ProductDrawer";
 import ProductStats from "./ProductStats";
@@ -28,6 +28,9 @@ const ProductManagement = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
   const [form, setForm] = useState<ProductFormValues>(emptyForm());
+  const [deleteTarget, setDeleteTarget] = useState<ProductRow | null>(null);
+  const [deleteAcknowledged, setDeleteAcknowledged] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -186,17 +189,35 @@ const ProductManagement = () => {
     }
   }, []);
 
-  const deleteProduct = useCallback(async (product: ProductRow) => {
-    if (!window.confirm(`Xóa sản phẩm "${product.name}"?`)) {
+  const requestDeleteProduct = useCallback((product: ProductRow) => {
+    setDeleteTarget(product);
+    setDeleteAcknowledged(false);
+  }, []);
+
+  const closeDeleteDialog = useCallback(() => {
+    if (deletingProductId) {
       return;
     }
 
-    setSaving(true);
+    setDeleteTarget(null);
+    setDeleteAcknowledged(false);
+  }, [deletingProductId]);
+
+  const deleteProduct = useCallback(async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    setDeletingProductId(deleteTarget.product_id);
     setError(null);
 
     try {
-      const response = await fetch(`/api/products/${encodeURIComponent(product.product_id)}`, {
+      const response = await fetch(`/api/products/${encodeURIComponent(deleteTarget.product_id)}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ force: true }),
       });
 
       const data = (await response.json()) as { error?: string };
@@ -205,13 +226,15 @@ const ProductManagement = () => {
         throw new Error(data.error ?? "Không thể xóa sản phẩm");
       }
 
+      setDeleteTarget(null);
+      setDeleteAcknowledged(false);
       await reloadData();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Không thể xóa sản phẩm");
     } finally {
-      setSaving(false);
+      setDeletingProductId(null);
     }
-  }, [reloadData]);
+  }, [deleteTarget, reloadData]);
 
   const toggleStatus = useCallback(async (product: ProductRow, nextStatus: ProductStatus) => {
     if (saving) {
@@ -281,11 +304,76 @@ const ProductManagement = () => {
       <ProductTable
         products={products}
         loading={loading}
-        saving={saving}
+        saving={saving || deletingProductId !== null}
         onEdit={openEditDrawer}
-        onDelete={deleteProduct}
+        onDelete={requestDeleteProduct}
         onToggleStatus={toggleStatus}
       />
+
+      {deleteTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6">
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-full bg-red-100 p-2 text-red-600">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Xóa vĩnh viễn sản phẩm</h3>
+                  <p className="mt-1 text-sm leading-6 text-gray-600">
+                    {deleteTarget.name} sẽ bị xóa cùng toàn bộ dữ liệu liên quan. Hành động này ảnh hưởng đến các row trong
+                    batches, inventory, inventory_transactions, prices, cart_items, order_items, subscriptions,
+                    group_buys, group_buy_members và reviews theo ràng buộc cascade/restrict của DB.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeDeleteDialog}
+                className="rounded-full bg-gray-50 p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                disabled={deletingProductId !== null}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-6 py-5">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={deleteAcknowledged}
+                  onChange={(event) => setDeleteAcknowledged(event.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  disabled={deletingProductId !== null}
+                />
+                <span className="text-sm leading-6 text-red-700">
+                  Tôi hiểu đây là thao tác không thể hoàn tác và sẽ xóa các dữ liệu liên quan.
+                </span>
+              </label>
+
+              <div className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 pt-4">
+                <button
+                  type="button"
+                  onClick={closeDeleteDialog}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  disabled={deletingProductId !== null}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void deleteProduct()}
+                  disabled={!deleteAcknowledged || deletingProductId !== null}
+                  className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deletingProductId ? "Đang xóa..." : "Xóa vĩnh viễn"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <ProductDrawer
         open={drawerOpen}

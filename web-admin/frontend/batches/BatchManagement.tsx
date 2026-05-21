@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, Hash, Plus, RefreshCw, ScanSearch } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
 import ConfirmActionDialog from "./ConfirmActionDialog";
 import BatchDrawer, { BatchFormValues } from "./BatchDrawer";
+import BatchScannerDialog from "./BatchScannerDialog";
 import BatchStats from "./BatchStats";
 import BatchTable from "./BatchTable";
 import type { BatchRow } from "../../backend/modules/batches/batch-management.types";
@@ -16,6 +17,8 @@ type OptionRow = {
   id: string;
   label: string;
 };
+
+type ScannerMode = "batch" | "qr" | "camera";
 
 const emptyForm = (): BatchFormValues => ({
   productId: "",
@@ -67,6 +70,9 @@ const BatchManagement = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<BatchRow | null>(null);
   const [form, setForm] = useState<BatchFormValues>(emptyForm());
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerMode, setScannerMode] = useState<ScannerMode>("batch");
+  const [scannerMenuOpen, setScannerMenuOpen] = useState(false);
   const [confirmState, setConfirmState] = useState<
     | {
         type: "approve" | "reject" | "restore" | "delete";
@@ -76,6 +82,7 @@ const BatchManagement = () => {
   >(null);
   const { profile } = useCurrentUserProfile();
   const canForceManageApproved = (profile?.roleName ?? "").trim().toLowerCase() === "admin";
+  const scannerMenuRef = useRef<HTMLDivElement | null>(null);
 
   const loadBatches = useCallback(async () => {
     setLoading(true);
@@ -134,6 +141,21 @@ const BatchManagement = () => {
     void loadSuppliers();
   }, [loadBatches, loadProducts, loadSuppliers]);
 
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (!scannerMenuOpen) {
+        return;
+      }
+
+      if (scannerMenuRef.current && !scannerMenuRef.current.contains(event.target as Node)) {
+        setScannerMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    return () => document.removeEventListener("mousedown", handleDocumentClick);
+  }, [scannerMenuOpen]);
+
   const stats = useMemo(() => {
     const availableBatches = batches.filter((batch) => deriveBatchStatus(batch) === "available").length;
     const expiringSoonBatches = batches.filter((batch) => {
@@ -165,6 +187,16 @@ const BatchManagement = () => {
     setSelectedBatch(null);
     setForm(emptyForm());
     setDrawerOpen(true);
+  }, []);
+
+  const openScanner = useCallback((mode: ScannerMode) => {
+    setScannerMode(mode);
+    setScannerOpen(true);
+    setScannerMenuOpen(false);
+  }, []);
+
+  const closeScanner = useCallback(() => {
+    setScannerOpen(false);
   }, []);
 
   const openEditDrawer = useCallback((batch: BatchRow) => {
@@ -308,7 +340,6 @@ const BatchManagement = () => {
     setError(null);
 
     try {
-      // If supplier is rejected, only allow if admin and explicitly forcing
       const chosenSupplier = suppliers.find((s) => s.supplier_id === form.supplierId);
       let force = false;
       if (chosenSupplier && chosenSupplier.status === "rejected") {
@@ -319,7 +350,6 @@ const BatchManagement = () => {
         }
       }
 
-      // Also keep existing force behavior for editing approved batches
       if (!force && selectedBatch && selectedBatch.status === "available" && canForceManageApproved) {
         force = true;
       }
@@ -365,6 +395,35 @@ const BatchManagement = () => {
       searchPlaceholder="Tìm kiếm batch, sản phẩm, nhà cung cấp..."
       pageActions={(
         <div className="flex items-center gap-2">
+          <div ref={scannerMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setScannerMenuOpen((previous) => !previous)}
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60"
+              disabled={loading || saving}
+            >
+              <ScanSearch className="h-4 w-4" />
+              Quét QR
+              <ChevronDown className="h-4 w-4" />
+            </button>
+
+            {scannerMenuOpen ? (
+              <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                <button type="button" onClick={() => openScanner("batch")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+                  <Hash className="h-4 w-4 text-gray-500" />
+                  Nhập batch ID
+                </button>
+                <button type="button" onClick={() => openScanner("qr")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+                  <ScanSearch className="h-4 w-4 text-emerald-600" />
+                  Nhập QR
+                </button>
+                <button type="button" onClick={() => openScanner("camera")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+                  <ScanSearch className="h-4 w-4 text-sky-600" />
+                  Quét camera
+                </button>
+              </div>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={() => void reloadData()}
@@ -456,6 +515,8 @@ const BatchManagement = () => {
           void handleConfirmAction();
         }}
       />
+
+      <BatchScannerDialog open={scannerOpen} initialMode={scannerMode} onClose={closeScanner} />
     </AdminShell>
   );
 };
