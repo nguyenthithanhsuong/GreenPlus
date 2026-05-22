@@ -5,6 +5,7 @@ import { Building2, Clock3, Edit, Mail, MapPin, Phone, Plus, RefreshCw, Search, 
 import AdminShell from "../shared/AdminShell";
 import SettingsNav from "./SettingsNav";
 import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
+import { usePermissions } from "@/lib/usePermissions";
 import type { StoreRow, StoreStatus } from "../../backend/modules/stores/stores-management.types";
 import type { UserSummary } from "../../backend/modules/users/user-management.types";
 
@@ -90,6 +91,8 @@ function getStatusChip(status: StoreStatus) {
 
 const StoreManagement = () => {
   const { profile } = useCurrentUserProfile();
+  const { hasPermission, loading: permLoading } = usePermissions();
+  const canModify = !permLoading && (hasPermission('stores.create') || hasPermission('stores.update'));
   const [stores, setStores] = useState<StoreRow[]>([]);
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -315,15 +318,17 @@ const StoreManagement = () => {
             <RefreshCw className="h-4 w-4" />
             Tải lại
           </button>
-          <button
-            type="button"
-            onClick={openCreateForm}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
-            disabled={loading || saving}
-          >
-            <Plus className="h-4 w-4" />
-            Thêm cửa hàng
-          </button>
+          {!permLoading && hasPermission('stores.create') && (
+            <button
+              type="button"
+              onClick={openCreateForm}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
+              disabled={loading || saving}
+            >
+              <Plus className="h-4 w-4" />
+              Thêm cửa hàng
+            </button>
+          )}
         </div>
       }
     >
@@ -493,24 +498,29 @@ const StoreManagement = () => {
                           </td>
                           <td className="px-5 py-4 align-top text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => openEditForm(store)}
-                                disabled={saving}
-                                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                <Edit className="h-3.5 w-3.5" />
-                                Sửa
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void deleteStore(store)}
-                                disabled={saving}
-                                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                Xóa
-                              </button>
+                              {!permLoading && hasPermission('stores.update') && (
+                                <button
+                                  type="button"
+                                  onClick={() => openEditForm(store)}
+                                  disabled={saving}
+                                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <Edit className="h-3.5 w-3.5" />
+                                  Sửa
+                                </button>
+                              )}
+
+                              {!permLoading && hasPermission('stores.delete') && (
+                                <button
+                                  type="button"
+                                  onClick={() => void deleteStore(store)}
+                                  disabled={saving}
+                                  className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  Xóa
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -621,7 +631,8 @@ const StoreManagement = () => {
                       <select
                         value={form.managerId}
                         onChange={(event) => setForm((current) => ({ ...current, managerId: event.target.value }))}
-                        className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                        disabled={!canModify}
+                        className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453] disabled:opacity-60"
                       >
                         <option value="">Chọn manager</option>
                         {managerOptions.map((user) => (
@@ -747,13 +758,16 @@ const StoreManagement = () => {
                     >
                       Hủy
                     </button>
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="rounded-md bg-[#1da453] px-4 py-2 text-sm font-semibold text-white hover:bg-[#178546] disabled:opacity-60"
-                    >
-                      {saving ? "Đang lưu..." : editingStore ? "Cập nhật" : "Tạo cửa hàng"}
-                    </button>
+
+                    {(!permLoading && ((editingStore && hasPermission('stores.update')) || (!editingStore && hasPermission('stores.create')))) && (
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="rounded-md bg-[#1da453] px-4 py-2 text-sm font-semibold text-white hover:bg-[#178546] disabled:opacity-60"
+                      >
+                        {saving ? "Đang lưu..." : editingStore ? "Cập nhật" : "Tạo cửa hàng"}
+                      </button>
+                    )}
                   </div>
                 </form>
               </div>

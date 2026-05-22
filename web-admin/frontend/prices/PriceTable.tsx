@@ -1,4 +1,5 @@
 import React from "react";
+import { usePermissions } from "@/lib/usePermissions";
 import { CheckCircle2, Edit2, Package, Plus, Search, XCircle, Trash2 } from "lucide-react";
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 
@@ -74,18 +75,24 @@ const PriceTable = ({
   onQuickApprove,
   onQuickReject,
 }: PriceTableProps) => {
+  const { hasPermission } = usePermissions();
+  const canCreateGlobal = hasPermission('prices.create');
+  const canUpdateGlobal = hasPermission('prices.update');
+  const canDeleteGlobal = hasPermission('prices.delete');
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
 
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between p-5 border-b border-gray-50 gap-3">
-        <button
-          type="button"
-          onClick={onCreate}
-          disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-60"
-        >
-          <Plus className="w-4 h-4" /> Thiết lập Giá mới
-        </button>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between p-5 border-b border-gray-50 gap-3">
+        {canCreateGlobal && (
+          <button
+            type="button"
+            onClick={onCreate}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-60"
+          >
+            <Plus className="w-4 h-4" /> Thiết lập Giá mới
+          </button>
+        )}
 
         <div className="relative w-full max-w-md md:ml-auto">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -182,7 +189,7 @@ const PriceTable = ({
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        {canModerate ? (
+                        {canModerate && canUpdateGlobal ? (
                           <>
                             <button
                               type="button"
@@ -208,33 +215,37 @@ const PriceTable = ({
                           </>
                         ) : null}
 
-                        <button
-                          type="button"
-                          onClick={() => onUpdate(item)}
-                          disabled={saving || !canEdit}
-                          className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-40"
-                          title={
-                            canEdit
-                              ? "Sửa"
-                              : "Chỉ admin mới có thể force chỉnh sửa giá đang áp dụng"
-                          }
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
+                        {canUpdateGlobal && (
+                          <button
+                            type="button"
+                            onClick={() => onUpdate(item)}
+                            disabled={saving || !canEdit}
+                            className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-40"
+                            title={
+                              canEdit
+                                ? "Sửa"
+                                : "Chỉ admin mới có thể force chỉnh sửa giá đang áp dụng"
+                            }
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
 
-                        <button
-                          type="button"
-                          onClick={() => onDelete(item)}
-                          disabled={saving || !deletable}
-                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-40"
-                          title={
-                            deletable
-                              ? "Xóa"
-                              : "Chỉ xóa khi trạng thái là chờ duyệt hoặc ngưng"
-                          }
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canDeleteGlobal && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(item)}
+                            disabled={saving || !deletable}
+                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-40"
+                            title={
+                              deletable
+                                ? "Xóa"
+                                : "Chỉ xóa khi trạng thái là chờ duyệt hoặc ngưng"
+                            }
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
+import { usePermissions } from "@/lib/usePermissions";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import PriceStats from "./PriceStats";
 import PriceTable from "./PriceTable";
@@ -43,6 +44,8 @@ const PriceManagement = () => {
   const [moderationNextStatus, setModerationNextStatus] = useState<"active" | "inactive" | null>(null);
 
   const canForceManagePrice = (profile?.roleName ?? "").trim().toLowerCase() === "admin";
+
+  const { hasPermission, loading: permLoading } = usePermissions();
 
   const loadPrices = useCallback(async () => {
     setLoading(true);
@@ -283,15 +286,28 @@ const PriceManagement = () => {
       title="Quản lý giá"
       description="Theo dõi biến động giá, cập nhật giá khuyến mãi và giá theo lô hàng."
       pageActions={
-        <button
-          type="button"
-          onClick={() => void loadPrices()}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-          disabled={loading || saving}
-        >
-          <RefreshCw className="h-4 w-4" />
-          Tải lại
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadPrices()}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+            disabled={loading || saving}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Tải lại
+          </button>
+          {!permLoading && hasPermission('prices.create') && (
+            <button
+              type="button"
+              onClick={openCreateDrawer}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
+              disabled={loading || saving}
+            >
+              <Plus className="h-4 w-4" />
+              Thiết lập Giá mới
+            </button>
+          )}
+        </div>
       }
     >
       {error && (

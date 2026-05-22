@@ -5,12 +5,16 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Building2, Bell, LogOut, User } from 'lucide-react';
 import { supabase } from '../../src/lib/supabaseClient';
 import { useAuthStore } from '../../src/lib/stores/authStore';
+import { usePermissions } from '@/lib/usePermissions';
+import { useCurrentUserProfile } from '../shared/useCurrentUserProfile';
 
 const SettingsNav = () => {
   const router = useRouter();
   const pathname = usePathname();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const { hasPermission, loading: permLoading } = usePermissions();
+  const { profile } = useCurrentUserProfile();
 
   const goTo = (href: string) => {
     router.push(href);
@@ -62,15 +66,19 @@ const SettingsNav = () => {
         <Building2 className="w-4 h-4" />
         Cửa hàng của tôi
       </button>
-      
-      <button
-        type="button"
-        onClick={() => goTo('/settings/stores')}
-        className={getItemClassName(isExactOrNestedPath('/settings/stores'))}
-      >
-        <Building2 className="w-4 h-4" />
-        Các cửa hàng
-      </button>
+      {
+        // show 'Các cửa hàng' only when user has stores.read permission
+      }
+      {!permLoading && profile?.roleName?.toLowerCase()?.includes('admin') && (
+        <button
+          type="button"
+          onClick={() => goTo('/settings/stores')}
+          className={getItemClassName(isExactOrNestedPath('/settings/stores'))}
+        >
+          <Building2 className="w-4 h-4" />
+          Các cửa hàng
+        </button>
+      )}
       
       <div className="my-2 border-t border-gray-200"></div>
       

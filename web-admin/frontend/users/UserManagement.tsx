@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
+import { usePermissions } from "@/lib/usePermissions";
 import UserStats from "./UserStats";
 import UserTable, { UserViewModel } from "./UserTable";
 import UserDrawer, { UserDrawerMode, UserFormValues } from "./UserDrawer";
@@ -49,6 +50,8 @@ const UserManagement = () => {
     }
     | null
   >(null);
+
+  const { hasPermission, loading: permLoading } = usePermissions();
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -445,15 +448,18 @@ const UserManagement = () => {
             <RefreshCw className="h-4 w-4" />
             Tải lại
           </button>
-          <button
-            type="button"
-            onClick={openCreateDrawer}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-60"
-            disabled={loading || saving}
-          >
-            <Plus className="h-4 w-4" />
-            Thêm User
-          </button>
+          {/* Create button controlled by permissions */}
+          {!permLoading && hasPermission("users.create") && (
+            <button
+              type="button"
+              onClick={openCreateDrawer}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-60"
+              disabled={loading || saving}
+            >
+              <Plus className="h-4 w-4" />
+              Thêm User
+            </button>
+          )}
         </div>
       }
     >

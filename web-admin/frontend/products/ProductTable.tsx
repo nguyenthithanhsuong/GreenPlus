@@ -1,4 +1,5 @@
 import React from 'react';
+import { usePermissions } from "@/lib/usePermissions";
 import { ChevronLeft, ChevronRight, Edit2, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import type { ProductRow, ProductStatus } from '../../backend/modules/catalog/product-management.types';
 
@@ -125,6 +126,10 @@ const ProductTable = ({ products, loading, saving, onEdit, onDelete, onToggleSta
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
   const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const { hasPermission } = usePermissions();
+  const canEditGlobal = hasPermission('products.update');
+  const canToggleGlobal = hasPermission('products.update');
+  const canDeleteGlobal = hasPermission('products.delete');
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -229,33 +234,41 @@ const ProductTable = ({ products, loading, saving, onEdit, onDelete, onToggleSta
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(product)}
-                      className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-60"
-                      title="Sửa"
-                      disabled={saving}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onToggleStatus(product, product.status === 'active' ? 'inactive' : 'active')}
-                      className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-60"
-                      title={product.status === 'active' ? 'Ngừng bán' : 'Kích hoạt'}
-                      disabled={saving}
-                    >
-                      {product.status === 'active' ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(product)}
-                      className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-60"
-                      title="Xóa"
-                      disabled={saving}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {canEditGlobal && (
+                      <button
+                        type="button"
+                        onClick={() => onEdit(product)}
+                        className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-60"
+                        title="Sửa"
+                        disabled={saving}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {canToggleGlobal && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleStatus(product, product.status === 'active' ? 'inactive' : 'active')}
+                        className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-60"
+                        title={product.status === 'active' ? 'Ngừng bán' : 'Kích hoạt'}
+                        disabled={saving}
+                      >
+                        {product.status === 'active' ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+                      </button>
+                    )}
+
+                    {canDeleteGlobal && (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(product)}
+                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-60"
+                        title="Xóa"
+                        disabled={saving}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

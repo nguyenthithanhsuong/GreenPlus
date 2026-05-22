@@ -20,6 +20,7 @@ import {
   Warehouse,
   Wallet,
 } from "lucide-react";
+import { usePermissions } from "@/lib/usePermissions";
 
 const navGroups = [
   {
@@ -64,6 +65,34 @@ function isRouteActive(pathname: string, href: string): boolean {
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const { permissions, loading } = usePermissions();
+
+  function allowed(href: string) {
+    if (!permissions) return false; // while loading, hide until resolved
+    // no permission required for dashboard and settings
+    if (href === "/dashboard" || href === "/settings") return true;
+
+    const map: Record<string, string> = {
+      "/users": "users.read",
+      "/roles": "roles.read",
+      "/suppliers": "suppliers.read",
+      "/products": "products.read",
+      "/categories": "categories.read",
+      "/batches": "batches.read",
+      "/inventories": "inventory.read",
+      "/prices": "prices.read",
+      "/orders": "orders.read",
+      "/shippers": "orders.assign",
+      "/complaints": "complaints.read",
+      "/customers": "reports.customer_analytics",
+      "/greencreators": "content.read",
+      "/reports": "reports.business_view",
+    };
+
+    const required = map[href];
+    if (!required) return true;
+    return permissions.includes(required);
+  }
 
   return (
     <aside className="w-[260px] h-screen bg-white border-r border-gray-100 flex flex-col font-sans shrink-0">
@@ -82,7 +111,13 @@ export default function AdminSidebar() {
           <div key={group.label}>
             <h3 className="text-sm font-semibold text-gray-400 mb-3 px-3">{group.label}</h3>
             <ul className="space-y-1">
-              {group.items.map((item) => {
+              {group.items
+                .filter((it) => {
+                  // while permission loading, show nothing to avoid flicker
+                  if (loading) return false;
+                  return allowed(it.href);
+                })
+                .map((item) => {
                 const Icon = item.icon;
                 const active = isRouteActive(pathname, item.href);
 

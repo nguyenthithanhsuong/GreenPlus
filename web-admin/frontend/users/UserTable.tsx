@@ -1,4 +1,5 @@
 import React, { useDeferredValue } from 'react';
+import { usePermissions } from "@/lib/usePermissions";
 import { Edit, Eye, Lock, Trash2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { userSearchStrategy } from '../shared/searchStrategies';
 
@@ -156,6 +157,11 @@ const UserTable = ({
     () => new Map(storeOptions.map((store) => [store.storeId, store.storeName])),
     [storeOptions]
   );
+  const { hasPermission } = usePermissions();
+  const canViewGlobal = hasPermission('users.read');
+  const canEditGlobal = hasPermission('users.update');
+  const canBanGlobal = hasPermission('users.update');
+  const canDeleteGlobal = hasPermission('users.delete');
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -236,13 +242,19 @@ const UserTable = ({
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => onViewUser(user)} className="p-2 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors" title="Xem chi tiết" disabled={saving}>
+                    {canViewGlobal && (
+                      <button onClick={() => onViewUser(user)} className="p-2 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors" title="Xem chi tiết" disabled={saving}>
                       <Eye className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => onEditUser(user)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title="Sửa" disabled={saving}>
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    {(user.role_name ?? '').toLowerCase() !== 'admin' && (
+                      </button>
+                    )}
+
+                    {canEditGlobal && (
+                      <button onClick={() => onEditUser(user)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title="Sửa" disabled={saving}>
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {canBanGlobal && (user.role_name ?? '').toLowerCase() !== 'admin' && (
                       <button
                         onClick={() => onRequestDisableUser(user)}
                         className={`p-2 rounded-lg transition-colors ${
@@ -256,9 +268,12 @@ const UserTable = ({
                         <Lock className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => onRequestDeleteUser(user)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Xóa" disabled={saving}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+
+                    {canDeleteGlobal && (
+                      <button onClick={() => onRequestDeleteUser(user)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Xóa" disabled={saving}>
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

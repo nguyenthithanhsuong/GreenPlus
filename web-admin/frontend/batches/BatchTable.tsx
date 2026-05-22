@@ -1,4 +1,5 @@
 import React, { useDeferredValue } from "react";
+import { usePermissions } from "@/lib/usePermissions";
 import { Check, ChevronLeft, ChevronRight, Copy, Edit2, RotateCcw, Search, Trash2, X } from "lucide-react";
 import type { BatchRow, BatchStatus } from "../../backend/modules/batches/batch-management.types";
 import { batchSearchStrategy } from "../shared/searchStrategies";
@@ -259,6 +260,11 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
     }
   };
 
+  const { hasPermission } = usePermissions();
+  const canApproveGlobal = hasPermission('batches.update');
+  const canEditGlobal = hasPermission('batches.update');
+  const canDeleteGlobal = hasPermission('batches.delete');
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
       <div className="flex flex-col justify-between gap-4 border-b border-gray-50 p-5 md:flex-row md:items-center">
@@ -378,44 +384,54 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
                     <div className="flex items-center justify-end gap-2">
                       {batch.status === "pending" ? (
                         <>
-                          <button
-                            type="button"
-                            onClick={() => onApprove(batch)}
-                            className="rounded-lg p-2 text-emerald-600 transition-colors hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-60"
-                            title="Duyệt nhanh"
-                            disabled={saving}
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onReject(batch)}
-                            className="rounded-lg p-2 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
-                            title="Từ chối nhanh"
-                            disabled={saving}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
+                          {canApproveGlobal && (
+                            <button
+                              type="button"
+                              onClick={() => onApprove(batch)}
+                              className="rounded-lg p-2 text-emerald-600 transition-colors hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-60"
+                              title="Duyệt nhanh"
+                              disabled={saving}
+                            >
+                              <Check className="h-4 w-4" />
+                            </button>
+                          )}
+                          {canApproveGlobal && (
+                            <button
+                              type="button"
+                              onClick={() => onReject(batch)}
+                              className="rounded-lg p-2 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
+                              title="Từ chối nhanh"
+                              disabled={saving}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
                         </>
                       ) : batch.status === "rejected" ? (
-                        <button
-                          type="button"
-                          onClick={() => onRestore(batch)}
-                          className="rounded-lg p-2 text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-700 disabled:opacity-60"
-                          title="Quay lại chờ duyệt"
-                          disabled={saving}
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                        </button>
+                        canApproveGlobal ? (
+                          <button
+                            type="button"
+                            onClick={() => onRestore(batch)}
+                            className="rounded-lg p-2 text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-700 disabled:opacity-60"
+                            title="Quay lại chờ duyệt"
+                            disabled={saving}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </button>
+                        ) : null
                       ) : null}
                       {batch.status !== "available" || canForceManageApproved ? (
                         <>
-                          <button type="button" onClick={() => onEdit(batch)} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-60" title="Sửa" disabled={saving}>
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button type="button" onClick={() => onDelete(batch)} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60" title="Xóa" disabled={saving}>
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {canEditGlobal && (
+                            <button type="button" onClick={() => onEdit(batch)} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-60" title="Sửa" disabled={saving}>
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                          )}
+                          {canDeleteGlobal && (
+                            <button type="button" onClick={() => onDelete(batch)} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60" title="Xóa" disabled={saving}>
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </>
                       ) : null}
                     </div>

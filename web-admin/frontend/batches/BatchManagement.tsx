@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Hash, Plus, RefreshCw, ScanSearch } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
+import { usePermissions } from "@/lib/usePermissions";
 import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
 import ConfirmActionDialog from "./ConfirmActionDialog";
 import BatchDrawer, { BatchFormValues } from "./BatchDrawer";
@@ -86,6 +87,8 @@ const BatchManagement = () => {
   const { profile } = useCurrentUserProfile();
   const canForceManageApproved = (profile?.roleName ?? "").trim().toLowerCase() === "admin";
   const scannerMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const { hasPermission, loading: permLoading } = usePermissions();
 
   const loadBatches = useCallback(async () => {
     setLoading(true);
@@ -420,53 +423,96 @@ const BatchManagement = () => {
       searchPlaceholder="Tìm kiếm batch, sản phẩm, nhà cung cấp..."
       pageActions={(
         <div className="flex items-center gap-2">
-          <div ref={scannerMenuRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setScannerMenuOpen((previous) => !previous)}
-              className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60"
-              disabled={loading || saving}
-            >
-              <ScanSearch className="h-4 w-4" />
-              Quét QR
-              <ChevronDown className="h-4 w-4" />
-            </button>
+          {(() => {
+            const { hasPermission, loading: permLoading } = usePermissions();
+            if (permLoading) {
+              return (
+                <>
+                  <div ref={scannerMenuRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setScannerMenuOpen((previous) => !previous)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60"
+                      disabled={loading || saving}
+                    >
+                      <ScanSearch className="h-4 w-4" />
+                      Quét QR
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void reloadData()}
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                    disabled={loading || saving}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Tải lại
+                  </button>
+                </>
+              );
+            }
 
-            {scannerMenuOpen ? (
-              <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-                <button type="button" onClick={() => openScanner("batch")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
-                  <Hash className="h-4 w-4 text-gray-500" />
-                  Nhập batch ID
+            return (
+              <>
+                <div ref={scannerMenuRef} className="relative">
+                  {hasPermission('batches.qr_scan') ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setScannerMenuOpen((previous) => !previous)}
+                        className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60"
+                        disabled={loading || saving}
+                      >
+                        <ScanSearch className="h-4 w-4" />
+                        Quét QR
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+
+                      {scannerMenuOpen ? (
+                        <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                          <button type="button" onClick={() => openScanner("batch")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+                            <Hash className="h-4 w-4 text-gray-500" />
+                            Nhập batch ID
+                          </button>
+                          <button type="button" onClick={() => openScanner("qr")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+                            <ScanSearch className="h-4 w-4 text-emerald-600" />
+                            Nhập QR
+                          </button>
+                          <button type="button" onClick={() => openScanner("camera")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+                            <ScanSearch className="h-4 w-4 text-sky-600" />
+                            Quét camera
+                          </button>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void reloadData()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                  disabled={loading || saving}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Tải lại
                 </button>
-                <button type="button" onClick={() => openScanner("qr")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
-                  <ScanSearch className="h-4 w-4 text-emerald-600" />
-                  Nhập QR
-                </button>
-                <button type="button" onClick={() => openScanner("camera")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
-                  <ScanSearch className="h-4 w-4 text-sky-600" />
-                  Quét camera
-                </button>
-              </div>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={() => void reloadData()}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-            disabled={loading || saving}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Tải lại
-          </button>
-          <button
-            type="button"
-            onClick={openCreateDrawer}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
-            disabled={loading || saving}
-          >
-            <Plus className="h-4 w-4" />
-            Thêm batch
-          </button>
+
+                {hasPermission('batches.create') ? (
+                  <button
+                    type="button"
+                    onClick={openCreateDrawer}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
+                    disabled={loading || saving}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Thêm batch
+                  </button>
+                ) : null}
+              </>
+            );
+          })()}
         </div>
       )}
     >
