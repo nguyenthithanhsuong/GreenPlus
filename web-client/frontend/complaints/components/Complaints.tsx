@@ -256,17 +256,18 @@ export default function Complaints() {
           throw new Error(msg || "Không thể tải danh sách đơn hàng.");
         }
 
-        const completedOrders = ((data as OrdersResponse).items ?? [])
-          .map((item) => ({ ...item, status: toStatus(item.status) }))
-          .filter((item) => item.status === "completed");
+        const nextOrders = ((data as OrdersResponse).items ?? []).map((item) => ({
+          ...item,
+          status: toStatus(item.status),
+        }));
 
-        setOrders(completedOrders);
+        setOrders(nextOrders);
 
         const preferredOrderId = (searchParams.get("orderId") ?? "").trim();
-        if (preferredOrderId && completedOrders.some((item) => item.order_id === preferredOrderId)) {
+        if (preferredOrderId && nextOrders.some((item) => item.order_id === preferredOrderId)) {
           setOrderId(preferredOrderId);
-        } else if (completedOrders.length > 0) {
-          setOrderId(completedOrders[0].order_id);
+        } else if (nextOrders.length > 0) {
+          setOrderId(nextOrders[0].order_id);
         } else {
           setOrderId("");
         }
@@ -362,7 +363,6 @@ export default function Complaints() {
       const payload = data as ComplaintResponse;
       setSuccess(`Đã tạo khiếu nại #${payload.complaintId.slice(0, 8).toUpperCase()} (${payload.status}).`);
       setDescription("");
-      // reload complaints
       try {
         const resp = await fetch(`/api/complaints?userId=${encodeURIComponent(user.user_id)}`);
         if (resp.ok) {
@@ -370,7 +370,6 @@ export default function Complaints() {
           setComplaints((d.items ?? []) as ComplaintResponse[]);
         }
       } catch (e) {
-        // ignore reload errors
       }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Không thể gửi khiếu nại.");
@@ -391,7 +390,7 @@ export default function Complaints() {
 
           <div style={{ textAlign: "center" }}>
             <h1 style={styles.headerTitle}>Khiếu nại đơn hàng</h1>
-            <p style={styles.headerSub}>Gửi yêu cầu hỗ trợ cho đơn đã giao</p>
+            <p style={styles.headerSub}>Gửi yêu cầu hỗ trợ cho mọi đơn hàng</p>
           </div>
 
           <div style={{ width: "24px" }} />

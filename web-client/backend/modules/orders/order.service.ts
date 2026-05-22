@@ -392,7 +392,7 @@ export class OrderService {
     };
   }
 
-  async cancelOrder(input: CancelOrderInput): Promise<{ order_id: string; status: "cancelled"; message: string }> {
+  async cancelOrder(input: CancelOrderInput): Promise<{ order_id: string; status: "cancelled"; payment_status: "cancelled"; message: string }> {
     if (!input.userId.trim()) {
       throw new AppError("userId is required", 400);
     }
@@ -450,6 +450,7 @@ export class OrderService {
     return {
       order_id: order.order_id,
       status: "cancelled",
+      payment_status: "cancelled",
       message: "Cancellation Successful",
     };
   }

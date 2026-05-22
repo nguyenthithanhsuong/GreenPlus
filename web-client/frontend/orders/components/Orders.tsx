@@ -81,6 +81,20 @@ type StatusConfig = {
   chipText: string;
 };
 
+type OrderCardActionKind = "contactShop" | "cancelOrder" | "trackOrder" | "review" | "complaint" | "buyAgain";
+
+type OrderCardAction = {
+  label: string;
+  kind: OrderCardActionKind;
+  tone?: "primary" | "danger" | "muted";
+};
+
+type OrderCardActions = {
+  left?: OrderCardAction;
+  middle?: OrderCardAction;
+  right: OrderCardAction;
+};
+
 type TabValue = "all" | OrderStatus;
 
 const DELIVERY_FEE = 15000;
@@ -536,7 +550,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   actionButton: {
     flex: 1,
-    borderRadius: "12px",
+    borderRadius: "14px",
     height: "38px",
     border: "1px solid #D1D5DB",
     background: "#FFFFFF",
@@ -547,17 +561,37 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   actionButtonPrimary: {
-    background: "#4EA96A",
+    flex: 1,
+    borderRadius: "14px",
+    height: "38px",
     border: "1px solid #4EA96A",
+    background: "#4EA96A",
     color: "#FFFFFF",
-    fontWeight: 700,
-    boxShadow: "0px 4px 6px -1px rgba(78, 169, 106, 0.2), 0px 2px 4px -2px rgba(78, 169, 106, 0.2)",
+    fontSize: "14px",
+    lineHeight: "20px",
+    fontWeight: 600,
+  },
+  actionButtonDanger: {
+    flex: 1,
+    borderRadius: "14px",
+    height: "38px",
+    border: "1px solid #FCA5A5",
+    background: "#FEF2F2",
+    color: "#B91C1C",
+    fontSize: "14px",
+    lineHeight: "20px",
+    fontWeight: 600,
   },
   actionButtonMuted: {
-    background: "#F3F4F6",
-    border: "1px solid #E5E7EB",
+    flex: 1,
+    borderRadius: "14px",
+    height: "38px",
+    background: "#FFFFFF",
+    border: "1px solid #D1D5DB",
     color: "#9CA3AF",
-    fontWeight: 700,
+    fontSize: "14px",
+    lineHeight: "20px",
+    fontWeight: 600,
   },
 };
 
@@ -624,24 +658,49 @@ function buildPreviewImages(images: string[]): string[] {
   return images.filter((value) => value.trim().length > 0).slice(0, 3);
 }
 
-function getCardActions(status: OrderStatus): { left?: string; right: string; mutedRight?: boolean } {
-  if (status === "pending" || status === "confirmed") {
-    return { left: "Hủy đơn hàng", right: "Đang xử lý...", mutedRight: true };
+function getCardActions(status: OrderStatus): OrderCardActions {
+  if (status === "pending") {
+    return {
+      left: { label: "Liên hệ Shop", kind: "contactShop" },
+      middle: { label: "Hủy đơn hàng", kind: "cancelOrder", tone: "danger" },
+      right: { label: "Theo dõi đơn", kind: "trackOrder", tone: "primary" },
+    };
   }
 
-  if (status === "delivering") {
-    return { left: "Liên hệ Shop", right: "Theo dõi đơn" };
+  if (status === "confirmed" || status === "preparing" || status === "delivering") {
+    return {
+      left: { label: "Liên hệ Shop", kind: "contactShop" },
+      right: { label: "Theo dõi đơn", kind: "trackOrder", tone: "primary" },
+    };
   }
 
   if (status === "completed") {
-    return { left: "Đánh giá ngay", right: "Mua lại" };
+    return {
+      left: { label: "Đánh Giá", kind: "review" },
+      middle: { label: "Khiếu nại", kind: "complaint" },
+      right: { label: "Mua lại", kind: "buyAgain", tone: "primary" },
+    };
   }
 
-  if (status === "cancelled") {
-    return { right: "Mua lại sản phẩm" };
+  return {
+    right: { label: "Mua lại", kind: "buyAgain", tone: "primary" },
+  };
+}
+
+function getActionButtonStyle(action: OrderCardAction): React.CSSProperties {
+  if (action.tone === "primary") {
+    return { ...styles.actionButton, ...styles.actionButtonPrimary };
   }
 
-  return { right: "Đang xử lý...", mutedRight: true };
+  if (action.tone === "danger") {
+    return { ...styles.actionButton, ...styles.actionButtonDanger };
+  }
+
+  if (action.tone === "muted") {
+    return { ...styles.actionButton, ...styles.actionButtonMuted };
+  }
+
+  return styles.actionButton;
 }
 
 function getStatusGroupLabel(status: OrderStatus): string {
@@ -1423,49 +1482,81 @@ export default function Orders() {
           {actions.left ? (
             <button
               type="button"
-              style={styles.actionButton}
+              style={getActionButtonStyle(actions.left)}
               onClick={(event) => {
                 event.stopPropagation();
-                if (status === "pending" || status === "confirmed") {
-                  handleOpenCancelPrompt(order);
+                if (actions.left?.kind === "contactShop") {
+                  void router.push(`/orders/${encodeURIComponent(order.order_id)}?mode=contact`);
                   return;
                 }
 
-                if (status === "completed") {
+                if (actions.left?.kind === "review") {
                   handleOpenReviewFromOrder(order.order_id);
+                  return;
+                }
+
+                if (actions.left?.kind === "cancelOrder") {
+                  handleOpenCancelPrompt(order);
                 }
               }}
             >
-              {actions.left}
+              {actions.left.label}
             </button>
           ) : null}
-          {status === "completed" ? (
+
+          {actions.middle ? (
             <button
               type="button"
-              style={styles.actionButton}
+              style={getActionButtonStyle(actions.middle)}
               onClick={(event) => {
                 event.stopPropagation();
-                handleOpenComplaintPage(order.order_id);
+                const middleAction = actions.middle;
+
+                if (!middleAction) {
+                  return;
+                }
+
+                if (middleAction.kind === "cancelOrder") {
+                  handleOpenCancelPrompt(order);
+                }
+
+                if (middleAction.kind === "complaint") {
+                  handleOpenComplaintPage(order.order_id);
+                }
               }}
             >
-              Khiếu nại
+              {actions.middle.label}
             </button>
           ) : null}
           <button
             type="button"
             style={{
-              ...styles.actionButton,
-              ...(actions.mutedRight ? styles.actionButtonMuted : styles.actionButtonPrimary),
-              flex: actions.left || status === "completed" ? 1 : 2,
+              ...getActionButtonStyle(actions.right),
+              flex: 1,
             }}
             onClick={(event) => {
               event.stopPropagation();
-              if (status === "completed" || status === "cancelled") {
+              if (actions.right.kind === "trackOrder") {
+                void router.push(`/orders/${encodeURIComponent(order.order_id)}?mode=track`);
+                return;
+              }
+
+              if (actions.right.kind === "buyAgain") {
                 void router.push("/dashboard");
+                return;
+              }
+
+              if (actions.right.kind === "review") {
+                handleOpenReviewFromOrder(order.order_id);
+                return;
+              }
+
+              if (actions.right.kind === "complaint") {
+                handleOpenComplaintPage(order.order_id);
               }
             }}
           >
-            {actions.right}
+            {actions.right.label}
           </button>
         </div>
       </article>

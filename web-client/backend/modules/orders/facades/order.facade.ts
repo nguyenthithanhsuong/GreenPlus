@@ -49,7 +49,7 @@ export class OrderFacade {
     return created;
   }
 
-  async cancelOrder(input: CancelOrderInput): Promise<{ order_id: string; status: "cancelled"; message: string }> {
+  async cancelOrder(input: CancelOrderInput): Promise<{ order_id: string; status: "cancelled"; payment_status: "cancelled"; message: string }> {
     const result = await this.service.cancelOrder(input);
 
     this.notifier.notify({
