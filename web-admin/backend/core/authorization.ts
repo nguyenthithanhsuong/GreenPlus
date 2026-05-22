@@ -66,8 +66,10 @@ const PERMISSION_KEYS = [
   "deliveries.view_assigned",
 
   // Content
+  "content.create",
   "content.read",
   "content.update",
+  "content.delete",
 
   // Complaints
   "complaints.read",
@@ -119,8 +121,10 @@ const FLAG_TO_PERMISSIONS: Record<string, string[]> = {
     // deliveries
     "deliveries.view_assigned",
     // content moderation
+    "content.create",
     "content.read",
     "content.update",
+    "content.delete",
     // complaints
     "complaints.read",
     "complaints.update",

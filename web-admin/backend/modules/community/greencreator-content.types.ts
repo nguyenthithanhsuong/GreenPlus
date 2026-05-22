@@ -35,3 +35,25 @@ export type GreenCreatorPostRow = {
   interaction_count: number;
   comment_count: number;
 };
+
+export type CreateGreenCreatorPostInput = {
+  userId: string;
+  title?: string;
+  content: string;
+  type?: GreenCreatorPostType;
+};
+
+export type UploadGreenCreatorAttachmentInput = {
+  userId: string;
+  postId: string;
+  files: File[];
+  replaceExisting?: boolean;
+};
+
+export type UploadGreenCreatorAttachmentResult = {
+  items: Array<{
+    path: string;
+    publicUrl: string;
+  }>;
+  mediaUrls: string[];
+};

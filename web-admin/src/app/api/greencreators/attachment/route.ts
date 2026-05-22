@@ -27,7 +27,7 @@ function ensureAdminOrManager(role: string): void {
   throw new AppError("Forbidden", 403);
 }
 
-export async function PATCH(request: Request, context: { params: Promise<{ postId: string }> }) {
+export async function POST(request: Request) {
   try {
     const accessToken = readAccessToken(request);
     if (!accessToken) {
@@ -38,40 +38,42 @@ export async function PATCH(request: Request, context: { params: Promise<{ postI
     const verified = await authService.verifySession(accessToken);
     ensureAdminOrManager(verified.role);
 
-    const params = await context.params;
-    const body = (await request.json()) as { status?: "pending" | "approved" | "rejected" };
+    const formData = await request.formData();
 
-    const updated = await greenCreatorContentFacade.changeStatus(params.postId, body.status ?? "pending");
+    const postIdRaw = formData.get("postId");
+    const postId = typeof postIdRaw === "string" ? postIdRaw.trim() : "";
+    const filesFromList = formData
+      .getAll("files")
+      .filter((value): value is File => value instanceof File);
+    const singleFile = formData.get("file");
+    const files = filesFromList.length
+      ? filesFromList
+      : singleFile instanceof File
+        ? [singleFile]
+        : [];
 
-    return NextResponse.json(updated, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    if (!postId) {
+      return NextResponse.json({ error: "postId is required" }, { status: 400 });
     }
+
+    if (!files.length) {
+      return NextResponse.json({ error: "files are required" }, { status: 400 });
+    }
+
+    const result = await greenCreatorContentFacade.uploadAttachment({
+      userId: verified.id,
+      postId,
+      files,
+      replaceExisting: true,
+    });
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
-      { status: 500 },
+      {
+        items: result.items,
+        mediaUrls: result.mediaUrls,
+      },
+      { status: 201 },
     );
-  }
-}
-
-export async function DELETE(request: Request, context: { params: Promise<{ postId: string }> }) {
-  try {
-    const accessToken = readAccessToken(request);
-    if (!accessToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const authService = new AuthService();
-    const verified = await authService.verifySession(accessToken);
-    ensureAdminOrManager(verified.role);
-
-    const params = await context.params;
-    const body = (await request.json().catch(() => ({}))) as { force?: boolean };
-    await greenCreatorContentFacade.deletePost(params.postId, Boolean(body.force));
-
-    return NextResponse.json({ deleted: true }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });

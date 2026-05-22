@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
+import CreatePostModal from "./CreatePostModal";
 import ContentDetailDrawer from "./ContentDetailDrawer";
 import ContentStats from "./ContentStats";
 import ContentTable from "./ContentTable";
+import { usePermissions } from "@/lib/usePermissions";
+import { useAuthStore } from "@/lib/stores/authStore";
 import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/community/greencreator-content.types";
 
 type ContentStatusFilter = "all" | GreenCreatorPostStatus;
@@ -20,6 +23,12 @@ const ContentModeration = () => {
   const [activeStatus, setActiveStatus] = useState<ContentStatusFilter>("all");
   const [searchValue, setSearchValue] = useState("");
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+  const accessToken = useAuthStore((state) => state.session?.access_token ?? "");
+  const { hasPermission } = usePermissions();
+  const canCreatePost = hasPermission("content.create");
+  const canDeletePost = hasPermission("content.delete");
+  const canModeratePost = hasPermission("content.update");
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -101,7 +110,10 @@ const ContentModeration = () => {
       try {
         const response = await fetch(`/api/greencreators/${encodeURIComponent(post.post_id)}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
           body: JSON.stringify({ status }),
         });
 
@@ -117,19 +129,123 @@ const ContentModeration = () => {
         setSavingPostId(null);
       }
     },
-    [loadPosts]
+    [accessToken, loadPosts]
   );
 
+  const uploadAttachment = useCallback(async (postId: string, files: File[]) => {
+    if (!files.length) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("postId", postId);
+    files.forEach((selectedFile) => formData.append("files", selectedFile));
+
+    const response = await fetch("/api/greencreators/attachment", {
+      method: "POST",
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      body: formData,
+    });
+
+    const data = (await response.json()) as { mediaUrls?: string[]; error?: string };
+    if (!response.ok || !Array.isArray(data.mediaUrls)) {
+      throw new Error(data.error ?? "Upload file thất bại");
+    }
+  }, [accessToken]);
+
+  const handleCreatePost = useCallback(async (input: { title: string; content: string; type: "blog" | "video" | "community"; files: File[] }) => {
+    setSavingPostId("creating");
+    setError(null);
+
+    try {
+      const createResponse = await fetch("/api/greencreators", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          title: input.title,
+          content: input.content,
+          type: input.type,
+        }),
+      });
+
+      const createData = (await createResponse.json()) as GreenCreatorPostRow | { error?: string };
+      if (!createResponse.ok || !("post_id" in createData)) {
+        const errorMessage = "error" in createData ? createData.error : undefined;
+        throw new Error(errorMessage ?? "Tạo bài đăng thất bại");
+      }
+
+      if (input.files.length) {
+        await uploadAttachment(createData.post_id, input.files);
+      }
+
+      setOpenCreateModal(false);
+      await loadPosts();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể tạo bài đăng");
+      throw requestError;
+    } finally {
+      setSavingPostId(null);
+    }
+  }, [accessToken, loadPosts, uploadAttachment]);
+
+  const deletePost = useCallback(async (post: GreenCreatorPostRow) => {
+    if (!confirm(`Bạn có chắc muốn xóa bài "${post.title}"?`)) {
+      return;
+    }
+
+    setSavingPostId(post.post_id);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/greencreators/${encodeURIComponent(post.post_id)}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ force: true }),
+      });
+
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error ?? "Không thể xóa bài đăng");
+      }
+
+      await loadPosts();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể xóa bài đăng");
+    } finally {
+      setSavingPostId(null);
+    }
+  }, [accessToken, loadPosts]);
+
   const pageActions = (
-    <button
-      type="button"
-      onClick={() => void loadPosts()}
-      className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-      disabled={loading || Boolean(savingPostId)}
-    >
-      <RefreshCw className="h-4 w-4" />
-      Tải lại
-    </button>
+    <div className="flex items-center gap-2">
+      {canCreatePost ? (
+        <button
+          type="button"
+          onClick={() => setOpenCreateModal(true)}
+          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
+          disabled={loading || Boolean(savingPostId)}
+        >
+          <Plus className="h-4 w-4" />
+          Tạo bài mới
+        </button>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => void loadPosts()}
+        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+        disabled={loading || Boolean(savingPostId)}
+      >
+        <RefreshCw className="h-4 w-4" />
+        Tải lại
+      </button>
+    </div>
   );
 
   return (
@@ -158,6 +274,9 @@ const ContentModeration = () => {
         onViewPost={(post) => setSelectedPostId(post.post_id)}
         onApprovePost={(post) => void updateStatus(post, "approved")}
         onRejectPost={(post) => void updateStatus(post, "rejected")}
+        onDeletePost={(post) => void deletePost(post)}
+        canModerate={canModeratePost}
+        canDelete={canDeletePost}
       />
 
       <ContentDetailDrawer
@@ -166,6 +285,13 @@ const ContentModeration = () => {
         onClose={() => setSelectedPostId(null)}
         onApprove={(post) => void updateStatus(post, "approved")}
         onReject={(post) => void updateStatus(post, "rejected")}
+      />
+
+      <CreatePostModal
+        open={openCreateModal}
+        loading={Boolean(savingPostId)}
+        onClose={() => setOpenCreateModal(false)}
+        onSubmit={handleCreatePost}
       />
     </AdminShell>
   );
