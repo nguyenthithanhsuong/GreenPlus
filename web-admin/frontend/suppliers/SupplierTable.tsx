@@ -1,4 +1,5 @@
 import React, { useDeferredValue } from "react";
+import { usePermissions } from "@/lib/usePermissions";
 import { ChevronLeft, ChevronRight, Edit, Info, Search, X } from "lucide-react";
 import type { SupplierRow, SupplierStatus } from "../../backend/modules/suppliers/supplier-management.types";
 import { supplierSearchStrategy } from "../shared/searchStrategies";
@@ -150,6 +151,12 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
     closeDeleteModal();
   }, [closeDeleteModal, deletingSupplier, onDelete]);
 
+  const { hasPermission } = usePermissions();
+  const canUpdateGlobal = hasPermission('suppliers.update');
+  const canDeleteGlobal = hasPermission('suppliers.delete');
+  const canApproveGlobal = hasPermission('suppliers.approve');
+  const anyActions = canUpdateGlobal || canDeleteGlobal || canApproveGlobal;
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
       
@@ -221,14 +228,14 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
+              <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 font-medium">Nhà cung cấp</th>
               <th className="px-6 py-4 font-medium">Địa chỉ</th>
               <th className="px-6 py-4 font-medium">Certificate</th>
               <th className="px-6 py-4 font-medium">Ngày tạo</th>
               <th className="px-6 py-4 font-medium">Trạng thái</th>
-              <th className="px-6 py-4 font-medium text-right">Thao tác</th>
+                  {anyActions && <th className="px-6 py-4 font-medium text-right">Thao tác</th>}
             </tr>
           </thead>
           <tbody>
@@ -275,10 +282,10 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right align-middle">
-                      <div className="flex items-center justify-end gap-3">
-                        {supplier.status === "pending" && (
-                          <>
+                    {anyActions ? (
+                      <td className="px-6 py-4 text-right align-middle">
+                        <div className="flex items-center justify-end gap-3">
+                          {supplier.status === "pending" && canApproveGlobal && (
                             <button
                               onClick={() => setReviewingSupplier(supplier)}
                               className="px-3 py-1.5 bg-[#059669] hover:bg-[#047857] text-white rounded-md text-xs font-semibold transition-colors shadow-sm disabled:opacity-60"
@@ -286,28 +293,28 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
                             >
                               Xử lý
                             </button>
-                          </>
-                        )}
-                        {supplier.status === "approved" && (
-                          <>
+                          )}
+
+                          {supplier.status === "approved" && canUpdateGlobal && (
                             <button onClick={() => onEdit(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Sửa" disabled={saving}>
                               <Edit className="w-4 h-4" />
                             </button>
-                            {/* <button onClick={() => onReject(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Chuyển sang từ chối" disabled={saving}>
-                              <PencilLine className="w-4 h-4" />
-                            </button> */}
-                          </>
-                        )}
-                        {supplier.status === "rejected" && (
-                          <button onClick={() => onEdit(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Xem / Sửa" disabled={saving}>
-                            <Info className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button onClick={() => setDeletingSupplier(supplier)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200 disabled:opacity-60" title="Xóa" disabled={saving}>
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
+                          )}
+
+                          {supplier.status === "rejected" && canUpdateGlobal && (
+                            <button onClick={() => onEdit(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Xem / Sửa" disabled={saving}>
+                              <Info className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {canDeleteGlobal && (
+                            <button onClick={() => setDeletingSupplier(supplier)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200 disabled:opacity-60" title="Xóa" disabled={saving}>
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    ) : null}
                   </tr>
                 );
               })

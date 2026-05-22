@@ -100,7 +100,6 @@ const FLAG_TO_PERMISSIONS: Record<string, string[]> = {
     "products.create",
     "products.read",
     "products.update",
-    "products.delete",
     // batches: full
     "batches.create",
     "batches.read",

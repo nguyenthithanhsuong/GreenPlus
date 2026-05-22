@@ -1,5 +1,6 @@
 import React from "react";
 import { ArrowLeftRight, Search, Trash2 } from "lucide-react";
+import { usePermissions } from "@/lib/usePermissions";
 import type { InventoryRow } from "../../backend/modules/inventory/inventory-management.types";
 
 type InventoryTableProps = {
@@ -51,6 +52,10 @@ const InventoryTable = ({
   onDelete,
 }: InventoryTableProps) => {
   const totalItems = items.length;
+  const { hasPermission } = usePermissions();
+  const canUpdateGlobal = hasPermission('inventory.update');
+  const canDeleteGlobal = hasPermission('inventory.delete');
+  const anyActions = canUpdateGlobal || canDeleteGlobal;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -108,9 +113,11 @@ const InventoryTable = ({
                 Cập nhật lần cuối
               </th>
 
-              <th className="px-6 py-4 font-medium text-right">
-                Thao tác
-              </th>
+              {anyActions && (
+                <th className="px-6 py-4 font-medium text-right">
+                  Thao tác
+                </th>
+              )}
             </tr>
           </thead>
 
@@ -181,29 +188,35 @@ const InventoryTable = ({
                     )}
                   </td>
 
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onUpdate(item)}
-                        disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-bold transition-colors bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
-                      >
-                        <ArrowLeftRight className="w-3.5 h-3.5" />
-                        Cập nhật
-                      </button>
+                  {anyActions ? (
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {canUpdateGlobal && (
+                          <button
+                            type="button"
+                            onClick={() => onUpdate(item)}
+                            disabled={saving}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-bold transition-colors bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
+                          >
+                            <ArrowLeftRight className="w-3.5 h-3.5" />
+                            Cập nhật
+                          </button>
+                        )}
 
-                      <button
-                        type="button"
-                        onClick={() => onDelete(item)}
-                        disabled={saving}
-                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+                        {canDeleteGlobal && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(item)}
+                            disabled={saving}
+                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
               ))
             )}

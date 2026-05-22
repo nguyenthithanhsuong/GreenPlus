@@ -130,6 +130,7 @@ const ProductTable = ({ products, loading, saving, onEdit, onDelete, onToggleSta
   const canEditGlobal = hasPermission('products.update');
   const canToggleGlobal = hasPermission('products.update');
   const canDeleteGlobal = hasPermission('products.delete');
+  const anyActions = canEditGlobal || canToggleGlobal || canDeleteGlobal;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -185,7 +186,7 @@ const ProductTable = ({ products, loading, saving, onEdit, onDelete, onToggleSta
               <th className="px-6 py-4 font-medium">Dinh dưỡng</th>
               <th className="px-6 py-4 font-medium">Ngày tạo</th>
               <th className="px-6 py-4 font-medium">Trạng thái</th>
-              <th className="px-6 py-4 font-medium text-right">Thao tác</th>
+              {anyActions && <th className="px-6 py-4 font-medium text-right">Thao tác</th>}
             </tr>
           </thead>
           <tbody>
@@ -232,45 +233,47 @@ const ProductTable = ({ products, loading, saving, onEdit, onDelete, onToggleSta
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    {canEditGlobal && (
-                      <button
-                        type="button"
-                        onClick={() => onEdit(product)}
-                        className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-60"
-                        title="Sửa"
-                        disabled={saving}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    )}
+                {anyActions && (
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {canEditGlobal && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(product)}
+                          className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-60"
+                          title="Sửa"
+                          disabled={saving}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
 
-                    {canToggleGlobal && (
-                      <button
-                        type="button"
-                        onClick={() => onToggleStatus(product, product.status === 'active' ? 'inactive' : 'active')}
-                        className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-60"
-                        title={product.status === 'active' ? 'Ngừng bán' : 'Kích hoạt'}
-                        disabled={saving}
-                      >
-                        {product.status === 'active' ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
-                      </button>
-                    )}
+                      {canToggleGlobal && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleStatus(product, product.status === 'active' ? 'inactive' : 'active')}
+                          className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-60"
+                          title={product.status === 'active' ? 'Ngừng bán' : 'Kích hoạt'}
+                          disabled={saving}
+                        >
+                          {product.status === 'active' ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+                        </button>
+                      )}
 
-                    {canDeleteGlobal && (
-                      <button
-                        type="button"
-                        onClick={() => onDelete(product)}
-                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-60"
-                        title="Xóa"
-                        disabled={saving}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </td>
+                      {canDeleteGlobal && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(product)}
+                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-60"
+                          title="Xóa"
+                          disabled={saving}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

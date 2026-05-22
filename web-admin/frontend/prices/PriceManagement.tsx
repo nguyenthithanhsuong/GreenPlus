@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Plus } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import { usePermissions } from "@/lib/usePermissions";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
