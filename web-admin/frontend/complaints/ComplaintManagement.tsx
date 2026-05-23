@@ -7,7 +7,7 @@ import ComplaintStats from "./ComplaintStats";
 import ComplaintTable from "./ComplaintTable";
 import ComplaintDrawer from "./ComplaintDrawer";
 import RejectReasonDialog from "./RejectReasonDialog";
-import { ComplaintRow, ComplaintStatus } from "../../backend/modules/community/complaint-management.types";
+import { ComplaintRow, ComplaintStatus } from "../../backend/modules/complaints/complaint-management.types";
 
 type ComplaintStatusFilter = "all" | ComplaintStatus;
 

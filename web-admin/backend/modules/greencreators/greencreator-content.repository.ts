@@ -265,17 +265,18 @@ export class GreenCreatorContentRepository {
       throw new Error(deleteError.message);
     }
 
-    const normalizedUrls = mediaUrls.map((url) => url.trim()).filter(Boolean);
-    if (!normalizedUrls.length) {
+    if (!mediaUrls.length) {
       return;
     }
 
-    const rows = normalizedUrls.map((mediaUrl) => ({
-      post_id: postId,
-      media_url: mediaUrl,
-    }));
-
-    const { error: insertError } = await this.supabase.from("post_medias").insert(rows);
+    const { error: insertError } = await this.supabase
+      .from("post_medias")
+      .insert(
+        mediaUrls.map((mediaUrl) => ({
+          post_id: postId,
+          media_url: mediaUrl,
+        }))
+      );
 
     if (insertError) {
       throw new Error(insertError.message);
@@ -283,10 +284,8 @@ export class GreenCreatorContentRepository {
   }
 
   private mapPostRow(row: PostDbRow): GreenCreatorPostRow {
-    const status = this.normalizeStatus(row.status);
-    const media = (row.post_medias ?? []).map((item) => this.mapMediaRow(item));
-    const interactions = (row.post_interactions ?? []).map((item) => this.mapInteractionRow(item));
-    const commentCount = interactions.filter((interaction) => Boolean(interaction.comment?.trim())).length;
+    const media = Array.isArray(row.post_medias) ? row.post_medias : [];
+    const interactions = Array.isArray(row.post_interactions) ? row.post_interactions : [];
 
     return {
       post_id: row.post_id,
@@ -296,52 +295,34 @@ export class GreenCreatorContentRepository {
       title: row.title,
       content: row.content,
       type: this.normalizeType(row.type),
-      status,
+      status: this.normalizeStatus(row.status),
       created_at: row.created_at,
-      media,
-      interactions,
+      media: media.map((item) => ({
+        media_id: item.media_id ?? "",
+        media_url: item.media_url ?? null,
+      })),
+      interactions: interactions.map((interaction) => {
+        const actor = interaction.actor ?? null;
+
+        return {
+          interaction_id: interaction.interaction_id ?? "",
+          post_id: interaction.post_id ?? null,
+          user_id: interaction.user_id ?? null,
+          user_name: this.pickUserField(actor, "name"),
+          user_image_url: this.pickUserField(actor, "image_url"),
+          type: interaction.type ?? "",
+          comment: interaction.comment ?? null,
+          created_at: interaction.created_at ?? null,
+          status: interaction.status ?? null,
+        } satisfies GreenCreatorInteractionRow;
+      }),
       media_count: media.length,
       interaction_count: interactions.length,
-      comment_count: commentCount,
+      comment_count: interactions.filter((interaction) => {
+        const status = interaction.status?.toLowerCase() ?? "";
+        return status === "comment" || Boolean(interaction.comment?.trim());
+      }).length,
     };
-  }
-
-  private mapMediaRow(row: { media_id?: string; media_url?: string | null }): GreenCreatorMediaRow {
-    return {
-      media_id: row.media_id ?? crypto.randomUUID(),
-      media_url: row.media_url ?? null,
-    };
-  }
-
-  private mapInteractionRow(row: {
-    interaction_id?: string;
-    post_id?: string | null;
-    user_id?: string | null;
-    type?: string | null;
-    comment?: string | null;
-    created_at?: string | null;
-    status?: string | null;
-    actor?: UserJoin;
-  }): GreenCreatorInteractionRow {
-    return {
-      interaction_id: row.interaction_id ?? crypto.randomUUID(),
-      post_id: row.post_id ?? null,
-      user_id: row.user_id ?? null,
-      user_name: this.pickUserField(row.actor ?? null, "name"),
-      user_image_url: this.pickUserField(row.actor ?? null, "image_url"),
-      type: row.type ?? "interaction",
-      comment: row.comment ?? null,
-      created_at: row.created_at ?? null,
-      status: row.status ?? null,
-    };
-  }
-
-  private pickUserField(user: UserJoin, field: "name" | "image_url"): string | null {
-    if (Array.isArray(user)) {
-      return user[0]?.[field] ?? null;
-    }
-
-    return user?.[field] ?? null;
   }
 
   private normalizeStatus(status: string | null | undefined): GreenCreatorPostStatus {
@@ -353,10 +334,18 @@ export class GreenCreatorContentRepository {
   }
 
   private normalizeType(type: string): GreenCreatorPostType {
-    if (type === "video" || type === "community") {
+    if (type === "blog" || type === "video" || type === "community") {
       return type;
     }
 
     return "blog";
+  }
+
+  private pickUserField(user: UserJoin, field: "name" | "image_url"): string | null {
+    if (Array.isArray(user)) {
+      return user[0]?.[field] ?? null;
+    }
+
+    return user?.[field] ?? null;
   }
 }

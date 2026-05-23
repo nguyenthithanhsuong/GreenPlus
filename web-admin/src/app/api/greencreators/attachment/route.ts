@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
-import { greenCreatorContentFacade } from "../../../../../backend/modules/community/greencreator-content.facade";
+import { greenCreatorContentFacade } from "../../../../../backend/modules/greencreators/greencreator-content.facade";
 
 function readAccessToken(request: Request): string {
   const authHeader = request.headers.get("authorization") ?? "";

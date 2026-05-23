@@ -1,7 +1,7 @@
 "use client";
 
 import { AlignLeft, Check, Eye, Image as ImageIcon, MessageSquareText, PlaySquare, Search, Trash2, X } from "lucide-react";
-import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/community/greencreator-content.types";
+import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/greencreators/greencreator-content.types";
 
 type ContentStatusFilter = "all" | GreenCreatorPostStatus;
 

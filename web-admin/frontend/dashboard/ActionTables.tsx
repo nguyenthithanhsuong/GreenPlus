@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Image as ImageIcon, PlaySquare, Store } from "lucide-react";
 import { SupplierRow } from "../../backend/modules/suppliers/supplier-management.types";
-import { GreenCreatorPostRow } from "../../backend/modules/community/greencreator-content.types";
+import { GreenCreatorPostRow } from "../../backend/modules/greencreators/greencreator-content.types";
 
 type ActionTablesProps = {
   suppliers: SupplierRow[];

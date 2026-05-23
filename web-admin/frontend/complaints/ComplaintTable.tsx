@@ -1,7 +1,7 @@
 "use client";
 
 import { CreditCard, Eye, MessageSquare, Package, RefreshCcw, Search, XCircle, CircleCheck } from "lucide-react";
-import { ComplaintRow, ComplaintStatus } from "../../backend/modules/community/complaint-management.types";
+import { ComplaintRow, ComplaintStatus } from "../../backend/modules/complaints/complaint-management.types";
 
 type ComplaintStatusFilter = "all" | ComplaintStatus;
 

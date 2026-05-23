@@ -9,7 +9,7 @@ import ContentStats from "./ContentStats";
 import ContentTable from "./ContentTable";
 import { usePermissions } from "@/lib/usePermissions";
 import { useAuthStore } from "@/lib/stores/authStore";
-import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/community/greencreator-content.types";
+import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/greencreators/greencreator-content.types";
 
 type ContentStatusFilter = "all" | GreenCreatorPostStatus;
 
