@@ -264,7 +264,7 @@ const Category = () => {
     const allCategory: CategoryItem = {
       categoryId: "all",
       name: "Tất cả",
-      imageUrl: null,
+      imageUrl: "https://ujgnuwlljslwokblmrwi.supabase.co/storage/v1/object/public/General/products%20(1).png",
     };
 
     const keyword = searchValue.trim().toLowerCase();
@@ -325,7 +325,7 @@ const Category = () => {
             {!loading && !error && filteredCategories.length > 0 && (
               <div style={styles.gridContainer}>
                 {filteredCategories.map((category) => {
-                  const hasImage = Boolean(category.imageUrl) && category.categoryId !== "all" && !brokenImageIds[category.categoryId];
+                  const hasImage = Boolean(category.imageUrl) && !brokenImageIds[category.categoryId];
                   const categoryHref = `/category-products/${category.categoryId}?name=${encodeURIComponent(category.name)}&backTo=${encodeURIComponent("/category")}`;
 
                   return (

@@ -7,6 +7,7 @@ import CreatePostModal from "./CreatePostModal";
 import ContentDetailDrawer from "./ContentDetailDrawer";
 import ContentStats from "./ContentStats";
 import ContentTable from "./ContentTable";
+import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import { usePermissions } from "@/lib/usePermissions";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/greencreators/greencreator-content.types";
@@ -24,6 +25,7 @@ const ContentModeration = () => {
   const [searchValue, setSearchValue] = useState("");
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [pendingDeletePost, setPendingDeletePost] = useState<GreenCreatorPostRow | null>(null);
   const accessToken = useAuthStore((state) => state.session?.access_token ?? "");
   const { hasPermission } = usePermissions();
   const canCreatePost = hasPermission("content.create");
@@ -192,10 +194,6 @@ const ContentModeration = () => {
   }, [accessToken, loadPosts, uploadAttachment]);
 
   const deletePost = useCallback(async (post: GreenCreatorPostRow) => {
-    if (!confirm(`Bạn có chắc muốn xóa bài "${post.title}"?`)) {
-      return;
-    }
-
     setSavingPostId(post.post_id);
     setError(null);
 
@@ -214,6 +212,8 @@ const ContentModeration = () => {
         throw new Error(data.error ?? "Không thể xóa bài đăng");
       }
 
+      setPendingDeletePost(null);
+      setSelectedPostId((current) => (current === post.post_id ? null : current));
       await loadPosts();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Không thể xóa bài đăng");
@@ -221,6 +221,10 @@ const ContentModeration = () => {
       setSavingPostId(null);
     }
   }, [accessToken, loadPosts]);
+
+  const requestDeletePost = useCallback((post: GreenCreatorPostRow) => {
+    setPendingDeletePost(post);
+  }, []);
 
   const pageActions = (
     <div className="flex items-center gap-2">
@@ -274,7 +278,7 @@ const ContentModeration = () => {
         onViewPost={(post) => setSelectedPostId(post.post_id)}
         onApprovePost={(post) => void updateStatus(post, "approved")}
         onRejectPost={(post) => void updateStatus(post, "rejected")}
-        onDeletePost={(post) => void deletePost(post)}
+        onDeletePost={requestDeletePost}
         canModerate={canModeratePost}
         canDelete={canDeletePost}
       />
@@ -292,6 +296,23 @@ const ContentModeration = () => {
         loading={Boolean(savingPostId)}
         onClose={() => setOpenCreateModal(false)}
         onSubmit={handleCreatePost}
+      />
+
+      <ConfirmActionDialog
+        open={Boolean(pendingDeletePost)}
+        title="Xác nhận xóa bài đăng"
+        message={pendingDeletePost ? `Bạn có chắc muốn xóa bài "${pendingDeletePost.title}"? Hành động này không thể hoàn tác.` : ""}
+        confirmLabel="Xóa bài đăng"
+        confirmVariant="danger"
+        loading={Boolean(savingPostId)}
+        onCancel={() => setPendingDeletePost(null)}
+        onConfirm={() => {
+          if (!pendingDeletePost) {
+            return;
+          }
+
+          void deletePost(pendingDeletePost);
+        }}
       />
     </AdminShell>
   );

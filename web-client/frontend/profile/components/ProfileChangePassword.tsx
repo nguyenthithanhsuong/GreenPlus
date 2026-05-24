@@ -72,7 +72,7 @@ export default function ProfileChangePassword() {
 
   const changePassword = async () => {
     if (!user?.user_id) {
-      setError("Please sign in first");
+      setError("Vui lòng đăng nhập trước.");
       return;
     }
 
@@ -99,7 +99,7 @@ export default function ProfileChangePassword() {
 
       const data = (await response.json()) as { updated?: boolean; error?: string };
       if (!response.ok) {
-        throw new Error(data.error ?? "Change password failed");
+        throw new Error(data.error ?? "Không thể đổi mật khẩu.");
       }
 
       setResult(data);
@@ -108,7 +108,7 @@ export default function ProfileChangePassword() {
       setConfirmPassword("");
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(requestError instanceof Error ? requestError.message : "Đã xảy ra lỗi không mong muốn.");
     } finally {
       setLoading(false);
     }
@@ -119,19 +119,19 @@ export default function ProfileChangePassword() {
       <div style={styles.container}>
         
         <header style={styles.topNav}>
-          <Link href="/profile" style={styles.backLink} aria-label="Back to profile">
+          <Link href="/profile" style={styles.backLink} aria-label="Quay lại hồ sơ">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <h1 style={styles.title}>Change Password</h1>
+          <h1 style={styles.title}>Đổi mật khẩu</h1>
           <div style={{ width: "24px" }} />
         </header>
 
         <main style={styles.main}>
           <section className="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
             <p className="mb-4 text-sm text-gray-600">
-              Update your password to keep your account secure.
+              Đổi mật khẩu để giữ cho tài khoản của bạn an toàn.
             </p>
 
             <div className="flex w-full flex-col gap-4">
@@ -139,7 +139,7 @@ export default function ProfileChangePassword() {
   <input
     value={currentPassword}
     onChange={(event) => setCurrentPassword(event.target.value)}
-    placeholder="Current password"
+    placeholder="Mật khẩu hiện tại"
     type="password"
     className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
   />
@@ -147,7 +147,7 @@ export default function ProfileChangePassword() {
   <input
     value={newPassword}
     onChange={(event) => setNewPassword(event.target.value)}
-    placeholder="New password"
+    placeholder="Mật khẩu mới"
     type="password"
     className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
   />
@@ -155,7 +155,7 @@ export default function ProfileChangePassword() {
   <input
     value={confirmPassword}
     onChange={(event) => setConfirmPassword(event.target.value)}
-    placeholder="Retype new password"
+    placeholder="Xác nhận mật khẩu mới"
     type="password"
     className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
   />
@@ -164,7 +164,7 @@ export default function ProfileChangePassword() {
 
             {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
             {result?.updated && (
-              <p className="mt-3 text-sm font-medium text-green-600">Password changed successfully!</p>
+              <p className="mt-3 text-sm font-medium text-green-600">Mật khẩu đã được thay đổi thành công!</p>
             )}
 
             <div className="mt-5 flex flex-wrap gap-2">
@@ -173,7 +173,7 @@ export default function ProfileChangePassword() {
                 disabled={loading || !currentPassword || !newPassword || !confirmPassword}
                 className="rounded bg-rose-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-800 disabled:opacity-60"
               >
-                {loading ? "Saving..." : "Change Password"}
+                {loading ? "Đang lưu..." : "Đổi mật khẩu"}
               </button>
             </div>
           </section>

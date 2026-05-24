@@ -364,14 +364,14 @@ export default function Home() {
         <div className="mb-6 rounded-xl border border-slate-800 bg-slate-900 p-5">
           <h1 className="text-2xl font-bold">GreenPlus Client Web Showcase</h1>
           <p className="mt-1 text-sm text-slate-300">
-            Click a feature on the left to view data from its mapped Supabase table. Click a table to view its relationships.
+            Chọn một tính năng bên trái để xem dữ liệu từ bảng Supabase tương ứng. Chọn một bảng để xem các quan hệ của nó.
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
           <aside className="rounded-xl border border-slate-800 bg-slate-900 p-3 lg:col-span-1">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-300">
-              Client Features
+              Tính năng khách hàng
             </h2>
             <div className="space-y-2">
               {clientFeatures.map((feature) => (
@@ -402,7 +402,7 @@ export default function Home() {
                 onClick={() => setExpandedRelationships(!expandedRelationships)}
                 className="w-full rounded-md border border-blue-500 bg-blue-500/10 px-3 py-2 text-left text-sm font-semibold text-blue-300 transition hover:bg-blue-500/20"
               >
-                Relationships
+                Quan hệ bảng
               </button>
 
               {(expandedRelationships || tableRelationships) && tableRelationships && (
@@ -443,7 +443,7 @@ export default function Home() {
 
                   {tableRelationships.incoming.length > 0 && (
                     <div className="space-y-2">
-                      <p className="font-semibold text-emerald-300">Referenced By</p>
+                      <p className="font-semibold text-emerald-300">Được tham chiếu bởi</p>
                       {tableRelationships.incoming.map((rel, idx) => (
                         <button
                           key={idx}
@@ -472,7 +472,7 @@ export default function Home() {
 
                   {tableRelationships.outgoing.length === 0 && tableRelationships.incoming.length === 0 && (
                     <div className="rounded border border-slate-700 bg-slate-800 p-2">
-                      <p className="text-slate-400">No relationships found</p>
+                      <p className="text-slate-400">Không tìm thấy quan hệ nào</p>
                     </div>
                   )}
                 </div>
@@ -486,8 +486,8 @@ export default function Home() {
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-blue-300">
                     {selectedRelationship.direction === "incoming"
-                      ? `Referenced By: Select ${activeFeature.table} row to load ${selectedRelationship.tableName}`
-                      : `Cross-Reference: Select from ${selectedRelationship.tableName}`}
+                      ? `Được tham chiếu bởi: Chọn một dòng ${activeFeature.table} để tải ${selectedRelationship.tableName}`
+                      : `Tham chiếu chéo: Chọn từ ${selectedRelationship.tableName}`}
                   </h3>
                   <button
                     onClick={() => {
@@ -496,18 +496,18 @@ export default function Home() {
                     }}
                     className="text-xs text-slate-400 hover:text-slate-200"
                   >
-                    Close
+                    Đóng
                   </button>
                 </div>
 
-                {relatedLoading && <p className="text-xs text-slate-400">Loading related records...</p>}
+                {relatedLoading && <p className="text-xs text-slate-400">Đang tải bản ghi liên quan...</p>}
 
                 {!relatedLoading && selectedRelationship.direction === "outgoing" && relatedRows.length === 0 && (
-                  <p className="text-xs text-slate-400">No records found</p>
+                  <p className="text-xs text-slate-400">Không tìm thấy bản ghi nào</p>
                 )}
 
                 {!relatedLoading && selectedRelationship.direction === "incoming" && rows.length === 0 && (
-                  <p className="text-xs text-slate-400">No rows in current table to select</p>
+                  <p className="text-xs text-slate-400">Không có dòng nào ở bảng hiện tại để chọn</p>
                 )}
 
                 {!relatedLoading && selectedRelationship.direction === "outgoing" && relatedRows.length > 0 && (
@@ -571,13 +571,13 @@ export default function Home() {
               <p className="text-sm text-slate-400 italic">{activeFeature.description}</p>
               {selectedRelatedId && (
                 <div className="mt-3 rounded-md bg-blue-900/30 border border-blue-700/50 px-3 py-2 text-xs text-blue-300">
-                  Filtered by cross-reference: <span className="font-semibold">{selectedRelatedId}</span>
+                  Đang lọc theo tham chiếu chéo: <span className="font-semibold">{selectedRelatedId}</span>
                 </div>
               )}
             </section>
 
             <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-cyan-300">CRUD Commands</h3>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-cyan-300">Lệnh CRUD</h3>
               <div className="space-y-2 text-xs text-slate-200">
                 <pre className="overflow-x-auto rounded bg-slate-800 p-2">SELECT: {crudTemplates.select}</pre>
                 <pre className="overflow-x-auto rounded bg-slate-800 p-2">INSERT: {crudTemplates.insert}</pre>
@@ -587,13 +587,13 @@ export default function Home() {
             </section>
 
             <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-cyan-300">Run Insert / Update / Delete</h3>
-              <p className="mb-3 text-xs text-slate-400">Primary key in this table: <span className="font-semibold text-slate-200">{primaryKeyColumn}</span></p>
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-cyan-300">Chạy Insert / Update / Delete</h3>
+              <p className="mb-3 text-xs text-slate-400">Khóa chính trong bảng này: <span className="font-semibold text-slate-200">{primaryKeyColumn}</span></p>
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <div className="rounded border border-slate-700 bg-slate-800/60 p-3">
-                  <p className="mb-2 text-xs font-semibold text-emerald-300">INSERT</p>
-                  <p className="mb-2 text-[11px] text-slate-400">Leave blank or use "__auto__" to skip autogenerated/default fields.</p>
+                  <p className="mb-2 text-xs font-semibold text-emerald-300">Thêm mới</p>
+                  <p className="mb-2 text-[11px] text-slate-400">Để trống hoặc dùng "__auto__" để bỏ qua các trường tự sinh/mặc định.</p>
                   <textarea
                     value={insertPayload}
                     onChange={(e) => setInsertPayload(e.target.value)}
@@ -604,16 +604,16 @@ export default function Home() {
                     disabled={mutationLoading}
                     className="mt-2 w-full rounded border border-emerald-600 bg-emerald-700/30 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-700/50 disabled:opacity-50"
                   >
-                    Insert
+                    Thêm mới
                   </button>
                 </div>
 
                 <div className="rounded border border-slate-700 bg-slate-800/60 p-3">
-                  <p className="mb-2 text-xs font-semibold text-amber-300">UPDATE</p>
+                  <p className="mb-2 text-xs font-semibold text-amber-300">Cập nhật</p>
                   <input
                     value={updateId}
                     onChange={(e) => setUpdateId(e.target.value)}
-                    placeholder={`Enter ${primaryKeyColumn}`}
+                    placeholder={`Nhập ${primaryKeyColumn}`}
                     className="mb-2 w-full rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-200"
                   />
                   <textarea
@@ -626,16 +626,16 @@ export default function Home() {
                     disabled={mutationLoading}
                     className="mt-2 w-full rounded border border-amber-600 bg-amber-700/30 px-2 py-1 text-xs text-amber-200 hover:bg-amber-700/50 disabled:opacity-50"
                   >
-                    Update
+                    Cập nhật
                   </button>
                 </div>
 
                 <div className="rounded border border-slate-700 bg-slate-800/60 p-3">
-                  <p className="mb-2 text-xs font-semibold text-red-300">DELETE</p>
+                  <p className="mb-2 text-xs font-semibold text-red-300">Xóa</p>
                   <input
                     value={deleteId}
                     onChange={(e) => setDeleteId(e.target.value)}
-                    placeholder={`Enter ${primaryKeyColumn}`}
+                    placeholder={`Nhập ${primaryKeyColumn}`}
                     className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-200"
                   />
                   <button
@@ -643,7 +643,7 @@ export default function Home() {
                     disabled={mutationLoading}
                     className="mt-2 w-full rounded border border-red-600 bg-red-700/30 px-2 py-1 text-xs text-red-200 hover:bg-red-700/50 disabled:opacity-50"
                   >
-                    Delete
+                    Xóa
                   </button>
                 </div>
               </div>
@@ -654,7 +654,7 @@ export default function Home() {
 
               {mutationResult && (
                 <div className="mt-3 rounded border border-emerald-700 bg-emerald-900/20 p-2 text-xs text-emerald-200">
-                  <p className="mb-1 font-semibold">Mutation Result</p>
+                  <p className="mb-1 font-semibold">Kết quả thao tác</p>
                   <pre className="max-h-40 overflow-auto text-xs">{JSON.stringify(mutationResult, null, 2)}</pre>
                 </div>
               )}
@@ -662,7 +662,7 @@ export default function Home() {
 
             <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Select * Result</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Kết quả Select *</h3>
                 {loading && <span className="text-xs text-amber-300">Loading...</span>}
               </div>
 
@@ -674,7 +674,7 @@ export default function Home() {
 
               {!loading && !error && displayRows.length === 0 && (
                 <div className="rounded border border-slate-700 bg-slate-800 p-3 text-sm text-slate-300">
-                  {selectedRelatedId ? "No matching rows for this cross-reference filter." : "No rows found in this table."}
+                  {selectedRelatedId ? "Không có dòng nào khớp với bộ lọc tham chiếu chéo này." : "Không tìm thấy dòng nào trong bảng này."}
                 </div>
               )}
 

@@ -248,7 +248,7 @@ export default function LockAccountPage() {
         <main style={styles.mainContent}>
           <section style={styles.card}>
             <span style={styles.badge}>Cảnh báo</span>
-            <h2 style={styles.headline}>Đưa tài khoản về trạng thái inactive</h2>
+            <h2 style={styles.headline}>Đưa tài khoản về trạng thái không hoạt động</h2>
             <p style={styles.description}>
               Khi khóa tài khoản, bạn sẽ bị đăng xuất ngay và lần đăng nhập sau sẽ cần mở khóa lại.
             </p>
@@ -257,7 +257,7 @@ export default function LockAccountPage() {
               <p style={styles.userLabel}>Tài khoản hiện tại</p>
               <p style={styles.userValue}>{user?.name ?? "Người dùng"}</p>
               <p style={styles.infoText}>{user?.email ?? "Chưa có email"}</p>
-              <p style={styles.infoText}>Trạng thái hiện tại: {user?.status ?? "unknown"}</p>
+              <p style={styles.infoText}>Trạng thái hiện tại: {user?.status ?? "không xác định"}</p>
             </div>
 
             {message ? <p style={styles.infoText}>{message}</p> : null}

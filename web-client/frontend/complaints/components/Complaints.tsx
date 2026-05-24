@@ -156,6 +156,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#111827",
     resize: "vertical" as const,
     boxSizing: "border-box",
+    textDecoration: "none",
   },
   submitBtn: {
     height: "44px",
@@ -207,6 +208,12 @@ function toStatus(value: string): OrderStatus {
     return value as OrderStatus;
   }
   return "pending";
+}
+
+function getComplaintStatusLabel(status: ComplaintResponse["status"]) {
+  if (status === "pending") return "Đang chờ";
+  if (status === "resolved") return "Đã xử lý";
+  return "Từ chối";
 }
 
 export default function Complaints() {
@@ -302,7 +309,7 @@ export default function Complaints() {
         const resp = await fetch(`/api/complaints?userId=${encodeURIComponent(user.user_id)}`, { signal: controller.signal });
         const data = await resp.json();
         if (!resp.ok) {
-          throw new Error(String((data && data.error) || "Failed to load complaints"));
+          throw new Error(String((data && data.error) || "Không thể tải danh sách khiếu nại."));
         }
 
         setComplaints((data.items ?? []) as ComplaintResponse[]);
@@ -492,7 +499,7 @@ export default function Complaints() {
 
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: c.status === "pending" ? "#D97706" : c.status === "resolved" ? "#047857" : "#B91C1C" }}>
-                            {c.status}
+                            {getComplaintStatusLabel(c.status)}
                           </div>
                           <button
                             onClick={() => setSelectedComplaintId(selectedComplaintId === c.complaintId ? null : c.complaintId)}
@@ -511,7 +518,7 @@ export default function Complaints() {
 
                       {selectedComplaintId === c.complaintId ? (
                         <div style={{ marginTop: 8 }}>
-                          <p style={{ margin: 0, fontWeight: 600 }}>Loại: {c.type}</p>
+                          <p style={{ margin: 0, fontWeight: 600 }}>Loại: {COMPLAINT_OPTIONS.find((option) => option.value === c.type)?.label ?? c.type}</p>
                           <p style={{ marginTop: 8 }}>{c.description}</p>
                           {c.status === "rejected" && c.rejectReason ? (
                             <p style={{ marginTop: 8, color: "#B91C1C" }}>Lý do từ chối: {c.rejectReason}</p>

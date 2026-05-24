@@ -83,7 +83,7 @@ const PriceTable = ({
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between p-5 border-b border-gray-50 gap-3">
-        {canCreateGlobal && (
+        {/* {canCreateGlobal && (
           <button
             type="button"
             onClick={onCreate}
@@ -92,7 +92,7 @@ const PriceTable = ({
           >
             <Plus className="w-4 h-4" /> Thiết lập Giá mới
           </button>
-        )}
+        )} */}
 
         <div className="relative w-full max-w-md md:ml-auto">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

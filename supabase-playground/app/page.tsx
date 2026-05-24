@@ -348,13 +348,13 @@ export default function SupabasePlayground() {
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-7xl p-4 md:p-6">
         <div className="mb-6 rounded-xl border border-slate-800 bg-slate-900 p-5">
-          <h1 className="text-2xl font-bold">GreenPlus Supabase Playground</h1>
-          <p className="mt-1 text-sm text-slate-300">Combined Admin + Client showcase with relationships and live CRUD execution.</p>
+          <h1 className="text-2xl font-bold">Khu thử nghiệm Supabase GreenPlus</h1>
+          <p className="mt-1 text-sm text-slate-300">Mô phỏng kết hợp Admin + Client với quan hệ bảng và CRUD trực tiếp.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
           <aside className="rounded-xl border border-slate-800 bg-slate-900 p-3 lg:col-span-1">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-300">Mode</h2>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-300">Chế độ</h2>
             <div className="mb-4 grid grid-cols-3 gap-2">
               <button
                 onClick={() => setMode("client")}
@@ -362,7 +362,7 @@ export default function SupabasePlayground() {
                   mode === "client" ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
-                Client
+                Khách hàng
               </button>
               <button
                 onClick={() => setMode("admin")}
@@ -370,7 +370,7 @@ export default function SupabasePlayground() {
                   mode === "admin" ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
-                Admin
+                Quản trị
               </button>
               <button
                 onClick={() => setMode("combined")}
@@ -378,7 +378,7 @@ export default function SupabasePlayground() {
                   mode === "combined" ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
-                Combined
+                Kết hợp
               </button>
             </div>
 
@@ -430,7 +430,7 @@ export default function SupabasePlayground() {
             ) : (
               <div className="space-y-4">
                 <div>
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-cyan-300">Client Features</h3>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-cyan-300">Tính năng khách hàng</h3>
                   <div className="space-y-2">
                     {clientFeatures.map((feature) => (
                       <button
@@ -452,7 +452,7 @@ export default function SupabasePlayground() {
                 </div>
 
                 <div className="border-t border-slate-700 pt-3">
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-300">Admin Features</h3>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-300">Tính năng quản trị</h3>
                   <div className="space-y-3">
                     {groupedAdminFeatures.map((groupBlock) => (
                       <div key={groupBlock.group}>
@@ -489,7 +489,7 @@ export default function SupabasePlayground() {
                 onClick={() => setExpandedRelationships(!expandedRelationships)}
                 className="w-full rounded-md border border-blue-500 bg-blue-500/10 px-3 py-2 text-left text-sm font-semibold text-blue-300 transition hover:bg-blue-500/20"
               >
-                Relationships
+                Quan hệ bảng
               </button>
 
               {(expandedRelationships || tableRelationships) && tableRelationships && (
@@ -501,7 +501,7 @@ export default function SupabasePlayground() {
 
                   {tableRelationships.outgoing.length > 0 && (
                     <div className="space-y-2">
-                      <p className="font-semibold text-amber-300">Referenced Tables</p>
+                      <p className="font-semibold text-amber-300">Bảng được tham chiếu</p>
                       {tableRelationships.outgoing.map((rel, idx) => (
                         <button
                           key={idx}
@@ -524,7 +524,7 @@ export default function SupabasePlayground() {
 
                   {tableRelationships.incoming.length > 0 && (
                     <div className="space-y-2">
-                      <p className="font-semibold text-emerald-300">Referenced By</p>
+                      <p className="font-semibold text-emerald-300">Được tham chiếu bởi</p>
                       {tableRelationships.incoming.map((rel, idx) => (
                         <button
                           key={idx}
@@ -555,8 +555,8 @@ export default function SupabasePlayground() {
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-blue-300">
                     {selectedRelationship.direction === "incoming"
-                      ? `Referenced By: Select ${activeFeature.table} row to load ${selectedRelationship.tableName}`
-                      : `Cross-Reference: Select from ${selectedRelationship.tableName}`}
+                      ? `Được tham chiếu bởi: Chọn một dòng ${activeFeature.table} để tải ${selectedRelationship.tableName}`
+                      : `Tham chiếu chéo: Chọn từ ${selectedRelationship.tableName}`}
                   </h3>
                   <button
                     onClick={() => {
@@ -565,13 +565,13 @@ export default function SupabasePlayground() {
                     }}
                     className="text-xs text-slate-400 hover:text-slate-200"
                   >
-                    Close
+                    Đóng
                   </button>
                 </div>
 
-                {relatedLoading && <p className="text-xs text-slate-400">Loading related records...</p>}
-                {!relatedLoading && selectedRelationship.direction === "outgoing" && relatedRows.length === 0 && <p className="text-xs text-slate-400">No records found</p>}
-                {!relatedLoading && selectedRelationship.direction === "incoming" && rows.length === 0 && <p className="text-xs text-slate-400">No rows in current table to select</p>}
+                {relatedLoading && <p className="text-xs text-slate-400">Đang tải bản ghi liên quan...</p>}
+                {!relatedLoading && selectedRelationship.direction === "outgoing" && relatedRows.length === 0 && <p className="text-xs text-slate-400">Không tìm thấy bản ghi nào</p>}
+                {!relatedLoading && selectedRelationship.direction === "incoming" && rows.length === 0 && <p className="text-xs text-slate-400">Không có dòng nào ở bảng hiện tại để chọn</p>}
 
                 {!relatedLoading && selectedRelationship.direction === "outgoing" && relatedRows.length > 0 && (
                   <div className="grid gap-2">

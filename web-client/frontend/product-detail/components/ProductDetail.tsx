@@ -812,38 +812,39 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
   const ratingText = averageRating === null ? "0.0" : averageRating.toFixed(1);
   const debugVisible = true;
 
-  const handleAddToCart = async () => {
-    setCartActionMessage(null);
-
+  const postCartItem = async (itemQuantity: number) => {
     if (!productId) {
-      setCartActionMessage("Không xác định được sản phẩm để thêm vào giỏ hàng.");
-      return;
+      throw new Error("Không xác định được sản phẩm để thêm vào giỏ hàng.");
     }
 
     if (!isAuthenticated || !routerUser?.user_id) {
-      setCartActionMessage("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
-      return;
+      throw new Error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
     }
 
+    const response = await fetch("/api/cart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: routerUser.user_id,
+        productId,
+        quantity: itemQuantity,
+      }),
+    });
+
+    const data = (await response.json()) as { error?: string };
+    if (!response.ok) {
+      throw new Error(data.error || "Không thể thêm sản phẩm vào giỏ hàng.");
+    }
+  };
+
+  const handleAddToCart = async () => {
+    setCartActionMessage(null);
     setCartActionLoading(true);
+
     try {
-      const response = await fetch("/api/cart", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: routerUser.user_id,
-          productId,
-          quantity,
-        }),
-      });
-
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error || "Không thể thêm sản phẩm vào giỏ hàng.");
-      }
-
+      await postCartItem(quantity);
       setCartActionMessage("Đã thêm sản phẩm vào giỏ hàng.");
     } catch (requestError) {
       setCartActionMessage(requestError instanceof Error ? requestError.message : "Không thể thêm sản phẩm vào giỏ hàng.");
@@ -877,7 +878,17 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
         throw new Error(data.error || "Không thể đặt lịch mua định kì.");
       }
 
-      setCartActionMessage("✓ Đã đặt lịch mua định kì thành công!");
+      try {
+        await postCartItem(1);
+        setCartActionMessage("✓ Đã đặt lịch mua định kì thành công và tự thêm 1 sản phẩm vào giỏ hàng!");
+      } catch (cartError) {
+        setCartActionMessage(
+          cartError instanceof Error
+            ? `✓ Đã đặt lịch mua định kì thành công, nhưng không thể tự thêm vào giỏ hàng: ${cartError.message}`
+            : "✓ Đã đặt lịch mua định kì thành công, nhưng không thể tự thêm vào giỏ hàng.",
+        );
+      }
+
       setTimeout(() => {
         setCartActionMessage(null);
         setPurchaseMode("cart");

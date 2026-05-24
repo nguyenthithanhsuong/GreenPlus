@@ -6,6 +6,7 @@ import AdminShell from "../shared/AdminShell";
 import SettingsNav from "./SettingsNav";
 import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
 import { usePermissions } from "@/lib/usePermissions";
+import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import type { StoreRow, StoreStatus } from "../../backend/modules/stores/stores-management.types";
 import type { UserSummary } from "../../backend/modules/users/user-management.types";
 
@@ -102,6 +103,7 @@ const StoreManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<StoreRow | null>(null);
+  const [pendingDeleteStore, setPendingDeleteStore] = useState<StoreRow | null>(null);
   const [form, setForm] = useState<StoreFormState>(emptyForm());
 
   const loadStores = async () => {
@@ -274,10 +276,6 @@ const StoreManagement = () => {
   };
 
   const deleteStore = async (store: StoreRow) => {
-    if (!window.confirm(`Xóa cửa hàng ${store.name}?`)) {
-      return;
-    }
-
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
@@ -293,6 +291,7 @@ const StoreManagement = () => {
         throw new Error(payload.error ?? "Không thể xóa cửa hàng");
       }
 
+      setPendingDeleteStore(null);
       setSuccessMessage(`Đã xóa cửa hàng ${store.name}.`);
       await loadStores();
     } catch (deleteError) {
@@ -300,6 +299,10 @@ const StoreManagement = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const requestDeleteStore = (store: StoreRow) => {
+    setPendingDeleteStore(store);
   };
 
   return (
@@ -513,7 +516,7 @@ const StoreManagement = () => {
                               {!permLoading && hasPermission('stores.delete') && (
                                 <button
                                   type="button"
-                                  onClick={() => void deleteStore(store)}
+                                  onClick={() => requestDeleteStore(store)}
                                   disabled={saving}
                                   className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
@@ -533,6 +536,23 @@ const StoreManagement = () => {
           </div>
         </div>
         </div>
+
+      <ConfirmActionDialog
+        open={Boolean(pendingDeleteStore)}
+        title="Xác nhận xóa cửa hàng"
+        message={pendingDeleteStore ? `Bạn có chắc muốn xóa cửa hàng ${pendingDeleteStore.name}?` : ""}
+        confirmLabel="Xóa cửa hàng"
+        confirmVariant="danger"
+        loading={saving}
+        onCancel={() => setPendingDeleteStore(null)}
+        onConfirm={() => {
+          if (!pendingDeleteStore) {
+            return;
+          }
+
+          void deleteStore(pendingDeleteStore);
+        }}
+      />
 
       {formOpen ? (
         <div className="fixed inset-0 z-50">

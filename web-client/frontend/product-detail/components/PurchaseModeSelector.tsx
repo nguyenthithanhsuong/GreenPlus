@@ -43,8 +43,8 @@ const styles: Record<string, React.CSSProperties> = {
 export default function PurchaseModeSelector({ currentMode, onModeChange }: PurchaseModeSelectorProps) {
   const modes: { id: PurchaseMode; label: string; icon: string }[] = [
     { id: "cart", label: "Mua thường", icon: "🛒" },
-    { id: "subscription", label: "Mua định kì", icon: "⏱" },
-    //{ id: "group", label: "Mua chung", icon: "👥" },
+    { id: "subscription", label: "Mua định kỳ", icon: "⏰" },
+    // { id: "group", label: "Mua chung" },
   ];
 
   return (

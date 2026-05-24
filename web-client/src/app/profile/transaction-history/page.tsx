@@ -457,13 +457,13 @@ export default function TransactionHistoryPage() {
 
 					<section style={styles.card}>
 						<h2 style={styles.sectionTitle}>Danh sách thanh toán</h2>
-						<p style={styles.helperText}>Trang này chỉ lấy dữ liệu theo `userId` của tài khoản đang đăng nhập.</p>
+						  <p style={styles.helperText}>Trang này chỉ lấy dữ liệu theo userId của tài khoản đang đăng nhập.</p>
 
 						<div style={styles.tabRow}>
 							{([
 								{ key: "pending", label: "Chờ thanh toán" },
 								{ key: "paid", label: "Đã thanh toán" },
-								{ key: "failed", label: "Thất bại" },
+								{ key: "failed", label: "Thanh toán lỗi" },
 							] as const).map((tab) => (
 								<button
 									key={tab.key}

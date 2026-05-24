@@ -42,28 +42,28 @@ const endpointChecks: EndpointCheck[] = [
   },
   {
     id: "orders-get",
-    label: "Orders Route",
+    label: "Route đơn hàng",
     path: "/api/orders",
     method: "GET",
     expectedStatuses: [200],
   },
   {
     id: "deliveries-get",
-    label: "Deliveries Route",
+    label: "Route giao hàng",
     path: "/api/deliveries",
     method: "GET",
     expectedStatuses: [200],
   },
   {
     id: "products-get",
-    label: "Products Route",
+    label: "Route sản phẩm",
     path: "/api/products",
     method: "GET",
     expectedStatuses: [200],
   },
   {
     id: "payment-process-valid",
-    label: "Payment Process (Valid Payload)",
+    label: "Xử lý thanh toán (dữ liệu hợp lệ)",
     path: "/api/payments/process",
     method: "POST",
     body: {
@@ -75,7 +75,7 @@ const endpointChecks: EndpointCheck[] = [
   },
   {
     id: "payment-process-invalid",
-    label: "Payment Process (Invalid Payload)",
+    label: "Xử lý thanh toán (dữ liệu không hợp lệ)",
     path: "/api/payments/process",
     method: "POST",
     body: {
@@ -256,7 +256,7 @@ export default function BackendHealthPage() {
             </span>
           </div>
           <p className="mt-2 text-sm text-slate-600">
-            Subscribed tables: orders, inventory.
+            Bảng đã theo dõi: orders, inventory.
           </p>
 
           {realtimeEvents.length === 0 && (

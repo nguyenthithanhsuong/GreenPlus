@@ -5,6 +5,7 @@ import { Plus, RefreshCw, Search } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import RoleDrawer, { RoleFormValues } from "./RoleDrawer";
 import RoleGrid from "./RoleGrid";
+import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import type { RoleSummary } from "../../backend/modules/roles/role-management.types";
 import { roleSearchStrategy } from "../shared/searchStrategies";
 
@@ -25,6 +26,7 @@ const RoleManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RoleSummary | null>(null);
+  const [pendingDeleteRole, setPendingDeleteRole] = useState<RoleSummary | null>(null);
   const [form, setForm] = useState<RoleFormValues>(emptyForm());
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -124,10 +126,6 @@ const RoleManagement = () => {
   };
 
   const deleteRole = async (role: RoleSummary) => {
-    if (!window.confirm(`Xóa role "${role.role_name}"?`)) {
-      return;
-    }
-
     setSaving(true);
     setError(null);
 
@@ -142,12 +140,17 @@ const RoleManagement = () => {
         throw new Error(data.error || "Failed to delete role");
       }
 
+      setPendingDeleteRole(null);
       await loadRoles();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Unexpected error");
     } finally {
       setSaving(false);
     }
+  };
+
+  const requestDeleteRole = (role: RoleSummary) => {
+    setPendingDeleteRole(role);
   };
 
   return (
@@ -214,8 +217,25 @@ const RoleManagement = () => {
         loading={loading}
         saving={saving}
         onEditRole={openEditDrawer}
-        onDeleteRole={deleteRole}
+        onDeleteRole={requestDeleteRole}
         emptyMessage={searchQuery.trim() ? "Không tìm thấy role phù hợp." : "Chưa có role nào."}
+      />
+
+      <ConfirmActionDialog
+        open={Boolean(pendingDeleteRole)}
+        title="Xác nhận xóa role"
+        message={pendingDeleteRole ? `Bạn có chắc muốn xóa role "${pendingDeleteRole.role_name}"?` : ""}
+        confirmLabel="Xóa role"
+        confirmVariant="danger"
+        loading={saving}
+        onCancel={() => setPendingDeleteRole(null)}
+        onConfirm={() => {
+          if (!pendingDeleteRole) {
+            return;
+          }
+
+          void deleteRole(pendingDeleteRole);
+        }}
       />
 
       <RoleDrawer

@@ -42,7 +42,7 @@ export default function BackendOrdersTestPage() {
 
   const requireUserId = (): string => {
     if (!activeUserId) {
-      throw new Error("Please set active test user in /backend/signin first");
+      throw new Error("Vui lòng thiết lập người dùng kiểm thử ở /backend/signin trước");
     }
 
     return activeUserId;
@@ -174,18 +174,18 @@ export default function BackendOrdersTestPage() {
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
       <div className="mx-auto max-w-6xl space-y-4">
         <section className="rounded-xl border border-slate-300 bg-white p-5">
-          <h1 className="text-2xl font-bold">Backend Test: Orders</h1>
+          <h1 className="text-2xl font-bold">Kiểm thử backend: Đơn hàng</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Use this page to test create order, track order list/detail, and cancel order.
+            Dùng trang này để kiểm tra tạo đơn, theo dõi danh sách/chi tiết đơn và hủy đơn.
           </p>
           <p className="mt-1 text-xs text-slate-500">Route: /backend/orders</p>
-          <p className="mt-1 text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
+          <p className="mt-1 text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/backend/products/cart" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Cart Test
+              Kiểm thử giỏ hàng
             </Link>
             <Link href="/backend/products" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Product Backend Test
+              Kiểm thử backend sản phẩm
             </Link>
           </div>
         </section>

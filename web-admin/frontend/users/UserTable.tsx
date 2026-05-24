@@ -44,9 +44,9 @@ const renderRoleBadge = (role: string) => {
 };
 
 const mapStatusLabel = (status: UserViewModel['status']) => {
-  if (status === 'active') return 'Active';
-  if (status === 'inactive') return 'Inactive';
-  return 'Banned';
+  if (status === 'active') return 'Đang hoạt động';
+  if (status === 'inactive') return 'Không hoạt động';
+  return 'Bị cấm';
 };
 
 const mapStatusClass = (status: UserViewModel['status']) => {
@@ -180,7 +180,7 @@ const UserTable = ({
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               type="text"
-              placeholder="Tìm theo tên, email, role..."
+              placeholder="Tìm theo tên, email, vai trò..."
               className="h-9 w-64 rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
@@ -193,7 +193,7 @@ const UserTable = ({
             <tr>
               <th className="px-6 py-4 font-medium">Tài khoản</th>
               <th className="px-6 py-4 font-medium">Số điện thoại</th>
-              <th className="px-6 py-4 font-medium">Vai trò (Role)</th>
+              <th className="px-6 py-4 font-medium">Vai trò</th>
               <th className="px-6 py-4 font-medium">Cửa hàng</th>
               <th className="px-6 py-4 font-medium">Ngày tham gia</th>
               <th className="px-6 py-4 font-medium">Trạng thái</th>
@@ -203,13 +203,13 @@ const UserTable = ({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Đang tải danh sách người dùng...</td>
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">Đang tải danh sách người dùng...</td>
               </tr>
             )}
 
             {!loading && filteredUsers.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Không có dữ liệu người dùng.</td>
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">Không có dữ liệu người dùng.</td>
               </tr>
             )}
 

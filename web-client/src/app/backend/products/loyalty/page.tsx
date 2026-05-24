@@ -40,8 +40,8 @@ export default function LoyaltyTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Backend Test: Loyalty Points</h1>
-        <p className="text-sm text-slate-600">Route test via /api/loyalty/award.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Điểm thưởng</h1>
+        <p className="text-sm text-slate-600">Kiểm tra route qua /api/loyalty/award.</p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">

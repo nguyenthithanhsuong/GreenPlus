@@ -17,27 +17,27 @@ type AuthScreenProps = {
 function getAuthCopy(mode: AuthMode) {
   return mode === "login"
     ? {
-        title: "Login",
-        subtitle: "Welcome back. Sign in to continue to GreenPlus.",
-        submitLabel: "Sign In",
-        toggleLabel: "Create an account",
+        title: "Đăng nhập",
+        subtitle: "Chào mừng quay trở lại! Để tiếp tục dùng GreenPlus, vui lòng đăng nhập.",
+        submitLabel: "Đăng nhập",
+        toggleLabel: "Tạo tài khoản",
         toggleHref: "/register",
-        routeLabel: "Admin Login",
-        panelHeadline: "Fast access for returning teams",
+        routeLabel: "Đăng nhập quản trị",
+        panelHeadline: "Trang web thương mại thực phẩm GreenPlus",
         panelText:
-          "Use your existing credentials to jump back into dashboards, orders, and account tools.",
+          "GreenPlus quản lý cơ sở dữ liệu và hệ thống chính của GreenPlus.",
       }
     : {
-        title: "Register",
+        title: "Đăng ký",
         subtitle:
-          "Create your account and choose the role that fits your workflow.",
-        submitLabel: "Sign Up",
-        toggleLabel: "Back to login",
+          "Tạo tài khoản và chọn vai trò phù hợp với quy trình làm việc của bạn.",
+        submitLabel: "Đăng ký",
+        toggleLabel: "Quay lại đăng nhập",
         toggleHref: "/login",
-        routeLabel: "Admin Register",
-        panelHeadline: "Onboard the right way",
+        routeLabel: "Đăng ký quản trị",
+        panelHeadline: "Thiết lập đúng ngay từ đầu",
         panelText:
-          "Capture a name, email, password, and role so the first session starts with the right context.",
+          "Nhập tên, email, mật khẩu và vai trò để phiên làm việc đầu tiên có đúng bối cảnh.",
       };
 }
 
@@ -97,15 +97,15 @@ export function AuthScreen({ mode }: AuthScreenProps) {
           typeof data === "object" && data !== null && "error" in data
             ? String((data as { error: string }).error)
             : isLogin
-            ? "Login request failed"
-            : "Register request failed";
+            ? "Không thể đăng nhập."
+            : "Không thể đăng ký.";
         throw new Error(message);
       }
 
       setSuccess(
         isLogin
-          ? "Signed in successfully."
-          : "Account created successfully."
+          ? "Đăng nhập thành công."
+          : "Tài khoản đã được tạo thành công."
       );
 
       if (isLogin && typeof data === "object" && data !== null) {
@@ -139,11 +139,11 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         const allowedRoles = ["admin", "manager", "employee"];
 
         if (!allowedRoles.includes(roleName)) {
-          throw new Error("Only admin, manager, or employee can access this portal");
+          throw new Error("Chỉ quản trị viên, quản lý hoặc nhân viên mới có thể truy cập cổng này.");
         }
 
         if (!session || !user) {
-          throw new Error("Login response is missing session data");
+          throw new Error("Phản hồi đăng nhập thiếu dữ liệu phiên.");
         }
 
         setAuth(
@@ -170,7 +170,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Unexpected error"
+          : "Đã xảy ra lỗi không mong muốn."
       );
     } finally {
       setLoading(false);
@@ -229,13 +229,13 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 {!isLogin && (
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Full name
+                      Họ và tên
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter your full name"
+                      placeholder="Nhập tên đầy đủ của bạn"
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                     />
                   </div>
@@ -243,27 +243,27 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Email address
+                    Email
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
+                    placeholder="Nhập địa chỉ email của bạn"
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                   />
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Password
+                    Mật khẩu
                   </label>
                   <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder="Nhập mật khẩu của bạn"
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                   />
                   <button
@@ -283,7 +283,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 {!isLogin && (
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Confirm password
+                      Xác nhận mật khẩu
                     </label>
                     <div className="relative">
                     <input
@@ -292,7 +292,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                       onChange={(e) =>
                         setConfirmPassword(e.target.value)
                       }
-                      placeholder="Re-enter your password"
+                      placeholder="Xác nhận mật khẩu"
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                     />
                     <button
@@ -317,15 +317,15 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                   disabled={loading}
                   className="w-full rounded-2xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
                 >
-                  {loading ? "Please wait..." : copy.submitLabel}
+                  {loading ? "Vui lòng chờ..." : copy.submitLabel}
                 </button>
               </form>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              {/* <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-600">
                   {isLogin
-                    ? "Need an account?"
-                    : "Already have an account?"}
+                    ? "Chưa có tài khoản?"
+                    : "Đã có tài khoản?"}
                 </p>
                 <Link
                   href={copy.toggleHref}
@@ -333,7 +333,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 >
                   {copy.toggleLabel}
                 </Link>
-              </div>
+              </div> */}
 
               {error && (
                 <p className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">

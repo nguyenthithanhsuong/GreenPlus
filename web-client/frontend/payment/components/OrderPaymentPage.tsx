@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/authStore";
 import {
+  SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
   SCREEN_HEADER_PADDING_X,
   SCREEN_MAX_WIDTH_PX,
@@ -26,7 +27,7 @@ type OrderDetailResponse = {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
-    background: "#F8FAFC",
+    background: SCREEN_BACKGROUND_GRADIENT,
     padding: `0 ${SCREEN_SIDE_PADDING_PX}`,
   },
   container: {
