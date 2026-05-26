@@ -1,4 +1,4 @@
-import { CartResponse, CartItemView } from "../services/CartService";
+import type { CartItemView, CartResponse } from "../singleton";
 
 export interface CartItemUIModel {
   id: string;
@@ -18,7 +18,7 @@ export interface CartUIModel {
   itemCount: number;
 }
 
-class CartAdapter {
+export class CartMapper {
   static toUIModel(response: CartResponse): CartUIModel {
     return {
       userId: response.user_id,
@@ -41,5 +41,3 @@ class CartAdapter {
     };
   }
 }
-
-export default CartAdapter;

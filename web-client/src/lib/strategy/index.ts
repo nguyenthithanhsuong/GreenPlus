@@ -2,7 +2,7 @@ export {
   CODStrategy,
   MoMoStrategy,
   VNPayStrategy,
-  PaymentStrategyFactory,
+  PaymentStrategyRegistry,
 } from "./PaymentStrategy";
 export type {
   PaymentStrategy,

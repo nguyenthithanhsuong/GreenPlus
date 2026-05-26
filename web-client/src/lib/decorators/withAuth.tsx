@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useAuthStore } from "../stores/authStore";
 
 type ComponentType<P = object> = React.ComponentType<P>;
@@ -8,24 +8,23 @@ export function withAuth<P extends object>(
   requiredRole?: string,
 ): ComponentType<P> {
   return function WithAuthComponent(props: P) {
-    const { user, isAuthenticated } = useAuthStore();
-    const [isAuthorized, setIsAuthorized] = useState(false);
+    const { initialized, user, isAuthenticated } = useAuthStore();
 
     useEffect(() => {
-      if (!isAuthenticated) {
+      if (initialized && !isAuthenticated) {
         window.location.href = "/login";
-        return;
       }
+    }, [initialized, isAuthenticated]);
 
-      if (requiredRole && user?.role !== requiredRole) {
-        setIsAuthorized(false);
-        return;
-      }
+    if (!initialized || !isAuthenticated) {
+      return (
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-gray-600">Đang kiểm tra phiên đăng nhập...</p>
+        </div>
+      );
+    }
 
-      setIsAuthorized(true);
-    }, [isAuthenticated, user]);
-
-    if (!isAuthorized) {
+    if (requiredRole && user?.role !== requiredRole) {
       return (
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">

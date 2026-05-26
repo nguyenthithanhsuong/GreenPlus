@@ -4,10 +4,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
-import { DialogFactory } from "@/lib/factory/DialogFactory";
 import ConfirmationDialog from "../../shared/ConfirmationActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
-import { compose, withAuth, withErrorBoundary } from "@/lib";
+import {
+  ListFilterBuilder,
+  UrlBuilder,
+  compose,
+  withAuth,
+  withErrorBoundary,
+} from "@/lib";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -142,8 +147,6 @@ const STATUS_TABS: Array<{ value: TabValue; label: string }> = [
   { value: "completed", label: STATUS_CONFIG.completed.label },
   { value: "cancelled", label: STATUS_CONFIG.cancelled.label },
 ];
-
-DialogFactory.registerDialog("confirmation", ConfirmationDialog);
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -653,12 +656,18 @@ function BaseOrders() {
       try {
         // Load both cart and orders in parallel
         const [cartResponse, ordersResponse] = await Promise.all([
-          fetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, {
-            signal: controller.signal,
-          }),
-          fetch(`/api/orders?userId=${encodeURIComponent(user.user_id)}`, {
-            signal: controller.signal,
-          }),
+          fetch(
+            UrlBuilder.from("/api/cart").query("userId", user.user_id).build(),
+            {
+              signal: controller.signal,
+            },
+          ),
+          fetch(
+            UrlBuilder.from("/api/orders").query("userId", user.user_id).build(),
+            {
+              signal: controller.signal,
+            },
+          ),
         ]);
 
         if (!cartResponse.ok) {
@@ -729,7 +738,10 @@ function BaseOrders() {
       return orders;
     }
 
-    return orders.filter((item) => item.status === activeTab);
+    return ListFilterBuilder.for<OrderItem>()
+      .where("status")
+      .equals(activeTab)
+      .apply(orders);
   }, [activeTab, orders]);
 
   const groupedOrders = useMemo(() => {
@@ -903,11 +915,18 @@ function BaseOrders() {
   };
 
   const handleOpenComplaintPage = (orderId: string) => {
-    void router.push(`/complaints?orderId=${encodeURIComponent(orderId)}`);
+    void router.push(
+      UrlBuilder.from("/complaints").query("orderId", orderId).build(),
+    );
   };
 
   const handleOpenReviewFromOrder = (orderId: string) => {
-    void router.push(`/orders/${encodeURIComponent(orderId)}?mode=review`);
+    void router.push(
+      UrlBuilder.from("/orders")
+        .segment(orderId)
+        .query("mode", "review")
+        .build(),
+    );
   };
 
   const handleCloseCancelPrompt = () => {
@@ -929,7 +948,10 @@ function BaseOrders() {
 
     try {
       const response = await fetch(
-        `/api/orders/${encodeURIComponent(cancelTarget.order_id)}/cancel`,
+        UrlBuilder.from("/api/orders")
+          .segment(cancelTarget.order_id)
+          .segment("cancel")
+          .build(),
         {
           method: "PUT",
           headers: {
@@ -1612,29 +1634,21 @@ function BaseOrders() {
 
         {mainTab === "cart" ? renderCartSection() : renderOrdersSection()}
 
-        {(() => {
-          const CancelDialogResult = DialogFactory.createDialog({
-            type: "confirmation",
-            title: "Xác nhận hủy đơn hàng",
-            message: cancelTarget
+        <ConfirmationDialog
+          open={Boolean(cancelTarget)}
+          title="Xác nhận hủy đơn hàng"
+          message={
+            cancelTarget
               ? `Bạn có chắc muốn hủy đơn #${cancelTarget.order_id.slice(0, 8).toUpperCase()}? Hành động này sẽ cập nhật trạng thái đơn và thanh toán.`
-              : "",
-            confirmLabel: "Hủy đơn",
-            cancelLabel: "Giữ lại",
-            confirmTone: "danger",
-            isLoading: saving,
-            onCancel: handleCloseCancelPrompt,
-            onConfirm: () => void handleConfirmCancelOrder(),
-          });
-
-          const CancelDialog = CancelDialogResult.component;
-          return (
-            <CancelDialog
-              {...CancelDialogResult.defaultProps}
-              open={Boolean(cancelTarget)}
-            />
-          );
-        })()}
+              : ""
+          }
+          confirmLabel="Hủy đơn"
+          cancelLabel="Giữ lại"
+          confirmTone="danger"
+          busy={saving}
+          onCancel={handleCloseCancelPrompt}
+          onConfirm={() => void handleConfirmCancelOrder()}
+        />
 
         <NavigationBar />
       </div>

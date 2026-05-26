@@ -1,8 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
 import type React from "react";
-import { ModalBuilder } from "@/lib/builder";
 import { compose, withErrorBoundary } from "@/lib/decorators";
 
 type ConfirmationDialogProps = {
@@ -102,27 +100,6 @@ function BaseConfirmationActionDialog({
   onConfirm,
   onCancel,
 }: ConfirmationDialogProps) {
-  const modalConfig = useMemo(
-    () =>
-      new ModalBuilder()
-        .setTitle(title)
-        .setContent(message)
-        .setSize("small")
-        .setCloseOnBackdropClick(true)
-        .setShowCloseButton(false)
-        .addButton(cancelLabel, "secondary", onCancel)
-        .addButton(
-          confirmLabel,
-          confirmTone === "danger" ? "danger" : "primary",
-          onConfirm,
-        )
-        .build(),
-    [title, message, cancelLabel, confirmLabel, confirmTone, onConfirm, onCancel],
-  );
-
-  const cancelButton = modalConfig.buttons[0];
-  const confirmButton = modalConfig.buttons[1];
-
   if (!open) {
     return null;
   }
@@ -132,20 +109,20 @@ function BaseConfirmationActionDialog({
       style={styles.backdrop}
       role="dialog"
       aria-modal="true"
-      aria-label={modalConfig.title}
+      aria-label={title}
     >
       <div style={styles.panel}>
-        <h3 style={styles.title}>{modalConfig.title}</h3>
-        <p style={styles.message}>{String(modalConfig.children)}</p>
+        <h3 style={styles.title}>{title}</h3>
+        <p style={styles.message}>{message}</p>
 
         <div style={styles.actions}>
           <button
             type="button"
             style={styles.buttonBase}
-            onClick={cancelButton?.onClick ?? onCancel}
+            onClick={onCancel}
             disabled={busy}
           >
-            {cancelButton?.label ?? cancelLabel}
+            {cancelLabel}
           </button>
           <button
             type="button"
@@ -157,10 +134,10 @@ function BaseConfirmationActionDialog({
                   ? styles.confirmWarning
                   : styles.confirmPrimary),
             }}
-            onClick={confirmButton?.onClick ?? onConfirm}
+            onClick={onConfirm}
             disabled={busy}
           >
-            {busy ? "Đang xử lý..." : (confirmButton?.label ?? confirmLabel)}
+            {busy ? "Đang xử lý..." : confirmLabel}
           </button>
         </div>
       </div>

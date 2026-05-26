@@ -1,4 +1,4 @@
-import { CreateOrderResponse } from "../services/OrderService";
+import type { CreateOrderResponse } from "../singleton";
 
 export interface OrderUIModel {
   id: string;
@@ -7,7 +7,7 @@ export interface OrderUIModel {
   createdAt: Date;
 }
 
-class OrderAdapter {
+export class OrderMapper {
   static toUIModel(response: CreateOrderResponse): OrderUIModel {
     return {
       id: response.order_id,
@@ -17,5 +17,3 @@ class OrderAdapter {
     };
   }
 }
-
-export default OrderAdapter;

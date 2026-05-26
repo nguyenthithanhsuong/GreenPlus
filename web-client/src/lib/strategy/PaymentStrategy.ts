@@ -133,7 +133,7 @@ export class VNPayStrategy implements PaymentStrategy {
   }
 }
 
-export class PaymentStrategyFactory {
+export class PaymentStrategyRegistry {
   private static strategies = new Map<string, PaymentStrategy>([
     ["cod", new CODStrategy()],
     ["momo", new MoMoStrategy()],

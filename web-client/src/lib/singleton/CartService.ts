@@ -1,4 +1,5 @@
 import apiService from "./ApiService";
+import { UrlBuilder } from "../builder";
 
 export interface CartItemView {
   cart_item_id: string;
@@ -32,7 +33,7 @@ class CartService {
 
   async getCart(userId: string): Promise<CartResponse> {
     return apiService.get<CartResponse>(
-      `/api/cart?userId=${encodeURIComponent(userId)}`,
+      UrlBuilder.from("/api/cart").query("userId", userId).build(),
     );
   }
 

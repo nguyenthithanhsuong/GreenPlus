@@ -1,4 +1,5 @@
 import apiService from "./ApiService";
+import { UrlBuilder } from "../builder";
 
 export interface ProductBrowseItem {
   productId: string;
@@ -80,7 +81,7 @@ class ProductService {
 
   async getProductDetail(productId: string): Promise<ProductDetailData> {
     return apiService.get<ProductDetailData>(
-      `/api/products/${encodeURIComponent(productId)}`,
+      UrlBuilder.from("/api/products").segment(productId).build(),
     );
   }
 
@@ -91,15 +92,8 @@ class ProductService {
     limit?: number;
     page?: number;
   }): Promise<ProductsResponse> {
-    const query = new URLSearchParams();
-    if (params.categoryId) query.append("categoryId", params.categoryId);
-    if (params.keyword) query.append("keyword", params.keyword);
-    if (params.sort) query.append("sort", params.sort);
-    if (params.limit) query.append("limit", String(params.limit));
-    if (params.page) query.append("page", String(params.page));
-
     const response = await apiService.get<Partial<ProductsResponse>>(
-      `/api/products?${query.toString()}`,
+      UrlBuilder.from("/api/products").queries(params).build(),
     );
 
     return {
@@ -112,7 +106,10 @@ class ProductService {
 
   async getReviews(productId: string, limit = 10): Promise<ReviewsResponse> {
     const response = await apiService.get<Partial<ReviewsResponse>>(
-      `/api/reviews?productId=${encodeURIComponent(productId)}&limit=${limit}`,
+      UrlBuilder.from("/api/reviews")
+        .query("productId", productId)
+        .query("limit", limit)
+        .build(),
     );
 
     return {

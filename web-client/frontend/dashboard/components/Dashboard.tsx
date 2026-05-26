@@ -5,8 +5,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "./NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
-import ProductService from "@/lib/services/ProductService";
-import CartService from "@/lib/services/CartService";
+import { ProductService, CartService } from "@/lib/singleton";
+import { ProductMapper, type ProductBrowseUIModel } from "@/lib/mapper";
 import { compose, withErrorBoundary } from "@/lib";
 import {
   SCREEN_BACKGROUND_GRADIENT,
@@ -20,28 +20,6 @@ type CategoryItem = {
   categoryId: string;
   name: string;
   imageUrl: string | null;
-};
-
-type CategoriesResponse = {
-  total: number;
-  items: CategoryItem[];
-};
-
-type ProductItem = {
-  productId: string;
-  name: string;
-  imageUrl: string | null;
-  categoryId: string | null;
-  categoryName: string | null;
-  price: number | null;
-  isAvailable: boolean;
-};
-
-type ProductsResponse = {
-  page: number;
-  limit: number;
-  total: number;
-  items: ProductItem[];
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -409,7 +387,7 @@ const BaseDashboard = () => {
   const [brokenImageIds, setBrokenImageIds] = useState<Record<string, boolean>>(
     {},
   );
-  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [products, setProducts] = useState<ProductBrowseUIModel[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
   const [categoryColumns, setCategoryColumns] = useState(4);
@@ -458,7 +436,7 @@ const BaseDashboard = () => {
         quantity: 1,
       });
 
-      const product = products.find((p) => p.productId === productId);
+      const product = products.find((p) => p.id === productId);
       const productName = product?.name || "sản phẩm";
       setCartActionMessage(`Đã thêm ${productName} vào Giỏ hàng!`);
       setTimeout(() => setCartActionMessage(null), 4000);
@@ -540,7 +518,11 @@ const BaseDashboard = () => {
           sort: "newest",
           limit: 8,
         });
-        setProducts(Array.isArray(data.items) ? data.items : []);
+        setProducts(
+          Array.isArray(data.items)
+            ? data.items.map((item) => ProductMapper.toBrowseUIModel(item))
+            : [],
+        );
       } catch (requestError) {
         setProducts([]);
         setProductsError(
@@ -827,18 +809,18 @@ const BaseDashboard = () => {
             <div style={styles.productRow}>
               {freshProducts.map((product) => (
                 <div
-                  key={product.productId}
+                  key={product.id}
                   style={{ display: "flex", flexDirection: "column" }}
                 >
                   <Link
-                    href={`/product-detail/${product.productId}?backTo=${encodeURIComponent("/dashboard")}`}
+                    href={`/product-detail/${product.id}?backTo=${encodeURIComponent("/dashboard")}`}
                     style={styles.productLink}
                   >
                     <article style={styles.productCard}>
                       <div style={styles.productImageWrap}>
                         <img
                           src={
-                            product.imageUrl ??
+                            product.image ??
                             "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"
                           }
                           alt={product.name}
@@ -850,7 +832,7 @@ const BaseDashboard = () => {
                         <div style={styles.ratingRow}>
                           <span aria-hidden="true">★</span>
                           <span>
-                            {product.isAvailable ? "Sẵn hàng" : "Tạm hết"}
+                            {product.available ? "Sẵn hàng" : "Tạm hết"}
                           </span>
                         </div>
                         <div style={styles.priceRow}>
@@ -872,7 +854,8 @@ const BaseDashboard = () => {
                       zIndex: 10,
                     }}
                     aria-label={`Thêm ${product.name}`}
-                    onClick={() => void handleAddToCart(product.productId)}
+                    onClick={() => void handleAddToCart(product.id)}
+                    disabled={cartActionLoading || !product.available}
                   >
                     <svg
                       width="24"
@@ -909,11 +892,11 @@ const BaseDashboard = () => {
             <div style={styles.productRow}>
               {dealProducts.map((product) => (
                 <div
-                  key={product.productId}
+                  key={product.id}
                   style={{ display: "flex", flexDirection: "column" }}
                 >
                   <Link
-                    href={`/product-detail/${product.productId}?backTo=${encodeURIComponent("/dashboard")}`}
+                    href={`/product-detail/${product.id}?backTo=${encodeURIComponent("/dashboard")}`}
                     style={styles.productLink}
                   >
                     <article style={styles.productCard}>
@@ -921,7 +904,7 @@ const BaseDashboard = () => {
                         <div style={styles.productBadge}>Mua ngay</div>
                         <img
                           src={
-                            product.imageUrl ??
+                            product.image ??
                             "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"
                           }
                           alt={product.name}
@@ -954,7 +937,8 @@ const BaseDashboard = () => {
                       zIndex: 10,
                     }}
                     aria-label={`Thêm ${product.name}`}
-                    onClick={() => void handleAddToCart(product.productId)}
+                    onClick={() => void handleAddToCart(product.id)}
+                    disabled={cartActionLoading || !product.available}
                   >
                     <svg
                       width="24"

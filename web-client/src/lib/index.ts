@@ -1,41 +1,12 @@
-// Factory Pattern Exports
-export { DialogFactory } from "./factory/DialogFactory";
-export { ButtonFactory } from "./factory/ButtonFactory";
-export { ComponentFactory } from "./factory";
-export type {
-  DialogType,
-  DialogConfig,
-  DialogResult,
-} from "./factory/DialogFactory";
-export type {
-  ButtonVariant,
-  ButtonSize,
-  ButtonConfig,
-} from "./factory/ButtonFactory";
-export type {
-  ComponentType,
-  ComponentConfig,
-  ComponentFactoryResult,
-} from "./factory";
-
 // Builder Pattern Exports
-export { FormBuilder, FilterBuilder, ModalBuilder } from "./builder";
-export type {
-  FieldConfig,
-  FormBuilderConfig,
-  FilterCondition,
-  FilterConfig,
-  FilterOperator,
-  ModalButton,
-  ModalBuilderConfig,
-} from "./builder";
+export * from "./builder";
 
 // Strategy Pattern Exports
 export {
   CODStrategy,
   MoMoStrategy,
   VNPayStrategy,
-  PaymentStrategyFactory,
+  PaymentStrategyRegistry,
 } from "./strategy";
 export type {
   PaymentStrategy,
@@ -45,40 +16,14 @@ export type {
 } from "./strategy";
 
 // Decorator Pattern Exports
-export {
-  withAuth,
-  withLoading,
-  withErrorBoundary,
-  compose,
-  composeAsync,
-} from "./decorators";
-export type { WithLoadingProps, WithErrorBoundaryProps } from "./decorators";
+export { withAuth, withErrorBoundary, compose } from "./decorators";
+export type { WithErrorBoundaryProps } from "./decorators";
 
-// Composite Pattern Exports
-export {
-  CompositeForm,
-  FormFieldGroup,
-  TextFieldComponent,
-  SelectFieldComponent,
-  CheckboxFieldComponent,
-  CompositeFormComponent,
-} from "./composite";
-export type {
-  FormComponentProps,
-  FormFieldValue,
-  FormGroupProps,
-  CompositeFormComponentProps,
-} from "./composite";
+// Mapper Exports
+export * from "./mapper";
 
-// Adapter Pattern Exports (Already Existing)
-export * from "./adapter/ProductAdapter";
-export * from "./adapter/CartAdapter";
-export * from "./adapter/OrderAdapter";
-export * from "./adapter/PaymentAdapter";
-export * from "./adapter/AccessPolicyAdapter";
-
-// Service Exports (Singleton Pattern)
-export { ApiService } from "./services/ApiService";
+// Singleton Pattern Exports
+export * from "./singleton";
 
 // Store Exports (Observer Pattern)
 export { useAuthStore } from "./stores/authStore";

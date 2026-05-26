@@ -1,4 +1,7 @@
-import type { AppUseCase, RolePolicy } from "@greenplus/supabase-shared/accessPolicy";
+import type {
+  AppUseCase,
+  RolePolicy,
+} from "@greenplus/supabase-shared/accessPolicy";
 
 export interface ClientUseCaseCardModel {
   key: string;
@@ -21,7 +24,7 @@ export interface ClientFrontendPolicyModel {
   visibleTables: string[];
 }
 
-class AccessPolicyAdapter {
+export class AccessPolicyMapper {
   static toClientFrontendPolicyModel({
     useCases,
     customerPolicy,
@@ -60,5 +63,3 @@ class AccessPolicyAdapter {
     };
   }
 }
-
-export default AccessPolicyAdapter;

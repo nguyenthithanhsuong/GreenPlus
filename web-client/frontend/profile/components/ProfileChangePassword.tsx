@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
-import { CompositeForm, FormFieldGroup, TextFieldComponent } from "@/lib/composite";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import {
   SCREEN_BACKGROUND_GRADIENT,
@@ -61,12 +60,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-const createCompositeTextField = (name: string) => {
-  const field = new TextFieldComponent();
-  field.name = name;
-  return field;
-};
-
 function BaseProfileChangePassword() {
   // Get current user from auth store
   const { user } = useAuthStore();
@@ -80,17 +73,6 @@ function BaseProfileChangePassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ updated?: boolean; error?: string } | null>(null);
-  const passwordCompositeForm = useMemo(
-    () =>
-      new CompositeForm().addGroup(
-        new FormFieldGroup("password", [
-          createCompositeTextField("currentPassword"),
-          createCompositeTextField("newPassword"),
-          createCompositeTextField("confirmPassword"),
-        ]),
-      ),
-    [],
-  );
 
   const changePassword = async () => {
     // Check if user is authenticated
@@ -98,42 +80,16 @@ function BaseProfileChangePassword() {
       return;
     }
 
-    const compositeValues = {
-      "password.currentPassword": currentPassword,
-      "password.newPassword": newPassword,
-      "password.confirmPassword": confirmPassword,
-    };
-    const compositeErrors: Record<string, string> = {};
-
-    if (!currentPassword.trim()) {
-      compositeErrors["password.currentPassword"] = "Current password is required.";
-    }
-    if (!newPassword.trim()) {
-      compositeErrors["password.newPassword"] = "New password is required.";
-    }
-    if (!confirmPassword.trim()) {
-      compositeErrors["password.confirmPassword"] = "Confirm password is required.";
-    }
-
-    const submittedValues = passwordCompositeForm
-      .setValues(compositeValues)
-      .setErrors(compositeErrors)
-      .submit();
-
-    if (!submittedValues) {
+    if (
+      !currentPassword.trim() ||
+      !newPassword.trim() ||
+      !confirmPassword.trim()
+    ) {
       setError("Please fill in all password fields.");
       return;
     }
 
-    const normalizedCurrentPassword = String(
-      submittedValues["password.currentPassword"] ?? "",
-    );
-    const normalizedNewPassword = String(submittedValues["password.newPassword"] ?? "");
-    const normalizedConfirmPassword = String(
-      submittedValues["password.confirmPassword"] ?? "",
-    );
-
-    if (normalizedNewPassword !== normalizedConfirmPassword) {
+    if (newPassword !== confirmPassword) {
       setError("New password and confirm password do not match.");
       return;
     }
@@ -148,9 +104,9 @@ function BaseProfileChangePassword() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.user_id,
-          currentPassword: normalizedCurrentPassword,
-          newPassword: normalizedNewPassword,
-          confirmPassword: normalizedConfirmPassword,
+          currentPassword,
+          newPassword,
+          confirmPassword,
         }),
       });
 

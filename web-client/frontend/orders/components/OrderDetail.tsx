@@ -4,11 +4,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
-import { DialogFactory } from "@/lib/factory/DialogFactory";
 import ConfirmationDialog from "../../shared/ConfirmationActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
-import { compose, withAuth, withErrorBoundary } from "@/lib";
-import { PaymentStrategyFactory } from "@/lib/strategy";
+import {
+  UrlBuilder,
+  compose,
+  withAuth,
+  withErrorBoundary,
+} from "@/lib";
+import { PaymentStrategyRegistry } from "@/lib/strategy";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -58,8 +62,6 @@ type OrderDetailResponse = {
   delivery_address: string;
   delivery_fee: number;
 };
-
-DialogFactory.registerDialog("confirmation", ConfirmationDialog);
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -594,7 +596,7 @@ function formatDateTime(value: string): string {
 
 function getMethodLabel(method: PaymentMethod): string {
   try {
-    return PaymentStrategyFactory.getStrategy(method).getMethod().displayName;
+    return PaymentStrategyRegistry.getStrategy(method).getMethod().displayName;
   } catch {
     if (method === "bank_transfer") {
       return "Chuyển khoản";
@@ -724,7 +726,10 @@ function BaseOrderDetail() {
 
       try {
         const response = await fetch(
-          `/api/orders/${encodeURIComponent(orderId)}?userId=${encodeURIComponent(user.user_id)}`,
+          UrlBuilder.from("/api/orders")
+            .segment(orderId)
+            .query("userId", user.user_id)
+            .build(),
           {
             signal: controller.signal,
           },
@@ -839,7 +844,10 @@ function BaseOrderDetail() {
 
     try {
       const response = await fetch(
-        `/api/orders/${encodeURIComponent(detail.order_id)}/cancel`,
+        UrlBuilder.from("/api/orders")
+          .segment(detail.order_id)
+          .segment("cancel")
+          .build(),
         {
           method: "PUT",
           headers: {
@@ -884,7 +892,12 @@ function BaseOrderDetail() {
       detail.payment_status !== "cancelled" &&
       detail.order_status !== "cancelled";
     if (canOpenPayment) {
-      router.push(`/orders/${encodeURIComponent(detail.order_id)}/payment`);
+      router.push(
+        UrlBuilder.from("/orders")
+          .segment(detail.order_id)
+          .segment("payment")
+          .build(),
+      );
       return;
     }
 
@@ -897,7 +910,9 @@ function BaseOrderDetail() {
     }
 
     void router.push(
-      `/complaints?orderId=${encodeURIComponent(detail.order_id)}`,
+      UrlBuilder.from("/complaints")
+        .query("orderId", detail.order_id)
+        .build(),
     );
   };
 
@@ -1376,32 +1391,25 @@ function BaseOrderDetail() {
           </div>
         ) : null}
 
-        {(() => {
-          const CancelDialogResult = DialogFactory.createDialog({
-            type: "confirmation",
-            title: "Xác nhận hủy đơn hàng",
-            message: detail
+        <ConfirmationDialog
+          open={cancelPromptOpen}
+          title="Xác nhận hủy đơn hàng"
+          message={
+            detail
               ? `Bạn có chắc muốn hủy đơn #${detail.order_id.slice(0, 8).toUpperCase()}? Thanh toán của đơn sẽ chuyển sang trạng thái đã hủy.`
-              : "",
-            confirmLabel: "Hủy đơn",
-            cancelLabel: "Giữ lại",
-            confirmTone: "danger",
-            isLoading: saving,
-            onCancel: () => {
-              if (!saving) {
-                setCancelPromptOpen(false);
-              }
-            },
-            onConfirm: () => void handleCancelOrder(),
-          });
-          const CancelDialog = CancelDialogResult.component;
-          return (
-            <CancelDialog
-              {...CancelDialogResult.defaultProps}
-              open={cancelPromptOpen}
-            />
-          );
-        })()}
+              : ""
+          }
+          confirmLabel="Hủy đơn"
+          cancelLabel="Giữ lại"
+          confirmTone="danger"
+          busy={saving}
+          onCancel={() => {
+            if (!saving) {
+              setCancelPromptOpen(false);
+            }
+          }}
+          onConfirm={() => void handleCancelOrder()}
+        />
 
         <NavigationBar />
       </div>

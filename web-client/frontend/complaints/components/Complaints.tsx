@@ -2,11 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
-import { compose, withAuth, withErrorBoundary } from "@/lib";
-import { FilterBuilder } from "@/lib/builder";
+import {
+  ListFilterBuilder,
+  UrlBuilder,
+  compose,
+  withAuth,
+  withErrorBoundary,
+} from "@/lib";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -212,7 +217,6 @@ function toStatus(value: string): OrderStatus {
 }
 
 function BaseComplaints() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const user = useAuthStore((state) => state.user);
 
@@ -237,9 +241,12 @@ function BaseComplaints() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/orders?userId=${encodeURIComponent(user.user_id)}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          UrlBuilder.from("/api/orders").query("userId", user.user_id).build(),
+          {
+            signal: controller.signal,
+          },
+        );
         const data = (await response.json()) as OrdersResponse | { error?: string };
 
         if (!response.ok) {
@@ -247,14 +254,11 @@ function BaseComplaints() {
           throw new Error(msg || "Không thể tải danh sách đơn hàng.");
         }
 
-        const filterConfig = new FilterBuilder()
-          .addCondition("status", "equals", "completed")
-          .build();
-
         const allOrders = ((data as OrdersResponse).items ?? []).map((item) => ({ ...item, status: toStatus(item.status) }));
-        const completedOrders = allOrders.filter((item) =>
-          filterConfig.conditions.every((cond) => String(item[cond.field as keyof typeof item]) === String(cond.value))
-        );
+        const completedOrders = ListFilterBuilder.for<OrderItem>()
+          .where("status")
+          .equals("completed")
+          .apply(allOrders);
 
         setOrders(completedOrders);
 

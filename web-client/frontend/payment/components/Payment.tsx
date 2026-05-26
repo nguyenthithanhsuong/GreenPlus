@@ -5,14 +5,13 @@ import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/authStore";
-import CartService, {
-  CartResponse,
-  CartItemView,
-} from "@/lib/services/CartService";
-import CartAdapter from "@/lib/adapter/CartAdapter";
-import OrderService from "@/lib/services/OrderService";
-import OrderAdapter from "@/lib/adapter/OrderAdapter";
-import { PaymentStrategyFactory, type PaymentMethod } from "@/lib/strategy";
+import { CartService, OrderService, type CartResponse } from "@/lib/singleton";
+import {
+  CartMapper,
+  OrderMapper,
+  type CartItemUIModel,
+} from "@/lib/mapper";
+import { PaymentStrategyRegistry, type PaymentMethod } from "@/lib/strategy";
 import {
   SCREEN_CONTENT_PADDING_X,
   SCREEN_HEADER_PADDING_X,
@@ -486,6 +485,13 @@ function formatPrice(value: number): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
 }
 
+function createNoteDrafts(items: CartItemUIModel[]): Record<string, string> {
+  return items.reduce<Record<string, string>>((drafts, item) => {
+    drafts[item.id] = item.note ?? "";
+    return drafts;
+  }, {});
+}
+
 function PaymentBase() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -496,20 +502,21 @@ function PaymentBase() {
   const [message, setMessage] = useState<string | null>(null);
   const [cart, setCart] = useState<CartResponse | null>(null);
   const [note, setNote] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>("cod");
+  const [paymentMethod, setPaymentMethod] =
+    useState<CheckoutPaymentMethod>("cod");
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
   const availablePaymentMethods = useMemo<PaymentMethod[]>(
     () =>
-      PaymentStrategyFactory.getAvailableMethods().filter((method) =>
+      PaymentStrategyRegistry.getAvailableMethods().filter((method) =>
         ["cod", "momo", "vnpay"].includes(method.id),
       ),
     [],
   );
   const selectedPaymentStrategy = useMemo(
-    () => PaymentStrategyFactory.getStrategy(paymentMethod),
+    () => PaymentStrategyRegistry.getStrategy(paymentMethod),
     [paymentMethod],
   );
 
@@ -530,16 +537,9 @@ function PaymentBase() {
           return;
         }
 
+        const cartModel = CartMapper.toUIModel(cartData);
         setCart(cartData);
-        setNoteDrafts(
-          (cartData.items ?? []).reduce<Record<string, string>>(
-            (drafts, item) => {
-              drafts[item.cart_item_id] = item.note ?? "";
-              return drafts;
-            },
-            {},
-          ),
-        );
+        setNoteDrafts(createNoteDrafts(cartModel.items));
       } catch (requestError) {
         setCart(null);
         setError(
@@ -555,9 +555,15 @@ function PaymentBase() {
     void loadCart();
   }, [router, user]);
 
-  const cartUIModel = useMemo(() => (cart ? CartAdapter.toUIModel(cart) : null), [cart]);
-  const itemTotal = useMemo(() => Number(cartUIModel?.total ?? 0), [cartUIModel]);
-  const cartItems = useMemo(() => cart?.items ?? [], [cart]);
+  const cartUIModel = useMemo(
+    () => (cart ? CartMapper.toUIModel(cart) : null),
+    [cart],
+  );
+  const itemTotal = useMemo(
+    () => Number(cartUIModel?.total ?? 0),
+    [cartUIModel],
+  );
+  const cartItems = useMemo(() => cartUIModel?.items ?? [], [cartUIModel]);
   const cartQuantity = useMemo(
     () => cartUIModel?.itemCount ?? 0,
     [cartUIModel],
@@ -576,26 +582,18 @@ function PaymentBase() {
   );
 
   useEffect(() => {
-    setNoteDrafts(
-      cartItems.reduce<Record<string, string>>((drafts, item) => {
-        drafts[item.cart_item_id] = item.note ?? "";
-        return drafts;
-      }, {}),
-    );
+    setNoteDrafts(createNoteDrafts(cartItems));
   }, [cartItems]);
 
   const refreshCart = (nextCart: CartResponse) => {
+    const cartModel = CartMapper.toUIModel(nextCart);
+
     setCart(nextCart);
-    setNoteDrafts(
-      (nextCart.items ?? []).reduce<Record<string, string>>((drafts, item) => {
-        drafts[item.cart_item_id] = item.note ?? "";
-        return drafts;
-      }, {}),
-    );
+    setNoteDrafts(createNoteDrafts(cartModel.items));
   };
 
   const handleChangeQuantity = async (
-    item: CartItemView,
+    item: CartItemUIModel,
     nextQuantity: number,
   ) => {
     if (!user?.user_id) {
@@ -607,12 +605,12 @@ function PaymentBase() {
       return;
     }
 
-    setActiveItemId(item.cart_item_id);
+    setActiveItemId(item.id);
 
     try {
       const nextCart = await CartService.updateQuantity({
         userId: user.user_id,
-        productId: item.product_id,
+        productId: item.productId,
         quantity: nextQuantity,
       });
       refreshCart(nextCart);
@@ -627,17 +625,17 @@ function PaymentBase() {
     }
   };
 
-  const handleRemoveItem = async (item: CartItemView) => {
+  const handleRemoveItem = async (item: CartItemUIModel) => {
     if (!user?.user_id) {
       return;
     }
 
-    setActiveItemId(item.cart_item_id);
+    setActiveItemId(item.id);
 
     try {
       const nextCart = await CartService.removeFromCart({
         userId: user.user_id,
-        productId: item.product_id,
+        productId: item.productId,
       });
       refreshCart(nextCart);
     } catch (requestError) {
@@ -651,18 +649,18 @@ function PaymentBase() {
     }
   };
 
-  const handleSaveNote = async (item: CartItemView) => {
+  const handleSaveNote = async (item: CartItemUIModel) => {
     if (!user?.user_id) {
       return;
     }
 
-    setSavingNoteItemId(item.cart_item_id);
+    setSavingNoteItemId(item.id);
 
     try {
       const nextCart = await CartService.updateNote({
         userId: user.user_id,
-        cartItemId: item.cart_item_id,
-        note: (noteDrafts[item.cart_item_id] ?? "").trim(),
+        cartItemId: item.id,
+        note: (noteDrafts[item.id] ?? "").trim(),
       });
       refreshCart(nextCart);
     } catch (requestError) {
@@ -713,8 +711,8 @@ function PaymentBase() {
         paymentMethod,
       });
 
-      // Apply OrderAdapter to get a typed UI model for the created order
-      const orderUIModel = OrderAdapter.toUIModel(createResult);
+      // Apply OrderMapper to get a typed UI model for the created order
+      const orderUIModel = OrderMapper.toUIModel(createResult);
       const paymentResult = await selectedPaymentStrategy.process({
         amount: orderUIModel.total,
         currency: "VND",
@@ -774,9 +772,7 @@ function PaymentBase() {
           {loading && (
             <p style={styles.infoText}>Đang tải thông tin thanh toán...</p>
           )}
-          {error && (
-            <p style={styles.errorText}>{error}</p>
-          )}
+          {error && <p style={styles.errorText}>{error}</p>}
 
           {!loading && cart && (
             <>
@@ -848,9 +844,9 @@ function PaymentBase() {
                   <p style={styles.itemMeta}>
                     Có {cartQuantity} sản phẩm trong giỏ
                   </p>
-                  {cart.items.map((item, index) => (
+                  {cartItems.map((item, index) => (
                     <div
-                      key={item.cart_item_id}
+                      key={item.id}
                       style={{
                         ...styles.itemRow,
                         ...(index > 0
@@ -862,14 +858,14 @@ function PaymentBase() {
                       }}
                     >
                       <Link
-                        href={`/product-detail/${item.product_id}`}
+                        href={`/product-detail/${item.productId}`}
                         style={{ textDecoration: "none" }}
-                        aria-label={`Xem chi tiết ${item.product_name}`}
+                        aria-label={`Xem chi tiết ${item.productName}`}
                       >
-                        {item.product_image_url ? (
+                        {item.productImage ? (
                           <img
-                            src={item.product_image_url}
-                            alt={item.product_name}
+                            src={item.productImage}
+                            alt={item.productName}
                             style={{ ...styles.itemThumb, cursor: "pointer" }}
                           />
                         ) : (
@@ -885,14 +881,14 @@ function PaymentBase() {
                       </Link>
                       <div style={styles.itemBody}>
                         <Link
-                          href={`/product-detail/${item.product_id}`}
+                          href={`/product-detail/${item.productId}`}
                           style={{
                             ...styles.itemName,
                             textDecoration: "none",
                             display: "inline-block",
                           }}
                         >
-                          {item.product_name}
+                          {item.productName}
                         </Link>
                         <p style={styles.itemMeta}>Sản phẩm hữu cơ GreenPlus</p>
                         <div style={styles.itemPriceRow}>
@@ -910,11 +906,11 @@ function PaymentBase() {
                           </div>
                           <input
                             type="text"
-                            value={noteDrafts[item.cart_item_id] ?? ""}
+                            value={noteDrafts[item.id] ?? ""}
                             onChange={(event) =>
                               setNoteDrafts((previous) => ({
                                 ...previous,
-                                [item.cart_item_id]: event.target.value,
+                                [item.id]: event.target.value,
                               }))
                             }
                             onBlur={() => void handleSaveNote(item)}
@@ -926,7 +922,7 @@ function PaymentBase() {
                             }}
                             style={styles.noteInputCompact}
                             placeholder="Thêm ghi chú cho sản phẩm này"
-                            disabled={savingNoteItemId === item.cart_item_id}
+                            disabled={savingNoteItemId === item.id}
                           />
                           <div style={styles.itemActions}>
                             <div style={styles.quantityControl}>
@@ -939,8 +935,8 @@ function PaymentBase() {
                                     item.quantity - 1,
                                   )
                                 }
-                                disabled={activeItemId === item.cart_item_id}
-                                aria-label={`Giảm số lượng ${item.product_name}`}
+                                disabled={activeItemId === item.id}
+                                aria-label={`Giảm số lượng ${item.productName}`}
                               >
                                 -
                               </button>
@@ -956,8 +952,8 @@ function PaymentBase() {
                                     item.quantity + 1,
                                   )
                                 }
-                                disabled={activeItemId === item.cart_item_id}
-                                aria-label={`Tăng số lượng ${item.product_name}`}
+                                disabled={activeItemId === item.id}
+                                aria-label={`Tăng số lượng ${item.productName}`}
                               >
                                 +
                               </button>
@@ -966,7 +962,7 @@ function PaymentBase() {
                               type="button"
                               style={styles.removeButton}
                               onClick={() => void handleRemoveItem(item)}
-                              disabled={activeItemId === item.cart_item_id}
+                              disabled={activeItemId === item.id}
                             >
                               Xóa sản phẩm
                             </button>
@@ -975,9 +971,9 @@ function PaymentBase() {
                             type="button"
                             style={styles.noteSaveButton}
                             onClick={() => void handleSaveNote(item)}
-                            disabled={savingNoteItemId === item.cart_item_id}
+                            disabled={savingNoteItemId === item.id}
                           >
-                            {savingNoteItemId === item.cart_item_id
+                            {savingNoteItemId === item.id
                               ? "Đang lưu..."
                               : "Cập nhật ghi chú"}
                           </button>
@@ -1020,7 +1016,9 @@ function PaymentBase() {
                           ...styles.paymentOption,
                           ...(isActive ? styles.paymentOptionActive : {}),
                         }}
-                        onClick={() => setPaymentMethod(method.id as CheckoutPaymentMethod)}
+                        onClick={() =>
+                          setPaymentMethod(method.id as CheckoutPaymentMethod)
+                        }
                       >
                         <span style={styles.paymentLeft}>
                           <span style={styles.paymentIconWrap}>
@@ -1103,7 +1101,6 @@ function PaymentBase() {
   );
 }
 
-export default compose(
-  withErrorBoundary,
-  (Component) => withAuth(Component, "customer")
+export default compose(withErrorBoundary, (Component) =>
+  withAuth(Component, "customer"),
 )(PaymentBase);

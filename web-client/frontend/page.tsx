@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { APP_USE_CASES, CLIENT_VISIBLE_TABLES, ROLE_POLICIES } from "@greenplus/supabase-shared/accessPolicy";
-import AccessPolicyAdapter from "@/lib/adapter/AccessPolicyAdapter";
+import { AccessPolicyMapper } from "@/lib/mapper";
 import { compose, withErrorBoundary } from "@/lib/decorators";
 
 function BaseClientFrontendPage() {
-  const policyModel = AccessPolicyAdapter.toClientFrontendPolicyModel({
+  const policyModel = AccessPolicyMapper.toClientFrontendPolicyModel({
     useCases: APP_USE_CASES["web-client"],
     customerPolicy: ROLE_POLICIES.find((policy) => policy.role === "customer"),
     visibleTables: CLIENT_VISIBLE_TABLES,

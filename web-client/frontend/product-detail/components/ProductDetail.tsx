@@ -5,15 +5,18 @@ import React, { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { compose, withErrorBoundary } from "@/lib/decorators";
 import { useAuthStore } from "@/lib/stores/authStore";
-import ProductService, {
-  ProductDetailData,
-  ReviewItem,
-} from "@/lib/services/ProductService";
-import ProductAdapter, {
-  ProductBrowseUIModel,
-} from "@/lib/adapter/ProductAdapter";
-import CartService from "@/lib/services/CartService";
-import PaymentService from "@/lib/services/PaymentService";
+import {
+  CartService,
+  PaymentService,
+  ProductService,
+  type ProductDetailData,
+  type ReviewItem,
+} from "@/lib/singleton";
+import {
+  PaymentMapper,
+  ProductMapper,
+  type ProductBrowseUIModel,
+} from "@/lib/mapper";
 import SubscriptionModal from "./SubscriptionModal";
 import GroupPurchaseModal from "./GroupPurchaseModal";
 import PurchaseModeSelector from "./PurchaseModeSelector";
@@ -492,17 +495,14 @@ function todayMidnightTimestamp(): number {
   return today.getTime();
 }
 
-function BaseProductDetail({
-  productId,
-  backHref,
-}: ProductDetailProps) {
+function BaseProductDetail({ productId, backHref }: ProductDetailProps) {
   const [quantity, setQuantity] = useState(1);
   const routerUser = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [product, setProduct] = useState<ProductDetailData | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<ProductBrowseUIModel[]>(
-    [],
-  );
+  const [relatedProducts, setRelatedProducts] = useState<
+    ProductBrowseUIModel[]
+  >([]);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(Boolean(productId));
   const [error, setError] = useState<string | null>(null);
@@ -573,9 +573,9 @@ function BaseProductDetail({
             limit: 6,
           });
           setRelatedProducts(
-            relatedData.items.filter(
-              (item) => item.productId !== detailData.productId,
-            ).map((item) => ProductAdapter.toBrowseUIModel(item)),
+            relatedData.items
+              .filter((item) => item.productId !== detailData.productId)
+              .map((item) => ProductMapper.toBrowseUIModel(item)),
           );
         } else {
           setRelatedProducts([]);
@@ -605,18 +605,20 @@ function BaseProductDetail({
   }, [productId]);
 
   const productUIModel = useMemo(
-    () => (product ? ProductAdapter.toDetailUIModel(product, reviews) : null),
+    () => (product ? ProductMapper.toDetailUIModel(product, reviews) : null),
     [product, reviews],
   );
   const reviewUIModels = useMemo(
-    () => reviews.map((review) => ProductAdapter.toReviewUIModel(review)),
+    () => reviews.map((review) => ProductMapper.toReviewUIModel(review)),
     [reviews],
   );
   const heroImage = productUIModel?.images[0] ?? null;
   const resolvedName = productUIModel?.name ?? null;
   const resolvedDescription = productUIModel?.description ?? null;
   const resolvedNutrition = productUIModel?.nutrition ?? null;
-  const resolvedPrice = productUIModel ? formatPrice(productUIModel.price) : null;
+  const resolvedPrice = productUIModel
+    ? formatPrice(productUIModel.price)
+    : null;
   const effectiveAvailability = useMemo(() => {
     if (!product) {
       return {
@@ -657,7 +659,9 @@ function BaseProductDetail({
   }, [product]);
 
   const resolvedCategoryName = productUIModel?.categoryName ?? null;
-  const ratingText = productUIModel ? productUIModel.ratings.average.toFixed(1) : "0.0";
+  const ratingText = productUIModel
+    ? productUIModel.ratings.average.toFixed(1)
+    : "0.0";
 
   const handleSubscription = async (frequency: string) => {
     if (!productId || !isAuthenticated || !routerUser?.user_id) {
@@ -667,13 +671,17 @@ function BaseProductDetail({
 
     setCartActionLoading(true);
     try {
-      await PaymentService.createSubscription({
-        userId: routerUser.user_id,
-        productId,
-        frequency,
-      });
+      const subscription = PaymentMapper.toSubscriptionUIModel(
+        await PaymentService.createSubscription({
+          userId: routerUser.user_id,
+          productId,
+          frequency,
+        }),
+      );
 
-      setCartActionMessage("✓ Đã đặt lịch mua định kì thành công!");
+      setCartActionMessage(
+        `✓ Đã đặt lịch mua định kì ${subscription.frequencyLabel.toLowerCase()} thành công!`,
+      );
       setTimeout(() => {
         setCartActionMessage(null);
         setPurchaseMode("cart");
@@ -697,13 +705,17 @@ function BaseProductDetail({
 
     setCartActionLoading(true);
     try {
-      await PaymentService.joinGroupPurchase({
-        userId: routerUser.user_id,
-        groupId,
-        quantity: joinQuantity,
-      });
+      const groupPurchase = PaymentMapper.toGroupPurchaseUIModel(
+        await PaymentService.joinGroupPurchase({
+          userId: routerUser.user_id,
+          groupId,
+          quantity: joinQuantity,
+        }),
+      );
 
-      setCartActionMessage("✓ Đã tham gia mua chung thành công!");
+      setCartActionMessage(
+        `✓ Đã tham gia nhóm mua chung #${groupPurchase.id.slice(0, 8).toUpperCase()} thành công!`,
+      );
       setTimeout(() => {
         setCartActionMessage(null);
         setPurchaseMode("cart");
@@ -742,7 +754,9 @@ function BaseProductDetail({
 
     setCartActionMessage(null);
     if (!productId) {
-      setCartActionMessage("Không xác định được sản phẩm để thêm vào giỏ hàng.");
+      setCartActionMessage(
+        "Không xác định được sản phẩm để thêm vào giỏ hàng.",
+      );
       return;
     }
     if (!isAuthenticated || !routerUser?.user_id) {
@@ -929,7 +943,9 @@ function BaseProductDetail({
                 <button
                   type="button"
                   style={styles.quantityButton}
-                  onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                  onClick={() =>
+                    setQuantity((current) => Math.max(1, current - 1))
+                  }
                   disabled={quantity <= 1 || cartActionLoading}
                   aria-label="Giảm số lượng"
                 >
@@ -947,7 +963,7 @@ function BaseProductDetail({
                 </button>
               </div>
             </div>
-            
+
             <p style={styles.detailText}>
               {resolvedDescription ??
                 (loading
@@ -956,7 +972,7 @@ function BaseProductDetail({
             </p>
 
             <p style={styles.priceText}>
-                {resolvedPrice ?? (loading ? "Đang tải..." : "Liên hệ")}
+              {resolvedPrice ?? (loading ? "Đang tải..." : "Liên hệ")}
             </p>
 
             {effectiveAvailability.warning ? (
@@ -972,7 +988,9 @@ function BaseProductDetail({
                 type="button"
                 style={styles.addButton}
                 onClick={() => void handlePurchaseAction()}
-                disabled={cartActionLoading || !effectiveAvailability.canPurchase}
+                disabled={
+                  cartActionLoading || !effectiveAvailability.canPurchase
+                }
               >
                 {cartActionLoading ? "Đang xử lý..." : "Tiếp tục"}
               </button>
@@ -1144,9 +1162,7 @@ function BaseProductDetail({
                         </p>
                       </div>
                     </div>
-                    <div style={styles.rating}>
-                      {buildStars(review.rating)}
-                    </div>
+                    <div style={styles.rating}>{buildStars(review.rating)}</div>
                   </div>
                   <p style={styles.reviewComment}>
                     {review.comment ?? "Không có nội dung đánh giá."}
@@ -1182,6 +1198,4 @@ function BaseProductDetail({
     </div>
   );
 }
-export default compose(
-  withErrorBoundary
-)(BaseProductDetail);
+export default compose(withErrorBoundary)(BaseProductDetail);

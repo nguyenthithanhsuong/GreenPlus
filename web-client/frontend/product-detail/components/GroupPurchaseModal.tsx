@@ -262,7 +262,7 @@ function formatPrice(value: number | null): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
 }
 
-function BaseGroupPurchaseModal({ isOpen, productId, productName, regularPrice, onClose, onSubmit, onCreateGroup }: GroupPurchaseModalProps) {
+function BaseGroupPurchaseModal({ isOpen, productId, regularPrice, onClose, onSubmit, onCreateGroup }: GroupPurchaseModalProps) {
   const [groups, setGroups] = useState<GroupBuy[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);

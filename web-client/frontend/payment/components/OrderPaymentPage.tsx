@@ -4,8 +4,9 @@ import Link from "next/link";
 import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { PaymentStrategyFactory } from "@/lib/strategy";
+import { PaymentStrategyRegistry } from "@/lib/strategy";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { UrlBuilder } from "@/lib";
 import {
   SCREEN_CONTENT_PADDING_X,
   SCREEN_HEADER_PADDING_X,
@@ -171,7 +172,7 @@ function formatPrice(value: number): string {
 
 function getMethodLabel(method: OrderPaymentMethod): string {
   try {
-    return PaymentStrategyFactory.getStrategy(method).getMethod().displayName;
+    return PaymentStrategyRegistry.getStrategy(method).getMethod().displayName;
   } catch {
     if (method === "bank_transfer") {
       return "Chuyển khoản";
@@ -211,9 +212,15 @@ function OrderPaymentPageBase() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}?userId=${encodeURIComponent(user.user_id)}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          UrlBuilder.from("/api/orders")
+            .segment(orderId)
+            .query("userId", user.user_id)
+            .build(),
+          {
+            signal: controller.signal,
+          },
+        );
 
         const data = (await response.json()) as OrderDetailResponse | { error?: string };
         if (!response.ok) {
@@ -278,15 +285,21 @@ function OrderPaymentPageBase() {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(detail.order_id)}/confirm-payment`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        UrlBuilder.from("/api/orders")
+          .segment(detail.order_id)
+          .segment("confirm-payment")
+          .build(),
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.user_id,
+          }),
         },
-        body: JSON.stringify({
-          userId: user.user_id,
-        }),
-      });
+      );
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -294,7 +307,9 @@ function OrderPaymentPageBase() {
       }
 
       setMessage("Thanh toán thành công. Đang quay lại chi tiết đơn hàng...");
-      router.replace(`/orders/${encodeURIComponent(detail.order_id)}`);
+      router.replace(
+        UrlBuilder.from("/orders").segment(detail.order_id).build(),
+      );
     } catch (requestError) {
       setMessage(requestError instanceof Error ? requestError.message : "Không thể thanh toán đơn hàng.");
     } finally {

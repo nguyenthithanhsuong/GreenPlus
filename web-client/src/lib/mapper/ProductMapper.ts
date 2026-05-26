@@ -1,8 +1,8 @@
-import {
-  ProductDetailData,
+import type {
   ProductBrowseItem,
+  ProductDetailData,
   ReviewItem,
-} from "../services/ProductService";
+} from "../singleton";
 
 export interface ProductDetailUIModel {
   id: string;
@@ -50,7 +50,7 @@ export interface ReviewUIModel {
   createdAt: Date;
 }
 
-class ProductAdapter {
+export class ProductMapper {
   static toDetailUIModel(
     data: ProductDetailData,
     reviews: ReviewItem[],
@@ -112,5 +112,3 @@ class ProductAdapter {
     };
   }
 }
-
-export default ProductAdapter;

@@ -181,7 +181,7 @@ const frequencyOptions = [
   { value: "monthly", label: "Hàng tháng", description: "Giao 1 lần/tháng - Tiết kiệm 20%" },
 ];
 
-function BaseSubscriptionModal({ isOpen, productId, productName, price, onClose, onSubmit }: SubscriptionModalProps) {
+function BaseSubscriptionModal({ isOpen, productName, price, onClose, onSubmit }: SubscriptionModalProps) {
   const [frequency, setFrequency] = useState("weekly");
   const [loading, setLoading] = useState(false);
 
