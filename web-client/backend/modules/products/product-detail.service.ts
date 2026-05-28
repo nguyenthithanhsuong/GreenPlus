@@ -45,7 +45,7 @@ export class ProductDetailService {
 
     const state = createProductState(product.status);
     if (!state.canView()) {
-      throw new AppError("MSG1: Product is not available", 400);
+      throw new AppError("Product is not available", 400);
     }
 
     const [latestPrice, batches, supplierMap] = await Promise.all([

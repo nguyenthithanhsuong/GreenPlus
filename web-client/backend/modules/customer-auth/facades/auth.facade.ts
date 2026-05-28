@@ -40,7 +40,7 @@ export class AuthFacade {
   private ensureActiveStatus(status: UserStatus): void {
     const accountState = createAccountState(status);
     if (!accountState.canSignIn()) {
-      throw new AppError("MSG6: account is not active", 400);
+      throw new AppError("Account is not active", 400);
     }
   }
 
@@ -52,20 +52,20 @@ export class AuthFacade {
     const email = input.email.trim().toLowerCase();
 
     if (email.length === 0) {
-      throw new AppError("MSG1: email is required", 400);
+      throw new AppError("Email is required", 400);
     }
 
     if (input.password.length === 0) {
-      throw new AppError("MSG2: password is required", 400);
+      throw new AppError("Password is required", 400);
     }
 
     if (!EMAIL_REGEX.test(email)) {
-      throw new AppError("MSG3: invalid email format", 400);
+      throw new AppError("Invalid email format", 400);
     }
 
     const user = await this.repository.findUserByEmail(email);
     if (!user) {
-      throw new AppError("MSG4: account not found", 404);
+      throw new AppError("Account not found", 404);
     }
     
 
@@ -82,7 +82,7 @@ export class AuthFacade {
     }
 
     if (!isValidPassword) {
-      throw new AppError("MSG5: invalid credentials", 400);
+      throw new AppError("Invalid credentials", 400);
     }
 
     return user;
@@ -90,28 +90,28 @@ export class AuthFacade {
 
   async register(input: RegisterInput) {
     if (input.name.trim().length === 0) {
-      throw new AppError("MSG1: name is required", 400);
+      throw new AppError("Name is required", 400);
     }
 
     if (input.email.trim().length === 0) {
-      throw new AppError("MSG2: email is required", 400);
+      throw new AppError("Email is required", 400);
     }
 
     if (input.password.length < 6) {
-      throw new AppError("MSG3: password must be at least 6 characters", 400);
+      throw new AppError("Password must be at least 6 characters", 400);
     }
 
     if (input.password !== input.confirmPassword) {
-      throw new AppError("MSG4: password and confirm password do not match", 400);
+      throw new AppError("Password and confirm password do not match", 400);
     }
 
     if (!EMAIL_REGEX.test(input.email.trim())) {
-      throw new AppError("MSG5: invalid email format", 400);
+      throw new AppError("Invalid email format", 400);
     }
 
     const existing = await this.repository.findUserByEmail(input.email.trim().toLowerCase());
     if (existing) {
-      throw new AppError("MSG6: email already exists", 400);
+      throw new AppError("Email already exists", 400);
     }
 
     const passwordHash = await this.hasher.hash(input.password);
@@ -236,30 +236,30 @@ export class AuthFacade {
     }
 
     if (input.name.trim().length === 0) {
-      throw new AppError("MSG1: name is required", 400);
+      throw new AppError("Name is required", 400);
     }
 
     if (input.email.trim().length === 0) {
-      throw new AppError("MSG2: email is required", 400);
+      throw new AppError("Email is required", 400);
     }
 
     const normalizedEmail = input.email.trim().toLowerCase();
 
     if (!EMAIL_REGEX.test(normalizedEmail)) {
-      throw new AppError("MSG3: invalid email format", 400);
+      throw new AppError("Invalid email format", 400);
     }
 
     if (input.phone.trim().length === 0) {
-      throw new AppError("MSG4: phone is required", 400);
+      throw new AppError("Phone is required", 400);
     }
 
     if (!PHONE_REGEX.test(input.phone.trim())) {
-      throw new AppError("MSG5: invalid phone format", 400);
+      throw new AppError("Invalid phone format", 400);
     }
 
     const existing = await this.repository.findUserByEmail(normalizedEmail);
     if (existing && existing.user_id !== input.userId) {
-      throw new AppError("MSG6: email already exists", 400);
+      throw new AppError("Email already exists", 400);
     }
 
     const updated = await this.repository.updateProfile({
@@ -293,15 +293,15 @@ export class AuthFacade {
     }
 
     if (input.currentPassword.length === 0) {
-      throw new AppError("MSG4: current password is required", 400);
+      throw new AppError("Current password is required", 400);
     }
 
     if (input.newPassword.length < 6) {
-      throw new AppError("MSG5: new password must be at least 6 characters", 400);
+      throw new AppError("New password must be at least 6 characters", 400);
     }
 
     if (input.newPassword !== input.confirmPassword) {
-      throw new AppError("MSG6: new password and confirm password do not match", 400);
+      throw new AppError("New password and confirm password do not match", 400);
     }
 
     const user = await this.repository.findUserById(input.userId);
@@ -314,7 +314,7 @@ export class AuthFacade {
       : input.currentPassword === user.password;
 
     if (!isCurrentPasswordCorrect) {
-      throw new AppError("MSG7: current password is incorrect", 400);
+      throw new AppError("Current password is incorrect", 400);
     }
 
     const newPasswordHash = await this.hasher.hash(input.newPassword);

@@ -17,7 +17,7 @@ class QueryStringQrParseStrategy implements QrParseStrategy {
     const batchId = params.get("batch_id")?.trim() ?? "";
 
     if (!productId || !batchId) {
-      throw new AppError("MSG1: QR code must contain product_id and batch_id", 400);
+      throw new AppError("QR code must contain product_id and batch_id", 400);
     }
 
     return { productId, batchId };

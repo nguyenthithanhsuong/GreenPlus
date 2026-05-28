@@ -41,7 +41,7 @@ export class SearchService {
     const hasAnyFilter = Boolean(criteria.categoryId || criteria.certification || criteria.minPrice !== undefined || criteria.maxPrice !== undefined);
 
     if (keywordProvided && keyword.length === 0 && !hasAnyFilter) {
-      throw new AppError("MSG1: Keyword must contain at least one character", 400);
+      throw new AppError("Keyword must contain at least one character", 400);
     }
 
     const normalizedCriteria: SearchCriteria = {
