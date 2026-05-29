@@ -2,23 +2,25 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
+import {
+  compose,
+  ProductManagementMapper,
+  ProductManagementService,
+  withErrorBoundary,
+} from "@/lib";
+import type { ProductFormValues } from "@/lib";
 import AdminShell from "../shared/AdminShell";
-import ProductDrawer, { ProductFormValues } from "./ProductDrawer";
+import ConfirmationActionDialog from "../shared/ConfirmationActionDialog";
+import ProductDrawer from "./ProductDrawer";
 import ProductStats from "./ProductStats";
 import ProductTable from "./ProductTable";
-import type { CategoryRow, ProductRow, ProductStatus } from "../../backend/modules/catalog/product-management.types";
+import type {
+  CategoryRow,
+  ProductRow,
+  ProductStatus,
+} from "../../backend/modules/catalog/product-management.types";
 
-const emptyForm = (): ProductFormValues => ({
-  categoryId: "",
-  name: "",
-  description: "",
-  unit: "",
-  imageUrl: "",
-  nutrition: "",
-  status: "active",
-});
-
-const ProductManagement = () => {
+const BaseProductManagement = () => {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,24 +28,27 @@ const ProductManagement = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
-  const [form, setForm] = useState<ProductFormValues>(emptyForm());
+  const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(
+    null,
+  );
+  const [form, setForm] = useState<ProductFormValues>(
+    ProductManagementMapper.emptyForm(),
+  );
+  const [deleteTarget, setDeleteTarget] = useState<ProductRow | null>(null);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/products", { cache: "no-store" });
-      const data = (await response.json()) as { items?: ProductRow[]; error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể tải danh sách sản phẩm");
-      }
-
+      const data = await ProductManagementService.getProducts();
       setProducts(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải danh sách sản phẩm");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải danh sách sản phẩm",
+      );
       setProducts([]);
     } finally {
       setLoading(false);
@@ -52,13 +57,7 @@ const ProductManagement = () => {
 
   const loadCategories = useCallback(async () => {
     try {
-      const response = await fetch("/api/categories", { cache: "no-store" });
-      const data = (await response.json()) as { items?: CategoryRow[]; error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể tải danh mục");
-      }
-
+      const data = await ProductManagementService.getCategories();
       setCategories(Array.isArray(data.items) ? data.items : []);
     } catch {
       setCategories([]);
@@ -71,7 +70,10 @@ const ProductManagement = () => {
   }, [loadCategories, loadProducts]);
 
   const stats = useMemo(() => {
-    const activeProducts = products.filter((product) => product.status === "active").length;
+    const activeProducts = products.filter(
+      (product) => product.status === "active",
+    ).length;
+
     return {
       totalProducts: products.length,
       activeProducts,
@@ -81,28 +83,20 @@ const ProductManagement = () => {
 
   const openCreateDrawer = useCallback(() => {
     setSelectedProduct(null);
-    setForm(emptyForm());
+    setForm(ProductManagementMapper.emptyForm());
     setDrawerOpen(true);
   }, []);
 
   const openEditDrawer = useCallback((product: ProductRow) => {
     setSelectedProduct(product);
-    setForm({
-      categoryId: product.category_id ?? "",
-      name: product.name,
-      description: product.description ?? "",
-      unit: product.unit,
-      imageUrl: product.image_url ?? "",
-      nutrition: product.nutrition ?? "",
-      status: product.status,
-    });
+    setForm(ProductManagementMapper.toFormValues(product));
     setDrawerOpen(true);
   }, []);
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
     setSelectedProduct(null);
-    setForm(emptyForm());
+    setForm(ProductManagementMapper.emptyForm());
   }, []);
 
   const patchForm = useCallback((patch: Partial<ProductFormValues>) => {
@@ -128,51 +122,31 @@ const ProductManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch(selectedProduct ? `/api/products/${encodeURIComponent(selectedProduct.product_id)}` : "/api/products", {
-        method: selectedProduct ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          categoryId: form.categoryId || null,
-          name: form.name,
-          description: form.description,
-          unit: form.unit,
-          imageUrl: form.imageUrl,
-          nutrition: form.nutrition,
-          status: form.status,
-        }),
-      });
-
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể lưu sản phẩm");
-      }
-
+      await ProductManagementService.saveProduct(
+        selectedProduct?.product_id ?? null,
+        ProductManagementMapper.toMutationPayload(form),
+      );
       closeDrawer();
       await reloadData();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể lưu sản phẩm");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể lưu sản phẩm",
+      );
     } finally {
       setSaving(false);
     }
-  }, [closeDrawer, form, loadCategories, loadProducts, reloadData, selectedProduct]);
+  }, [closeDrawer, form, reloadData, selectedProduct]);
 
   const handleUploadImage = useCallback(async (file: File) => {
     setUploadingImage(true);
     setError(null);
 
     try {
-      const body = new FormData();
-      body.append("file", file);
-
-      const response = await fetch("/api/products/image", {
-        method: "POST",
-        body,
-      });
-
-      const data = (await response.json()) as { publicUrl?: string; error?: string };
-      if (!response.ok || !data.publicUrl) {
-        throw new Error(data.error ?? "Upload ảnh sản phẩm thất bại");
+      const data = await ProductManagementService.uploadImage(file);
+      if (!data.publicUrl) {
+        throw new Error("Upload ảnh sản phẩm thất bại");
       }
 
       setForm((previous) => ({
@@ -180,14 +154,22 @@ const ProductManagement = () => {
         imageUrl: data.publicUrl ?? previous.imageUrl,
       }));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Upload ảnh sản phẩm thất bại");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Upload ảnh sản phẩm thất bại",
+      );
     } finally {
       setUploadingImage(false);
     }
   }, []);
 
-  const deleteProduct = useCallback(async (product: ProductRow) => {
-    if (!window.confirm(`Xóa sản phẩm "${product.name}"?`)) {
+  const requestDeleteProduct = useCallback((product: ProductRow) => {
+    setDeleteTarget(product);
+  }, []);
+
+  const deleteProduct = useCallback(async () => {
+    if (!deleteTarget) {
       return;
     }
 
@@ -195,52 +177,47 @@ const ProductManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch(`/api/products/${encodeURIComponent(product.product_id)}`, {
-        method: "DELETE",
-      });
-
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể xóa sản phẩm");
-      }
-
+      await ProductManagementService.deleteProduct(deleteTarget.product_id);
+      setDeleteTarget(null);
       await reloadData();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể xóa sản phẩm");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể xóa sản phẩm",
+      );
     } finally {
       setSaving(false);
     }
-  }, [reloadData]);
+  }, [deleteTarget, reloadData]);
 
-  const toggleStatus = useCallback(async (product: ProductRow, nextStatus: ProductStatus) => {
-    if (saving) {
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/products/${encodeURIComponent(product.product_id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể cập nhật trạng thái sản phẩm");
+  const toggleStatus = useCallback(
+    async (product: ProductRow, nextStatus: ProductStatus) => {
+      if (saving) {
+        return;
       }
 
-      await reloadData();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật trạng thái sản phẩm");
-    } finally {
-      setSaving(false);
-    }
-  }, [reloadData, saving]);
+      setSaving(true);
+      setError(null);
+
+      try {
+        await ProductManagementService.updateStatus(
+          product.product_id,
+          nextStatus,
+        );
+        await reloadData();
+      } catch (requestError) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể cập nhật trạng thái sản phẩm",
+        );
+      } finally {
+        setSaving(false);
+      }
+    },
+    [reloadData, saving],
+  );
 
   return (
     <AdminShell
@@ -283,7 +260,7 @@ const ProductManagement = () => {
         loading={loading}
         saving={saving}
         onEdit={openEditDrawer}
-        onDelete={deleteProduct}
+        onDelete={requestDeleteProduct}
         onToggleStatus={toggleStatus}
       />
 
@@ -301,8 +278,22 @@ const ProductManagement = () => {
           void submitDrawer();
         }}
       />
+
+      <ConfirmationActionDialog
+        open={Boolean(deleteTarget)}
+        title="Xóa sản phẩm"
+        message={`Xóa sản phẩm "${deleteTarget?.name ?? ""}"?`}
+        confirmLabel="Xóa"
+        cancelLabel="Hủy"
+        confirmTone="danger"
+        busy={saving}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          void deleteProduct();
+        }}
+      />
     </AdminShell>
   );
 };
 
-export default ProductManagement;
+export default compose(withErrorBoundary)(BaseProductManagement);
