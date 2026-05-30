@@ -1,13 +1,11 @@
 "use client";
 
 import React from 'react';
-import { Camera, Eye, EyeOff, Home, Save } from 'lucide-react';
+import { Camera, Home, Save } from 'lucide-react';
 import { useCurrentUserProfile } from '../shared/useCurrentUserProfile';
-import { useAuthStore } from '../../src/lib/stores/authStore';
 
 const ProfileForm = () => {
   const { profile, loading, initialized, refreshProfile } = useCurrentUserProfile();
-  const accessToken = useAuthStore((state) => state.session?.access_token ?? '');
   const avatarInputRef = React.useRef<HTMLInputElement | null>(null);
   const [formValues, setFormValues] = React.useState({
     name: '',
@@ -22,51 +20,6 @@ const ProfileForm = () => {
   const [saveMessage, setSaveMessage] = React.useState<string | null>(null);
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [avatarError, setAvatarError] = React.useState<string | null>(null);
-  const [passwordValues, setPasswordValues] = React.useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [showCurrentPassword, setShowCurrentPassword] = React.useState(false);
-  const [showNewPassword, setShowNewPassword] = React.useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
-  const [passwordSaving, setPasswordSaving] = React.useState(false);
-  const [passwordMessage, setPasswordMessage] = React.useState<string | null>(null);
-  const [passwordError, setPasswordError] = React.useState<string | null>(null);
-  const [storeName, setStoreName] = React.useState('Chưa gán cửa hàng');
-
-  React.useEffect(() => {
-    let active = true;
-
-    const loadStoreName = async () => {
-      if (!profile?.storeId) {
-        setStoreName('Chưa gán cửa hàng');
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/stores', { cache: 'no-store' });
-        const payload = (await response.json().catch(() => ({}))) as { items?: Array<{ store_id?: string; name?: string }> };
-        const matchedStore = Array.isArray(payload.items)
-          ? payload.items.find((store) => store.store_id === profile.storeId)
-          : null;
-
-        if (active) {
-          setStoreName(matchedStore?.name?.trim() || profile.storeId || 'Chưa gán cửa hàng');
-        }
-      } catch {
-        if (active) {
-          setStoreName(profile.storeId || 'Chưa gán cửa hàng');
-        }
-      }
-    };
-
-    void loadStoreName();
-
-    return () => {
-      active = false;
-    };
-  }, [profile?.storeId]);
 
   React.useEffect(() => {
     if (!profile) {
@@ -158,17 +111,9 @@ const ProfileForm = () => {
     setAvatarError(null);
 
     try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
-      }
-
       const response = await fetch('/api/users/me', {
         method: 'PATCH',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formValues.name,
           email: formValues.email,
@@ -217,83 +162,6 @@ const ProfileForm = () => {
     }
   };
 
-  const handlePasswordChange =
-    (field: keyof typeof passwordValues) =>
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setPasswordValues((previous) => ({
-        ...previous,
-        [field]: event.target.value,
-      }));
-    };
-
-  const handlePasswordSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!profile?.userId) {
-      setPasswordError('Không tìm thấy tài khoản hiện tại để đổi mật khẩu.');
-      return;
-    }
-
-    if (!passwordValues.currentPassword.trim()) {
-      setPasswordError('Vui lòng nhập mật khẩu hiện tại.');
-      return;
-    }
-
-    if (passwordValues.newPassword.length < 6) {
-      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
-      return;
-    }
-
-    if (passwordValues.newPassword !== passwordValues.confirmPassword) {
-      setPasswordError('Mật khẩu mới và xác nhận mật khẩu không khớp.');
-      return;
-    }
-
-    setPasswordSaving(true);
-    setPasswordMessage(null);
-    setPasswordError(null);
-
-    try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
-      }
-
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          currentPassword: passwordValues.currentPassword,
-          newPassword: passwordValues.newPassword,
-          confirmPassword: passwordValues.confirmPassword,
-        }),
-      });
-
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? 'Không thể đổi mật khẩu');
-      }
-
-      setPasswordValues({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      setShowCurrentPassword(false);
-      setShowNewPassword(false);
-      setShowConfirmPassword(false);
-      setPasswordMessage('Đã đổi mật khẩu thành công.');
-    } catch (error) {
-      setPasswordError(error instanceof Error ? error.message : 'Không thể đổi mật khẩu');
-    } finally {
-      setPasswordSaving(false);
-    }
-  };
-
   const handleChange =
     (field: keyof typeof formValues) =>
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -304,9 +172,9 @@ const ProfileForm = () => {
     };
 
   return (
-    <div className="flex-1 space-y-6">
-      <form className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8" onSubmit={handleSubmit}>
+    <form className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8" onSubmit={handleSubmit}>
       
+      {/* Form Header */}
       <div className="mb-8 border-b border-gray-100 pb-4">
         <h2 className="text-lg font-bold text-gray-900">Thông tin cơ bản</h2>
         <p className="text-sm text-gray-500 mt-1">
@@ -332,6 +200,7 @@ const ProfileForm = () => {
         </div>
       ) : null}
 
+      {/* Avatar Section */}
       <div className="flex items-center gap-6 mb-8">
         <div className="relative">
           <img 
@@ -386,6 +255,7 @@ const ProfileForm = () => {
         </div>
       </div>
 
+      {/* Form Fields grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Họ và tên</label>
@@ -425,18 +295,27 @@ const ProfileForm = () => {
         </div>
       </div>
 
+      {/* Store Information Section */}
+      <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-6 flex gap-3">
+        <Home className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+        <div>
+          <h4 className="text-sm font-bold text-blue-900">Thông tin Cơ sở</h4>
+          <p className="text-xs text-blue-700 mt-1">Đây là địa chỉ lấy hàng mặc định cho các Shipper thuộc quản lý của bạn.</p>
+        </div>
+      </div>
+
       <div className="space-y-6 mb-8">
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Cửa hàng phụ trách</label>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Tên Cửa hàng / Kho vận</label>
           <input 
             type="text" 
-            value={storeName}
+            value={formValues.role ? `${formValues.role} workspace` : 'Admin workspace'}
             readOnly
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 cursor-not-allowed"
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
           />
         </div>
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Địa chỉ</label>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Địa chỉ cửa hàng</label>
           <textarea 
             rows={3}
             value={formValues.address}
@@ -446,6 +325,7 @@ const ProfileForm = () => {
         </div>
       </div>
 
+      {/* Save Action */}
       <div className="flex justify-end pt-4 border-t border-gray-100">
         <button
           type="submit"
@@ -457,104 +337,7 @@ const ProfileForm = () => {
         </button>
       </div>
 
-      </form>
-
-      <form className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8" onSubmit={handlePasswordSubmit}>
-        <div className="mb-8 border-b border-gray-100 pb-4">
-          <h2 className="text-lg font-bold text-gray-900">Đổi mật khẩu</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Cập nhật mật khẩu đăng nhập của tài khoản quản lý.
-          </p>
-        </div>
-
-        {passwordMessage ? (
-          <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            {passwordMessage}
-          </div>
-        ) : null}
-
-        {passwordError ? (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {passwordError}
-          </div>
-        ) : null}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Mật khẩu hiện tại</label>
-            <div className="relative">
-              <input
-                type={showCurrentPassword ? 'text' : 'password'}
-                value={passwordValues.currentPassword}
-                onChange={handlePasswordChange('currentPassword')}
-                className="w-full px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowCurrentPassword((previous) => !previous)}
-                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
-                aria-label={showCurrentPassword ? 'Ẩn mật khẩu hiện tại' : 'Hiện mật khẩu hiện tại'}
-              >
-                {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Mật khẩu mới</label>
-              <div className="relative">
-                <input
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={passwordValues.newPassword}
-                  onChange={handlePasswordChange('newPassword')}
-                  className="w-full px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword((previous) => !previous)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
-                  aria-label={showNewPassword ? 'Ẩn mật khẩu mới' : 'Hiện mật khẩu mới'}
-                >
-                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Xác nhận mật khẩu mới</label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={passwordValues.confirmPassword}
-                  onChange={handlePasswordChange('confirmPassword')}
-                  className="w-full px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((previous) => !previous)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
-                  aria-label={showConfirmPassword ? 'Ẩn xác nhận mật khẩu' : 'Hiện xác nhận mật khẩu'}
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t border-gray-100 mt-8">
-          <button
-            type="submit"
-            disabled={passwordSaving || loading || !initialized}
-            className="flex items-center gap-2 px-6 py-2.5 bg-[#059669] hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
-          >
-            <Save className="w-4 h-4" />
-            {passwordSaving ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
-          </button>
-        </div>
-      </form>
-
-    </div>
+    </form>
   );
 };
 

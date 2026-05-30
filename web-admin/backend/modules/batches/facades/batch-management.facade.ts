@@ -34,8 +34,8 @@ export class BatchManagementFacade {
     return updated;
   }
 
-  async deleteBatch(batchId: string, force = false): Promise<void> {
-    await this.service.deleteBatch(batchId, force);
+  async deleteBatch(batchId: string): Promise<void> {
+    await this.service.deleteBatch(batchId);
     await this.subject.notify({ type: "batch_deleted", batchId, actor: "admin" });
   }
 }

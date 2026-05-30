@@ -46,8 +46,8 @@ export default function ProductCategoriesTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Danh mục</h1>
-        <p className="text-sm text-slate-600">Kiểm tra route /api/categories.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Backend Test: Categories</h1>
+        <p className="text-sm text-slate-600">Route tests for /api/categories.</p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="flex flex-wrap items-center gap-2">

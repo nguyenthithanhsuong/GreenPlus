@@ -36,8 +36,8 @@ export class ProductManagementFacade {
     return updated;
   }
 
-  async deleteProduct(productId: string, force = false): Promise<void> {
-    await this.service.deleteProduct(productId, force);
+  async deleteProduct(productId: string): Promise<void> {
+    await this.service.deleteProduct(productId);
     await this.subject.notify({ type: "product_deleted", productId, actor: "admin" });
   }
 }

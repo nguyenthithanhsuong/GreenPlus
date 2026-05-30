@@ -5,7 +5,6 @@ import { Plus, RefreshCw, X } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import SupplierStats from "./SupplierStats";
 import SupplierTable from "./SupplierTable";
-import { usePermissions } from "@/lib/usePermissions";
 import type { SupplierRow, SupplierStatus } from "../../backend/modules/suppliers/supplier-management.types";
 
 type SupplierFormState = {
@@ -25,7 +24,6 @@ const emptyForm = (): SupplierFormState => ({
 });
 
 const SupplierManagement = () => {
-  const { hasPermission, loading: permLoading } = usePermissions();
   const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -180,29 +178,26 @@ const SupplierManagement = () => {
       description="Danh sách đối tác, nông trại phân phối thực phẩm sạch trên hệ thống."
       searchPlaceholder="Tìm kiếm nhà cung cấp bằng tên, mô tả..."
       pageActions={
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => void loadSuppliers()}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-              disabled={loading || saving}
-            >
-              <RefreshCw className="h-4 w-4" />
-              Tải lại
-            </button>
-
-            {!permLoading && hasPermission('suppliers.create') && (
-              <button
-                type="button"
-                onClick={openCreateForm}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
-                disabled={loading || saving}
-              >
-                <Plus className="h-4 w-4" />
-                Thêm supplier
-              </button>
-            )}
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadSuppliers()}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+            disabled={loading || saving}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Tải lại
+          </button>
+          <button
+            type="button"
+            onClick={openCreateForm}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
+            disabled={loading || saving}
+          >
+            <Plus className="h-4 w-4" />
+            Thêm supplier
+          </button>
+        </div>
       }
     >
       {error && (

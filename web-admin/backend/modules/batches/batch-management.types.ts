@@ -1,4 +1,4 @@
-export type BatchStatus = "pending" | "available" | "rejected" | "expired" | "sold_out";
+export type BatchStatus = "pending" | "available" | "expired" | "sold_out";
 
 export type BatchRow = {
   batch_id: string;
@@ -9,7 +9,6 @@ export type BatchRow = {
   harvest_date: string;
   expire_date: string;
   quantity: number;
-  import_price: number | null;
   qr_code: string | null;
   status: BatchStatus;
   created_at: string;
@@ -22,10 +21,8 @@ export type CreateBatchInput = {
   harvestDate: string;
   expireDate: string;
   quantity: number;
-  importPrice: number;
   qrCode?: string | null;
   status?: BatchStatus;
-  force?: boolean;
 };
 
 export type UpdateBatchInput = {
@@ -35,8 +32,6 @@ export type UpdateBatchInput = {
   harvestDate?: string;
   expireDate?: string;
   quantity?: number;
-  importPrice?: number;
   qrCode?: string | null;
   status?: BatchStatus;
-  force?: boolean;
 };

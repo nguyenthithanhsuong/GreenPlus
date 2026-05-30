@@ -5,12 +5,14 @@
   "workspaces": [
     "web-admin",
     "web-client",
+    "web-shipper",
     "packages/*"
   ],
   "scripts": {
     "dev": "turbo dev --ui=tui",
     "dev:admin": "turbo dev --filter=web-admin",
     "dev:client": "turbo dev --filter=web-client",
+    "dev:shipper": "turbo dev --filter=web-shipper",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo run typecheck"

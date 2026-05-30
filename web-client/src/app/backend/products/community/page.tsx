@@ -175,10 +175,10 @@ export default function CommunityPostTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Đăng bài cộng đồng</h1>
-        <p className="text-sm text-slate-600">Kiểm tra route qua /api/community/posts.</p>
-        <p className="text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
-        <p className="text-xs text-slate-500">Bài viết đã chọn: {selectedPostId || "không có"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">Backend Test: Post Community Content</h1>
+        <p className="text-sm text-slate-600">Route test via /api/community/posts.</p>
+        <p className="text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
+        <p className="text-xs text-slate-500">Selected post: {selectedPostId || "none"}</p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">

@@ -10,7 +10,6 @@ export type UserFormValues = {
   password: string;
   phone: string;
   roleId: string;
-  storeId: string;
   address: string;
   imageUrl: string;
   status: "active" | "inactive" | "banned";
@@ -21,11 +20,6 @@ type RoleOption = {
   roleName: string;
 };
 
-type StoreOption = {
-  storeId: string;
-  storeName: string;
-};
-
 type UserDrawerProps = {
   isOpen: boolean;
   mode: UserDrawerMode | null;
@@ -33,7 +27,6 @@ type UserDrawerProps = {
   form: UserFormValues;
   showPassword: boolean;
   roleOptions: RoleOption[];
-  storeOptions: StoreOption[];
   selectedUser: UserViewModel | null;
   error: string | null;
   uploadingAvatar: boolean;
@@ -60,7 +53,6 @@ const UserDrawer = ({
   form,
   showPassword,
   roleOptions,
-  storeOptions,
   selectedUser,
   error,
   uploadingAvatar,
@@ -135,7 +127,7 @@ const UserDrawer = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Số điện thoại</p>
                     <p className="mt-1 text-sm text-gray-800">{selectedUser?.phone || "-"}</p>
@@ -143,14 +135,6 @@ const UserDrawer = ({
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Vai trò</p>
                     <p className="mt-1 text-sm text-gray-800">{selectedUser?.role_name || "Mặc định"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Cửa hàng</p>
-                    <p className="mt-1 text-sm text-gray-800">
-                      {selectedUser?.store_id
-                        ? storeOptions.find((store) => store.storeId === selectedUser.store_id)?.storeName ?? selectedUser.store_id
-                        : "Chưa gán"}
-                    </p>
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Trạng thái</p>
@@ -171,6 +155,10 @@ const UserDrawer = ({
                   <p className="mt-1 text-sm text-gray-800">{selectedUser?.address || "-"}</p>
                 </div>
 
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Ảnh đại diện</p>
+                  <p className="mt-1 break-all text-sm text-gray-800">{selectedUser?.image_url || "-"}</p>
+                </div>
               </div>
             ) : (
               <form
@@ -287,21 +275,6 @@ const UserDrawer = ({
                       {roleOptions.map((role) => (
                         <option key={role.roleId} value={role.roleId}>
                           {role.roleName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-bold text-gray-800">Cửa hàng</label>
-                    <select
-                      value={form.storeId}
-                      onChange={(event) => onChange({ storeId: event.target.value })}
-                      className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
-                    >
-                      <option value="">Chưa gán cửa hàng</option>
-                      {storeOptions.map((store) => (
-                        <option key={store.storeId} value={store.storeId}>
-                          {store.storeName}
                         </option>
                       ))}
                     </select>

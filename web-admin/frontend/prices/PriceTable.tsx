@@ -1,20 +1,16 @@
 import React from "react";
-import { usePermissions } from "@/lib/usePermissions";
-import { CheckCircle2, Edit2, Package, Plus, Search, XCircle, Trash2 } from "lucide-react";
+import { Edit2, Package, Plus, Search, Trash2 } from "lucide-react";
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 
 type PriceTableProps = {
   items: PriceRow[];
   loading: boolean;
   saving: boolean;
-  canForceManagePrice: boolean;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   onCreate: () => void;
   onUpdate: (item: PriceRow) => void;
   onDelete: (item: PriceRow) => void;
-  onQuickApprove: (item: PriceRow) => void;
-  onQuickReject: (item: PriceRow) => void;
 };
 
 const formatCurrency = (value: number): string => {
@@ -28,6 +24,7 @@ const formatDate = (value: string): string => {
   return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short" }).format(date);
 };
 
+// ✅ status style
 const getStatusBadge = (status: PriceRow["status"]) => {
   switch (status) {
     case "pending":
@@ -54,45 +51,34 @@ const getStatusLabel = (status: PriceRow["status"]) => {
   }
 };
 
+// ✅ delete rule
 const canDelete = (status: PriceRow["status"]) => {
   return status === "pending" || status === "inactive";
-};
-
-const canQuickModerate = (status: PriceRow["status"]) => {
-  return status === "pending";
 };
 
 const PriceTable = ({
   items,
   loading,
   saving,
-  canForceManagePrice,
   searchQuery,
   onSearchQueryChange,
   onCreate,
   onUpdate,
   onDelete,
-  onQuickApprove,
-  onQuickReject,
 }: PriceTableProps) => {
-  const { hasPermission } = usePermissions();
-  const canCreateGlobal = hasPermission('prices.create');
-  const canUpdateGlobal = hasPermission('prices.update');
-  const canDeleteGlobal = hasPermission('prices.delete');
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between p-5 border-b border-gray-50 gap-3">
-        {/* {canCreateGlobal && (
-          <button
-            type="button"
-            onClick={onCreate}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-60"
-          >
-            <Plus className="w-4 h-4" /> Thiết lập Giá mới
-          </button>
-        )} */}
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between p-5 border-b border-gray-50 gap-3">
+        <button
+          type="button"
+          onClick={onCreate}
+          disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-60"
+        >
+          <Plus className="w-4 h-4" /> Thiết lập Giá mới
+        </button>
 
         <div className="relative w-full max-w-md md:ml-auto">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -106,6 +92,7 @@ const PriceTable = ({
         </div>
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-white border-b border-gray-100">
@@ -136,13 +123,12 @@ const PriceTable = ({
               </tr>
             ) : (
               items.map((item) => {
-                const deletable = canDelete(item.status) || (item.status === "active" && canForceManagePrice);
-                const canEdit = item.status !== "active" || canForceManagePrice;
-                const canModerate = canQuickModerate(item.status);
+                const deletable = canDelete(item.status);
 
                 return (
                   <tr key={item.price_id} className="border-b border-gray-50 hover:bg-gray-50/50">
 
+                    {/* Product */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         {/* <div className="w-10 h-10 rounded-lg border bg-gray-50 flex items-center justify-center text-xs font-semibold text-gray-500">
@@ -154,6 +140,7 @@ const PriceTable = ({
                       </div>
                     </td>
 
+                    {/* Batch */}
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold border ${
                         item.batch_id
@@ -165,15 +152,18 @@ const PriceTable = ({
                       </span>
                     </td>
 
+                    {/* Price */}
                     <td className="px-6 py-4 text-center font-bold">
                       {formatCurrency(item.price)}
                     </td>
 
+                    {/* Date */}
                     <td className="px-6 py-4 text-center">
                       <p className="font-medium text-gray-700">
                         {formatDate(item.date)}
                       </p>
 
+                      {/* ✅ only show when active */}
                       {item.status === "active" && (
                         <p className="text-[10px] font-bold mt-0.5 text-emerald-600">
                           Đang áp dụng
@@ -181,71 +171,36 @@ const PriceTable = ({
                       )}
                     </td>
 
+                    {/* Status */}
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex px-2.5 py-1 rounded text-[11px] font-bold border ${getStatusBadge(item.status)}`}>
                         {getStatusLabel(item.status)}
                       </span>
                     </td>
 
+                    {/* Actions */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        {canModerate && canUpdateGlobal ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => onQuickApprove(item)}
-                              disabled={saving}
-                              className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
-                              title="Duyệt nhanh"
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                              Duyệt
-                            </button>
+                        <button
+                          onClick={() => onUpdate(item)}
+                          disabled={saving}
+                          className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
 
-                            <button
-                              type="button"
-                              onClick={() => onQuickReject(item)}
-                              disabled={saving}
-                              className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11px] font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
-                              title="Từ chối nhanh"
-                            >
-                              <XCircle className="h-4 w-4" />
-                              Từ chối
-                            </button>
-                          </>
-                        ) : null}
-
-                        {canUpdateGlobal && (
-                          <button
-                            type="button"
-                            onClick={() => onUpdate(item)}
-                            disabled={saving || !canEdit}
-                            className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-40"
-                            title={
-                              canEdit
-                                ? "Sửa"
-                                : "Chỉ admin mới có thể force chỉnh sửa giá đang áp dụng"
-                            }
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        )}
-
-                        {canDeleteGlobal && (
-                          <button
-                            type="button"
-                            onClick={() => onDelete(item)}
-                            disabled={saving || !deletable}
-                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-40"
-                            title={
-                              deletable
-                                ? "Xóa"
-                                : "Chỉ xóa khi trạng thái là chờ duyệt hoặc ngưng"
-                            }
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => onDelete(item)}
+                          disabled={saving || !deletable}
+                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-40"
+                          title={
+                            deletable
+                              ? "Xóa"
+                              : "Chỉ xóa khi trạng thái là chờ duyệt hoặc ngưng"
+                          }
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
 

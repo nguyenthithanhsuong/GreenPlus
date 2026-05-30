@@ -24,7 +24,6 @@ export class UserManagementRepository {
       .select(`
   user_id,
   role_id,
-  store_id,
   name,
   email,
   password,
@@ -57,7 +56,6 @@ export class UserManagementRepository {
       .select(`
   user_id,
   role_id,
-  store_id,
   name,
   email,
   password,
@@ -96,7 +94,6 @@ export class UserManagementRepository {
       .select(`
   user_id,
   role_id,
-  store_id,
   name,
   email,
   password,
@@ -129,7 +126,6 @@ export class UserManagementRepository {
       .from("users")
       .insert({
         role_id: input.roleId ?? (await this.findCustomerRoleId()),
-        store_id: input.storeId ?? null,
         name: input.name,
         email: input.email,
         password: input.passwordHash,
@@ -171,7 +167,6 @@ export class UserManagementRepository {
     const payload: Record<string, string | null> = {};
 
     if (typeof input.roleId !== "undefined") payload.role_id = input.roleId;
-    if (typeof input.storeId !== "undefined") payload.store_id = input.storeId;
     if (typeof input.name !== "undefined") payload.name = input.name.trim();
     if (typeof input.email !== "undefined") payload.email = input.email.trim().toLowerCase();
     if (typeof input.phone !== "undefined") payload.phone = input.phone.trim() || null;

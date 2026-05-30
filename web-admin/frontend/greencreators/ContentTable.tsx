@@ -1,7 +1,7 @@
 "use client";
 
-import { AlignLeft, Check, Eye, Image as ImageIcon, MessageSquareText, PlaySquare, Search, Trash2, X } from "lucide-react";
-import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/greencreators/greencreator-content.types";
+import { AlignLeft, Check, Eye, Image as ImageIcon, MessageSquareText, PlaySquare, Search, X } from "lucide-react";
+import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/community/greencreator-content.types";
 
 type ContentStatusFilter = "all" | GreenCreatorPostStatus;
 
@@ -16,9 +16,6 @@ type ContentTableProps = {
   onViewPost: (post: GreenCreatorPostRow) => void;
   onApprovePost: (post: GreenCreatorPostRow) => void;
   onRejectPost: (post: GreenCreatorPostRow) => void;
-  onDeletePost: (post: GreenCreatorPostRow) => void;
-  canModerate: boolean;
-  canDelete: boolean;
 };
 
 const statusTabs: Array<{ value: ContentStatusFilter; label: string }> = [
@@ -91,9 +88,6 @@ const ContentTable = ({
   onViewPost,
   onApprovePost,
   onRejectPost,
-  onDeletePost,
-  canModerate,
-  canDelete,
 }: ContentTableProps) => {
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -265,7 +259,7 @@ const ContentTable = ({
                         <button
                           type="button"
                           onClick={() => onApprovePost(post)}
-                          disabled={!canModerate || saving || status === "approved"}
+                          disabled={saving || status === "approved"}
                           className="rounded-full p-2 text-gray-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
                           title="Duyệt"
                         >
@@ -275,24 +269,12 @@ const ContentTable = ({
                         <button
                           type="button"
                           onClick={() => onRejectPost(post)}
-                          disabled={!canModerate || saving || status === "rejected"}
+                          disabled={saving || status === "rejected"}
                           className="rounded-full p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                           title="Từ chối"
                         >
                           <X className="h-4 w-4" strokeWidth={2.5} />
                         </button>
-
-                        {canDelete ? (
-                          <button
-                            type="button"
-                            onClick={() => onDeletePost(post)}
-                            disabled={saving}
-                            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                            title="Xóa bài"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        ) : null}
                       </div>
                     </td>
                   </tr>

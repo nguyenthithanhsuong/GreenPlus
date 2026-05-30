@@ -11,12 +11,6 @@ type InventoryDbRow = {
   quantity_available: number;
   quantity_reserved: number | null;
   last_updated: string | null;
-  batches?: {
-    batch_id?: string | null;
-    products?: { name?: string | null } | null;
-    suppliers?: { name?: string | null } | null;
-    status?: string | null;
-  } | null;
 };
 
 type InventoryTransactionDbRow = {
@@ -35,7 +29,7 @@ export class InventoryManagementRepository {
     const { data, error } = await this.supabase
       .from("inventory")
       .select(
-        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,products(name),suppliers(name),status)"
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated"
       )
       .order("last_updated", {
         ascending: false,
@@ -57,7 +51,7 @@ export class InventoryManagementRepository {
     const { data, error } = await this.supabase
       .from("inventory")
       .select(
-        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,products(name),suppliers(name),status)"
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated"
       )
       .eq("inventory_id", inventoryId)
       .maybeSingle();
@@ -102,7 +96,7 @@ export class InventoryManagementRepository {
       })
       .eq("inventory_id", input.inventoryId)
       .select(
-        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,products(name),suppliers(name),status)"
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated"
       )
       .maybeSingle();
 
@@ -128,20 +122,6 @@ export class InventoryManagementRepository {
     return Boolean(
       (data as { inventory_id?: string } | null)?.inventory_id
     );
-  }
-
-  async deleteTransactionsByBatchId(batchId: string): Promise<number> {
-    const { data, error } = await this.supabase
-      .from("inventory_transactions")
-      .delete()
-      .eq("batch_id", batchId)
-      .select("transaction_id");
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return Array.isArray(data) ? data.length : 0;
   }
 
   async listTransactions(): Promise<InventoryTransactionRow[]> {
@@ -216,9 +196,6 @@ export class InventoryManagementRepository {
       quantity_available: row.quantity_available,
       quantity_reserved: row.quantity_reserved,
       last_updated: row.last_updated,
-      product_name: row.batches?.products?.name ?? null,
-      supplier_name: row.batches?.suppliers?.name ?? null,
-      batch_status: row.batches?.status ?? null,
     };
   }
 
@@ -228,8 +205,6 @@ export class InventoryManagementRepository {
     const normalizedType: InventoryTransactionType =
       row.type === "stock_in" ||
       row.type === "stock_out" ||
-      row.type === "adjust_in" ||
-      row.type === "adjust_out" ||
       row.type === "adjustment"
         ? row.type
         : "adjustment";

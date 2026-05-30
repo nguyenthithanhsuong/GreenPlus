@@ -118,7 +118,7 @@ export default function BackendStoragePage() {
           </div>
 
           <label className="text-sm block">
-            <span className="mb-1 block font-medium">Tệp</span>
+            <span className="mb-1 block font-medium">File</span>
             <input
               type="file"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
@@ -128,7 +128,7 @@ export default function BackendStoragePage() {
 
           {generatedPath && (
             <p className="text-xs text-slate-600">
-              Đường dẫn tải lên: <span className="font-mono">{generatedPath}</span>
+              Upload path: <span className="font-mono">{generatedPath}</span>
             </p>
           )}
 
@@ -139,7 +139,7 @@ export default function BackendStoragePage() {
             disabled={uploading}
             className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
           >
-            {uploading ? "Đang tải lên..." : "Tải lên bằng Signed URL"}
+            {uploading ? "Uploading..." : "Upload via Signed URL"}
           </button>
 
           {error && <p className="text-sm text-rose-700">{error}</p>}

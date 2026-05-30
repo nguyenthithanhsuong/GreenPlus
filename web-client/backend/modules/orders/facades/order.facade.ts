@@ -4,15 +4,7 @@ import {
   OrderNotificationObserver,
 } from "../observers/order.observer";
 import { OrderService } from "../order.service";
-import {
-  CancelOrderInput,
-  ConfirmPaymentInput,
-  CreateOrderInput,
-  OrderDetail,
-  OrderSummary,
-  PaymentHistoryItem,
-  UpdateOrderInput,
-} from "../order.types";
+import { CancelOrderInput, ConfirmPaymentInput, CreateOrderInput, OrderDetail, OrderSummary, UpdateOrderInput } from "../order.types";
 
 export class OrderFacade {
   private readonly notifier: OrderChangeNotifier;
@@ -27,10 +19,6 @@ export class OrderFacade {
 
   async trackMyOrders(userId: string): Promise<OrderSummary[]> {
     return this.service.listMyOrders(userId);
-  }
-
-  async trackMyPaymentHistory(userId: string): Promise<PaymentHistoryItem[]> {
-    return this.service.listMyPaymentHistory(userId);
   }
 
   async getOrderDetail(userId: string, orderId: string): Promise<OrderDetail> {
@@ -49,7 +37,7 @@ export class OrderFacade {
     return created;
   }
 
-  async cancelOrder(input: CancelOrderInput): Promise<{ order_id: string; status: "cancelled"; payment_status: "cancelled"; message: string }> {
+  async cancelOrder(input: CancelOrderInput): Promise<{ order_id: string; status: "cancelled"; message: string }> {
     const result = await this.service.cancelOrder(input);
 
     this.notifier.notify({

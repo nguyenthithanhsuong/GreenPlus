@@ -1,6 +1,5 @@
 import React from "react";
 import { ArrowLeftRight, Search, Trash2 } from "lucide-react";
-import { usePermissions } from "@/lib/usePermissions";
 import type { InventoryRow } from "../../backend/modules/inventory/inventory-management.types";
 
 type InventoryTableProps = {
@@ -52,13 +51,10 @@ const InventoryTable = ({
   onDelete,
 }: InventoryTableProps) => {
   const totalItems = items.length;
-  const { hasPermission } = usePermissions();
-  const canUpdateGlobal = hasPermission('inventory.update');
-  const canDeleteGlobal = hasPermission('inventory.delete');
-  const anyActions = canUpdateGlobal || canDeleteGlobal;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Filters */}
       <div className="flex flex-col md:flex-row md:items-center p-5 border-b border-gray-50 gap-4">
         <div className="flex items-center gap-3 md:ml-auto w-full md:w-auto">
           <div className="relative w-full md:w-[28rem] max-w-md">
@@ -77,6 +73,7 @@ const InventoryTable = ({
         </div>
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-white border-b border-gray-100">
@@ -87,10 +84,6 @@ const InventoryTable = ({
 
               <th className="px-6 py-4 font-medium">
                 Batch ID
-              </th>
-
-              <th className="px-6 py-4 font-medium">
-                Sản phẩm
               </th>
 
               <th className="px-6 py-4 font-medium text-center">
@@ -113,11 +106,9 @@ const InventoryTable = ({
                 Cập nhật lần cuối
               </th>
 
-              {anyActions && (
-                <th className="px-6 py-4 font-medium text-right">
-                  Thao tác
-                </th>
-              )}
+              <th className="px-6 py-4 font-medium text-right">
+                Thao tác
+              </th>
             </tr>
           </thead>
 
@@ -126,7 +117,7 @@ const InventoryTable = ({
               <tr>
                 <td
                   className="px-6 py-10 text-center text-gray-500"
-                  colSpan={7}
+                  colSpan={6}
                 >
                   Đang tải dữ liệu tồn kho...
                 </td>
@@ -135,7 +126,7 @@ const InventoryTable = ({
               <tr>
                 <td
                   className="px-6 py-10 text-center text-gray-500"
-                  colSpan={7}
+                  colSpan={6}
                 >
                   {searchQuery.trim()
                     ? "Không tìm thấy dữ liệu tồn kho phù hợp."
@@ -160,14 +151,6 @@ const InventoryTable = ({
                     {item.batch_id ?? "-"}
                   </td>
 
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-gray-900">
-                        {item.product_name ?? "-"}
-                      </span>
-                    </div>
-                  </td>
-
                   <td className="px-6 py-4 text-center">
                     <span
                       className={`inline-flex items-center justify-center px-4 py-1.5 rounded font-bold border ${quantityClassName(
@@ -188,35 +171,33 @@ const InventoryTable = ({
                     )}
                   </td>
 
-                  {anyActions ? (
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {canUpdateGlobal && (
-                          <button
-                            type="button"
-                            onClick={() => onUpdate(item)}
-                            disabled={saving}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-bold transition-colors bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
-                          >
-                            <ArrowLeftRight className="w-3.5 h-3.5" />
-                            Cập nhật
-                          </button>
-                        )}
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onUpdate(item)}
+                        disabled={saving}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-bold transition-colors bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
+                      >
+                        <ArrowLeftRight className="w-3.5 h-3.5" />
+                        Cập nhật
+                      </button>
 
-                        {canDeleteGlobal && (
-                          <button
-                            type="button"
-                            onClick={() => onDelete(item)}
-                            disabled={saving}
-                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                            title="Xóa"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  ) : null}
+                      <button
+                        type="button"
+                        onClick={() => onDelete(item)}
+                        disabled={
+                          saving ||
+                          item.quantity_available > 0 ||
+                          (item.quantity_reserved ?? 0) > 0
+                        }
+                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}
@@ -224,6 +205,7 @@ const InventoryTable = ({
         </table>
       </div>
 
+      {/* Footer */}
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span className="text-sm text-gray-500">
           Hiển thị{" "}

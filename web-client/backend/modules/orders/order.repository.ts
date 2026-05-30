@@ -30,18 +30,6 @@ export type OrderItemImageRow = {
   products: RelObj;
 };
 
-export type PaymentHistoryRow = {
-  payment_id: string;
-  order_id: string;
-  order_date: string;
-  order_status: OrderStatus;
-  method: PaymentMethod;
-  status: string;
-  amount: number;
-  transaction_id: string | null;
-  payment_date: string | null;
-};
-
 export class OrderRepository {
   async listOrdersByUser(userId: string): Promise<OrderRow[]> {
     const { data, error } = await supabaseServer
@@ -55,59 +43,6 @@ export class OrderRepository {
     }
 
     return (data ?? []) as OrderRow[];
-  }
-
-  async listPaymentHistoryByUser(userId: string): Promise<PaymentHistoryRow[]> {
-    const { data: orders, error: ordersError } = await supabaseServer
-      .from("orders")
-      .select("order_id,order_date,status")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (ordersError) {
-      throw new Error(ordersError.message);
-    }
-
-    const orderRows = (orders ?? []) as Array<{ order_id: string; order_date: string; status: OrderStatus }>;
-    if (orderRows.length === 0) {
-      return [];
-    }
-
-    const orderMap = new Map<string, { order_date: string; order_status: OrderStatus }>();
-    const orderIds: string[] = [];
-    orderRows.forEach((row) => {
-      const orderId = String(row.order_id);
-      orderIds.push(orderId);
-      orderMap.set(orderId, {
-        order_date: String(row.order_date),
-        order_status: row.status,
-      });
-    });
-
-    const { data: payments, error: paymentsError } = await supabaseServer
-      .from("payments")
-      .select("payment_id,order_id,method,status,amount,transaction_id,payment_date")
-      .in("order_id", orderIds)
-      .order("payment_date", { ascending: false, nullsFirst: false });
-
-    if (paymentsError) {
-      throw new Error(paymentsError.message);
-    }
-
-    return ((payments ?? []) as PaymentHistoryRow[]).map((row) => {
-      const orderInfo = orderMap.get(String(row.order_id));
-      return {
-        payment_id: String(row.payment_id),
-        order_id: String(row.order_id),
-        order_date: orderInfo?.order_date ?? String(row.payment_date ?? ""),
-        order_status: orderInfo?.order_status ?? "pending",
-        method: row.method,
-        status: row.status,
-        amount: Number(row.amount),
-        transaction_id: row.transaction_id,
-        payment_date: row.payment_date,
-      };
-    });
   }
 
   async findOrderById(orderId: string): Promise<OrderRow | null> {

@@ -2,7 +2,6 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
-import { usePermissions } from "@/lib/usePermissions";
 import AdminShell from "../shared/AdminShell";
 import CategoryDrawer, { CategoryFormValues } from "./CategoryDrawer";
 import CategoryStats from "./CategoryStats";
@@ -27,8 +26,6 @@ const CategoryManagement = () => {
   const [form, setForm] = useState<CategoryFormValues>(emptyForm());
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = useDeferredValue(searchQuery);
-
-  const { hasPermission, loading: permLoading } = usePermissions();
 
   const loadCategories = useCallback(async () => {
     setLoading(true);
@@ -209,17 +206,15 @@ const CategoryManagement = () => {
             <RefreshCw className="h-4 w-4" />
             Tải lại
           </button>
-          {!permLoading && hasPermission('categories.create') && (
-            <button
-              type="button"
-              onClick={openCreateDrawer}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
-              disabled={loading || saving}
-            >
-              <Plus className="h-4 w-4" />
-              Thêm danh mục
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={openCreateDrawer}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
+            disabled={loading || saving}
+          >
+            <Plus className="h-4 w-4" />
+            Thêm danh mục
+          </button>
         </div>
       }
     >

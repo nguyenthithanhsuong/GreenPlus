@@ -1,16 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
-import { usePermissions } from "@/lib/usePermissions";
-import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import PriceStats from "./PriceStats";
 import PriceTable from "./PriceTable";
-import PriceDrawer, { BatchOption, PriceDrawerMode, PriceFormValues } from "./PriceDrawer";
+import PriceDrawer, { PriceDrawerMode, PriceFormValues } from "./PriceDrawer";
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
-import type { BatchRow } from "../../backend/modules/batches/batch-management.types";
-import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
 import { priceSearchStrategy } from "../shared/searchStrategies";
 
 const todayIso = () => {
@@ -27,9 +23,7 @@ const emptyForm = (): PriceFormValues => ({
 });
 
 const PriceManagement = () => {
-  const { profile } = useCurrentUserProfile();
   const [items, setItems] = useState<PriceRow[]>([]);
-  const [batchOptions, setBatchOptions] = useState<BatchOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,13 +33,6 @@ const PriceManagement = () => {
   const [selectedPrice, setSelectedPrice] = useState<PriceRow | null>(null);
   const [form, setForm] = useState<PriceFormValues>(emptyForm());
   const [drawerError, setDrawerError] = useState<string | null>(null);
-  const [moderationDialogOpen, setModerationDialogOpen] = useState(false);
-  const [moderationTarget, setModerationTarget] = useState<PriceRow | null>(null);
-  const [moderationNextStatus, setModerationNextStatus] = useState<"active" | "inactive" | null>(null);
-
-  const canForceManagePrice = (profile?.roleName ?? "").trim().toLowerCase() === "admin";
-
-  const { hasPermission, loading: permLoading } = usePermissions();
 
   const loadPrices = useCallback(async () => {
     setLoading(true);
@@ -68,33 +55,9 @@ const PriceManagement = () => {
     }
   }, []);
 
-  const loadBatches = useCallback(async () => {
-    try {
-      const response = await fetch("/api/batches", { cache: "no-store" });
-      const data = (await response.json()) as { items?: BatchRow[]; error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể tải danh sách batch");
-      }
-
-      const nextBatchOptions = Array.isArray(data.items)
-        ? data.items.map((batch) => ({
-            batchId: batch.batch_id,
-            productName: batch.product_name,
-            importPrice: batch.import_price,
-          }))
-        : [];
-
-      setBatchOptions(nextBatchOptions);
-    } catch {
-      setBatchOptions([]);
-    }
-  }, []);
-
   useEffect(() => {
     void loadPrices();
-    void loadBatches();
-  }, [loadBatches, loadPrices]);
+  }, [loadPrices]);
 
   const filteredItems = useMemo(
     () => priceSearchStrategy.filter(items, searchQuery),
@@ -150,49 +113,6 @@ const PriceManagement = () => {
     setDrawerError(null);
   }, []);
 
-  const closeModerationDialog = useCallback(() => {
-    setModerationDialogOpen(false);
-    setModerationTarget(null);
-    setModerationNextStatus(null);
-  }, []);
-
-  const openModerationDialog = useCallback((item: PriceRow, nextStatus: "active" | "inactive") => {
-    setModerationTarget(item);
-    setModerationNextStatus(nextStatus);
-    setModerationDialogOpen(true);
-  }, []);
-
-  const submitModeration = useCallback(async () => {
-    if (!moderationTarget || !moderationNextStatus) {
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/prices/${encodeURIComponent(moderationTarget.price_id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: moderationNextStatus }),
-      });
-
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể cập nhật trạng thái giá");
-      }
-
-      closeModerationDialog();
-      await loadPrices();
-    } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Thao tác thất bại";
-      setError(message);
-    } finally {
-      setSaving(false);
-    }
-  }, [closeModerationDialog, loadPrices, moderationNextStatus, moderationTarget]);
-
   const patchForm = useCallback((patch: Partial<PriceFormValues>) => {
     setForm((current) => ({ ...current, ...patch }));
   }, []);
@@ -239,16 +159,13 @@ const PriceManagement = () => {
       }
 
       if (drawerMode === "edit" && selectedPrice) {
-        const force = canForceManagePrice && selectedPrice.status === "active";
-        const editUrl = `/api/prices/${encodeURIComponent(selectedPrice.price_id)}${force ? "?force=true" : ""}`;
-        const response = await fetch(editUrl, {
+        const response = await fetch(`/api/prices/${encodeURIComponent(selectedPrice.price_id)}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             batchId: form.batchId.trim() || null,
             price: Number(form.price),
             date: form.date.trim(),
-            status: form.status || null,
           }),
         });
 
@@ -259,8 +176,7 @@ const PriceManagement = () => {
       }
 
       if (drawerMode === "delete" && selectedPrice) {
-        const force = canForceManagePrice && selectedPrice.status === "active";
-        const response = await fetch(`/api/prices/${encodeURIComponent(selectedPrice.price_id)}${force ? "?force=true" : ""}`, {
+        const response = await fetch(`/api/prices/${encodeURIComponent(selectedPrice.price_id)}`, {
           method: "DELETE",
         });
 
@@ -279,35 +195,22 @@ const PriceManagement = () => {
     } finally {
       setSaving(false);
     }
-  }, [canForceManagePrice, closeDrawer, drawerMode, form, loadPrices, selectedPrice]);
+  }, [closeDrawer, drawerMode, form, loadPrices, selectedPrice]);
 
   return (
     <AdminShell
       title="Quản lý giá"
       description="Theo dõi biến động giá, cập nhật giá khuyến mãi và giá theo lô hàng."
       pageActions={
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void loadPrices()}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-            disabled={loading || saving}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Tải lại
-          </button>
-          {!permLoading && hasPermission('prices.create') && (
-            <button
-              type="button"
-              onClick={openCreateDrawer}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
-              disabled={loading || saving}
-            >
-              <Plus className="h-4 w-4" />
-              Thiết lập Giá mới
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => void loadPrices()}
+          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+          disabled={loading || saving}
+        >
+          <RefreshCw className="h-4 w-4" />
+          Tải lại
+        </button>
       }
     >
       {error && (
@@ -321,14 +224,11 @@ const PriceManagement = () => {
         items={filteredItems}
         loading={loading}
         saving={saving}
-        canForceManagePrice={canForceManagePrice}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         onCreate={openCreateDrawer}
-        onUpdate={(item) => openEditDrawer(item)}
-        onDelete={(item) => openDeleteDrawer(item)}
-        onQuickApprove={(item) => openModerationDialog(item, "active")}
-        onQuickReject={(item) => openModerationDialog(item, "inactive")}
+        onUpdate={openEditDrawer}
+        onDelete={openDeleteDrawer}
       />
 
       <PriceDrawer
@@ -338,29 +238,11 @@ const PriceManagement = () => {
         error={drawerError}
         selectedPrice={selectedPrice}
         form={form}
-        batchOptions={batchOptions}
         onClose={closeDrawer}
         onSubmit={() => {
           void submitDrawer();
         }}
         onChange={patchForm}
-      />
-
-      <ConfirmActionDialog
-        open={moderationDialogOpen}
-        title={moderationNextStatus === "active" ? "Duyệt giá" : "Từ chối giá"}
-        message={
-          moderationTarget
-            ? `Bạn sắp ${moderationNextStatus === "active" ? "duyệt" : "từ chối"} mức giá ${moderationTarget.price_id}${moderationTarget.product_name ? ` của ${moderationTarget.product_name}` : ""}. Hành động này sẽ đổi trạng thái ngay lập tức.`
-            : "Bạn sắp thay đổi trạng thái giá. Hành động này sẽ đổi ngay lập tức."
-        }
-        confirmLabel={moderationNextStatus === "active" ? "Duyệt" : "Từ chối"}
-        confirmVariant={moderationNextStatus === "active" ? "warning" : "danger"}
-        loading={saving}
-        onCancel={closeModerationDialog}
-        onConfirm={() => {
-          void submitModeration();
-        }}
       />
     </AdminShell>
   );

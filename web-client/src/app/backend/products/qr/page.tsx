@@ -55,6 +55,7 @@ export default function ProductQrTestPage() {
           setProductId(products[0].product_id);
         }
       } catch {
+        // Khong chan test page neu options load that bai.
       }
     };
 
@@ -110,13 +111,13 @@ export default function ProductQrTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-3xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Quét QR nguồn gốc sản phẩm</h1>
-        <p className="text-sm text-slate-600">Kiểm tra route cho use case 26 qua /api/traceability/scan.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Backend Test: Scan QR Product Origin</h1>
+        <p className="text-sm text-slate-600">Route test for use case 26 via /api/traceability/scan.</p>
 
         <form onSubmit={submit} className="rounded border border-slate-300 bg-white p-4">
           <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-2">
             <select value={productId} onChange={(e) => setProductId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
-              <option value="">Chọn product_id</option>
+              <option value="">Select product_id</option>
               {productOptions.map((product) => (
                 <option key={product.product_id} value={product.product_id}>
                   {product.name} ({product.product_id})
@@ -125,7 +126,7 @@ export default function ProductQrTestPage() {
             </select>
 
             <select value={batchId} onChange={(e) => setBatchId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
-              <option value="">Chọn batch_id</option>
+              <option value="">Select batch_id</option>
               {filteredBatches.map((batch) => (
                 <option key={batch.batch_id} value={batch.batch_id}>
                   {batch.batch_id}
@@ -134,7 +135,7 @@ export default function ProductQrTestPage() {
             </select>
           </div>
 
-          <label className="mb-2 block text-sm font-medium text-slate-800">Dữ liệu QR</label>
+          <label className="mb-2 block text-sm font-medium text-slate-800">QR payload</label>
           <input
             value={qrCode}
             onChange={(e) => setQrCode(e.target.value)}
@@ -146,7 +147,7 @@ export default function ProductQrTestPage() {
             disabled={loading}
             className="mt-3 rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
           >
-            {loading ? "Đang quét..." : "Quét QR"}
+            {loading ? "Scanning..." : "Scan QR"}
           </button>
         </form>
 

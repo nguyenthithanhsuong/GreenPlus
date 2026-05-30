@@ -26,7 +26,6 @@ export async function POST(request: Request) {
       harvestDate?: string;
       expireDate?: string;
       quantity?: number;
-      importPrice?: number;
       qrCode?: string | null;
       status?: "pending" | "available" | "expired" | "sold_out";
     };
@@ -37,10 +36,8 @@ export async function POST(request: Request) {
       harvestDate: body.harvestDate ?? "",
       expireDate: body.expireDate ?? "",
       quantity: typeof body.quantity === "number" ? body.quantity : Number.NaN,
-      importPrice: typeof body.importPrice === "number" ? body.importPrice : Number.NaN,
       qrCode: body.qrCode,
       status: body.status,
-      force: body.force === true,
     });
 
     return NextResponse.json(created, { status: 201 });

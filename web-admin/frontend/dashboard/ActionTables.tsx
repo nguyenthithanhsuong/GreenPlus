@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Image as ImageIcon, PlaySquare, Store } from "lucide-react";
 import { SupplierRow } from "../../backend/modules/suppliers/supplier-management.types";
-import { GreenCreatorPostRow } from "../../backend/modules/greencreators/greencreator-content.types";
+import { GreenCreatorPostRow } from "../../backend/modules/community/greencreator-content.types";
 
 type ActionTablesProps = {
   suppliers: SupplierRow[];
@@ -12,18 +12,6 @@ type ActionTablesProps = {
 const ActionTables = ({ suppliers, posts, loading }: ActionTablesProps) => {
   const pendingSuppliers = suppliers.filter((supplier) => supplier.status === "pending").slice(0, 5);
   const pendingPosts = posts.filter((post) => post.status === "pending").slice(0, 5);
-
-  const getPostTypeLabel = (type: string) => {
-    if (type === "video") {
-      return "Video";
-    }
-
-    if (type === "image") {
-      return "Hình ảnh";
-    }
-
-    return type;
-  };
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -115,7 +103,7 @@ const ActionTables = ({ suppliers, posts, loading }: ActionTablesProps) => {
                       <p className="font-semibold text-gray-900">{post.author_name ?? "Người dùng ẩn danh"}</p>
                       <p className="flex items-center gap-1 text-xs text-blue-600">
                         {post.type === "video" ? <PlaySquare className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
-                        {getPostTypeLabel(post.type)}
+                        {post.type}
                       </p>
                     </td>
                     <td className="max-w-[220px] truncate px-5 py-3 text-gray-600">{post.title}</td>

@@ -9,12 +9,13 @@ export interface Relationship {
 
 export interface TableRelationships {
   table: string;
-  outgoing: Relationship[]; 
-  incoming: Relationship[]; 
+  outgoing: Relationship[]; // This table references others
+  incoming: Relationship[]; // Other tables reference this
   category: string;
 }
 
 export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
+  // 1. Identity & Access Relationships
   roles: {
     table: "roles",
     category: "Identity & Access",
@@ -97,6 +98,7 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     ],
   },
 
+  // 2. Supply Chain & Products
   suppliers: {
     table: "suppliers",
     category: "Supply Chain & Products",
@@ -218,6 +220,7 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     ],
   },
 
+  // 3. Inventory & Pricing
   inventory: {
     table: "inventory",
     category: "Inventory & Pricing",
@@ -258,6 +261,7 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     incoming: [],
   },
 
+  // 4. Shopping & Orders
   carts: {
     table: "carts",
     category: "Shopping & Orders",
@@ -361,6 +365,7 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     incoming: [],
   },
 
+  // 5. Fulfillment
   payments: {
     table: "payments",
     category: "Fulfillment",
@@ -394,6 +399,7 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     incoming: [],
   },
 
+  // 6. Complaints
   complaints: {
     table: "complaints",
     category: "Complaints",
@@ -414,6 +420,7 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     incoming: [],
   },
 
+  // 7. Subscriptions
   subscriptions: {
     table: "subscriptions",
     category: "Subscriptions",
@@ -434,6 +441,7 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     incoming: [],
   },
 
+  // 8. Social / Content
   posts: {
     table: "posts",
     category: "Social / Content",
@@ -467,6 +475,7 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
     incoming: [],
   },
 
+  // 9. Group Buying System
   group_buys: {
     table: "group_buys",
     category: "Group Buying System",

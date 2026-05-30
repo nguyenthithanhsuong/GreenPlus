@@ -5,6 +5,7 @@ export interface PasswordHasherStrategy {
   compare(password: string, hash: string): Promise<boolean>;
 }
 
+// Strategy pattern: co the thay doi thuat toan hash ma khong sua Auth Facade.
 export class Pbkdf2HasherStrategy implements PasswordHasherStrategy {
   private readonly iterations = 100_000;
   private readonly keyLength = 64;

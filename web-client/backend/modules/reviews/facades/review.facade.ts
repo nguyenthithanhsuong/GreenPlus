@@ -1,6 +1,7 @@
 import { CreateReviewInput, ReviewCreatedResult, ReviewListItem } from "../review.types";
 import { ReviewService } from "../review.service";
 
+// Facade cho use case danh gia san pham: route goi 1 diem vao duy nhat.
 export class ReviewFacade {
   private readonly service = new ReviewService();
 

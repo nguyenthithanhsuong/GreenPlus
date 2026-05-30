@@ -34,14 +34,14 @@ export default function BackendRegisterTestPage() {
         const message =
           typeof data === "object" && data !== null && "error" in data
             ? String((data as { error: string }).error)
-            : "Không thể đăng ký.";
+            : "Register request failed";
         throw new Error(message);
       }
 
       setResult(data);
     } catch (submitError) {
       setResult(null);
-      setError(submitError instanceof Error ? submitError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(submitError instanceof Error ? submitError.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
@@ -51,29 +51,29 @@ export default function BackendRegisterTestPage() {
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
       <div className="mx-auto max-w-3xl space-y-4">
         <section className="rounded-xl border border-slate-300 bg-white p-5">
-          <h1 className="text-2xl font-bold">Kiểm thử backend: Đăng ký</h1>
-          <p className="mt-2 text-sm text-slate-600">Dùng trang này để kiểm tra /api/auth/register.</p>
+          <h1 className="text-2xl font-bold">Backend Test: Register</h1>
+          <p className="mt-2 text-sm text-slate-600">Use this page to test /api/auth/register.</p>
           <p className="mt-1 text-xs text-slate-500">Route: /backend/register</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/backend/signin" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Đi tới kiểm thử đăng nhập
+              Go to Sign In Test
             </Link>
             <Link href="/backend/profile" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Đi tới kiểm thử hồ sơ
+              Go to Profile Test
             </Link>
             <Link href="/backend/products" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Kiểm thử backend sản phẩm
+              Product Backend Test
             </Link>
           </div>
         </section>
 
         <section className="rounded-xl border border-slate-300 bg-white p-5">
-          <h2 className="text-lg font-semibold">Biểu mẫu đăng ký</h2>
+          <h2 className="text-lg font-semibold">Register Form</h2>
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="tên"
+              placeholder="name"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
             <input
@@ -85,14 +85,14 @@ export default function BackendRegisterTestPage() {
             <input
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="mật khẩu"
+              placeholder="password"
               type="password"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
             <input
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="xác nhận mật khẩu"
+              placeholder="confirm password"
               type="password"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
@@ -103,7 +103,7 @@ export default function BackendRegisterTestPage() {
             disabled={loading}
             className="mt-4 rounded bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
           >
-            {loading ? "Đang gửi..." : "Đăng ký"}
+            {loading ? "Submitting..." : "Register"}
           </button>
         </section>
 

@@ -1,6 +1,5 @@
 import { AppError } from "../../core/errors";
 import { BatchManagementRepository } from "./batch-management.repository";
-import { SupplierManagementRepository } from "../suppliers/supplier-management.repository";
 import { BatchRow, CreateBatchInput, UpdateBatchInput } from "./batch-management.types";
 import { DefaultBatchStatusStrategy } from "./strategies/batch-status.strategy";
 
@@ -23,21 +22,18 @@ export class BatchManagementService {
     return this.repository.listBatches();
   }
 
-  private async ensureProductAndSupplier(input: { productId: string; supplierId: string }, force = false): Promise<void> {
-    const [hasProduct] = await Promise.all([this.repository.findProductById(input.productId)]);
+  private async ensureProductAndSupplier(input: { productId: string; supplierId: string }): Promise<void> {
+    const [hasProduct, hasSupplier] = await Promise.all([
+      this.repository.findProductById(input.productId),
+      this.repository.findSupplierById(input.supplierId),
+    ]);
 
     if (!hasProduct) {
       throw new AppError("Product not found", 404);
     }
 
-    const supplierRepo = new SupplierManagementRepository();
-    const supplier = await supplierRepo.findById(input.supplierId);
-    if (!supplier) {
+    if (!hasSupplier) {
       throw new AppError("Supplier not found", 404);
-    }
-
-    if (!force && supplier.status === "rejected") {
-      throw new AppError("Selected supplier has been rejected", 400);
     }
   }
 
@@ -57,16 +53,6 @@ export class BatchManagementService {
 
     if (quantity < 0) {
       throw new AppError("Quantity must be greater than or equal to zero", 400);
-    }
-  }
-
-  private ensureImportPrice(importPrice: number): void {
-    if (!Number.isFinite(importPrice)) {
-      throw new AppError("Import price must be a valid number", 400);
-    }
-
-    if (importPrice < 0) {
-      throw new AppError("Import price must be greater than or equal to zero", 400);
     }
   }
 
@@ -123,9 +109,8 @@ export class BatchManagementService {
     }
 
     this.ensureQuantity(input.quantity);
-    this.ensureImportPrice(input.importPrice);
     this.ensureDates(harvestDate, expireDate);
-    await this.ensureProductAndSupplier({ productId, supplierId }, Boolean(input.force));
+    await this.ensureProductAndSupplier({ productId, supplierId });
 
     return this.repository.createBatch({
       productId,
@@ -133,7 +118,6 @@ export class BatchManagementService {
       harvestDate,
       expireDate,
       quantity: input.quantity,
-      importPrice: input.importPrice,
       qrCode: input.qrCode?.trim() || null,
       status: "pending",
     });
@@ -145,16 +129,11 @@ export class BatchManagementService {
       throw new AppError("Batch not found", 404);
     }
 
-    if (existing.status === "available" && !input.force) {
-      throw new AppError("Batch đã duyệt không thể chỉnh sửa", 400);
-    }
-
     const nextProductId = typeof input.productId !== "undefined" ? input.productId.trim() : existing.product_id;
     const nextSupplierId = typeof input.supplierId !== "undefined" ? input.supplierId.trim() : existing.supplier_id;
     const nextHarvestDate = typeof input.harvestDate !== "undefined" ? input.harvestDate.trim() : existing.harvest_date;
     const nextExpireDate = typeof input.expireDate !== "undefined" ? input.expireDate.trim() : existing.expire_date;
     const nextQuantity = typeof input.quantity !== "undefined" ? input.quantity : existing.quantity;
-    const nextImportPrice = typeof input.importPrice !== "undefined" ? input.importPrice : existing.import_price;
 
     if (!nextProductId) {
       throw new AppError("Product is required", 400);
@@ -173,15 +152,10 @@ export class BatchManagementService {
     }
 
     this.ensureQuantity(nextQuantity);
-    if (nextImportPrice === null) {
-      throw new AppError("Import price is required", 400);
-    }
-
-    this.ensureImportPrice(nextImportPrice);
     this.ensureDates(nextHarvestDate, nextExpireDate);
 
     if (typeof input.productId !== "undefined" || typeof input.supplierId !== "undefined") {
-      await this.ensureProductAndSupplier({ productId: nextProductId, supplierId: nextSupplierId }, Boolean(input.force));
+      await this.ensureProductAndSupplier({ productId: nextProductId, supplierId: nextSupplierId });
     }
 
     let nextStatus = existing.status;
@@ -196,7 +170,6 @@ export class BatchManagementService {
       harvestDate: typeof input.harvestDate !== "undefined" ? nextHarvestDate : undefined,
       expireDate: typeof input.expireDate !== "undefined" ? nextExpireDate : undefined,
       quantity: typeof input.quantity !== "undefined" ? nextQuantity : undefined,
-      importPrice: typeof input.importPrice !== "undefined" ? nextImportPrice : undefined,
       qrCode: input.qrCode,
       status: nextStatus,
     });
@@ -238,18 +211,9 @@ export class BatchManagementService {
     return updated;
   }
 
-  async deleteBatch(batchId: string, force = false): Promise<void> {
+  async deleteBatch(batchId: string): Promise<void> {
     if (!batchId.trim()) {
       throw new AppError("batchId is required", 400);
-    }
-
-    const existing = await this.repository.findById(batchId);
-    if (!existing) {
-      throw new AppError("Batch not found", 404);
-    }
-
-    if (existing.status === "available" && !force) {
-      throw new AppError("Batch đã duyệt không thể xóa", 400);
     }
 
     const deleted = await this.repository.deleteBatch(batchId);

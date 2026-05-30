@@ -14,7 +14,6 @@ export class UserManagementService {
   private toSummary(user: {
     user_id: string;
     role_id: string | null;
-    store_id: string | null;
     name: string;
     email: string;
     phone: string | null;
@@ -27,7 +26,6 @@ export class UserManagementService {
     return {
       user_id: user.user_id,
       role_id: user.role_id,
-      store_id: user.store_id,
       role_name: user.roles?.role_name ?? null,
       name: user.name,
       email: user.email,

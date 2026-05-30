@@ -50,7 +50,7 @@ export default function BackendProfileTestPage() {
   const resolveUserId = (): string => {
     const normalized = userIdInput.trim() || activeUserId.trim();
     if (!normalized) {
-      throw new Error("Vui lòng đăng nhập trước hoặc cung cấp userId.");
+      throw new Error("Please sign in first or provide userId");
     }
 
     return normalized;
@@ -66,7 +66,7 @@ export default function BackendProfileTestPage() {
       const data = (await response.json()) as ProfileResult | { error: string };
 
       if (!response.ok) {
-        throw new Error("error" in data ? data.error : "Không thể tải hồ sơ.");
+        throw new Error("error" in data ? data.error : "Load profile failed");
       }
 
       const profile = data as ProfileResult;
@@ -81,7 +81,7 @@ export default function BackendProfileTestPage() {
       setUserIdInput(profile.user_id);
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ export default function BackendProfileTestPage() {
 
       const data = (await response.json()) as ProfileResult | { error: string };
       if (!response.ok) {
-        throw new Error("error" in data ? data.error : "Không thể cập nhật hồ sơ.");
+        throw new Error("error" in data ? data.error : "Update profile failed");
       }
 
       const profile = data as ProfileResult;
@@ -119,7 +119,7 @@ export default function BackendProfileTestPage() {
       setUserIdInput(profile.user_id);
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
@@ -144,7 +144,7 @@ export default function BackendProfileTestPage() {
 
       const data = (await response.json()) as { updated?: boolean; error?: string };
       if (!response.ok) {
-        throw new Error(data.error ?? "Không thể đổi mật khẩu.");
+        throw new Error(data.error ?? "Change password failed");
       }
 
       setResult(data);
@@ -153,7 +153,7 @@ export default function BackendProfileTestPage() {
       setConfirmPassword("");
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
@@ -179,25 +179,25 @@ export default function BackendProfileTestPage() {
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
       <div className="mx-auto max-w-3xl space-y-4">
         <section className="rounded-xl border border-slate-300 bg-white p-5">
-          <h1 className="text-2xl font-bold">Kiểm thử backend: Hồ sơ</h1>
-          <p className="mt-2 text-sm text-slate-600">Dùng trang này để kiểm tra /api/account/profile (GET và PUT).</p>
+          <h1 className="text-2xl font-bold">Backend Test: Profile</h1>
+          <p className="mt-2 text-sm text-slate-600">Use this page to test /api/account/profile (GET and PUT).</p>
           <p className="mt-1 text-xs text-slate-500">Route: /backend/profile</p>
-          <p className="mt-1 text-xs text-slate-500">Người dùng kiểm thử hiện tại: {activeUserId || "chưa thiết lập"}</p>
+          <p className="mt-1 text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/backend/register" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Đi tới kiểm thử đăng ký
+              Go to Register Test
             </Link>
             <Link href="/backend/signin" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Đi tới kiểm thử đăng nhập
+              Go to Sign In Test
             </Link>
             <Link href="/backend/products" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Kiểm thử backend sản phẩm
+              Product Backend Test
             </Link>
           </div>
         </section>
 
         <section className="rounded-xl border border-slate-300 bg-white p-5">
-          <h2 className="text-lg font-semibold">Biểu mẫu hồ sơ</h2>
+          <h2 className="text-lg font-semibold">Profile Form</h2>
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <input
               value={userIdInput}
@@ -208,7 +208,7 @@ export default function BackendProfileTestPage() {
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="tên"
+              placeholder="name"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
             <input
@@ -220,13 +220,13 @@ export default function BackendProfileTestPage() {
             <input
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
-              placeholder="số điện thoại"
+              placeholder="phone"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
             <input
               value={address}
               onChange={(event) => setAddress(event.target.value)}
-              placeholder="địa chỉ"
+              placeholder="address"
               className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2"
             />
             <input
@@ -243,33 +243,33 @@ export default function BackendProfileTestPage() {
               disabled={loading}
               className="rounded bg-blue-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
             >
-              {loading ? "Đang tải..." : "Tải hồ sơ"}
+              {loading ? "Loading..." : "Load Profile"}
             </button>
             <button
               onClick={() => void updateProfile()}
               disabled={loading}
               className="rounded bg-amber-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
             >
-              {loading ? "Đang lưu..." : "Cập nhật hồ sơ"}
+              {loading ? "Saving..." : "Update Profile"}
             </button>
             <button
               onClick={showFakeProfile}
               disabled={loading}
               className="rounded bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
             >
-              Hiển thị hồ sơ mẫu
+              Show Fake Profile
             </button>
           </div>
         </section>
 
         <section className="rounded-xl border border-slate-300 bg-white p-5">
-          <h2 className="text-lg font-semibold">Xem trước hồ sơ</h2>
-          <p className="mt-1 text-xs text-slate-500">Phần xem trước dùng giá trị form và sẽ dùng hồ sơ demo nếu thiếu dữ liệu.</p>
+          <h2 className="text-lg font-semibold">Formatted Profile Preview</h2>
+          <p className="mt-1 text-xs text-slate-500">Preview uses form values and falls back to a fake demo profile.</p>
           <div className="mt-4 rounded-xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-sky-50 p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <img
                 src={previewImageSrc}
-                alt="Xem trước hồ sơ"
+                alt="Profile preview"
                 className="h-24 w-24 rounded-full border border-slate-300 object-cover"
                 onError={(event) => {
                   event.currentTarget.src = "https://placehold.co/160x160?text=Bad+URL";
@@ -286,26 +286,26 @@ export default function BackendProfileTestPage() {
         </section>
 
         <section className="rounded-xl border border-slate-300 bg-white p-5">
-          <h2 className="text-lg font-semibold">Đổi mật khẩu</h2>
+          <h2 className="text-lg font-semibold">Change Password</h2>
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
             <input
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
-              placeholder="mật khẩu hiện tại"
+              placeholder="current password"
               type="password"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
             <input
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              placeholder="mật khẩu mới"
+              placeholder="new password"
               type="password"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
             <input
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="xác nhận mật khẩu"
+              placeholder="confirm password"
               type="password"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
@@ -317,7 +317,7 @@ export default function BackendProfileTestPage() {
               disabled={loading}
               className="rounded bg-rose-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
             >
-              {loading ? "Đang lưu..." : "Đổi mật khẩu"}
+              {loading ? "Saving..." : "Change Password"}
             </button>
           </div>
         </section>

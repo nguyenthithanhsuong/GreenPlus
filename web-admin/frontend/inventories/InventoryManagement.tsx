@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
-import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import InventoryStats from "./InventoryStats";
 import InventoryTable from "./InventoryTable";
 import InventoryTransactionTable from "./InventoryTransactionTable";
@@ -18,6 +17,7 @@ const emptyForm = (): InventoryFormValues => ({
   quantityAvailable: "0",
   quantityReserved: "0",
   note: "",
+  type: "adjustment",
 });
 
 const InventoryManagement = () => {
@@ -31,8 +31,6 @@ const InventoryManagement = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryRow | null>(null);
   const [form, setForm] = useState<InventoryFormValues>(emptyForm());
   const [drawerError, setDrawerError] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<InventoryRow | null>(null);
   const [viewMode, setViewMode] = useState<"inventory" | "transactions">(
   "inventory"
 );
@@ -109,10 +107,6 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
   }
 }, []);
 
-  const refreshAll = useCallback(async () => {
-    await Promise.all([loadInventory(), loadTransactions()]);
-  }, [loadInventory, loadTransactions]);
-
   useEffect(() => {
     void loadInventory();
     void loadTransactions();
@@ -169,55 +163,24 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
       quantityAvailable: String(item.quantity_available),
       quantityReserved: String(item.quantity_reserved),
       note: "",
+      type: "adjustment",
     });
     setDrawerError(null);
     setDrawerOpen(true);
   }, []);
 
   const openDeleteDrawer = useCallback((item: InventoryRow) => {
-    setDeleteTarget(item);
-    setDeleteDialogOpen(true);
+    setDrawerMode("delete");
+    setSelectedItem(item);
+    setForm({
+      quantityAvailable: String(item.quantity_available),
+      quantityReserved: String(item.quantity_reserved),
+      note: "",
+      type: "adjustment",
+    });
+    setDrawerError(null);
+    setDrawerOpen(true);
   }, []);
-
-  const closeDeleteDialog = useCallback(() => {
-    setDeleteDialogOpen(false);
-    setDeleteTarget(null);
-  }, []);
-
-  const confirmDeleteInventory = useCallback(async () => {
-    if (!deleteTarget) {
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `/api/inventory/${encodeURIComponent(deleteTarget.inventory_id)}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể xóa tồn kho");
-      }
-
-      closeDeleteDialog();
-      await refreshAll();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error
-          ? requestError.message
-          : "Thao tác thất bại";
-      setError(message);
-    } finally {
-      setSaving(false);
-    }
-  }, [closeDeleteDialog, deleteTarget, refreshAll]);
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
@@ -269,6 +232,7 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
             quantityAvailable: Number(form.quantityAvailable),
             quantityReserved: Number(form.quantityReserved),
             note: form.note.trim() || "Updated from inventory management",
+            type: form.type,
           }),
         });
 
@@ -278,8 +242,22 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
         }
       }
 
+      if (drawerMode === "delete") {
+        const response = await fetch(`/api/inventory/${encodeURIComponent(selectedItem.inventory_id)}`, {
+          method: "DELETE",
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể xóa tồn kho");
+        }
+      }
+
       closeDrawer();
-      await refreshAll();
+      await Promise.all([
+  loadInventory(),
+  loadTransactions(),
+]);
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "Thao tác thất bại";
       setDrawerError(message);
@@ -287,7 +265,7 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
     } finally {
       setSaving(false);
     }
-  }, [closeDrawer, drawerMode, form, refreshAll, selectedItem]);
+  }, [closeDrawer, drawerMode, form, loadInventory, selectedItem]);
 
   return (
     <AdminShell
@@ -297,9 +275,9 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => void refreshAll()}
+            onClick={() => void loadInventory()}
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-            disabled={loading || transactionsLoading || saving}
+            disabled={loading || saving}
           >
             <RefreshCw className="h-4 w-4" />
             Tải lại
@@ -371,23 +349,6 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
           void submitDrawer();
         }}
         onChange={patchForm}
-      />
-
-      <ConfirmActionDialog
-        open={deleteDialogOpen}
-        title="Xóa tồn kho"
-        message={
-          deleteTarget
-            ? `Bạn sắp xóa inventory ${deleteTarget.inventory_id}${deleteTarget.batch_id ? ` và toàn bộ lịch sử giao dịch của batch ${deleteTarget.batch_id}` : ""}. Hành động này không thể hoàn tác.`
-            : "Bạn sắp xóa bản ghi tồn kho này. Hành động này không thể hoàn tác."
-        }
-        confirmLabel={saving ? "Đang xóa..." : "Xóa"}
-        confirmVariant="danger"
-        loading={saving}
-        onCancel={closeDeleteDialog}
-        onConfirm={() => {
-          void confirmDeleteInventory();
-        }}
       />
     </AdminShell>
   );

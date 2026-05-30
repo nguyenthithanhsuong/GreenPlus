@@ -1,5 +1,4 @@
 import React from "react";
-import { usePermissions } from "@/lib/usePermissions";
 import { Edit2, Search, Trash2 } from "lucide-react";
 import type { CategoryRow } from "../../backend/modules/catalog/category-management.types";
 
@@ -35,10 +34,6 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
   const closeDeleteModal = React.useCallback(() => {
     setDeletingCategory(null);
   }, []);
-
-  const { hasPermission } = usePermissions();
-  const canEditGlobal = hasPermission('categories.update');
-  const canDeleteGlobal = hasPermission('categories.delete');
 
   const handleConfirmDelete = React.useCallback(() => {
     if (!deletingCategory) {
@@ -125,28 +120,24 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {canEditGlobal && (
-                          <button
-                            type="button"
-                            onClick={() => onEdit(category)}
-                            disabled={saving}
-                            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-60"
-                            title="Sửa"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                        )}
-                        {canDeleteGlobal && (
-                          <button
-                            type="button"
-                            onClick={() => setDeletingCategory(category)}
-                            disabled={saving}
-                            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
-                            title="Xóa"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => onEdit(category)}
+                          disabled={saving}
+                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-60"
+                          title="Sửa"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingCategory(category)}
+                          disabled={saving}
+                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
+                          title="Xóa"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>

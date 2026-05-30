@@ -31,11 +31,9 @@ const formatDate = (value: string | null) => {
 const getTypeClassName = (type: string) => {
   switch (type) {
     case "stock_in":
-    case "adjust_in":
       return "bg-emerald-50 text-emerald-700 border-emerald-100";
 
     case "stock_out":
-    case "adjust_out":
       return "bg-red-50 text-red-700 border-red-100";
 
     default:
@@ -55,30 +53,7 @@ const getQuantityDisplay = (
     return `+ ${quantity}`;
   }
 
-  if (type === "adjust_out") {
-    return `- ${quantity}`;
-  }
-
-  if (type === "adjust_in") {
-    return `+ ${quantity}`;
-  }
-
   return quantity;
-};
-
-const getTypeLabel = (type: string) => {
-  switch (type) {
-    case "stock_in":
-      return "Nhập kho";
-    case "stock_out":
-      return "Xuất kho";
-    case "adjust_in":
-      return "Điều chỉnh tăng";
-    case "adjust_out":
-      return "Điều chỉnh giảm";
-    default:
-      return "Điều chỉnh";
-  }
 };
 
 const InventoryTransactionTable = ({
@@ -91,6 +66,7 @@ const InventoryTransactionTable = ({
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center p-5 border-b border-gray-50 gap-4">
         <div>
           <h2 className="text-lg font-bold text-gray-900">
@@ -102,6 +78,7 @@ const InventoryTransactionTable = ({
           </p>
         </div>
 
+        {/* Search */}
         <div className="flex items-center gap-3 md:ml-auto w-full md:w-auto">
           <div className="relative w-full md:w-[28rem] max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -119,6 +96,7 @@ const InventoryTransactionTable = ({
         </div>
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-white border-b border-gray-100">
@@ -176,36 +154,41 @@ const InventoryTransactionTable = ({
                   key={item.transaction_id}
                   className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
                 >
+                  {/* Time */}
                   <td className="px-6 py-4 text-gray-700 whitespace-nowrap">
                     {formatDate(item.created_at)}
                   </td>
 
+                  {/* Transaction ID */}
                   <td className="px-6 py-4">
                     <span className="font-semibold text-gray-900">
                       {item.transaction_id}
                     </span>
                   </td>
 
+                  {/* Batch ID */}
                   <td className="px-6 py-4 text-gray-600">
                     {item.batch_id ?? "-"}
                   </td>
 
+                  {/* Type */}
                   <td className="px-6 py-4 text-center">
                     <span
                       className={`inline-flex items-center justify-center px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wide ${getTypeClassName(
                         item.type
                       )}`}
                     >
-                      {getTypeLabel(item.type)}
+                      {item.type.replace("_", " ")}
                     </span>
                   </td>
 
+                  {/* Quantity */}
                   <td className="px-6 py-4 text-center">
                     <span
                       className={`font-bold ${
-                        item.type === "stock_out" || item.type === "adjust_out"
+                        item.type === "stock_out"
                           ? "text-red-600"
-                          : item.type === "stock_in" || item.type === "adjust_in"
+                          : item.type === "stock_in"
                           ? "text-emerald-600"
                           : "text-amber-600"
                       }`}
@@ -217,6 +200,7 @@ const InventoryTransactionTable = ({
                     </span>
                   </td>
 
+                  {/* Note */}
                   <td className="px-6 py-4 text-gray-600">
                     {item.note ?? "-"}
                   </td>
@@ -227,6 +211,7 @@ const InventoryTransactionTable = ({
         </table>
       </div>
 
+      {/* Footer */}
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span className="text-sm text-gray-500">
           Hiển thị{" "}

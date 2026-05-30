@@ -17,10 +17,8 @@ export async function PUT(request: Request, context: Context) {
       harvestDate?: string;
       expireDate?: string;
       quantity?: number;
-      importPrice?: number;
       qrCode?: string | null;
-      status?: "pending" | "available" | "rejected" | "expired" | "sold_out";
-      force?: boolean;
+      status?: "pending" | "available" | "expired" | "sold_out";
     };
 
     const updated = await batchManagementFacade.updateBatch({
@@ -30,10 +28,8 @@ export async function PUT(request: Request, context: Context) {
       harvestDate: body.harvestDate,
       expireDate: body.expireDate,
       quantity: body.quantity,
-      importPrice: body.importPrice,
       qrCode: body.qrCode,
       status: body.status,
-      force: body.force === true,
     });
 
     return NextResponse.json(updated, { status: 200 });
@@ -53,7 +49,7 @@ export async function PATCH(request: Request, context: Context) {
   try {
     const { batchId } = await context.params;
     const body = (await request.json()) as {
-      status?: "pending" | "available" | "rejected" | "expired" | "sold_out";
+      status?: "pending" | "available" | "expired" | "sold_out";
     };
 
     if (!body.status) {
@@ -77,9 +73,7 @@ export async function PATCH(request: Request, context: Context) {
 export async function DELETE(_: Request, context: Context) {
   try {
     const { batchId } = await context.params;
-    const url = new URL(_.url);
-    const force = url.searchParams.get("force") === "true";
-    await batchManagementFacade.deleteBatch(batchId, force);
+    await batchManagementFacade.deleteBatch(batchId);
     return NextResponse.json({ deleted: true }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {

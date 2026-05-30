@@ -19,6 +19,7 @@ const Header = () => {
       </div>
 
       <div className="flex items-center gap-6">
+        {/* Store Status Badge */}
         <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full">
           <span className="w-2 h-2 rounded-full bg-[#059669]"></span>
           <span className="text-xs font-semibold text-[#059669]">Cửa hàng đang mở</span>

@@ -69,7 +69,7 @@ export class InventoryManagementAuditObserver
 
       case "inventory_transaction_created":
         console.info(
-          `[Inventory Transaction] inventoryId=${event.inventoryId} batchId=${event.batchId} type=${event.transactionType} quantity=${event.quantity} actor=${event.actor}${event.note ? ` note=${event.note}` : ""}`
+          `[Inventory Transaction] inventoryId=${event.inventoryId} batchId=${event.batchId} type=${event.transactionType} quantity=${event.quantity} actor=${event.actor}`
         );
         break;
 

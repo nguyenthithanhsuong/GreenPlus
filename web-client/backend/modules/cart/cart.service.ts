@@ -117,18 +117,18 @@ export class CartService {
     const state = createCartItemState(quantity);
     if (!state.canApplyQuantity(quantity, availableStock)) {
       if (quantity <= 0) {
-        throw new AppError("Quantity must be greater than 0", 400);
+        throw new AppError("MSG1: quantity must be greater than 0", 400);
       }
 
-      throw new AppError("Quantity exceeds available stock", 400);
+      throw new AppError("MSG2: quantity exceeds available stock", 400);
     }
 
     if (quantity <= 0) {
-      throw new AppError("Quantity must be greater than 0", 400);
+      throw new AppError("MSG1: quantity must be greater than 0", 400);
     }
 
     if (quantity > availableStock) {
-      throw new AppError("Quantity exceeds available stock", 400);
+      throw new AppError("MSG2: quantity exceeds available stock", 400);
     }
   }
 
@@ -293,7 +293,7 @@ export class CartService {
     let existingItem: { cart_item_id: string } | null = null;
 
     if (!target.cartItemId && !target.productId) {
-      throw new AppError("ProductId or CartItemId is required", 400);
+      throw new AppError("MSG3: productId or cartItemId is required", 400);
     }
 
     try {
@@ -307,7 +307,7 @@ export class CartService {
     }
 
     if (!existingItem) {
-      throw new AppError("Cart item not found", 404);
+      throw new AppError("MSG3: cart item not found", 404);
     }
 
     const nextNote = note.trim().length === 0 ? null : note;

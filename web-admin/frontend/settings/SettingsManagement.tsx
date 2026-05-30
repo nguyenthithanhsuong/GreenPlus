@@ -6,8 +6,8 @@ import UserDebugPanel from "./UserDebugPanel";
 const SettingsManagement = () => {
   return (
     <AdminShell
-      title="Cài đặt tài khoản"
-      description="Quản lý hồ sơ cá nhân, bảo mật và thông báo tài khoản."
+      title="Cài đặt tài khoản và cửa hàng"
+      description="Quản lý thông tin liên hệ, bảo mật và cấu hình nhận thông báo vận hành."
       searchPlaceholder="Tìm kiếm nhanh..."
     >
       <UserDebugPanel />

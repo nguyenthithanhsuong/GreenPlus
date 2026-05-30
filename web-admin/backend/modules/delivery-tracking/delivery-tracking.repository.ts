@@ -130,6 +130,7 @@ export class DeliveryTrackingRepository {
       updateData.employee_id = input.employeeId;
     }
 
+    // handle timestamps based on status
     if (input.status === "picked_up") {
       updateData.pickup_time = new Date().toISOString();
     }

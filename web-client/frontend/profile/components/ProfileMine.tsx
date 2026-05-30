@@ -141,7 +141,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   infoRow: {
     display: "flex",
-    justifyContent: "flex-end", 
+    justifyContent: "flex-end", // Đã cập nhật để căn lề nút đăng xuất
     gap: "12px",
     alignItems: "center",
     flexWrap: "wrap",

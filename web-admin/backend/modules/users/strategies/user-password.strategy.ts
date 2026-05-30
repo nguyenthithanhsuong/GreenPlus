@@ -27,6 +27,7 @@ class Pbkdf2UserPasswordStrategy implements UserPasswordStrategy {
   verify(raw: string, stored: string): boolean {
     const parts = stored.split("$");
 
+    // handle invalid format safely
     if (parts.length !== 4 || parts[0] !== "pbkdf2") {
       return false;
     }

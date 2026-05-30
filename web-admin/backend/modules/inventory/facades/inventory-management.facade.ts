@@ -35,11 +35,6 @@ export class InventoryManagementFacade {
   async updateInventory(
     input: UpdateInventoryInput
   ): Promise<InventoryRow> {
-    const previousInventory =
-      await this.repository.findInventoryById(
-        input.inventoryId
-      );
-
     const updated =
       await this.service.updateInventory(input);
 
@@ -50,34 +45,43 @@ export class InventoryManagementFacade {
     });
 
     if (updated.batch_id) {
+      const previousInventory =
+        await this.repository.findInventoryById(
+          updated.inventory_id
+        );
+
       const previousQuantity =
         previousInventory?.quantity_available ?? 0;
 
       const nextQuantity =
         updated.quantity_available;
 
+      let transactionType =
+        input.type ?? "adjustment";
+
+      if (!input.type) {
+        if (nextQuantity > previousQuantity) {
+          transactionType = "stock_in";
+        } else if (
+          nextQuantity < previousQuantity
+        ) {
+          transactionType = "stock_out";
+        }
+      }
+
       const quantity = Math.abs(
         nextQuantity - previousQuantity
       );
 
-      if (quantity > 0) {
-        const transactionType =
-          typeof input.type !== "undefined" && input.type !== "adjustment"
-            ? input.type
-            : nextQuantity > previousQuantity
-            ? "adjust_in"
-            : "adjust_out";
-
-        await this.subject.notify({
-          type: "inventory_transaction_created",
-          inventoryId: updated.inventory_id,
-          batchId: updated.batch_id,
-          actor: "manager",
-          transactionType,
-          quantity,
-          note: input.note ?? null,
-        });
-      }
+      await this.subject.notify({
+        type: "inventory_transaction_created",
+        inventoryId: updated.inventory_id,
+        batchId: updated.batch_id,
+        actor: "manager",
+        transactionType,
+        quantity,
+        note: input.note ?? null,
+      });
     }
 
     return updated;
@@ -96,9 +100,9 @@ export class InventoryManagementFacade {
       actor: "manager",
     });
   }
-  async listTransactions(): Promise<InventoryTransactionRow[]> {
-    return this.repository.listTransactions();
-  }
+async listTransactions(): Promise<InventoryTransactionRow[]> {
+  return this.repository.listTransactions();
+}
   async listTransactionsByBatchId(
     batchId: string
   ): Promise<InventoryTransactionRow[]> {

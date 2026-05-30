@@ -80,20 +80,6 @@ export class OrderTrackingService {
       note: input.note,
     });
 
-    if (nextStatus === "cancelled") {
-      await this.repository.updatePaymentStatus({
-        orderId: normalizedOrderId,
-        status: "cancelled",
-      });
-
-      const refreshed = await this.repository.findOrderById(normalizedOrderId);
-      if (!refreshed) {
-        throw new AppError("order not found", 404);
-      }
-
-      return refreshed;
-    }
-
     if (currentStatus === "preparing" && nextStatus === "delivering") {
       await this.repository.ensureDeliveryForOrder({
         orderId: normalizedOrderId,

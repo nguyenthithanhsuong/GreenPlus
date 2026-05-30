@@ -137,7 +137,7 @@ export default function BackendProductsTestPage() {
       setDetail(null);
       setDetailError(null);
     } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Lỗi không xác định";
+      const message = requestError instanceof Error ? requestError.message : "Unexpected error";
       setError(message);
     } finally {
       setLoading(false);
@@ -160,7 +160,7 @@ export default function BackendProductsTestPage() {
       setSelectedProductId(productId);
       setDetail(data as ProductDetail);
     } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Lỗi không xác định";
+      const message = requestError instanceof Error ? requestError.message : "Unexpected error";
       setDetailError(message);
       setDetail(null);
     } finally {

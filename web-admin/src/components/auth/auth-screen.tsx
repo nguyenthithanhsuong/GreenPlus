@@ -17,27 +17,27 @@ type AuthScreenProps = {
 function getAuthCopy(mode: AuthMode) {
   return mode === "login"
     ? {
-        title: "Đăng nhập",
-        subtitle: "Chào mừng quay trở lại! Để tiếp tục dùng GreenPlus, vui lòng đăng nhập.",
-        submitLabel: "Đăng nhập",
-        toggleLabel: "Tạo tài khoản",
+        title: "Login",
+        subtitle: "Welcome back. Sign in to continue to GreenPlus.",
+        submitLabel: "Sign In",
+        toggleLabel: "Create an account",
         toggleHref: "/register",
-        routeLabel: "Đăng nhập quản trị",
-        panelHeadline: "Trang web thương mại thực phẩm GreenPlus",
+        routeLabel: "Admin Login",
+        panelHeadline: "Fast access for returning teams",
         panelText:
-          "GreenPlus quản lý cơ sở dữ liệu và hệ thống chính của GreenPlus.",
+          "Use your existing credentials to jump back into dashboards, orders, and account tools.",
       }
     : {
-        title: "Đăng ký",
+        title: "Register",
         subtitle:
-          "Tạo tài khoản và chọn vai trò phù hợp với quy trình làm việc của bạn.",
-        submitLabel: "Đăng ký",
-        toggleLabel: "Quay lại đăng nhập",
+          "Create your account and choose the role that fits your workflow.",
+        submitLabel: "Sign Up",
+        toggleLabel: "Back to login",
         toggleHref: "/login",
-        routeLabel: "Đăng ký quản trị",
-        panelHeadline: "Thiết lập đúng ngay từ đầu",
+        routeLabel: "Admin Register",
+        panelHeadline: "Onboard the right way",
         panelText:
-          "Nhập tên, email, mật khẩu và vai trò để phiên làm việc đầu tiên có đúng bối cảnh.",
+          "Capture a name, email, password, and role so the first session starts with the right context.",
       };
 }
 
@@ -97,15 +97,15 @@ export function AuthScreen({ mode }: AuthScreenProps) {
           typeof data === "object" && data !== null && "error" in data
             ? String((data as { error: string }).error)
             : isLogin
-            ? "Không thể đăng nhập."
-            : "Không thể đăng ký.";
+            ? "Login request failed"
+            : "Register request failed";
         throw new Error(message);
       }
 
       setSuccess(
         isLogin
-          ? "Đăng nhập thành công."
-          : "Tài khoản đã được tạo thành công."
+          ? "Signed in successfully."
+          : "Account created successfully."
       );
 
       if (isLogin && typeof data === "object" && data !== null) {
@@ -139,11 +139,11 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         const allowedRoles = ["admin", "manager", "employee"];
 
         if (!allowedRoles.includes(roleName)) {
-          throw new Error("Chỉ quản trị viên, quản lý hoặc nhân viên mới có thể truy cập cổng này.");
+          throw new Error("Only admin, manager, or employee can access this portal");
         }
 
         if (!session || !user) {
-          throw new Error("Phản hồi đăng nhập thiếu dữ liệu phiên.");
+          throw new Error("Login response is missing session data");
         }
 
         setAuth(
@@ -170,7 +170,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Đã xảy ra lỗi không mong muốn."
+          : "Unexpected error"
       );
     } finally {
       setLoading(false);
@@ -184,6 +184,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur xl:grid-cols-[1.05fr_0.95fr]">
           
+          {/* LEFT PANEL */}
           <section className="hidden flex-col justify-between bg-[linear-gradient(160deg,_#0f172a_0%,_#115e59_55%,_#10b981_100%)] p-10 text-white xl:flex">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-200">
@@ -209,6 +210,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
             </div> */}
           </section>
 
+          {/* FORM PANEL */}
           <section className="p-6 sm:p-10 lg:p-12">
             <div className="mx-auto max-w-xl">
               <div className="flex items-center justify-between gap-4">
@@ -229,13 +231,13 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 {!isLogin && (
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Họ và tên
+                      Full name
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Nhập tên đầy đủ của bạn"
+                      placeholder="Enter your full name"
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                     />
                   </div>
@@ -243,27 +245,27 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Email
+                    Email address
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Nhập địa chỉ email của bạn"
+                    placeholder="Enter your email"
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                   />
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Mật khẩu
+                    Password
                   </label>
                   <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Nhập mật khẩu của bạn"
+                    placeholder="Enter your password"
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                   />
                   <button
@@ -283,7 +285,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 {!isLogin && (
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Xác nhận mật khẩu
+                      Confirm password
                     </label>
                     <div className="relative">
                     <input
@@ -292,7 +294,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                       onChange={(e) =>
                         setConfirmPassword(e.target.value)
                       }
-                      placeholder="Xác nhận mật khẩu"
+                      placeholder="Re-enter your password"
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                     />
                     <button
@@ -317,15 +319,16 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                   disabled={loading}
                   className="w-full rounded-2xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
                 >
-                  {loading ? "Vui lòng chờ..." : copy.submitLabel}
+                  {loading ? "Please wait..." : copy.submitLabel}
                 </button>
               </form>
 
-              {/* <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              {/* SINGLE TOGGLE (BOTTOM ONLY) */}
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-600">
                   {isLogin
-                    ? "Chưa có tài khoản?"
-                    : "Đã có tài khoản?"}
+                    ? "Need an account?"
+                    : "Already have an account?"}
                 </p>
                 <Link
                   href={copy.toggleHref}
@@ -333,7 +336,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 >
                   {copy.toggleLabel}
                 </Link>
-              </div> */}
+              </div>
 
               {error && (
                 <p className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">

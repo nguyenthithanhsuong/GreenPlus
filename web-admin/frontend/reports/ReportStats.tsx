@@ -4,6 +4,7 @@ import { DollarSign, PieChart, Truck, Tag, TrendingUp } from 'lucide-react';
 const ReportStats = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Total Revenue */}
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
         <div className="flex justify-between items-start mb-4">
           <p className="text-sm font-medium text-gray-500">Tổng Doanh Thu</p>
@@ -15,6 +16,7 @@ const ReportStats = () => {
         </p>
       </div>
 
+      {/* Gross Profit */}
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
         <div className="flex justify-between items-start mb-4">
           <p className="text-sm font-medium text-gray-500">Lợi Nhuận Gộp</p>
@@ -26,6 +28,7 @@ const ReportStats = () => {
         </p>
       </div>
 
+      {/* Shipping Fees */}
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
         <div className="flex justify-between items-start mb-4">
           <p className="text-sm font-medium text-gray-500">Phí Vận Chuyển</p>
@@ -37,6 +40,7 @@ const ReportStats = () => {
         </p>
       </div>
 
+      {/* Discounts & Vouchers */}
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
         <div className="flex justify-between items-start mb-4">
           <p className="text-sm font-medium text-gray-500">Chiết Khấu & Voucher</p>

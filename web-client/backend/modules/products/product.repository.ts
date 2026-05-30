@@ -114,6 +114,7 @@ export class ProductRepository {
         return;
       }
 
+      // Du lieu da sort giam dan theo ngay, ghi lan dau tien se la gia moi nhat.
       if (!priceMap.has(productId)) {
         priceMap.set(productId, Number(row.price));
       }
@@ -180,6 +181,7 @@ export class ProductRepository {
   }
 }
 
+// Ho tro doc relation an toan cho ca 2 truong hop: object don hoac mang object tu Supabase.
 export function getRelationValue<T = string>(rel: RelObj, field: string): T | null {
   if (!rel) {
     return null;

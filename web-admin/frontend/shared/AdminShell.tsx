@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import AdminHeader from "./AdminHeader";
 import AdminPageHeader from "./AdminPageHeader";
 import AdminSidebar from "./AdminSidebar";
-import PageGuard from "./PageGuard";
 
 type AdminShellProps = {
   title: string;
@@ -29,7 +28,7 @@ export default function AdminShell({
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
           <div className="max-w-7xl mx-auto space-y-6">
             <AdminPageHeader title={title} description={description} actions={pageActions} />
-            <PageGuard>{children}</PageGuard>
+            {children}
           </div>
         </main>
       </div>

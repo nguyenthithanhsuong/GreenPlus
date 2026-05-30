@@ -47,7 +47,6 @@ abstract class BaseSearchStrategy<T> implements SearchStrategy<T> {
 class UserSearchStrategy extends BaseSearchStrategy<{
   user_id: string;
   role_id: string | null;
-  store_id: string | null;
   name: string;
   email: string;
   role_name: string | null;
@@ -60,7 +59,6 @@ class UserSearchStrategy extends BaseSearchStrategy<{
   protected getSearchableText(item: {
     user_id: string;
     role_id: string | null;
-    store_id: string | null;
     name: string;
     email: string;
     role_name: string | null;
@@ -115,7 +113,7 @@ class BatchSearchStrategy extends BaseSearchStrategy<{
   expire_date: string;
   qr_code: string | null;
   quantity: number;
-  status: "pending" | "available" | "rejected" | "expired" | "sold_out";
+  status: "pending" | "available" | "expired" | "sold_out";
   created_at: string;
   updated_at: string;
 }> {
@@ -129,7 +127,7 @@ class BatchSearchStrategy extends BaseSearchStrategy<{
     expire_date: string;
     qr_code: string | null;
     quantity: number;
-    status: "pending" | "available" | "rejected" | "expired" | "sold_out";
+    status: "pending" | "available" | "expired" | "sold_out";
     created_at: string;
     updated_at: string;
   }): Array<string | number | null | undefined> {

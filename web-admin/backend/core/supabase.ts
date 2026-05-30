@@ -4,7 +4,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-
+// CLIENT (user token)
 export function createAnonSupabaseClient(accessToken?: string) {
   return createClient(supabaseUrl, anonKey, {
     auth: {
@@ -19,7 +19,7 @@ export function createAnonSupabaseClient(accessToken?: string) {
   });
 }
 
-
+// SERVER (admin DB access)
 export const supabaseServer = createClient(supabaseUrl, serviceRoleKey, {
   auth: {
     autoRefreshToken: false,

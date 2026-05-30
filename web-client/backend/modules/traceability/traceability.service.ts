@@ -37,7 +37,7 @@ export class TraceabilityService {
     }
 
     if (productData.status !== "active") {
-      throw new AppError("Product is inactive", 400);
+      throw new AppError("MSG3: Product is inactive", 400);
     }
 
     let supplierData: {
@@ -87,12 +87,12 @@ export class TraceabilityService {
     }
 
     if (!batchData) {
-      throw new AppError("Batch not found", 404);
+      throw new AppError("MSG2: Batch not found", 404);
     }
 
     const batch = batchData;
     if (batch.product_id !== qrPayload.productId) {
-      throw new AppError("QR product_id does not match batch", 400);
+      throw new AppError("MSG1: QR product_id does not match batch", 400);
     }
 
     return this.toOriginInfoFromBatch(batch);
@@ -118,7 +118,7 @@ export class TraceabilityService {
     }
 
     if (!batchData) {
-      throw new AppError("Batch not found", 404);
+      throw new AppError("MSG2: Batch not found", 404);
     }
 
     return this.toOriginInfoFromBatch(batchData);

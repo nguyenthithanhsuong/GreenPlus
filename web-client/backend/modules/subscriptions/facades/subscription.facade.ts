@@ -12,6 +12,7 @@ import {
   SubscriptionSubject,
 } from "../observers/subscription.observer";
 
+// Facade cho use case dat lich mua dinh ky.
 export class SubscriptionFacade {
   private readonly service = new SubscriptionService();
   private readonly subject = new SubscriptionSubject();

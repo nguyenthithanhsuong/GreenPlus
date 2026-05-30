@@ -212,22 +212,22 @@ export default function ProductOrdersTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Đơn hàng</h1>
-        <p className="text-sm text-slate-600">Kiểm tra các route tạo/danh sách/chi tiết/hủy qua /api/orders.</p>
-        <p className="text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">Backend Test: Orders</h1>
+        <p className="text-sm text-slate-600">Route tests for create/list/detail/cancel via /api/orders.</p>
+        <p className="text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             <input
               value={deliveryAddress}
               onChange={(event) => setDeliveryAddress(event.target.value)}
-              placeholder="địa chỉ giao hàng"
+              placeholder="delivery address"
               className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2"
             />
             <input
               value={deliveryFee}
               onChange={(event) => setDeliveryFee(event.target.value)}
-              placeholder="phí giao hàng"
+              placeholder="delivery fee"
               className="rounded border border-slate-300 px-3 py-2 text-sm"
             />
             <input

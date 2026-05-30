@@ -8,7 +8,6 @@ type BatchDbRow = {
   harvest_date: string;
   expire_date: string;
   quantity: number;
-  import_price: number | string | null;
   qr_code: string | null;
   status: string;
   created_at: string;
@@ -36,7 +35,7 @@ export class BatchManagementRepository {
   async listBatches(): Promise<BatchRow[]> {
     const { data, error } = await this.supabase
       .from("batches")
-      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
+      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -49,7 +48,7 @@ export class BatchManagementRepository {
   async findById(batchId: string): Promise<BatchRow | null> {
     const { data, error } = await this.supabase
       .from("batches")
-      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
+      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
       .eq("batch_id", batchId)
       .maybeSingle();
 
@@ -89,11 +88,10 @@ export class BatchManagementRepository {
         harvest_date: input.harvestDate,
         expire_date: input.expireDate,
         quantity: input.quantity,
-        import_price: input.importPrice,
         qr_code: input.qrCode?.trim() || null,
         status: input.status,
       })
-      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
+      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
       .single();
 
     if (error) {
@@ -111,7 +109,6 @@ export class BatchManagementRepository {
     if (typeof input.harvestDate !== "undefined") payload.harvest_date = input.harvestDate;
     if (typeof input.expireDate !== "undefined") payload.expire_date = input.expireDate;
     if (typeof input.quantity !== "undefined") payload.quantity = input.quantity;
-    if (typeof input.importPrice !== "undefined") payload.import_price = input.importPrice;
     if (typeof input.qrCode !== "undefined") payload.qr_code = input.qrCode?.trim() || null;
     if (typeof input.status !== "undefined") payload.status = input.status;
 
@@ -119,7 +116,7 @@ export class BatchManagementRepository {
       .from("batches")
       .update(payload)
       .eq("batch_id", input.batchId)
-      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
+      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
       .maybeSingle();
 
     if (error) {
@@ -194,7 +191,7 @@ export class BatchManagementRepository {
 
   private toRow(batch: BatchDbRow): BatchRow {
     const normalizedStatus: BatchStatus =
-      batch.status === "pending" || batch.status === "available" || batch.status === "rejected" || batch.status === "expired" || batch.status === "sold_out"
+      batch.status === "pending" || batch.status === "available" || batch.status === "expired" || batch.status === "sold_out"
         ? batch.status
         : "available";
 
@@ -207,7 +204,6 @@ export class BatchManagementRepository {
       harvest_date: batch.harvest_date,
       expire_date: batch.expire_date,
       quantity: batch.quantity,
-      import_price: batch.import_price === null ? null : Number(batch.import_price),
       qr_code: batch.qr_code,
       status: normalizedStatus,
       created_at: batch.created_at,

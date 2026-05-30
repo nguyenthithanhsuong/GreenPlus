@@ -511,8 +511,8 @@ function BaseSubscriptionsManagementPage() {
 
     try {
       const [productResponse, subscriptionResponse] = await Promise.all([
-        fetch("/api/products?limit=100", { signal, cache: "no-store" }),
-        fetch(`/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`, { signal, cache: "no-store" }),
+        fetch("/api/products?limit=100", { signal }),
+        fetch(`/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`, { signal }),
       ]);
 
       const productData = (await productResponse.json()) as ProductsResponse | { error?: string };
@@ -590,7 +590,6 @@ function BaseSubscriptionsManagementPage() {
       }
 
       setMessage("Đã tạo đơn đặt định kỳ mới.");
-      setFilterStatus("active");
       await loadData();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Không thể tạo đơn định kỳ.");
@@ -801,12 +800,12 @@ function BaseSubscriptionsManagementPage() {
               ))}
             </div>
 
-            {message ? <p style={styles.messageText}>{message}</p> : null}
-
             {loading ? (
               <p style={styles.infoText}>Đang tải danh sách đơn định kỳ...</p>
             ) : error ? (
               <p style={styles.errorText}>{error}</p>
+            ) : message ? (
+              <p style={styles.messageText}>{message}</p>
             ) : filteredSubscriptions.length === 0 ? (
               <p style={styles.infoText}>Chưa có đơn đặt định kỳ nào.</p>
             ) : (

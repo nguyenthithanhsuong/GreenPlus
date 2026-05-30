@@ -1,6 +1,7 @@
 import { CartService } from "../cart.service";
 import { CartView } from "../cart.types";
 
+// Facade gom use case 27 + 28: cart quantity, remove, va shopping note.
 export class CartFacade {
   private readonly service = new CartService();
 

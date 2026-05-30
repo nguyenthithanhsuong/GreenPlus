@@ -8,10 +8,6 @@ type Context = {
   }>;
 };
 
-type DeleteProductBody = {
-  force?: boolean;
-};
-
 export async function PUT(request: Request, context: Context) {
   try {
     const { productId } = await context.params;
@@ -88,8 +84,7 @@ export async function PATCH(request: Request, context: Context) {
 export async function DELETE(_: Request, context: Context) {
   try {
     const { productId } = await context.params;
-    const body = (await _.json().catch(() => ({}))) as DeleteProductBody;
-    await productManagementFacade.deleteProduct(productId, Boolean(body.force));
+    await productManagementFacade.deleteProduct(productId);
     return NextResponse.json({ deleted: true }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {

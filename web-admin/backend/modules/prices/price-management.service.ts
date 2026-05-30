@@ -51,10 +51,6 @@ export class PriceManagementService {
       throw new AppError("price not found", 404);
     }
 
-    if (existing.status === "active" && !input.force) {
-      throw new AppError("Giá đang áp dụng không thể chỉnh sửa", 400);
-    }
-
     const updated = await this.repository.updatePrice({
       priceId,
       batchId:
@@ -82,7 +78,7 @@ export class PriceManagementService {
     return updated;
   }
 
-  async deletePrice(priceId: string, force = false): Promise<void> {
+  async deletePrice(priceId: string): Promise<void> {
     const normalizedId = priceId.trim();
     if (!normalizedId) {
       throw new AppError("priceId is required", 400);
@@ -93,11 +89,9 @@ export class PriceManagementService {
       throw new AppError("price not found", 404);
     }
 
-    if (!force) {
-      const state = createPriceState(existing.date);
-      if (!state.canDelete()) {
-        throw new AppError("Only future price entries can be deleted", 400);
-      }
+    const state = createPriceState(existing.date);
+    if (!state.canDelete()) {
+      throw new AppError("Only future price entries can be deleted", 400);
     }
 
     const deleted = await this.repository.deletePrice(normalizedId);

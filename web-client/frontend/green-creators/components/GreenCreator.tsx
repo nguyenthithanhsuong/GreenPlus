@@ -74,6 +74,35 @@ type CommunityPostInteractionItem = {
 
 const BACKEND_TEST_USER_STORAGE_KEY = "backend-testing-user-id";
 
+// const fallbackPostsData: Post[] = [
+//   {
+//     id: "fallback-1",
+//     postId: "fallback-1",
+//     userId: "fallback-user",
+//     title: "Community Post",
+//     content: "Thử làm cơm đĩa giá dưới 50k!",
+//     mediaType: "JPG",
+//     type: "community",
+//     status: "approved",
+//     author: {
+//       name: "Thanh Sương",
+//       avatar: "/images/avatar1.png",
+//     },
+//     image: "/images/post-image1.png",
+//     likes: 74,
+//     caption: "Thử làm cơm đĩa giá dưới 50k!",
+//     comments: [
+//       { id: 1, username: "Hoàng Sơn", text: "Trông xịn thế", isLiked: true },
+//       {
+//         id: 2,
+//         username: "thienduongofficial",
+//         text: "Nhìn thôi đã thấy đói bụng rồi, khéo tay quá!",
+//         isLiked: false,
+//       },
+//     ],
+//     date: "Ngày 03 Tháng 03 Năm 2026",
+//   },
+// ];
 
 function formatPostDate(value: string): string {
   const parsed = new Date(value);
@@ -913,6 +942,7 @@ function BaseGreenCreator() {
     let results = allPosts;
     const actorUserId = resolveActorUserId();
 
+    // Filter by tab
     if (activeTab === "own") {
       results = results.filter((post) => post.user_id === userId);
     } else if (activeTab === "interacted") {
@@ -937,6 +967,7 @@ function BaseGreenCreator() {
       });
     }
 
+    // Filter by search query
     const query = searchQuery.trim().toLowerCase();
     if (query) {
       results = results.filter((post) => {
@@ -1097,6 +1128,7 @@ function BaseGreenCreator() {
         window.alert("Đã sao chép link bài đăng.");
       }
     } catch {
+      // User canceled share flow.
     } finally {
       setActiveMenuPostId(null);
     }
