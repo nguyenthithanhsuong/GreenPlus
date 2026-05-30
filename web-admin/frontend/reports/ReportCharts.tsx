@@ -45,7 +45,6 @@ const ReportCharts = () => {
       const m = d.getMonth();
       const amt = typeof o.total_amount === 'number' ? o.total_amount : Number(o.total_amount) || 0;
       revenue[m] += amt;
-      // no cost data available: use a conservative margin estimate for profit
       profit[m] += Math.round(amt * 0.25);
       const method = o.payment_method ?? 'cod';
       payments[method] = (payments[method] || 0) + 1;
@@ -64,7 +63,6 @@ const ReportCharts = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      {/* Combo Chart: Revenue & Profit */}
       <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm lg:col-span-2 flex flex-col">
         <div className="flex justify-between items-center mb-8">
           <h3 className="font-bold text-gray-900">Doanh Thu & Lợi Nhuận</h3>
@@ -80,7 +78,6 @@ const ReportCharts = () => {
         </div>
 
         <div className="flex-1 relative min-h-[250px] w-full">
-          {/* Y-Axis & Grid Lines */}
           <div className="absolute inset-0 flex flex-col justify-between text-xs text-gray-400 pb-6">
             {[600, 500, 400, 300, 200, 100, 0].map((val) => (
               <div key={val} className="flex items-center w-full">
@@ -92,7 +89,6 @@ const ReportCharts = () => {
 
           <div className="absolute inset-0 ml-11 mb-6">
             <svg viewBox="0 0 1000 250" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-              {/* Bars (Revenue) - compute heights from revenueByMonth */}
               {(() => {
                 const xs = [20, 100, 180, 260, 340, 420, 500, 580, 660, 740, 820, 900];
                 const maxVal = Math.max(...revenueByMonth, ...profitByMonth, 1);
@@ -103,7 +99,6 @@ const ReportCharts = () => {
                 });
               })()}
 
-              {/* Line (Profit) */}
               {(() => {
                 const xs = [40, 120, 200, 280, 360, 440, 520, 600, 680, 760, 840, 920];
                 const maxVal = Math.max(...revenueByMonth, ...profitByMonth, 1);
@@ -126,7 +121,6 @@ const ReportCharts = () => {
             </svg>
           </div>
           
-          {/* X-Axis Labels */}
           <div className="absolute bottom-0 left-11 right-0 flex justify-between text-xs text-gray-400 pl-4 pr-10">
             {['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'].map((label) => (
               <span key={label}>{label}</span>
@@ -135,7 +129,6 @@ const ReportCharts = () => {
         </div>
       </div>
 
-      {/* Donut Chart: Payment Methods */}
       <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-gray-900">Phương thức thanh toán</h3>
@@ -143,10 +136,8 @@ const ReportCharts = () => {
         </div>
         
         <div className="flex flex-col items-center justify-center flex-1">
-          {/* SVG Donut */}
           <div className="relative w-48 h-48 mb-8">
             <svg viewBox="-3 -3 42 42" className="w-full h-full transform -rotate-90" style={{ overflow: 'visible' }}>
-              {/* Draw arcs based on paymentDistribution */}
               {(() => {
                 const radius = 15.91549430918954;
                 const colors: Record<string,string> = { vnpay: '#3b82f6', momo: '#ec4899', cod: '#10b981', bank_transfer: '#6b7280' };
@@ -174,7 +165,6 @@ const ReportCharts = () => {
             </svg>
           </div>
 
-          {/* Legend */}
           <div className="w-full space-y-3">
             {paymentDistribution.map((seg) => {
               const color = seg.key === 'vnpay' ? 'bg-blue-500' : seg.key === 'momo' ? 'bg-pink-500' : seg.key === 'cod' ? 'bg-emerald-500' : 'bg-gray-500';

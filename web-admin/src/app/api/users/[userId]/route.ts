@@ -13,6 +13,7 @@ export async function PUT(request: Request, context: Context) {
     const { userId } = await context.params;
     const body = (await request.json()) as {
       roleId?: string | null;
+      storeId?: string | null;
       name?: string;
       email?: string;
       phone?: string;
@@ -24,6 +25,7 @@ export async function PUT(request: Request, context: Context) {
     const updated = await userManagementFacade.updateUser({
       userId,
       roleId: body.roleId,
+      storeId: body.storeId,
       name: body.name,
       email: body.email,
       phone: body.phone,

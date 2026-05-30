@@ -39,7 +39,6 @@ export class AuthAuditObserver implements AuthObserver {
     const eventType = event.type;
     const userId = event.userId;
 
-    // Placeholder for app logging/auditing side effects.
     void eventType;
     void userId;
 

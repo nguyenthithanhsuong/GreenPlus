@@ -24,4 +24,5 @@ export type UpdatePriceInput = {
   price?: number;
   date?: string;
   status?: PriceStatus | null;
+  force?: boolean;
 };

@@ -40,9 +40,8 @@ export class SearchService {
     const keyword = criteria.keyword?.trim() ?? "";
     const hasAnyFilter = Boolean(criteria.categoryId || criteria.certification || criteria.minPrice !== undefined || criteria.maxPrice !== undefined);
 
-    // Bám theo SRS: neu nguoi dung co y dinh search ma keyword rong va khong co bo loc thi bao MSG1.
     if (keywordProvided && keyword.length === 0 && !hasAnyFilter) {
-      throw new AppError("MSG1: Keyword must contain at least one character", 400);
+      throw new AppError("Keyword must contain at least one character", 400);
     }
 
     const normalizedCriteria: SearchCriteria = {
@@ -54,7 +53,6 @@ export class SearchService {
 
     let items = await this.productService.getActiveBrowseItems();
 
-    // Pipeline strategy: them/xoa bo loc rat de, khong can sua code tim kiem co loi.
     this.filterStrategies.forEach((strategy) => {
       items = strategy.apply(items, normalizedCriteria);
     });

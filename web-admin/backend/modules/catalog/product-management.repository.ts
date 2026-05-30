@@ -16,6 +16,13 @@ type ProductDbRow = {
   } | null;
 };
 
+type ProductDependencyCounts = {
+  cartItems: number;
+  orderItems: number;
+  subscriptions: number;
+  total: number;
+};
+
 export class ProductManagementRepository {
   private readonly supabase = createServiceRoleSupabaseClient();
 
@@ -93,7 +100,52 @@ export class ProductManagementRepository {
     return data ? this.toRow(data as ProductDbRow) : null;
   }
 
-  async deleteProduct(productId: string): Promise<boolean> {
+  async countBlockingDependencies(productId: string): Promise<ProductDependencyCounts> {
+    const [cartItemsResult, orderItemsResult, subscriptionsResult] = await Promise.all([
+      this.supabase.from("cart_items").select("product_id", { count: "exact", head: true }).eq("product_id", productId),
+      this.supabase.from("order_items").select("product_id", { count: "exact", head: true }).eq("product_id", productId),
+      this.supabase.from("subscriptions").select("product_id", { count: "exact", head: true }).eq("product_id", productId),
+    ]);
+
+    if (cartItemsResult.error) {
+      throw new Error(cartItemsResult.error.message);
+    }
+
+    if (orderItemsResult.error) {
+      throw new Error(orderItemsResult.error.message);
+    }
+
+    if (subscriptionsResult.error) {
+      throw new Error(subscriptionsResult.error.message);
+    }
+
+    const cartItems = cartItemsResult.count ?? 0;
+    const orderItems = orderItemsResult.count ?? 0;
+    const subscriptions = subscriptionsResult.count ?? 0;
+
+    return {
+      cartItems,
+      orderItems,
+      subscriptions,
+      total: cartItems + orderItems + subscriptions,
+    };
+  }
+
+  async deleteProduct(productId: string, force = false): Promise<boolean> {
+    if (force) {
+      const cleanupResults = await Promise.all([
+        this.supabase.from("order_items").delete().eq("product_id", productId),
+        this.supabase.from("cart_items").delete().eq("product_id", productId),
+        this.supabase.from("subscriptions").delete().eq("product_id", productId),
+      ]);
+
+      for (const result of cleanupResults) {
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+      }
+    }
+
     const { data, error } = await this.supabase
       .from("products")
       .delete()

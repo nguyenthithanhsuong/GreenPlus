@@ -9,7 +9,6 @@ type InventoryRow = {
   quantity_reserved: number;
 };
 
-// Supabase relation co the tra object hoac array, ham nay chuan hoa ve array de tinh toan on dinh.
 function toInventoryRows(input: ProductBatchRow["inventory"]): InventoryRow[] {
   if (!input) {
     return [];
@@ -27,7 +26,6 @@ function normalizeBatchStatus(status: ProductBatchRow["status"]): "available" | 
     return status;
   }
 
-  // Defensive default for nullable/unknown DB status values.
   return "sold_out";
 }
 
@@ -46,12 +44,10 @@ export class ProductDetailService {
     }
 
     const state = createProductState(product.status);
-    // State pattern xu ly quy tac hien thi san pham theo trang thai.
     if (!state.canView()) {
-      throw new AppError("MSG1: Product is not available", 400);
+      throw new AppError("Product is not available", 400);
     }
 
-    // Chay song song de giam do tre khi load trang chi tiet.
     const [latestPrice, batches, supplierMap] = await Promise.all([
       this.repository.getLatestPriceForProduct(productId),
       this.repository.getBatchesWithInventoryByProduct(productId),
@@ -76,7 +72,6 @@ export class ProductDetailService {
       totalReserved += reservedInBatch;
       totalQuantity += quantityInBatch;
 
-      // Batch state quyet dinh kha nang ban theo status + ton kho + han su dung.
       const isSellable = createBatchState(resolvedStatus).isSellable(availableInBatch, batch.expire_date);
       if (isSellable) {
         hasSellableBatch = true;
@@ -97,7 +92,6 @@ export class ProductDetailService {
       }
     });
 
-    // Uu tien in_stock, neu khong co lo ban duoc thi phan loai expired/out_of_stock.
     const inventoryStatus = hasSellableBatch ? "in_stock" : hasAnyExpiredBatch ? "expired" : "out_of_stock";
 
     return {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Calendar, Check, CreditCard, MapPin, Package, Phone, Truck, X } from "lucide-react";
 import type { OrderDetailRow, OrderStatus } from "../../backend/modules/orders/order-tracking.types";
 
@@ -51,8 +52,13 @@ const statusLabel = (status: OrderStatus): string => {
 };
 
 const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUpdateStatus, onViewDelivery }: OrderDetailPanelProps) => {
+  const [mounted, setMounted] = useState(false);
   const [nextStatus, setNextStatus] = useState<OrderStatus>("confirmed");
   const [note, setNote] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!order) {
@@ -78,13 +84,13 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
     return (order?.items ?? []).reduce((sum, item) => sum + item.line_total, 0);
   }, [order]);
 
-  if (!isOpen) {
+  if (!isOpen || !mounted) {
     return null;
   }
 
-  return (
+  return createPortal(
     <>
-      <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
+      <div className="fixed inset-0 bg-gray-900/20 z-40 transition-opacity" onClick={onClose} />
 
       <div className="fixed inset-y-0 right-0 w-full max-w-3xl bg-gray-50 z-50 flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100 shrink-0">
@@ -277,7 +283,8 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 

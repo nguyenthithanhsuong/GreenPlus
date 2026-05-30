@@ -18,7 +18,6 @@ export class NameDescSortStrategy implements CategorySortStrategy {
 
 export class NewestSortStrategy implements CategorySortStrategy {
   apply(items: CategoryItem[]): CategoryItem[] {
-    // categories table currently has no created_at in current schema, so fallback to id order for stable newest-like listing.
     return [...items].sort((a, b) => b.categoryId.localeCompare(a.categoryId));
   }
 }

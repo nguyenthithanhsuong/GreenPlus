@@ -17,27 +17,27 @@ type AuthScreenProps = {
 function getAuthCopy(mode: AuthMode) {
   return mode === "login"
     ? {
-        title: "Login",
-        subtitle: "Welcome back. Sign in to continue to GreenPlus.",
-        submitLabel: "Sign In",
-        toggleLabel: "Create an account",
+        title: "Đăng nhập",
+        subtitle: "Chào mừng bạn quay lại. Đăng nhập để tiếp tục vào GreenPlus.",
+        submitLabel: "Đăng nhập",
+        toggleLabel: "Tạo tài khoản",
         toggleHref: "/register",
-        routeLabel: "/login",
-        panelHeadline: "Fast access for returning teams",
+        routeLabel: "Đăng nhập khách hàng",
+        panelHeadline: "Truy cập nhanh cho người dùng quay lại",
         panelText:
-          "Use your existing credentials to jump back into dashboards, orders, and account tools.",
+          "Dùng thông tin đăng nhập hiện có để quay lại bảng điều khiển, đơn hàng và công cụ tài khoản.",
       }
     : {
-        title: "Register",
+        title: "Đăng ký",
         subtitle:
-          "Create your account and choose the role that fits your workflow.",
-        submitLabel: "Sign Up",
-        toggleLabel: "Back to login",
+          "Tạo tài khoản và chọn vai trò phù hợp với quy trình làm việc của bạn.",
+        submitLabel: "Đăng ký",
+        toggleLabel: "Quay lại đăng nhập",
         toggleHref: "/login",
-        routeLabel: "/register",
-        panelHeadline: "Onboard the right way",
+        routeLabel: "Đăng ký khách hàng",
+        panelHeadline: "Thiết lập tài khoản đúng ngay từ đầu",
         panelText:
-          "Capture a name, email, password, and role so the first session starts with the right context.",
+          "Nhập tên, email, mật khẩu và vai trò để phiên làm việc đầu tiên có đúng bối cảnh.",
       };
 }
 
@@ -59,6 +59,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [unlockDialogOpen, setUnlockDialogOpen] = useState(false);
+  const [bannedDialogOpen, setBannedDialogOpen] = useState(false);
 
   useEffect(() => {
     if (initialized && isAuthenticated && isLogin) {
@@ -68,7 +69,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
   const applyLoginResponse = (data: unknown) => {
     if (typeof data !== "object" || data === null) {
-      throw new Error("Invalid login response");
+      throw new Error("Phản hồi đăng nhập không hợp lệ.");
     }
 
     const payload = data as {
@@ -92,7 +93,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
     const userId = payload.session?.user_id?.trim() ?? payload.user?.user_id?.trim() ?? "";
 
     if (!sessionId || !userId || !payload.user) {
-      throw new Error("Invalid login response");
+      throw new Error("Phản hồi đăng nhập không hợp lệ.");
     }
 
     setAuth({
@@ -136,7 +137,23 @@ export function AuthScreen({ mode }: AuthScreenProps) {
           const message =
             typeof signInData === "object" && signInData !== null && "error" in signInData
               ? String((signInData as { error: string }).error)
-              : "Login request failed";
+              : "Không thể đăng nhập.";
+
+          if (typeof signInData === "object" && signInData !== null && "status" in signInData) {
+            const status = (signInData as { status?: string }).status;
+            if (status === "banned") {
+              setBannedDialogOpen(true);
+              return;
+            } else if (status === "inactive" || status === "suspended") {
+              setUnlockDialogOpen(true);
+              return;
+            }
+          }
+
+          if (message.includes("banned")) {
+            setBannedDialogOpen(true);
+            return;
+          }
 
           if (message.includes("account is not active")) {
             setUnlockDialogOpen(true);
@@ -146,7 +163,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
           throw new Error(message);
         }
 
-        setSuccess("Signed in successfully.");
+        setSuccess("Đăng nhập thành công.");
         applyLoginResponse(signInData);
         return;
       }
@@ -168,14 +185,14 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         const message =
           typeof data === "object" && data !== null && "error" in data
             ? String((data as { error: string }).error)
-            : "Register request failed";
+            : "Không thể đăng ký.";
         throw new Error(message);
       }
 
-      setSuccess("Account created successfully.");
+      setSuccess("Tài khoản đã được tạo thành công.");
     } catch (submitError) {
       setSuccess(null);
-      setError(submitError instanceof Error ? submitError.message : "Unexpected error");
+      setError(submitError instanceof Error ? submitError.message : "Đã xảy ra lỗi không mong muốn.");
     } finally {
       setLoading(false);
     }
@@ -214,14 +231,14 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         const retryMessage =
           typeof retryData === "object" && retryData !== null && "error" in retryData
             ? String((retryData as { error: string }).error)
-            : "Login request failed";
+            : "Không thể đăng nhập.";
         throw new Error(retryMessage);
       }
 
       setSuccess("Tài khoản đã được mở khóa và đăng nhập thành công.");
       applyLoginResponse(retryData);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof Error ? e.message : "Đã xảy ra lỗi không mong muốn.");
     } finally {
       setLoading(false);
     }
@@ -234,7 +251,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur xl:grid-cols-[1.05fr_0.95fr]">
           
-          {/* LEFT PANEL */}
           <section className="hidden flex-col justify-between bg-[linear-gradient(160deg,_#0f172a_0%,_#115e59_55%,_#10b981_100%)] p-10 text-white xl:flex">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-200">
@@ -247,20 +263,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 {copy.panelText}
               </p>
             </div>
-
-            {/* <div className="grid gap-4 rounded-[1.5rem] border border-white/15 bg-white/10 p-5 shadow-lg shadow-black/10 backdrop-blur-sm">
-              <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-emerald-100/80">
-                  Route
-                </p>
-                <p className="mt-2 text-lg font-semibold">
-                  {copy.routeLabel}
-                </p>
-              </div>
-            </div> */}
           </section>
-
-          {/* FORM PANEL */}
           <section className="p-6 sm:p-10 lg:p-12">
             <div className="mx-auto max-w-xl">
               <div className="flex items-center justify-between gap-4">
@@ -281,13 +284,13 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 {!isLogin && (
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Full name
+                      Họ và tên
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter your full name"
+                      placeholder="Nhập họ và tên"
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                     />
                   </div>
@@ -295,27 +298,27 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Email address
+                    Email
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
+                    placeholder="Nhập email"
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                   />
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Password
+                    Mật khẩu
                   </label>
                   <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder="Nhập mật khẩu"
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                   />
                   <button
@@ -335,7 +338,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 {!isLogin && (
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Confirm password
+                      Xác nhận mật khẩu
                     </label>
                     <div className="relative">
                     <input
@@ -344,7 +347,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                       onChange={(e) =>
                         setConfirmPassword(e.target.value)
                       }
-                      placeholder="Re-enter your password"
+                      placeholder="Nhập lại mật khẩu"
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                     />
                     <button
@@ -369,16 +372,15 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                   disabled={loading}
                   className="w-full rounded-2xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
                 >
-                  {loading ? "Please wait..." : copy.submitLabel}
+                  {loading ? "Vui lòng chờ..." : copy.submitLabel}
                 </button>
               </form>
 
-              {/* SINGLE TOGGLE (BOTTOM ONLY) */}
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-600">
                   {isLogin
-                    ? "Need an account?"
-                    : "Already have an account?"}
+                    ? "Chưa có tài khoản?"
+                    : "Đã có tài khoản?"}
                 </p>
                 <Link
                   href={copy.toggleHref}
@@ -410,6 +412,16 @@ export function AuthScreen({ mode }: AuthScreenProps) {
             busy={loading}
             onCancel={() => setUnlockDialogOpen(false)}
             onConfirm={() => void handleConfirmUnlock()}
+          />
+          <ConfirmationActionDialog
+            open={bannedDialogOpen}
+            title="Tài khoản bị cấm"
+            message="Tài khoản của bạn đã bị cấm và không thể đăng nhập. Vui lòng liên hệ với bộ phận hỗ trợ để biết thêm thông tin."
+            confirmLabel="Đóng"
+            confirmTone="danger"
+            busy={false}
+            onCancel={() => setBannedDialogOpen(false)}
+            onConfirm={() => setBannedDialogOpen(false)}
           />
         </div>
       </div>

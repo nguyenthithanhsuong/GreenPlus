@@ -1,6 +1,5 @@
-import { randomUUID } from "crypto";
+import { createHmac, randomUUID } from "crypto";
 import { AppError } from "../../../core/errors";
-// import { isUsingServiceRoleKey } from "../../../core/supabase";
 import { AuthAuditObserver, AuthSubject } from "../observers/auth.observer";
 import { AuthRepository } from "../auth.repository";
 import { createAccountState } from "../states/account.state";
@@ -22,8 +21,9 @@ import { createProfileImageStorageStrategy } from "../strategies/profile-image.s
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
+const CUSTOM_TOKEN_PREFIX = "gpv1";
 
-// Facade pattern: gom toan bo luong dang ky/dang nhap/quan ly tai khoan vao mot diem vao.
+
 export class AuthFacade {
   private readonly repository: AuthRepository;
   private readonly hasher: PasswordHasherStrategy;
@@ -40,7 +40,7 @@ export class AuthFacade {
   private ensureActiveStatus(status: UserStatus): void {
     const accountState = createAccountState(status);
     if (!accountState.canSignIn()) {
-      throw new AppError("MSG6: account is not active", 400);
+      throw new AppError("Account is not active", 400);
     }
   }
 
@@ -48,30 +48,53 @@ export class AuthFacade {
     return value.startsWith("pbkdf2$");
   }
 
+  private getSessionSecret(): string {
+    const secret = process.env.AUTH_HANDOFF_SECRET || process.env.AUTH_SESSION_SECRET;
+
+    if (!secret) {
+      throw new AppError("Session secret is not configured", 500);
+    }
+
+    return secret;
+  }
+
+  private createAccessToken(input: {
+    userId: string;
+    email: string;
+    role: string;
+    sessionId: string;
+    loginTime: string;
+  }): string {
+    const payload = Buffer.from(JSON.stringify(input)).toString("base64url");
+    const signature = createHmac("sha256", this.getSessionSecret()).update(payload).digest("base64url");
+
+    return `${CUSTOM_TOKEN_PREFIX}.${payload}.${signature}`;
+  }
+
   async register(input: RegisterInput) {
     if (input.name.trim().length === 0) {
-      throw new AppError("MSG1: name is required", 400);
+      throw new AppError("Name is required", 400);
     }
 
     if (input.email.trim().length === 0) {
-      throw new AppError("MSG2: email is required", 400);
+      throw new AppError("Email is required", 400);
     }
 
     if (input.password.length < 6) {
-      throw new AppError("MSG3: password must be at least 6 characters", 400);
+      throw new AppError("Password must be at least 6 characters", 400);
     }
 
     if (input.password !== input.confirmPassword) {
-      throw new AppError("MSG4: password and confirm password do not match", 400);
+      throw new AppError("Password and confirm password do not match", 400);
     }
 
     if (!EMAIL_REGEX.test(input.email.trim())) {
-      throw new AppError("MSG5: invalid email format", 400);
+      throw new AppError("Invalid email format", 400);
     }
 
     const existing = await this.repository.findUserByEmail(input.email.trim().toLowerCase());
     if (existing) {
-      throw new AppError("MSG6: email already exists", 400);
+      throw new AppError("Email already exists", 400);
     }
 
     const passwordHash = await this.hasher.hash(input.password);
@@ -103,26 +126,20 @@ export class AuthFacade {
     const email = input.email.trim().toLowerCase();
 
     if (email.length === 0) {
-      throw new AppError("MSG1: email is required", 400);
+      throw new AppError("Email is required", 400);
     }
 
     if (input.password.length === 0) {
-      throw new AppError("MSG2: password is required", 400);
+      throw new AppError("Password is required", 400);
     }
 
     if (!EMAIL_REGEX.test(email)) {
-      throw new AppError("MSG3: invalid email format", 400);
+      throw new AppError("Invalid email format", 400);
     }
 
     const user = await this.repository.findUserByEmail(email);
     if (!user) {
-      // if (!isUsingServiceRoleKey) {
-      //   throw new AppError(
-      //     "MSG4: account not found (backend is using anon key; if RLS is enabled, user rows may be hidden). Set SUPABASE_SERVICE_ROLE_KEY.",
-      //     404
-      //   );
-      // }
-      throw new AppError("MSG4: account not found", 404);
+            throw new AppError("Account not found", 404);
     }
     console.log("========== LOGIN DEBUG ==========");
 
@@ -173,7 +190,7 @@ console.log("=================================");
     if (this.isPbkdf2Hash(user.password)) {
       isValidPassword = await this.hasher.compare(input.password, user.password);
     } else {
-      // Ho tro du lieu cu luu plaintext: cho phep dang nhap 1 lan roi nang cap len hash.
+      
       isValidPassword = input.password === user.password;
       if (isValidPassword) {
         const upgradedHash = await this.hasher.hash(input.password);
@@ -182,7 +199,7 @@ console.log("=================================");
     }
 
     if (!isValidPassword) {
-      throw new AppError("MSG5: invalid credentials", 400);
+      throw new AppError("Invalid credentials", 400);
     }
 
     this.ensureActiveStatus(user.status);
@@ -191,9 +208,17 @@ console.log("=================================");
       session_id: randomUUID(),
       user_id: user.user_id,
       login_time: new Date().toISOString(),
+      access_token: "",
     };
 
     const roleName = await this.repository.findRoleNameById(user.role_id);
+    session.access_token = this.createAccessToken({
+      userId: user.user_id,
+      email: user.email,
+      role: roleName || "",
+      sessionId: session.session_id,
+      loginTime: session.login_time,
+    });
 
     await this.authSubject.notify({
       type: "sign_in_succeeded",
@@ -243,15 +268,15 @@ console.log("=================================");
     }
 
     if (input.name.trim().length === 0) {
-      throw new AppError("MSG1: name is required", 400);
+      throw new AppError("Name is required", 400);
     }
 
     if (input.phone.trim().length === 0) {
-      throw new AppError("MSG2: phone is required", 400);
+      throw new AppError("Phone is required", 400);
     }
 
     if (!PHONE_REGEX.test(input.phone.trim())) {
-      throw new AppError("MSG3: invalid phone format", 400);
+      throw new AppError("Invalid phone format", 400);
     }
 
     const updated = await this.repository.updateProfile({
@@ -280,19 +305,19 @@ console.log("=================================");
 
   async changePassword(input: ChangePasswordInput): Promise<{ updated: true }> {
     if (input.userId.trim().length === 0) {
-      throw new AppError("userId is required", 400);
+      throw new AppError("UserId is required", 400);
     }
 
     if (input.currentPassword.length === 0) {
-      throw new AppError("MSG4: current password is required", 400);
+      throw new AppError("Current password is required", 400);
     }
 
     if (input.newPassword.length < 6) {
-      throw new AppError("MSG5: new password must be at least 6 characters", 400);
+      throw new AppError("New password must be at least 6 characters", 400);
     }
 
     if (input.newPassword !== input.confirmPassword) {
-      throw new AppError("MSG6: new password and confirm password do not match", 400);
+      throw new AppError("New password and confirm password do not match", 400);
     }
 
     const user = await this.repository.findUserById(input.userId);
@@ -305,7 +330,7 @@ console.log("=================================");
       : input.currentPassword === user.password;
 
     if (!isCurrentPasswordCorrect) {
-      throw new AppError("MSG7: current password is incorrect", 400);
+      throw new AppError("Current password is incorrect", 400);
     }
 
     const newPasswordHash = await this.hasher.hash(input.newPassword);
@@ -323,12 +348,12 @@ console.log("=================================");
     const userId = input.userId.trim();
 
     if (!userId) {
-      throw new AppError("userId is required", 400);
+      throw new AppError("UserId is required", 400);
     }
 
     const file = input.file;
     if (!file) {
-      throw new AppError("file is required", 400);
+      throw new AppError("File is required", 400);
     }
 
     if (!file.type.startsWith("image/")) {

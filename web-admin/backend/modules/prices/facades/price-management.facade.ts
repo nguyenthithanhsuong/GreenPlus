@@ -45,8 +45,8 @@ export class PriceManagementFacade {
     return updated;
   }
 
-  async deletePrice(priceId: string): Promise<void> {
-    await this.service.deletePrice(priceId);
+  async deletePrice(priceId: string, force = false): Promise<void> {
+    await this.service.deletePrice(priceId, force);
 
     await this.subject.notify({
       type: "price_deleted",

@@ -7,7 +7,8 @@ import ComplaintStats from "./ComplaintStats";
 import ComplaintTable from "./ComplaintTable";
 import ComplaintDrawer from "./ComplaintDrawer";
 import RejectReasonDialog from "./RejectReasonDialog";
-import { ComplaintRow, ComplaintStatus } from "../../backend/modules/community/complaint-management.types";
+import ConfirmActionDialog from "../users/ConfirmActionDialog";
+import { ComplaintRow, ComplaintStatus } from "../../backend/modules/complaints/complaint-management.types";
 
 type ComplaintStatusFilter = "all" | ComplaintStatus;
 
@@ -121,28 +122,19 @@ const ComplaintManagement = () => {
     };
   }, [complaints]);
 
-  const handleReject = useCallback(
-    (complaint: ComplaintRow) => {
-      setSelectedComplaint(complaint);
-      setRejectOpen(true);
-    },
-    [updateStatus]
-  );
-
-  const handleResolve = useCallback(
-    (complaint: ComplaintRow) => {
-      if (!window.confirm("Đánh dấu khiếu nại này là đã giải quyết?")) {
-        return;
-      }
-
-      void updateStatus(complaint, "resolved");
-    },
-    [updateStatus]
-  );
-
   const [selectedComplaint, setSelectedComplaint] = useState<ComplaintRow | null>(null);
+  const [resolveComplaint, setResolveComplaint] = useState<ComplaintRow | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
+
+  const handleReject = useCallback((complaint: ComplaintRow) => {
+    setSelectedComplaint(complaint);
+    setRejectOpen(true);
+  }, []);
+
+  const handleResolve = useCallback((complaint: ComplaintRow) => {
+    setResolveComplaint(complaint);
+  }, []);
 
   const handleView = useCallback((complaint: ComplaintRow) => {
     setSelectedComplaint(complaint);
@@ -188,6 +180,25 @@ const ComplaintManagement = () => {
       />
 
       <ComplaintDrawer open={drawerOpen} complaint={selectedComplaint} onClose={() => setDrawerOpen(false)} />
+
+      <ConfirmActionDialog
+        open={Boolean(resolveComplaint)}
+        title="Xác nhận xử lý khiếu nại"
+        message="Đánh dấu khiếu nại này là đã giải quyết?"
+        confirmLabel="Đã giải quyết"
+        confirmVariant="warning"
+        loading={Boolean(savingComplaintId)}
+        onCancel={() => setResolveComplaint(null)}
+        onConfirm={() => {
+          if (!resolveComplaint) {
+            return;
+          }
+
+          const complaint = resolveComplaint;
+          setResolveComplaint(null);
+          void updateStatus(complaint, "resolved");
+        }}
+      />
 
       <RejectReasonDialog
         open={rejectOpen}

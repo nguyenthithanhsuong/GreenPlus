@@ -56,7 +56,6 @@ export default function ProductCartTestPage() {
           setProductId((current) => current || products[0].product_id);
         }
       } catch {
-        // Khong chan test page neu options load that bai.
       }
     };
 
@@ -98,14 +97,14 @@ export default function ProductCartTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Backend Test: Cart and Shopping Notes</h1>
-        <p className="text-sm text-slate-600">Route tests for use case 27 and 28 via /api/cart and /api/cart/note.</p>
-        <p className="text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Giỏ hàng và ghi chú mua hàng</h1>
+        <p className="text-sm text-slate-600">Kiểm tra các route cho use case 27 và 28 qua /api/cart và /api/cart/note.</p>
+        <p className="text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             <select value={productId} onChange={(e) => setProductId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
-              <option value="">Select product_id</option>
+              <option value="">Chọn product_id</option>
               {productOptions.map((product) => (
                 <option key={product.product_id} value={product.product_id}>
                   {product.name} ({product.product_id})

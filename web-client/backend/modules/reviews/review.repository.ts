@@ -50,7 +50,7 @@ export class ReviewRepository {
       .from("orders")
       .select("order_id")
       .eq("user_id", userId)
-      .eq("status", "delivered");
+      .in("status", ["completed", "delivered"]);
 
     if (error) {
       throw new Error(error.message);

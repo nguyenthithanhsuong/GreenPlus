@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, RefreshCw } from "lucide-react";
+import { usePermissions } from "@/lib/usePermissions";
 import UserStats from "./UserStats";
 import UserTable, { UserViewModel } from "./UserTable";
 import UserDrawer, { UserDrawerMode, UserFormValues } from "./UserDrawer";
@@ -12,12 +14,18 @@ type RoleOption = {
   roleName: string;
 };
 
+type StoreOption = {
+  storeId: string;
+  storeName: string;
+};
+
 const emptyForm: UserFormValues = {
   name: "",
   email: "",
   password: "",
   phone: "",
   roleId: "",
+  storeId: "",
   address: "",
   imageUrl: "",
   status: "active",
@@ -34,6 +42,7 @@ const UserManagement = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
+  const [storeOptions, setStoreOptions] = useState<StoreOption[]>([]);
   const [confirmState, setConfirmState] = useState<
     | {
       type: "ban" | "unban" | "delete";
@@ -41,6 +50,8 @@ const UserManagement = () => {
     }
     | null
   >(null);
+
+  const { hasPermission, loading: permLoading } = usePermissions();
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -89,10 +100,34 @@ const UserManagement = () => {
     }
   }, []);
 
+  const loadStores = useCallback(async () => {
+    try {
+      const response = await fetch("/api/stores");
+      const data = (await response.json()) as { items?: Array<{ store_id?: string; name?: string }>; error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Không thể tải danh sách cửa hàng");
+      }
+
+      const items = Array.isArray(data.items) ? data.items : [];
+      setStoreOptions(
+        items
+          .filter((store) => Boolean(store.store_id) && Boolean(store.name))
+          .map((store) => ({
+            storeId: store.store_id as string,
+            storeName: (store.name ?? "").trim(),
+          }))
+      );
+    } catch {
+      setStoreOptions([]);
+    }
+  }, []);
+
   useEffect(() => {
     void loadUsers();
     void loadRoles();
-  }, [loadRoles, loadUsers]);
+    void loadStores();
+  }, [loadRoles, loadStores, loadUsers]);
 
   const withSaving = useCallback(async (work: () => Promise<void>) => {
     setSaving(true);
@@ -115,6 +150,7 @@ const UserManagement = () => {
     email: string;
     password: string;
     roleId?: string | null;
+    storeId?: string | null;
     phone?: string;
     address?: string;
     imageUrl?: string;
@@ -138,6 +174,7 @@ const UserManagement = () => {
     name?: string;
     email?: string;
     roleId?: string | null;
+    storeId?: string | null;
     phone?: string;
     address?: string;
     imageUrl?: string;
@@ -220,6 +257,7 @@ const UserManagement = () => {
       password: "",
       phone: user.phone ?? "",
       roleId: user.role_id ?? "",
+      storeId: user.store_id ?? "",
       address: user.address ?? "",
       imageUrl: user.image_url ?? "",
       status: user.status,
@@ -234,7 +272,7 @@ const UserManagement = () => {
   }, []);
 
   const requestToggleBanStatus = useCallback((user: UserViewModel) => {
-    // If active, ban them. If banned, unban them (restore to active).
+
     const type = user.status === "active" ? "ban" : "unban";
     setConfirmState({ type, user });
   }, []);
@@ -278,6 +316,7 @@ const UserManagement = () => {
           email: form.email.trim(),
           password: form.password,
           roleId: form.roleId || null,
+          storeId: form.storeId || null,
           phone: form.phone.trim() || undefined,
           address: form.address.trim() || undefined,
           imageUrl: form.imageUrl.trim() || undefined,
@@ -293,6 +332,7 @@ const UserManagement = () => {
           name: form.name.trim(),
           email: form.email.trim(),
           roleId: form.roleId || null,
+          storeId: form.storeId || null,
           phone: form.phone.trim() || undefined,
           address: form.address.trim() || undefined,
           imageUrl: form.imageUrl.trim() || undefined,
@@ -302,7 +342,6 @@ const UserManagement = () => {
         closeDrawer();
       }
     } catch {
-      // Error state is already handled by withSaving.
     }
   }, [
     closeDrawer,
@@ -386,15 +425,43 @@ const UserManagement = () => {
 
       setConfirmState(null);
     } catch {
-      // Error state is already handled by withSaving.
     }
   }, [closeDrawer, confirmState, handleDeleteUser, handleToggleBanStatus, selectedUser]);
+
+  const reloadData = useCallback(async () => {
+    await Promise.all([loadUsers(), loadRoles(), loadStores()]);
+  }, [loadRoles, loadStores, loadUsers]);
 
   return (
     <AdminShell
       title="Quản lý người dùng"
       description="Quản trị danh sách tài khoản, phân quyền và trạng thái hoạt động trên hệ thống."
       searchPlaceholder="Tìm kiếm người dùng bằng tên, email..."
+      pageActions={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void reloadData()}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+            disabled={loading || saving}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Tải lại
+          </button>
+          {/* Create button controlled by permissions */}
+          {!permLoading && hasPermission("users.create") && (
+            <button
+              type="button"
+              onClick={openCreateDrawer}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-60"
+              disabled={loading || saving}
+            >
+              <Plus className="h-4 w-4" />
+              Thêm User
+            </button>
+          )}
+        </div>
+      }
     >
       {error ? (
         <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -411,7 +478,7 @@ const UserManagement = () => {
         loading={loading}
         saving={saving}
         customerRoleId={customerRoleId}
-        onAddUser={openCreateDrawer}
+        storeOptions={storeOptions}
         onViewUser={openDetailDrawer}
         onEditUser={openEditDrawer}
         onRequestDisableUser={requestToggleBanStatus}
@@ -425,6 +492,7 @@ const UserManagement = () => {
         form={form}
         showPassword={showPassword}
         roleOptions={roleOptions}
+        storeOptions={storeOptions}
         selectedUser={selectedUser}
         error={error}
         uploadingAvatar={uploadingAvatar}

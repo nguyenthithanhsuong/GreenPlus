@@ -1,9 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, Hash, Plus, RefreshCw, ScanSearch } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
+import { usePermissions } from "@/lib/usePermissions";
+import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
+import ConfirmActionDialog from "./ConfirmActionDialog";
 import BatchDrawer, { BatchFormValues } from "./BatchDrawer";
+import BatchScannerDialog from "./BatchScannerDialog";
 import BatchStats from "./BatchStats";
 import BatchTable from "./BatchTable";
 import type { BatchRow } from "../../backend/modules/batches/batch-management.types";
@@ -15,12 +19,17 @@ type OptionRow = {
   label: string;
 };
 
+type ScannerMode = "batch" | "qr" | "camera";
+
 const emptyForm = (): BatchFormValues => ({
   productId: "",
   supplierId: "",
   harvestDate: "",
   expireDate: "",
   quantity: 0,
+  pricingMode: "unit",
+  importPrice: "",
+  importTotalPrice: "",
   qrCode: "",
   status: "pending",
 });
@@ -38,6 +47,10 @@ const daysUntilExpire = (expireDate: string): number => {
 const deriveBatchStatus = (batch: BatchRow): BatchRow["status"] => {
   if (batch.status === "pending") {
     return "pending";
+  }
+
+  if (batch.status === "rejected") {
+    return "rejected";
   }
 
   if (batch.quantity <= 0) {
@@ -61,6 +74,21 @@ const BatchManagement = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<BatchRow | null>(null);
   const [form, setForm] = useState<BatchFormValues>(emptyForm());
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerMode, setScannerMode] = useState<ScannerMode>("batch");
+  const [scannerMenuOpen, setScannerMenuOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState<
+    | {
+        type: "approve" | "reject" | "restore" | "delete";
+        batch: BatchRow;
+      }
+    | null
+  >(null);
+  const { profile } = useCurrentUserProfile();
+  const canForceManageApproved = (profile?.roleName ?? "").trim().toLowerCase() === "admin";
+  const scannerMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const { hasPermission, loading: permLoading } = usePermissions();
 
   const loadBatches = useCallback(async () => {
     setLoading(true);
@@ -119,6 +147,21 @@ const BatchManagement = () => {
     void loadSuppliers();
   }, [loadBatches, loadProducts, loadSuppliers]);
 
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (!scannerMenuOpen) {
+        return;
+      }
+
+      if (scannerMenuRef.current && !scannerMenuRef.current.contains(event.target as Node)) {
+        setScannerMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    return () => document.removeEventListener("mousedown", handleDocumentClick);
+  }, [scannerMenuOpen]);
+
   const stats = useMemo(() => {
     const availableBatches = batches.filter((batch) => deriveBatchStatus(batch) === "available").length;
     const expiringSoonBatches = batches.filter((batch) => {
@@ -144,12 +187,22 @@ const BatchManagement = () => {
   }, [batches]);
 
   const productOptions = useMemo<OptionRow[]>(() => products.map((product) => ({ id: product.product_id, label: product.name })), [products]);
-  const supplierOptions = useMemo<OptionRow[]>(() => suppliers.map((supplier) => ({ id: supplier.supplier_id, label: supplier.name })), [suppliers]);
+  const supplierOptions = useMemo<OptionRow[]>(() => suppliers.map((supplier) => ({ id: supplier.supplier_id, label: supplier.name + (supplier.status === "rejected" ? " (Rejected)" : "") })), [suppliers]);
 
   const openCreateDrawer = useCallback(() => {
     setSelectedBatch(null);
     setForm(emptyForm());
     setDrawerOpen(true);
+  }, []);
+
+  const openScanner = useCallback((mode: ScannerMode) => {
+    setScannerMode(mode);
+    setScannerOpen(true);
+    setScannerMenuOpen(false);
+  }, []);
+
+  const closeScanner = useCallback(() => {
+    setScannerOpen(false);
   }, []);
 
   const openEditDrawer = useCallback((batch: BatchRow) => {
@@ -160,6 +213,9 @@ const BatchManagement = () => {
       harvestDate: batch.harvest_date,
       expireDate: batch.expire_date,
       quantity: batch.quantity,
+      pricingMode: "unit",
+      importPrice: batch.import_price === null ? "" : String(batch.import_price),
+      importTotalPrice: batch.import_price === null ? "" : String(batch.import_price * batch.quantity),
       qrCode: batch.qr_code ?? "",
       status: batch.status,
     });
@@ -179,6 +235,89 @@ const BatchManagement = () => {
   const reloadData = useCallback(async () => {
     await Promise.all([loadBatches(), loadProducts(), loadSuppliers()]);
   }, [loadBatches, loadProducts, loadSuppliers]);
+
+  const requestApproveBatch = useCallback((batch: BatchRow) => {
+    setConfirmState({ type: "approve", batch });
+  }, []);
+
+  const requestRejectBatch = useCallback((batch: BatchRow) => {
+    setConfirmState({ type: "reject", batch });
+  }, []);
+
+  const requestRestoreBatch = useCallback((batch: BatchRow) => {
+    setConfirmState({ type: "restore", batch });
+  }, []);
+
+  const requestDeleteBatch = useCallback((batch: BatchRow) => {
+    setConfirmState({ type: "delete", batch });
+  }, []);
+
+  const closeConfirmDialog = useCallback(() => {
+    setConfirmState(null);
+  }, []);
+
+  const handleConfirmAction = useCallback(async () => {
+    if (!confirmState) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      if (confirmState.type === "approve") {
+        const response = await fetch(`/api/batches/${encodeURIComponent(confirmState.batch.batch_id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "available" }),
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể duyệt batch");
+        }
+      } else if (confirmState.type === "reject") {
+        const response = await fetch(`/api/batches/${encodeURIComponent(confirmState.batch.batch_id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "rejected" }),
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể từ chối batch");
+        }
+      } else if (confirmState.type === "restore") {
+        const response = await fetch(`/api/batches/${encodeURIComponent(confirmState.batch.batch_id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "pending" }),
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể đưa batch về chờ duyệt");
+        }
+      } else {
+        const force = confirmState.batch.status === "available" && canForceManageApproved;
+        const response = await fetch(`/api/batches/${encodeURIComponent(confirmState.batch.batch_id)}${force ? "?force=true" : ""}`, {
+          method: "DELETE",
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? (force ? "Không thể force xóa batch" : "Không thể xóa batch"));
+        }
+      }
+
+      closeConfirmDialog();
+      await reloadData();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể xử lý batch");
+    } finally {
+      setSaving(false);
+    }
+  }, [canForceManageApproved, closeConfirmDialog, confirmState, reloadData]);
 
   const submitDrawer = useCallback(async () => {
     if (!form.productId.trim()) {
@@ -206,10 +345,42 @@ const BatchManagement = () => {
       return;
     }
 
+    const normalizedImportPrice = form.pricingMode === "unit" ? Number(form.importPrice) : Number(form.importTotalPrice) / form.quantity;
+    const normalizedImportTotalPrice = form.pricingMode === "unit" ? Number(form.importPrice) * form.quantity : Number(form.importTotalPrice);
+
+    if (form.pricingMode === "total" && form.quantity <= 0) {
+      setError("Số lượng phải lớn hơn 0 khi nhập giá tổng thể");
+      return;
+    }
+
+    if (!Number.isFinite(normalizedImportPrice) || normalizedImportPrice < 0) {
+      setError("Giá nhập phải là số hợp lệ không âm");
+      return;
+    }
+
+    if (!Number.isFinite(normalizedImportTotalPrice) || normalizedImportTotalPrice < 0) {
+      setError("Giá tổng thể phải là số hợp lệ không âm");
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
+      const chosenSupplier = suppliers.find((s) => s.supplier_id === form.supplierId);
+      let force = false;
+      if (chosenSupplier && chosenSupplier.status === "rejected") {
+        if (canForceManageApproved) {
+          force = true;
+        } else {
+          throw new Error("Nhà cung cấp đã bị từ chối và không thể được gán bởi tài khoản của bạn");
+        }
+      }
+
+      if (!force && selectedBatch && selectedBatch.status === "available" && canForceManageApproved) {
+        force = true;
+      }
+
       const response = await fetch(selectedBatch ? `/api/batches/${encodeURIComponent(selectedBatch.batch_id)}` : "/api/batches", {
         method: selectedBatch ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -219,8 +390,10 @@ const BatchManagement = () => {
           harvestDate: form.harvestDate,
           expireDate: form.expireDate,
           quantity: form.quantity,
+          importPrice: normalizedImportPrice,
           qrCode: form.qrCode,
           status: selectedBatch ? form.status : undefined,
+          force,
         }),
       });
 
@@ -237,31 +410,11 @@ const BatchManagement = () => {
     } finally {
       setSaving(false);
     }
-  }, [closeDrawer, form, reloadData, selectedBatch]);
+  }, [canForceManageApproved, closeDrawer, form, reloadData, selectedBatch]);
 
-  const deleteBatch = useCallback(async (batch: BatchRow) => {
-    if (!window.confirm(`Xóa batch "${batch.batch_id}"?`)) {
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/batches/${encodeURIComponent(batch.batch_id)}`, { method: "DELETE" });
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể xóa batch");
-      }
-
-      await reloadData();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể xóa batch");
-    } finally {
-      setSaving(false);
-    }
-  }, [reloadData]);
+  const deleteBatch = useCallback((batch: BatchRow) => {
+    requestDeleteBatch(batch);
+  }, [requestDeleteBatch]);
 
   return (
     <AdminShell
@@ -270,24 +423,96 @@ const BatchManagement = () => {
       searchPlaceholder="Tìm kiếm batch, sản phẩm, nhà cung cấp..."
       pageActions={(
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void reloadData()}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-            disabled={loading || saving}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Tải lại
-          </button>
-          <button
-            type="button"
-            onClick={openCreateDrawer}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
-            disabled={loading || saving}
-          >
-            <Plus className="h-4 w-4" />
-            Thêm batch
-          </button>
+          {(() => {
+            const { hasPermission, loading: permLoading } = usePermissions();
+            if (permLoading) {
+              return (
+                <>
+                  <div ref={scannerMenuRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setScannerMenuOpen((previous) => !previous)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60"
+                      disabled={loading || saving}
+                    >
+                      <ScanSearch className="h-4 w-4" />
+                      Quét QR
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void reloadData()}
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                    disabled={loading || saving}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Tải lại
+                  </button>
+                </>
+              );
+            }
+
+            return (
+              <>
+                <div ref={scannerMenuRef} className="relative">
+                  {hasPermission('batches.qr_scan') ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setScannerMenuOpen((previous) => !previous)}
+                        className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60"
+                        disabled={loading || saving}
+                      >
+                        <ScanSearch className="h-4 w-4" />
+                        Quét QR
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+
+                      {scannerMenuOpen ? (
+                        <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                          <button type="button" onClick={() => openScanner("batch")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+                            <Hash className="h-4 w-4 text-gray-500" />
+                            Nhập batch ID
+                          </button>
+                          <button type="button" onClick={() => openScanner("qr")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+                            <ScanSearch className="h-4 w-4 text-emerald-600" />
+                            Nhập QR
+                          </button>
+                          <button type="button" onClick={() => openScanner("camera")} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+                            <ScanSearch className="h-4 w-4 text-sky-600" />
+                            Quét camera
+                          </button>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void reloadData()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                  disabled={loading || saving}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Tải lại
+                </button>
+
+                {hasPermission('batches.create') ? (
+                  <button
+                    type="button"
+                    onClick={openCreateDrawer}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
+                    disabled={loading || saving}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Thêm batch
+                  </button>
+                ) : null}
+              </>
+            );
+          })()}
         </div>
       )}
     >
@@ -295,7 +520,17 @@ const BatchManagement = () => {
 
       <BatchStats {...stats} />
 
-      <BatchTable batches={batches} loading={loading} saving={saving} onEdit={openEditDrawer} onDelete={deleteBatch} />
+      <BatchTable
+        batches={batches}
+        loading={loading}
+        saving={saving}
+        canForceManageApproved={canForceManageApproved}
+        onApprove={requestApproveBatch}
+        onReject={requestRejectBatch}
+        onRestore={requestRestoreBatch}
+        onEdit={openEditDrawer}
+        onDelete={deleteBatch}
+      />
 
       <BatchDrawer
         open={drawerOpen}
@@ -308,6 +543,51 @@ const BatchManagement = () => {
         onClose={closeDrawer}
         onSubmit={submitDrawer}
       />
+
+      <ConfirmActionDialog
+        open={Boolean(confirmState)}
+        title={
+          confirmState?.type === "approve"
+            ? "Xác nhận duyệt batch"
+            : confirmState?.type === "reject"
+              ? "Xác nhận từ chối batch"
+              : confirmState?.type === "restore"
+                ? "Xác nhận quay lại chờ duyệt"
+                : "Xác nhận xóa batch"
+        }
+        message={
+          confirmState
+            ? confirmState.type === "approve"
+              ? `Bạn có chắc muốn duyệt batch ${confirmState.batch.batch_id}? Batch sẽ chuyển sang trạng thái khả dụng.`
+              : confirmState.type === "reject"
+                ? `Bạn có chắc muốn từ chối batch ${confirmState.batch.batch_id}? Batch sẽ chuyển sang trạng thái từ chối.`
+                : confirmState.type === "restore"
+                  ? `Bạn có chắc muốn đưa batch ${confirmState.batch.batch_id} quay lại chờ duyệt?`
+                  : confirmState.batch.status === "available" && canForceManageApproved
+                    ? `Bạn có chắc muốn force xóa batch ${confirmState.batch.batch_id}? Hành động này không thể hoàn tác.`
+                    : `Bạn có chắc muốn xóa batch ${confirmState.batch.batch_id}? Hành động này không thể hoàn tác.`
+            : ""
+        }
+        confirmLabel={
+          confirmState?.type === "approve"
+            ? "Duyệt batch"
+            : confirmState?.type === "reject"
+              ? "Từ chối batch"
+              : confirmState?.type === "restore"
+                ? "Quay lại chờ duyệt"
+                : confirmState?.batch.status === "available" && canForceManageApproved
+                  ? "Force xóa batch"
+                  : "Xóa batch"
+        }
+        confirmVariant={confirmState?.type === "approve" || confirmState?.type === "restore" ? "warning" : "danger"}
+        loading={saving}
+        onCancel={closeConfirmDialog}
+        onConfirm={() => {
+          void handleConfirmAction();
+        }}
+      />
+
+      <BatchScannerDialog open={scannerOpen} initialMode={scannerMode} onClose={closeScanner} />
     </AdminShell>
   );
 };

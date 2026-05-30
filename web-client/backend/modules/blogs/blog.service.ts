@@ -32,7 +32,6 @@ export class BlogService {
           return normalizedUrl;
         }
       } catch {
-        // Ignore malformed URLs and continue scanning the content.
       }
     }
 

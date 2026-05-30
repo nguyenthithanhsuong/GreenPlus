@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../backend/core/errors";
-import { complaintManagementFacade } from "../../../../backend/modules/community/complaint-management.facade";
+import { complaintManagementFacade } from "../../../../backend/modules/complaints/complaint-management.facade";
 
 export async function GET() {
   try {

@@ -10,24 +10,24 @@ type NavItem = {
 };
 
 const topNavItems: NavItem[] = [
-  { href: "/backend/products", label: "Product Backend" },
+  { href: "/backend/products", label: "Backend sản phẩm" },
 ];
 
 const productSubNavItems: NavItem[] = [
-  { href: "/backend/products", label: "Overview" },
-  { href: "/backend/register", label: "Register" },
-  { href: "/backend/signin", label: "Sign In" },
-  { href: "/backend/profile", label: "Profile" },
-  { href: "/backend/products/qr", label: "QR Origin" },
-  { href: "/backend/products/cart", label: "Cart and Notes" },
-  { href: "/backend/products/orders", label: "Orders" },
-  { href: "/backend/products/categories", label: "Categories" },
-  { href: "/backend/products/group-purchases", label: "Group Purchases" },
-  { href: "/backend/products/reviews", label: "Reviews" },
-  { href: "/backend/products/subscriptions", label: "Subscriptions" },
-  { href: "/backend/products/blogs", label: "Nutrition Blogs" },
-  { href: "/backend/products/community", label: "Community Posts" },
-  { href: "/backend/products/loyalty", label: "Loyalty Points" },
+  { href: "/backend/products", label: "Tổng quan" },
+  { href: "/backend/register", label: "Đăng ký" },
+  { href: "/backend/signin", label: "Đăng nhập" },
+  { href: "/backend/profile", label: "Hồ sơ" },
+  { href: "/backend/products/qr", label: "Nguồn gốc QR" },
+  { href: "/backend/products/cart", label: "Giỏ hàng và ghi chú" },
+  { href: "/backend/products/orders", label: "Đơn hàng" },
+  { href: "/backend/products/categories", label: "Danh mục" },
+  { href: "/backend/products/group-purchases", label: "Mua chung" },
+  { href: "/backend/products/reviews", label: "Đánh giá" },
+  { href: "/backend/products/subscriptions", label: "Đăng ký định kỳ" },
+  { href: "/backend/products/blogs", label: "Blog dinh dưỡng" },
+  { href: "/backend/products/community", label: "Bài viết cộng đồng" },
+  { href: "/backend/products/loyalty", label: "Điểm thưởng" },
 ];
 
 const BACKEND_TEST_USER_STORAGE_KEY = "backend-testing-user-id";
@@ -91,28 +91,28 @@ export default function ProductBackendLayout({ children }: { children: ReactNode
             </div>
 
             <div className="flex items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-2 py-1">
-              <span className="text-[11px] font-semibold text-slate-700">Test User</span>
+              <span className="text-[11px] font-semibold text-slate-700">Người dùng kiểm thử</span>
               <input
                 type="text"
                 value={inputUserId}
                 onChange={(event) => setInputUserId(event.target.value)}
                 className="w-64 rounded border border-slate-300 px-2 py-1 text-xs"
-                placeholder="Enter user_id"
+                placeholder="Nhập user_id"
               />
               <button
                 onClick={loginAsTestUser}
                 className="rounded bg-slate-800 px-2 py-1 text-[11px] font-semibold text-white"
               >
-                Login
+                Đăng nhập
               </button>
               <button
                 onClick={clearTestUser}
                 className="rounded bg-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-800"
               >
-                Clear
+                Xóa
               </button>
               <span className="text-[11px] text-slate-600">
-                {activeUserId ? `Active: ${activeUserId}` : "No active user"}
+                {activeUserId ? `Đang dùng: ${activeUserId}` : "Chưa có người dùng đang hoạt động"}
               </span>
             </div>
           </div>

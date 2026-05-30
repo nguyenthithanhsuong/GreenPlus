@@ -22,6 +22,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as {
       roleId?: string | null;
+      storeId?: string | null;
       name?: string;
       email?: string;
       password?: string;
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
 
     const created = await userManagementFacade.createUser({
       roleId: body.roleId,
+      storeId: body.storeId,
       name: body.name ?? "",
       email: body.email ?? "",
       password: body.password ?? "",

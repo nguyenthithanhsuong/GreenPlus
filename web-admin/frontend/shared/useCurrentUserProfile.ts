@@ -6,6 +6,7 @@ import { UserSummary } from "../../backend/modules/users/user-management.types";
 
 export type CurrentUserProfile = {
   userId: string;
+  storeId: string | null;
   name: string;
   email: string;
   phone: string;
@@ -71,6 +72,7 @@ export function useCurrentUserProfile() {
             previous?.address === matchedUser?.address &&
             previous?.image_url === matchedUser?.image_url &&
             previous?.role_name === matchedUser?.role_name &&
+            previous?.store_id === matchedUser?.store_id &&
             previous?.status === matchedUser?.status
           ) {
             return previous;
@@ -120,6 +122,7 @@ export function useCurrentUserProfile() {
 
     return {
       userId: dbUser?.user_id ?? storedUser?.user_id ?? "",
+      storeId: dbUser?.store_id ?? storedUser?.store_id ?? null,
       name,
       email: dbUser?.email ?? storedUser?.email ?? "",
       phone: dbUser?.phone ?? storedUser?.phone ?? "",

@@ -25,6 +25,18 @@ export type OrderSummary = {
   preview_images: string[];
 };
 
+export type PaymentHistoryItem = {
+  payment_id: string;
+  order_id: string;
+  order_date: string;
+  order_status: OrderStatus;
+  payment_method: PaymentMethod | "unknown";
+  payment_status: PaymentStatus;
+  amount: number;
+  transaction_id: string | null;
+  payment_date: string | null;
+};
+
 
 export type OrderItemDetail = {
   order_item_id: string;

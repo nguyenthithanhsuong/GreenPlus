@@ -104,12 +104,27 @@ export class ProductManagementService {
     return updated;
   }
 
-  async deleteProduct(productId: string): Promise<void> {
+  async deleteProduct(productId: string, force = false): Promise<void> {
     if (!productId.trim()) {
       throw new AppError("productId is required", 400);
     }
 
-    const deleted = await this.repository.deleteProduct(productId);
+    const existing = await this.repository.findById(productId);
+    if (!existing) {
+      throw new AppError("Product not found", 404);
+    }
+
+    if (!force) {
+      const dependencies = await this.repository.countBlockingDependencies(productId);
+      if (dependencies.total > 0) {
+        throw new AppError(
+          "Sản phẩm này đang có dữ liệu liên quan trong giỏ hàng, đơn hàng hoặc đăng ký định kỳ. Hãy dùng force delete để xóa toàn bộ dữ liệu liên quan.",
+          400,
+        );
+      }
+    }
+
+    const deleted = await this.repository.deleteProduct(productId, force);
     if (!deleted) {
       throw new AppError("Product not found", 404);
     }

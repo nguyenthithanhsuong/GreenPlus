@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, Check, Image as ImageIcon, MessageSquareText, PlaySquare, X } from "lucide-react";
-import { GreenCreatorPostRow } from "../../backend/modules/community/greencreator-content.types";
+import { GreenCreatorPostRow } from "../../backend/modules/greencreators/greencreator-content.types";
 
 type ContentDetailDrawerProps = {
   post: GreenCreatorPostRow | null;

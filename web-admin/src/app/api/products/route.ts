@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { ProductService } from "../../../../backend/modules/catalog/product.service";
 import { AppError } from "../../../../backend/core/errors";
+import { AuthService } from "../../../../backend/modules/auth/auth.service";
+import { requirePermissionForUser } from "../../../../backend/core/authorization";
 
 export async function GET() {
   try {
@@ -28,6 +30,22 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // verify session and permission
+    const authHeader = request.headers.get("authorization") ?? "";
+    let accessToken = "";
+    if (authHeader.toLowerCase().startsWith("bearer ")) accessToken = authHeader.slice("bearer ".length).trim();
+    const cookieHeader = request.headers.get("cookie") ?? "";
+    if (!accessToken) {
+      const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_portal_session=([^;]+)/);
+      accessToken = cookieMatch ? decodeURIComponent(cookieMatch[1]).trim() : "";
+    }
+
+    if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const authService = new AuthService();
+    const verified = await authService.verifySession(accessToken);
+    await requirePermissionForUser(verified.id, "products.create");
+
     const body = (await request.json()) as {
       categoryId?: string | null;
       name?: string;

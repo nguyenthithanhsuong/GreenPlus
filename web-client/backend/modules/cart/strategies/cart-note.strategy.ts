@@ -9,11 +9,11 @@ export interface CartNoteValidationStrategy {
 class DefaultCartNoteValidationStrategy implements CartNoteValidationStrategy {
   validate(note: string): void {
     if (note.length > 255) {
-      throw new AppError("MSG1: note must not exceed 255 characters", 400);
+      throw new AppError("Note must not exceed 255 characters", 400);
     }
 
     if (NOTE_PROHIBITED_REGEX.test(note)) {
-      throw new AppError("MSG2: note contains prohibited characters", 400);
+      throw new AppError("Note contains prohibited characters", 400);
     }
   }
 }

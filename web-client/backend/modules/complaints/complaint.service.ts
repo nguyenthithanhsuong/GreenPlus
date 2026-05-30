@@ -82,6 +82,31 @@ export class ComplaintService {
       rejectReason: created.reject_reason,
     };
   }
+
+  async listComplaintsByUser(userId: string): Promise<ComplaintCreatedResult[]> {
+    if (!userId || !userId.trim()) {
+      throw new AppError("userId is required", 400);
+    }
+
+    let rows;
+    try {
+      rows = await this.repository.listComplaintsByUser(userId.trim());
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Failed to list complaints", 500);
+    }
+
+    return (rows ?? []).map((r) => ({
+      complaintId: String(r.complaint_id),
+      userId: String(r.user_id),
+      orderId: String(r.order_id),
+      type: r.type,
+      description: String(r.description),
+      status: r.status,
+      createdAt: String(r.created_at),
+      resolvedAt: r.resolved_at,
+      rejectReason: r.reject_reason,
+    }));
+  }
 }
 
 export const complaintService = new ComplaintService();

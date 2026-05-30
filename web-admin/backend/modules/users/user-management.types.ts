@@ -3,6 +3,7 @@ export type UserStatus = "active" | "inactive" | "banned";
 export type UserRow = {
   user_id: string;
   role_id: string | null;
+  store_id: string | null;
   name: string;
   email: string;
   password: string;
@@ -19,6 +20,7 @@ export type UserRow = {
 export type UserSummary = {
   user_id: string;
   role_id: string | null;
+  store_id: string | null;
   role_name: string | null;
   name: string;
   email: string;
@@ -31,6 +33,7 @@ export type UserSummary = {
 
 export type CreateUserInput = {
   roleId?: string | null;
+  storeId?: string | null;
   name: string;
   email: string;
   password: string;
@@ -43,6 +46,7 @@ export type CreateUserInput = {
 export type UpdateUserInput = {
   userId: string;
   roleId?: string | null;
+  storeId?: string | null;
   name?: string;
   email?: string;
   phone?: string;

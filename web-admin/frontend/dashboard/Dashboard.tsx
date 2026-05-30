@@ -9,8 +9,8 @@ import AdminShell from "../shared/AdminShell";
 import { UserSummary } from "../../backend/modules/users/user-management.types";
 import { OrderListRow } from "../../backend/modules/orders/order-tracking.types";
 import { SupplierRow } from "../../backend/modules/suppliers/supplier-management.types";
-import { ComplaintRow } from "../../backend/modules/community/complaint-management.types";
-import { GreenCreatorPostRow } from "../../backend/modules/community/greencreator-content.types";
+import { ComplaintRow } from "../../backend/modules/complaints/complaint-management.types";
+import { GreenCreatorPostRow } from "../../backend/modules/greencreators/greencreator-content.types";
 
 type ApiItemsResponse<T> = {
   items?: T[];

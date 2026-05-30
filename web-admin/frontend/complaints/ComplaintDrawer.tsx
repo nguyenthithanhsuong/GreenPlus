@@ -1,6 +1,6 @@
 import React from "react";
 import { X } from "lucide-react";
-import type { ComplaintRow } from "../../backend/modules/community/complaint-management.types";
+import type { ComplaintRow } from "../../backend/modules/complaints/complaint-management.types";
 
 type Props = {
   open: boolean;

@@ -78,12 +78,12 @@ export default function BlogTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Backend Test: View Nutrition Blog</h1>
-        <p className="text-sm text-slate-600">Route tests via /api/blogs and /api/blogs/[postId].</p>
+        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Xem blog dinh dưỡng</h1>
+        <p className="text-sm text-slate-600">Kiểm tra route qua /api/blogs và /api/blogs/[postId].</p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            <input value={postId} onChange={(e) => setPostId(e.target.value)} placeholder="postId" className="rounded border border-slate-300 px-3 py-2 text-sm" />
+            <input value={postId} onChange={(e) => setPostId(e.target.value)} placeholder="mã bài viết" className="rounded border border-slate-300 px-3 py-2 text-sm" />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={() => void loadPublishedBlogs()} disabled={loading} className="rounded bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">Load Published Blogs</button>

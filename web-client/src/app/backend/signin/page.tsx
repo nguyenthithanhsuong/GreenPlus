@@ -51,7 +51,7 @@ export default function BackendSignInTestPage() {
         const message =
           typeof data === "object" && data !== null && "error" in data
             ? String((data as { error: string }).error)
-            : "Sign in request failed";
+            : "Không thể đăng nhập.";
         throw new Error(message);
       }
 
@@ -72,7 +72,7 @@ export default function BackendSignInTestPage() {
       }
     } catch (submitError) {
       setResult(null);
-      setError(submitError instanceof Error ? submitError.message : "Unexpected error");
+      setError(submitError instanceof Error ? submitError.message : "Đã xảy ra lỗi không mong muốn.");
     } finally {
       setLoading(false);
     }
@@ -82,26 +82,26 @@ export default function BackendSignInTestPage() {
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
       <div className="mx-auto max-w-3xl space-y-4">
         <section className="rounded-xl border border-slate-300 bg-white p-5">
-          <h1 className="text-2xl font-bold">Backend Test: Sign In</h1>
-          <p className="mt-2 text-sm text-slate-600">Use this page to test /api/auth/sign-in.</p>
+          <h1 className="text-2xl font-bold">Kiểm thử backend: Đăng nhập</h1>
+          <p className="mt-2 text-sm text-slate-600">Dùng trang này để kiểm tra /api/auth/sign-in.</p>
           <p className="mt-1 text-xs text-slate-500">Route: /backend/signin</p>
-          <p className="mt-1 text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
-          <p className="mt-1 text-xs text-slate-500">Stored token/session id: {activeToken ? "available" : "not set"}</p>
+          <p className="mt-1 text-xs text-slate-500">Người dùng kiểm thử hiện tại: {activeUserId || "chưa thiết lập"}</p>
+          <p className="mt-1 text-xs text-slate-500">Token/mã phiên đã lưu: {activeToken ? "đã có" : "chưa thiết lập"}</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/backend/register" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Go to Register Test
+              Đi tới kiểm thử đăng ký
             </Link>
             <Link href="/backend/profile" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Go to Profile Test
+              Đi tới kiểm thử hồ sơ
             </Link>
             <Link href="/backend/products" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
-              Product Backend Test
+              Kiểm thử backend sản phẩm
             </Link>
           </div>
         </section>
 
         <section className="rounded-xl border border-slate-300 bg-white p-5">
-          <h2 className="text-lg font-semibold">Sign In Form</h2>
+          <h2 className="text-lg font-semibold">Biểu mẫu đăng nhập</h2>
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <input
               value={email}
@@ -123,7 +123,7 @@ export default function BackendSignInTestPage() {
             disabled={loading}
             className="mt-4 rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </section>
 

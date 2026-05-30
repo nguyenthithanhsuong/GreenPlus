@@ -45,7 +45,6 @@ export default function GroupPurchaseTestPage() {
           setProductId((current) => current || products[0].product_id);
         }
       } catch {
-        // Keep page usable even if option loading fails.
       }
     };
 
@@ -181,15 +180,15 @@ export default function GroupPurchaseTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Backend Test: Group Purchases</h1>
-        <p className="text-sm text-slate-600">Route tests for create/join/list via /api/group-purchases.</p>
-        <p className="text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Mua chung</h1>
+        <p className="text-sm text-slate-600">Kiểm tra các route tạo/tham gia/danh sách qua /api/group-purchases.</p>
+        <p className="text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Create Group</h2>
+          <h2 className="text-sm font-semibold text-slate-900">Tạo nhóm</h2>
           <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
             <select value={productId} onChange={(e) => setProductId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
-              <option value="">Select product_id</option>
+              <option value="">Chọn product_id</option>
               {productOptions.map((product) => (
                 <option key={product.product_id} value={product.product_id}>
                   {product.name} ({product.product_id})

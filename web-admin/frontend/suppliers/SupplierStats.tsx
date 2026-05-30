@@ -11,7 +11,6 @@ type SupplierStatsProps = {
 const SupplierStats = ({ total, approved, pending, rejected }: SupplierStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Total */}
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
         <div className="p-3 bg-gray-50 rounded-full">
           <ListOrdered className="w-6 h-6 text-gray-600" />
@@ -22,7 +21,6 @@ const SupplierStats = ({ total, approved, pending, rejected }: SupplierStatsProp
         </div>
       </div>
 
-      {/* Active */}
       <div className="bg-white p-5 rounded-xl border border-emerald-50 shadow-sm flex items-center gap-4">
         <div className="p-3 bg-emerald-50 rounded-full">
           <CheckCircle2 className="w-6 h-6 text-emerald-600" />
@@ -33,9 +31,7 @@ const SupplierStats = ({ total, approved, pending, rejected }: SupplierStatsProp
         </div>
       </div>
 
-      {/* Pending */}
       <div className="bg-white p-5 rounded-xl border border-yellow-200 shadow-sm flex items-center gap-4 relative overflow-hidden">
-        {/* subtle highlight effect */}
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-yellow-400"></div>
         <div className="p-3 bg-yellow-50 rounded-full">
           <Clock className="w-6 h-6 text-yellow-600" />
@@ -46,7 +42,6 @@ const SupplierStats = ({ total, approved, pending, rejected }: SupplierStatsProp
         </div>
       </div>
 
-      {/* Rejected */}
       <div className="bg-white p-5 rounded-xl border border-red-100 shadow-sm flex items-center gap-4 relative overflow-hidden">
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-400"></div>
         <div className="p-3 bg-red-50 rounded-full">

@@ -1,15 +1,34 @@
 "use client";
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { User, Shield, Bell, LogOut } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Building2, Bell, LogOut, User } from 'lucide-react';
 import { supabase } from '../../src/lib/supabaseClient';
 import { useAuthStore } from '../../src/lib/stores/authStore';
+import { usePermissions } from '@/lib/usePermissions';
+import { useCurrentUserProfile } from '../shared/useCurrentUserProfile';
 
 const SettingsNav = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const { hasPermission, loading: permLoading } = usePermissions();
+  const { profile } = useCurrentUserProfile();
+
+  const goTo = (href: string) => {
+    router.push(href);
+  };
+
+  const getItemClassName = (isActive: boolean) => {
+    return `flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors text-left ${
+      isActive ? 'bg-emerald-50 text-[#059669]' : 'text-gray-600 hover:bg-gray-100'
+    }`;
+  };
+
+  const isExactOrNestedPath = (basePath: string) => {
+    return pathname === basePath || pathname.startsWith(`${basePath}/`);
+  };
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -17,7 +36,6 @@ const SettingsNav = () => {
     }
 
     setIsLoggingOut(true);
-    const CLIENT_APP_URL = process.env.NEXT_PUBLIC_WEB_CLIENT_URL ?? 'http://localhost:3000';
 
     try {
       await supabase.auth.signOut();
@@ -25,31 +43,43 @@ const SettingsNav = () => {
       clearAuth();
       await fetch('/api/auth/sync?portal=1', { method: 'DELETE' }).catch(() => undefined);
       setIsLoggingOut(false);
-      // Keep logout on the admin origin so the admin session stays local.
       window.location.replace('/login');
     }
   };
 
   return (
     <div className="w-full lg:w-64 shrink-0 flex flex-col gap-2">
-      {/* Active Link */}
-      <button className="flex items-center gap-3 px-4 py-3 bg-emerald-50 text-[#059669] rounded-xl font-bold text-sm transition-colors text-left">
+      <button
+        type="button"
+        onClick={() => goTo('/settings')}
+        className={getItemClassName(pathname === '/settings')}
+      >
         <User className="w-4 h-4" />
         Hồ sơ cá nhân
       </button>
       
-      {/* Inactive Links */}
-      <button className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-xl font-medium text-sm transition-colors text-left">
-        <Shield className="w-4 h-4" />
-        Bảo mật & Mật khẩu
+      <button
+        type="button"
+        onClick={() => goTo('/settings/store')}
+        className={getItemClassName(isExactOrNestedPath('/settings/store'))}
+      >
+        <Building2 className="w-4 h-4" />
+        Cửa hàng của tôi
       </button>
+      {
+        // show 'Các cửa hàng' only when user has stores.read permission
+      }
+      {!permLoading && profile?.roleName?.toLowerCase()?.includes('admin') && (
+        <button
+          type="button"
+          onClick={() => goTo('/settings/stores')}
+          className={getItemClassName(isExactOrNestedPath('/settings/stores'))}
+        >
+          <Building2 className="w-4 h-4" />
+          Các cửa hàng
+        </button>
+      )}
       
-      <button className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-xl font-medium text-sm transition-colors text-left">
-        <Bell className="w-4 h-4" />
-        Cài đặt thông báo
-      </button>
-      
-      {/* Separator & Logout */}
       <div className="my-2 border-t border-gray-200"></div>
       
       <button

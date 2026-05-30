@@ -125,6 +125,23 @@ export class OrderTrackingRepository {
     return data ? this.toOrderDetailRow(data as OrderDbRow) : null;
   }
 
+  async updatePaymentStatus(input: {
+    orderId: string;
+    status: PaymentStatus;
+  }): Promise<void> {
+    const { error } = await this.supabase
+      .from("payments")
+      .update({
+        status: input.status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("order_id", input.orderId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
   async appendTracking(input: {
     orderId: string;
     status: OrderStatus;

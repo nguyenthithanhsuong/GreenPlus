@@ -48,7 +48,6 @@ export default function ProductReviewTestPage() {
           setProductId((current) => current || products[0].product_id);
         }
       } catch {
-        // Khong chan test page neu options load that bai.
       }
     };
 
@@ -96,25 +95,25 @@ export default function ProductReviewTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-3xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Backend Test: Product Review</h1>
-        <p className="text-sm text-slate-600">Route test for use case 34 via /api/reviews.</p>
-        <p className="text-xs text-slate-500">Active test user: {activeUserId || "not set"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Đánh giá sản phẩm</h1>
+        <p className="text-sm text-slate-600">Kiểm tra route cho use case 34 qua /api/reviews.</p>
+        <p className="text-xs text-slate-500">Người dùng kiểm thử đang актив: {activeUserId || "chưa thiết lập"}</p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2">
             <select value={productId} onChange={(e) => setProductId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
-              <option value="">Select product_id</option>
+              <option value="">Chọn product_id</option>
               {productOptions.map((product) => (
                 <option key={product.product_id} value={product.product_id}>
                   {product.name} ({product.product_id})
                 </option>
               ))}
             </select>
-            <input value={rating} onChange={(e) => setRating(e.target.value)} placeholder="rating 1..5" className="rounded border border-slate-300 px-3 py-2 text-sm" />
-            <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="comment (max 500)" className="rounded border border-slate-300 px-3 py-2 text-sm" rows={4} />
+            <input value={rating} onChange={(e) => setRating(e.target.value)} placeholder="đánh giá 1..5" className="rounded border border-slate-300 px-3 py-2 text-sm" />
+            <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="bình luận (tối đa 500 ký tự)" className="rounded border border-slate-300 px-3 py-2 text-sm" rows={4} />
           </div>
           <button onClick={() => void submit()} disabled={loading} className="mt-3 rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60">
-            {loading ? "Submitting..." : "Submit Review"}
+            {loading ? "Đang gửi..." : "Gửi đánh giá"}
           </button>
         </section>
 

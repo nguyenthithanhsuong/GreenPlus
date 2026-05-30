@@ -2,10 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-/**
- * Health check endpoint for uptime monitoring and load balancer checks
- * Returns 200 OK with service status
- */
+
 export async function GET() {
   try {
     const timestamp = new Date().toISOString();

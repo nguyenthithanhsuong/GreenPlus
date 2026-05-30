@@ -1,10 +1,12 @@
 import React, { useDeferredValue } from 'react';
+import { usePermissions } from "@/lib/usePermissions";
 import { Edit, Eye, Lock, Trash2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { userSearchStrategy } from '../shared/searchStrategies';
 
 export type UserViewModel = {
   user_id: string;
   role_id: string | null;
+  store_id: string | null;
   role_name: string | null;
   name: string;
   email: string;
@@ -20,14 +22,13 @@ type UserTableProps = {
   loading: boolean;
   saving: boolean;
   customerRoleId: string | null;
-  onAddUser: () => void;
+  storeOptions: Array<{ storeId: string; storeName: string }>;
   onViewUser: (user: UserViewModel) => void;
   onEditUser: (user: UserViewModel) => void;
   onRequestDisableUser: (user: UserViewModel) => void;
   onRequestDeleteUser: (user: UserViewModel) => void;
 };
 
-// Helper to render role badges with specific colors
 const renderRoleBadge = (role: string) => {
   const styles: Record<string, string> = {
     Admin: 'bg-purple-100 text-purple-700',
@@ -43,9 +44,9 @@ const renderRoleBadge = (role: string) => {
 };
 
 const mapStatusLabel = (status: UserViewModel['status']) => {
-  if (status === 'active') return 'Active';
-  if (status === 'inactive') return 'Inactive';
-  return 'Banned';
+  if (status === 'active') return 'Đang hoạt động';
+  if (status === 'inactive') return 'Không hoạt động';
+  return 'Bị cấm';
 };
 
 const mapStatusClass = (status: UserViewModel['status']) => {
@@ -91,7 +92,7 @@ const UserTable = ({
   loading,
   saving,
   customerRoleId,
-  onAddUser,
+  storeOptions,
   onViewUser,
   onEditUser,
   onRequestDisableUser,
@@ -152,20 +153,26 @@ const UserTable = ({
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
   const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const storeNameById = React.useMemo(
+    () => new Map(storeOptions.map((store) => [store.storeId, store.storeName])),
+    [storeOptions]
+  );
+  const { hasPermission } = usePermissions();
+  const canViewGlobal = hasPermission('users.read');
+  const canEditGlobal = hasPermission('users.update');
+  const canBanGlobal = hasPermission('users.update');
+  const canDeleteGlobal = hasPermission('users.delete');
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
       
-      {/* Table Top Controls: Tabs & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-50 gap-4">
-        {/* Tabs */}
         <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg">
           <button onClick={() => setActiveTab('all')} className={`px-4 py-1.5 text-sm font-medium rounded-md ${activeTab === 'all' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>Tất cả</button>
           <button onClick={() => setActiveTab('customer')} className={`px-4 py-1.5 text-sm font-medium rounded-md ${activeTab === 'customer' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>Khách hàng</button>
           <button onClick={() => setActiveTab('staff')} className={`px-4 py-1.5 text-sm font-medium rounded-md ${activeTab === 'staff' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>Nhân viên & Quản trị</button>
         </div>
 
-        {/* Filters (Placeholders) */}
         <div className="flex items-center gap-2">
           <div className="relative hidden sm:block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -173,30 +180,21 @@ const UserTable = ({
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               type="text"
-              placeholder="Tìm theo tên, email, role..."
+              placeholder="Tìm theo tên, email, vai trò..."
               className="h-9 w-64 rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
-          <button
-            onClick={() => {
-              onAddUser();
-            }}
-            disabled={saving}
-            className="h-9 px-4 border border-emerald-600 rounded-lg bg-emerald-600 text-white text-sm font-semibold disabled:opacity-60"
-          >
-            Thêm User
-          </button>
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 font-medium">Tài khoản</th>
               <th className="px-6 py-4 font-medium">Số điện thoại</th>
-              <th className="px-6 py-4 font-medium">Vai trò (Role)</th>
+              <th className="px-6 py-4 font-medium">Vai trò</th>
+              <th className="px-6 py-4 font-medium">Cửa hàng</th>
               <th className="px-6 py-4 font-medium">Ngày tham gia</th>
               <th className="px-6 py-4 font-medium">Trạng thái</th>
               <th className="px-6 py-4 font-medium text-right">Thao tác</th>
@@ -205,13 +203,13 @@ const UserTable = ({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Đang tải danh sách người dùng...</td>
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">Đang tải danh sách người dùng...</td>
               </tr>
             )}
 
             {!loading && filteredUsers.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Không có dữ liệu người dùng.</td>
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">Không có dữ liệu người dùng.</td>
               </tr>
             )}
 
@@ -234,6 +232,7 @@ const UserTable = ({
                 </td>
                 <td className="px-6 py-4 text-gray-600">{user.phone ?? '-'}</td>
                 <td className="px-6 py-4">{renderRoleBadge(user.role_name ?? 'Customer')}</td>
+                <td className="px-6 py-4 text-gray-600">{user.store_id ? storeNameById.get(user.store_id) ?? 'Không gán' : 'Không gán'}</td>
                 <td className="px-6 py-4 text-gray-600">{formatDate(user.created_at)}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-1.5">
@@ -243,13 +242,19 @@ const UserTable = ({
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => onViewUser(user)} className="p-2 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors" title="Xem chi tiết" disabled={saving}>
+                    {canViewGlobal && (
+                      <button onClick={() => onViewUser(user)} className="p-2 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors" title="Xem chi tiết" disabled={saving}>
                       <Eye className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => onEditUser(user)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title="Sửa" disabled={saving}>
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    {(user.role_name ?? '').toLowerCase() !== 'admin' && (
+                      </button>
+                    )}
+
+                    {canEditGlobal && (
+                      <button onClick={() => onEditUser(user)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title="Sửa" disabled={saving}>
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {canBanGlobal && (user.role_name ?? '').toLowerCase() !== 'admin' && (
                       <button
                         onClick={() => onRequestDisableUser(user)}
                         className={`p-2 rounded-lg transition-colors ${
@@ -263,9 +268,12 @@ const UserTable = ({
                         <Lock className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => onRequestDeleteUser(user)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Xóa" disabled={saving}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+
+                    {canDeleteGlobal && (
+                      <button onClick={() => onRequestDeleteUser(user)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Xóa" disabled={saving}>
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -274,7 +282,6 @@ const UserTable = ({
         </table>
       </div>
 
-      {/* Pagination Footer */}
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
         <span className="text-sm text-gray-500">
           Hiển thị <span className="font-bold text-gray-900">{startItem} - {endItem}</span> trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>

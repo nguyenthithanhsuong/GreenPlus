@@ -4,11 +4,17 @@ import React from "react";
 import { CalendarDays, Package, Tag, Trash2, X } from "lucide-react";
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 
+export type BatchOption = {
+  batchId: string;
+  productName: string | null;
+  importPrice: number | null;
+};
+
 export type PriceFormValues = {
   batchId: string;
   price: string;
   date: string;
-  status: PriceRow["status"] | ""; // ✅ added
+  status: PriceRow["status"] | ""; 
 };
 
 export type PriceDrawerMode = "create" | "edit" | "delete";
@@ -20,6 +26,7 @@ type PriceDrawerProps = {
   error: string | null;
   selectedPrice: PriceRow | null;
   form: PriceFormValues;
+  batchOptions: BatchOption[];
   onClose: () => void;
   onSubmit: () => void;
   onChange: (patch: Partial<PriceFormValues>) => void;
@@ -27,6 +34,14 @@ type PriceDrawerProps = {
 
 const formatCurrency = (value: number): string => {
   return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(value)} đ`;
+};
+
+const formatCompactCurrency = (value: number | null): string => {
+  if (value === null) {
+    return "-";
+  }
+
+  return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(value)} đ`;
 };
 
 const titleByMode: Record<PriceDrawerMode, string> = {
@@ -41,7 +56,6 @@ const actionByMode: Record<PriceDrawerMode, string> = {
   delete: "Xác nhận xóa",
 };
 
-// ✅ status options
 const STATUS_OPTIONS = [
   { value: "pending", label: "Chờ áp dụng" },
   { value: "active", label: "Đang áp dụng" },
@@ -55,6 +69,7 @@ const PriceDrawer = ({
   error,
   selectedPrice,
   form,
+  batchOptions,
   onClose,
   onSubmit,
   onChange,
@@ -62,6 +77,13 @@ const PriceDrawer = ({
   if (!isOpen) {
     return null;
   }
+
+  const batchListId = "price-batch-options";
+  const selectedBatch = batchOptions.find((batch) => batch.batchId === form.batchId) ?? null;
+  const salePrice = Number(form.price);
+  const importPrice = selectedBatch?.importPrice ?? null;
+  const profit = importPrice !== null && Number.isFinite(salePrice) ? salePrice - importPrice : null;
+  const marginPercent = importPrice !== null && profit !== null && importPrice > 0 ? (profit / importPrice) * 100 : null;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -106,7 +128,7 @@ const PriceDrawer = ({
                     <p><span className="font-semibold">Sản phẩm:</span> {selectedPrice?.product_name ?? "Chưa gán sản phẩm"}</p>
                     <p><span className="font-semibold">Giá:</span> {selectedPrice ? formatCurrency(selectedPrice.price) : "-"}</p>
                     <p><span className="font-semibold">Ngày áp dụng:</span> {selectedPrice?.date ?? "-"}</p>
-                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice?.status ?? "-"}</p> {/* ✅ */}
+                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice?.status ?? "-"}</p> 
                   </div>
                 </div>
               </div>
@@ -125,12 +147,53 @@ const PriceDrawer = ({
                     <input
                       value={form.batchId}
                       onChange={(event) => onChange({ batchId: event.target.value })}
+                      list={batchListId}
                       type="text"
-                      placeholder="Nhập batch_id hoặc để trống"
-                      className="w-full rounded-md border border-gray-300 px-10 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                      placeholder="Nhập batch_id hoặc chọn từ danh sách"
+                      className="w-full rounded-md border border-gray-300 bg-white px-10 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                     />
                   </div>
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    Bạn có thể gõ batch_id hoặc chọn nhanh từ danh sách gợi ý theo batch và tên sản phẩm.
+                  </p>
+                  <datalist id={batchListId}>
+                    <option value="">Áp dụng chung cho toàn bộ bảng giá</option>
+                    {batchOptions.map((batch) => (
+                      <option key={batch.batchId} value={batch.batchId} label={`${batch.batchId}${batch.productName ? ` - ${batch.productName}` : ""}`}>
+                        {batch.batchId}
+                        {batch.productName ? ` - ${batch.productName}` : ""}
+                      </option>
+                    ))}
+                  </datalist>
                 </div>
+
+                {mode === "create" ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Giá nhập lô hàng</p>
+                      <p className="mt-2 text-2xl font-bold text-gray-900">
+                        {selectedBatch ? formatCompactCurrency(selectedBatch.importPrice) : "-"}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {selectedBatch ? `Batch ${selectedBatch.batchId}${selectedBatch.productName ? ` - ${selectedBatch.productName}` : ""}` : "Chọn batch để xem giá nhập hiện tại."}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Lợi nhuận dự kiến</p>
+                      <p className={`mt-2 text-2xl font-bold ${profit === null ? "text-gray-900" : profit >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                        {profit === null ? "-" : formatCompactCurrency(profit)}
+                      </p>
+                      <p className="mt-1 text-xs text-emerald-700/80">
+                        {selectedBatch
+                          ? marginPercent === null
+                            ? "Không thể tính biên lợi nhuận khi giá nhập bằng 0."
+                            : `Biên lợi nhuận: ${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(marginPercent)}%`
+                          : "Nhập batch và giá bán để so sánh lợi nhuận."}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div>
                   <label className="mb-1.5 block text-sm font-bold text-gray-800">
@@ -165,14 +228,17 @@ const PriceDrawer = ({
                   </div>
                 </div>
 
-                {/* ✅ STATUS (same style as inputs) */}
                 <div>
                   <label className="mb-1.5 block text-sm font-bold text-gray-800">
                     Trạng thái
                   </label>
                   <select
-                    value={form.status}
-                    onChange={(event) => onChange({ status: event.target.value })}
+                    value={form.status ?? ""}
+                    onChange={(event) =>
+                      onChange({
+                        status: event.target.value as PriceRow["status"] | "",
+                      })
+                    }
                     className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                   >
                     <option value="">Chọn trạng thái</option>
@@ -190,7 +256,7 @@ const PriceDrawer = ({
                     <p><span className="font-semibold">Mã giá:</span> {selectedPrice.price_id}</p>
                     <p><span className="font-semibold">Sản phẩm:</span> {selectedPrice.product_name ?? "Chưa gán sản phẩm"}</p>
                     <p><span className="font-semibold">Supplier:</span> {selectedPrice.supplier_name ?? "-"}</p>
-                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice.status ?? "-"}</p> {/* ✅ */}
+                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice.status ?? "-"}</p>
                   </div>
                 ) : null}
               </form>

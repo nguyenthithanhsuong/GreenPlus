@@ -10,6 +10,10 @@ export class ComplaintFacade {
   async submitComplaint(input: CreateComplaintInput): Promise<ComplaintCreatedResult> {
     return this.service.createComplaint(input);
   }
+
+  async listComplaintsByUser(userId: string): Promise<ComplaintCreatedResult[]> {
+    return this.service.listComplaintsByUser(userId);
+  }
 }
 
 export const complaintFacade = new ComplaintFacade();

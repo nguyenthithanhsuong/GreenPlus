@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS inventory (
 CREATE TABLE IF NOT EXISTS inventory_transactions (
   transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   batch_id UUID NOT NULL REFERENCES batches(batch_id) ON DELETE CASCADE,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('in', 'out', 'adjustment')),
+  type VARCHAR(20) NOT NULL CHECK (type IN ('in', 'out', 'adjustment', 'adjust_in', 'adjust_out')),
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   note VARCHAR(255),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
