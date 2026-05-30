@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 import { useAuthStore } from "@/lib/stores/authStore";
 import {
   SCREEN_BACKGROUND_GRADIENT,
@@ -459,7 +460,7 @@ function getInitials(name: string): string {
     .join("");
 }
 
-export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps) {
+function BaseGreenCreatorDetails({ postId }: GreenCreatorDetailsProps) {
   const [allPosts, setAllPosts] = useState<CommunityPostItem[]>([]);
   const [profileByUserId, setProfileByUserId] = useState<Record<string, ProfileResult>>({});
   const [interactions, setInteractions] = useState<CommunityPostInteractionItem[]>([]);
@@ -1194,3 +1195,7 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
     </main>
   );
 }
+
+export default compose(
+  withErrorBoundary
+)(BaseGreenCreatorDetails);

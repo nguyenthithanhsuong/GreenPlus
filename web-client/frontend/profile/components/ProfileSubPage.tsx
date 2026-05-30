@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import NavigationBar from "../../dashboard/components/NavigationBar";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -77,7 +78,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function ProfileSubPage({ title, description }: ProfileSubPageProps) {
+function BaseProfileSubPage({ title, description }: ProfileSubPageProps) {
   return (
     <div style={styles.page}>
       <div style={styles.container}>
@@ -102,3 +103,7 @@ export default function ProfileSubPage({ title, description }: ProfileSubPagePro
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary
+)(BaseProfileSubPage);

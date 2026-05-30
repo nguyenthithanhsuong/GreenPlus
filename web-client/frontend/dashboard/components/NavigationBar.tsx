@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 import { SCREEN_MAX_WIDTH_PX, SCREEN_SIDE_PADDING_PX } from "../../shared/screen.styles";
 
 type NavItem = {
@@ -125,7 +126,7 @@ const navItems: NavItem[] = [
   },
 ];
 
-const NavigationBar = () => {
+function BaseNavigationBar() {
   const pathname = usePathname();
 
   return (
@@ -153,6 +154,6 @@ const NavigationBar = () => {
       </div>
     </nav>
   );
-};
+}
 
-export default NavigationBar;
+export default compose(withErrorBoundary)(BaseNavigationBar);

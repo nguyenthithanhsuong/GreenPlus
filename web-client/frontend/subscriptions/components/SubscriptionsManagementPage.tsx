@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -468,10 +469,8 @@ function statusBadgeStyle(value: string): CSSProperties {
   return { background: "#F3F4F6", borderColor: "#D1D5DB", color: "#4B5563" };
 }
 
-export default function SubscriptionsManagementPage() {
+function BaseSubscriptionsManagementPage() {
   const router = useRouter();
-  const initialized = useAuthStore((state) => state.initialized);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
   const [products, setProducts] = useState<ProductOption[]>([]);
@@ -549,12 +548,7 @@ export default function SubscriptionsManagementPage() {
   };
 
   useEffect(() => {
-    if (!initialized) {
-      return;
-    }
-
-    if (!isAuthenticated || !user) {
-      router.replace("/login");
+    if (!user) {
       return;
     }
 
@@ -564,7 +558,7 @@ export default function SubscriptionsManagementPage() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, user]);
+  }, [user]);
 
   const handleCreate = async () => {
     if (!user?.user_id || !productId) {
@@ -686,21 +680,7 @@ export default function SubscriptionsManagementPage() {
     }
   };
 
-  if (!initialized) {
-    return (
-      <div style={styles.page}>
-        <div style={styles.container}>
-          <main style={styles.mainContent}>
-            <p style={styles.infoText}>Đang kiểm tra phiên đăng nhập...</p>
-          </main>
-        </div>
-      </div>
-    );
-  }
 
-  if (!isAuthenticated || !user) {
-    return null;
-  }
 
   return (
     <div style={styles.page}>
@@ -981,3 +961,8 @@ export default function SubscriptionsManagementPage() {
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary,
+  (Component) => withAuth(Component, "user")
+)(BaseSubscriptionsManagementPage);

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import NavigationBar from "../../../../frontend/dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { supabase } from "@/lib/supabaseClient";
-import ConfirmActionDialog from '../../../../frontend/shared/ConfirmActionDialog';
+import ConfirmationActionDialog from '../../../../frontend/shared/ConfirmationActionDialog';
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -286,13 +286,13 @@ export default function LockAccountPage() {
 
         <NavigationBar />
 
-        <ConfirmActionDialog
+        <ConfirmationActionDialog
           open={confirmOpen}
           title="Xác nhận khóa tài khoản"
           message="Bạn chắc chắn muốn khóa tài khoản này và đăng xuất ngay bây giờ? Hành động này sẽ đặt trạng thái tài khoản về 'inactive'."
           confirmLabel="Khóa và đăng xuất"
-          confirmVariant="danger"
-          loading={processing}
+          confirmTone="danger"
+          busy={processing}
           onCancel={() => setConfirmOpen(false)}
           onConfirm={async () => {
             setConfirmOpen(false);

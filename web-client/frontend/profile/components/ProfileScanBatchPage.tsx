@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import jsQR from "jsqr";
 import NavigationBar from "../../dashboard/components/NavigationBar";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -251,7 +252,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function ProfileScanBatchPage() {
+function BaseProfileScanBatchPage() {
   const [batchIdInput, setBatchIdInput] = useState("");
   const [scanStatus, setScanStatus] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -619,3 +620,7 @@ export default function ProfileScanBatchPage() {
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary
+)(BaseProfileScanBatchPage);

@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/authStore";
 import NavigationBar from "../../dashboard/components/NavigationBar";
+import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -166,7 +166,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function CreateGroupPurchasePage() {
+function BaseCreateGroupPurchasePage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -177,7 +177,10 @@ export default function CreateGroupPurchasePage() {
   const [deadline, setDeadline] = useState("");
   const authUser = useAuthStore((state) => state.user);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -190,7 +193,10 @@ export default function CreateGroupPurchasePage() {
           setProductId(productList[0].product_id);
         }
       } catch {
-        setMessage({ type: "error", text: "Không thể tải danh sách sản phẩm." });
+        setMessage({
+          type: "error",
+          text: "Không thể tải danh sách sản phẩm.",
+        });
       } finally {
         setLoadingProducts(false);
       }
@@ -198,6 +204,8 @@ export default function CreateGroupPurchasePage() {
 
     void loadData();
   }, []);
+
+  // Set default deadline to tomorrow
   useEffect(() => {
     if (!deadline) {
       const tomorrow = new Date();
@@ -211,13 +219,11 @@ export default function CreateGroupPurchasePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!authUser?.user_id) {
-      setMessage({ type: "error", text: "Vui lòng đăng nhập để tạo nhóm mua chung." });
-      return;
-    }
-
     if (!productId || !targetQuantity || !minQuantity || !deadline) {
-      setMessage({ type: "error", text: "Vui lòng điền đầy đủ thông tin bắt buộc." });
+      setMessage({
+        type: "error",
+        text: "Vui lòng điền đầy đủ thông tin bắt buộc.",
+      });
       return;
     }
 
@@ -232,16 +238,21 @@ export default function CreateGroupPurchasePage() {
         },
         body: JSON.stringify({
           action: "create",
-          userId: authUser.user_id,
+          userId: authUser?.user_id ?? "",
           productId,
           targetQuantity: Number(targetQuantity),
           minQuantity: Number(minQuantity),
-          discountPrice: discountPrice.trim() ? Number(discountPrice) : undefined,
+          discountPrice: discountPrice.trim()
+            ? Number(discountPrice)
+            : undefined,
           deadline: new Date(deadline).toISOString(),
         }),
       });
 
-      const data = (await response.json()) as { group_id?: string; error?: string };
+      const data = (await response.json()) as {
+        group_id?: string;
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error || "Không thể tạo nhóm mua chung.");
@@ -256,7 +267,8 @@ export default function CreateGroupPurchasePage() {
     } catch (err) {
       setMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Không thể tạo nhóm mua chung.",
+        text:
+          err instanceof Error ? err.message : "Không thể tạo nhóm mua chung.",
       });
     } finally {
       setSubmitting(false);
@@ -278,7 +290,13 @@ export default function CreateGroupPurchasePage() {
             aria-label="Quay lại"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
           <h1 style={styles.title}>Tạo nhóm mua chung</h1>
@@ -286,31 +304,14 @@ export default function CreateGroupPurchasePage() {
         </header>
 
         <main style={styles.mainContent}>
-          {!authUser?.user_id ? (
-            <div style={styles.section}>
-              <div style={{
-                padding: "16px",
-                borderRadius: "12px",
-                background: "#FEE2E2",
-                color: "#B91C1C",
-                textAlign: "center" as const,
-              }}>
-                <p style={{ margin: 0, marginBottom: "8px" }}>Bạn cần đăng nhập để tạo nhóm mua chung</p>
-                <Link href="/login" style={{
-                  color: "#B91C1C",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                }}>
-                  → Đi đến đăng nhập
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Thông tin nhóm mua chung</h2>
-              <p style={styles.hint}>Nhập thông tin để tạo một nhóm mua chung mới.</p>
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>Thông tin nhóm mua chung</h2>
+            <p style={styles.hint}>
+              Nhập thông tin để tạo một nhóm mua chung mới.
+            </p>
 
-              <form onSubmit={(e) => void handleSubmit(e)}>
+            <form onSubmit={(e) => void handleSubmit(e)}>
+              {/* Product Selection */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="product">
                   Sản phẩm *
@@ -327,7 +328,10 @@ export default function CreateGroupPurchasePage() {
                   >
                     <option value="">-- Chọn sản phẩm --</option>
                     {products.map((product) => (
-                      <option key={product.product_id} value={product.product_id}>
+                      <option
+                        key={product.product_id}
+                        value={product.product_id}
+                      >
                         {product.name}
                       </option>
                     ))}
@@ -335,6 +339,7 @@ export default function CreateGroupPurchasePage() {
                 )}
               </div>
 
+              {/* Target Quantity */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="targetQuantity">
                   Số lượng mục tiêu *
@@ -349,9 +354,12 @@ export default function CreateGroupPurchasePage() {
                   disabled={submitting}
                   placeholder="Ví dụ: 10"
                 />
-                <p style={styles.hint}>Số lượng cần đạt để hoàn thành đơn hàng</p>
+                <p style={styles.hint}>
+                  Số lượng cần đạt để hoàn thành đơn hàng
+                </p>
               </div>
 
+              {/* Min Quantity */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="minQuantity">
                   Số lượng tối thiểu *
@@ -369,6 +377,7 @@ export default function CreateGroupPurchasePage() {
                 <p style={styles.hint}>Số lượng tối thiểu để giao hàng</p>
               </div>
 
+              {/* Discount Price */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="discountPrice">
                   Giá ưu đãi (VNĐ)
@@ -383,9 +392,12 @@ export default function CreateGroupPurchasePage() {
                   disabled={submitting}
                   placeholder="Ví dụ: 50000"
                 />
-                <p style={styles.hint}>Giá ưu đãi nếu đạt số lượng mục tiêu (không bắt buộc)</p>
+                <p style={styles.hint}>
+                  Giá ưu đãi nếu đạt số lượng mục tiêu (không bắt buộc)
+                </p>
               </div>
 
+              {/* Deadline */}
               <div style={styles.formGroup}>
                 <label style={styles.label} htmlFor="deadline">
                   Hạn chót *
@@ -401,12 +413,20 @@ export default function CreateGroupPurchasePage() {
                 <p style={styles.hint}>Thời gian kết thúc nhóm mua chung</p>
               </div>
 
+              {/* Messages */}
               {message && (
-                <div style={message.type === "success" ? styles.messageSuccess : styles.messageError}>
+                <div
+                  style={
+                    message.type === "success"
+                      ? styles.messageSuccess
+                      : styles.messageError
+                  }
+                >
                   {message.text}
                 </div>
               )}
 
+              {/* Buttons */}
               <div style={styles.buttonGroup}>
                 <button
                   type="button"
@@ -421,16 +441,16 @@ export default function CreateGroupPurchasePage() {
                   style={{
                     ...styles.button,
                     opacity: submitting || !productId ? 0.6 : 1,
-                    cursor: submitting || !productId ? "not-allowed" : "pointer",
+                    cursor:
+                      submitting || !productId ? "not-allowed" : "pointer",
                   }}
                   disabled={submitting || !productId}
                 >
                   {submitting ? "Đang tạo..." : "Tạo nhóm"}
                 </button>
               </div>
-              </form>
-            </div>
-          )}
+            </form>
+          </div>
         </main>
 
         <NavigationBar />
@@ -438,3 +458,7 @@ export default function CreateGroupPurchasePage() {
     </div>
   );
 }
+
+export default compose(withErrorBoundary, (Component) =>
+  withAuth(Component, "user"),
+)(BaseCreateGroupPurchasePage);

@@ -5,6 +5,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "./NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { ProductService, CartService } from "@/lib/singleton";
+import { ProductMapper, type ProductBrowseUIModel } from "@/lib/mapper";
+import { compose, withErrorBoundary } from "@/lib";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -17,28 +20,6 @@ type CategoryItem = {
   categoryId: string;
   name: string;
   imageUrl: string | null;
-};
-
-type CategoriesResponse = {
-  total: number;
-  items: CategoryItem[];
-};
-
-type ProductItem = {
-  productId: string;
-  name: string;
-  imageUrl: string | null;
-  categoryId: string | null;
-  categoryName: string | null;
-  price: number | null;
-  isAvailable: boolean;
-};
-
-type ProductsResponse = {
-  page: number;
-  limit: number;
-  total: number;
-  items: ProductItem[];
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -397,22 +378,27 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-const Dashboard = () => {
+const BaseDashboard = () => {
   const router = useRouter();
   const { isAuthenticated, user: authUser } = useAuthStore();
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [categoryError, setCategoryError] = useState<string | null>(null);
-  const [brokenImageIds, setBrokenImageIds] = useState<Record<string, boolean>>({});
-  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [brokenImageIds, setBrokenImageIds] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [products, setProducts] = useState<ProductBrowseUIModel[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
   const [categoryColumns, setCategoryColumns] = useState(4);
   const [searchValue, setSearchValue] = useState("");
-  const [cartActionMessage, setCartActionMessage] = useState<string | null>(null);
+  const [cartActionMessage, setCartActionMessage] = useState<string | null>(
+    null,
+  );
   const [cartActionLoading, setCartActionLoading] = useState(false);
 
   useEffect(() => {
+    // Add animation styles globally
     const style = document.createElement("style");
     style.innerHTML = `
       @keyframes slideUp {
@@ -444,29 +430,21 @@ const Dashboard = () => {
 
     setCartActionLoading(true);
     try {
-      const response = await fetch("/api/cart", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: authUser.user_id,
-          productId,
-          quantity: 1,
-        }),
+      await CartService.addToCart({
+        userId: authUser.user_id,
+        productId,
+        quantity: 1,
       });
 
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error || "Không thể thêm sản phẩm vào giỏ hàng.");
-      }
-
-      const product = products.find((p) => p.productId === productId);
+      const product = products.find((p) => p.id === productId);
       const productName = product?.name || "sản phẩm";
       setCartActionMessage(`Đã thêm ${productName} vào Giỏ hàng!`);
       setTimeout(() => setCartActionMessage(null), 4000);
     } catch (requestError) {
-      const errorMsg = requestError instanceof Error ? requestError.message : "Không thể thêm sản phẩm vào giỏ hàng.";
+      const errorMsg =
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể thêm sản phẩm vào giỏ hàng.";
       setCartActionMessage(errorMsg);
       setTimeout(() => setCartActionMessage(null), 4000);
     } finally {
@@ -500,83 +478,64 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-
     const loadCategories = async () => {
       setLoadingCategories(true);
       setCategoryError(null);
 
       try {
-        const response = await fetch("/api/categories?sort=name_asc", { signal: controller.signal });
-        const data = (await response.json()) as CategoriesResponse | { error?: string };
-
-        if (!response.ok) {
-          const message = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
-          throw new Error(message || "Không thể tải danh mục.");
-        }
-
-        setCategories((data as CategoriesResponse).items ?? []);
+        const data = await ProductService.getProducts({ sort: "name_asc" });
+        const items = Array.isArray(data.items) ? data.items : [];
+        setCategories(
+          items.slice(0, 10).map((item) => ({
+            categoryId: item.categoryId || "",
+            name: item.categoryName || item.name,
+            imageUrl: item.imageUrl,
+          })),
+        );
       } catch (requestError) {
-        if ((requestError as Error).name === "AbortError") {
-          return;
-        }
-
         setCategories([]);
-        setCategoryError(requestError instanceof Error ? requestError.message : "Không thể tải danh mục.");
+        setCategoryError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải danh mục.",
+        );
       } finally {
         setLoadingCategories(false);
       }
     };
 
     void loadCategories();
-
-    return () => {
-      controller.abort();
-    };
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-
     const loadProducts = async () => {
       setLoadingProducts(true);
       setProductsError(null);
 
       try {
-        const query = new URLSearchParams();
-        query.set("sort", "newest");
-        query.set("limit", "8");
-
-        if (searchValue.trim()) {
-          query.set("keyword", searchValue.trim());
-        }
-
-        const response = await fetch(`/api/products?${query.toString()}`, { signal: controller.signal });
-        const data = (await response.json()) as ProductsResponse | { error?: string };
-
-        if (!response.ok) {
-          const message = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
-          throw new Error(message || "Không thể tải sản phẩm.");
-        }
-
-        setProducts((data as ProductsResponse).items ?? []);
+        const data = await ProductService.getProducts({
+          keyword: searchValue.trim() || undefined,
+          sort: "newest",
+          limit: 8,
+        });
+        setProducts(
+          Array.isArray(data.items)
+            ? data.items.map((item) => ProductMapper.toBrowseUIModel(item))
+            : [],
+        );
       } catch (requestError) {
-        if ((requestError as Error).name === "AbortError") {
-          return;
-        }
-
         setProducts([]);
-        setProductsError(requestError instanceof Error ? requestError.message : "Không thể tải sản phẩm.");
+        setProductsError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải sản phẩm.",
+        );
       } finally {
         setLoadingProducts(false);
       }
     };
 
     void loadProducts();
-
-    return () => {
-      controller.abort();
-    };
   }, [searchValue]);
 
   const runSearch = () => {
@@ -595,17 +554,15 @@ const Dashboard = () => {
 
   const displayCategories = useMemo(
     () => [
-      {
-        categoryId: "all",
-        name: "Tất cả",
-        description: null,
-        imageUrl: "https://ujgnuwlljslwokblmrwi.supabase.co/storage/v1/object/public/General/products%20(1).png",
-      },
+      { categoryId: "all", name: "Tất cả", description: null, imageUrl: null },
       ...categories,
     ],
     [categories],
   );
-  const twoRowCategories = useMemo(() => displayCategories.slice(0, categoryColumns * 2), [displayCategories, categoryColumns]);
+  const twoRowCategories = useMemo(
+    () => displayCategories.slice(0, categoryColumns * 2),
+    [displayCategories, categoryColumns],
+  );
   const freshProducts = useMemo(() => products.slice(0, 2), [products]);
   const dealProducts = useMemo(() => products.slice(2, 4), [products]);
   const allProductsHref = `/category-products/all?${new URLSearchParams({
@@ -627,22 +584,61 @@ const Dashboard = () => {
       <div style={styles.dashboardContainer}>
         <div style={styles.topSpace} />
         <div style={styles.locationRow}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11Z" stroke="#1A4331" strokeWidth="1.8" />
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11Z"
+              stroke="#1A4331"
+              strokeWidth="1.8"
+            />
             <circle cx="12" cy="10" r="2.5" fill="#1A4331" />
           </svg>
           <p style={styles.locationText}>Thủ Đức, Hồ Chí Minh</p>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="m6 9 6 6 6-6" stroke="#1A4331" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="m6 9 6 6 6-6"
+              stroke="#1A4331"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </div>
 
         <main style={styles.mainContent}>
           <section style={styles.searchRow}>
             <div style={styles.searchBox}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" stroke="#AAAAAA" strokeWidth="2" />
-                <path d="m20 20-4-4" stroke="#AAAAAA" strokeWidth="2" strokeLinecap="round" />
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                  stroke="#AAAAAA"
+                  strokeWidth="2"
+                />
+                <path
+                  d="m20 20-4-4"
+                  stroke="#AAAAAA"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
               <input
                 value={searchValue}
@@ -664,9 +660,25 @@ const Dashboard = () => {
                 }}
               />
             </div>
-            <button type="button" style={styles.searchButton} aria-label="Tìm kiếm" onClick={runSearch}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 6h16M7 12h10M10 18h4" stroke="#51B788" strokeWidth="2" strokeLinecap="round" />
+            <button
+              type="button"
+              style={styles.searchButton}
+              aria-label="Tìm kiếm"
+              onClick={runSearch}
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 6h16M7 12h10M10 18h4"
+                  stroke="#51B788"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
           </section>
@@ -677,8 +689,18 @@ const Dashboard = () => {
                 <div>
                   <h2 style={styles.bannerTitle}>Rau quả tươi giảm giá sốc</h2>
                   <span style={styles.bannerButton}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.5L21 8H6" stroke="#EAFBF0" strokeWidth="1.8" />
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.5L21 8H6"
+                        stroke="#EAFBF0"
+                        strokeWidth="1.8"
+                      />
                       <circle cx="10" cy="20" r="1.2" fill="#EAFBF0" />
                       <circle cx="17" cy="20" r="1.2" fill="#EAFBF0" />
                     </svg>
@@ -709,51 +731,66 @@ const Dashboard = () => {
               </Link>
             </div>
 
-            {loadingCategories && <p style={styles.infoText}>Đang tải danh mục...</p>}
-            {!loadingCategories && categoryError && <p style={styles.errorText}>{categoryError}</p>}
-            {!loadingCategories && !categoryError && twoRowCategories.length === 0 && (
-              <p style={styles.infoText}>Không có danh mục để hiển thị.</p>
+            {loadingCategories && (
+              <p style={styles.infoText}>Đang tải danh mục...</p>
             )}
-
-            {!loadingCategories && !categoryError && twoRowCategories.length > 0 && (
-              <div
-                style={{
-                  ...styles.categoryGrid,
-                  gridTemplateColumns: `repeat(${categoryColumns}, minmax(0, 1fr))`,
-                  columnGap: categoryColumns === 4 ? "10px" : "12px",
-                }}
-              >
-                {twoRowCategories.map((category) => {
-                  const hasImage = Boolean(category.imageUrl) && !brokenImageIds[category.categoryId];
-                  const categoryHref = `/category-products/${category.categoryId}?name=${encodeURIComponent(category.name)}&backTo=${encodeURIComponent("/dashboard")}`;
-
-                  return (
-                    <Link key={category.categoryId} href={categoryHref} style={styles.productLink}>
-                      <article style={styles.categoryCard}>
-                        <div style={styles.categoryImageWrap}>
-                          {hasImage ? (
-                            <img
-                              src={category.imageUrl ?? ""}
-                              alt={category.name}
-                              style={styles.categoryImage}
-                              onError={() =>
-                                setBrokenImageIds((previous) => ({
-                                  ...previous,
-                                  [category.categoryId]: true,
-                                }))
-                              }
-                            />
-                          ) : (
-                            <div style={styles.categoryPlaceholder} />
-                          )}
-                        </div>
-                        <div style={styles.categoryName}>{category.name}</div>
-                      </article>
-                    </Link>
-                  );
-                })}
-              </div>
+            {!loadingCategories && categoryError && (
+              <p style={styles.errorText}>{categoryError}</p>
             )}
+            {!loadingCategories &&
+              !categoryError &&
+              twoRowCategories.length === 0 && (
+                <p style={styles.infoText}>Không có danh mục để hiển thị.</p>
+              )}
+
+            {!loadingCategories &&
+              !categoryError &&
+              twoRowCategories.length > 0 && (
+                <div
+                  style={{
+                    ...styles.categoryGrid,
+                    gridTemplateColumns: `repeat(${categoryColumns}, minmax(0, 1fr))`,
+                    columnGap: categoryColumns === 4 ? "10px" : "12px",
+                  }}
+                >
+                  {twoRowCategories.map((category) => {
+                    const hasImage =
+                      Boolean(category.imageUrl) &&
+                      category.categoryId !== "all" &&
+                      !brokenImageIds[category.categoryId];
+                    const categoryHref = `/category-products/${category.categoryId}?name=${encodeURIComponent(category.name)}&backTo=${encodeURIComponent("/dashboard")}`;
+
+                    return (
+                      <Link
+                        key={category.categoryId}
+                        href={categoryHref}
+                        style={styles.productLink}
+                      >
+                        <article style={styles.categoryCard}>
+                          <div style={styles.categoryImageWrap}>
+                            {hasImage ? (
+                              <img
+                                src={category.imageUrl ?? ""}
+                                alt={category.name}
+                                style={styles.categoryImage}
+                                onError={() =>
+                                  setBrokenImageIds((previous) => ({
+                                    ...previous,
+                                    [category.categoryId]: true,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              <div style={styles.categoryPlaceholder} />
+                            )}
+                          </div>
+                          <div style={styles.categoryName}>{category.name}</div>
+                        </article>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
           </section>
 
           <section>
@@ -763,16 +800,29 @@ const Dashboard = () => {
                 Xem thêm
               </Link>
             </div>
-            {loadingProducts && <p style={styles.infoText}>Đang tải sản phẩm...</p>}
-            {!loadingProducts && productsError && <p style={styles.errorText}>{productsError}</p>}
+            {loadingProducts && (
+              <p style={styles.infoText}>Đang tải sản phẩm...</p>
+            )}
+            {!loadingProducts && productsError && (
+              <p style={styles.errorText}>{productsError}</p>
+            )}
             <div style={styles.productRow}>
               {freshProducts.map((product) => (
-                <div key={product.productId} style={{ display: "flex", flexDirection: "column" }}>
-                  <Link href={`/product-detail/${product.productId}?backTo=${encodeURIComponent("/dashboard")}`} style={styles.productLink}>
+                <div
+                  key={product.id}
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <Link
+                    href={`/product-detail/${product.id}?backTo=${encodeURIComponent("/dashboard")}`}
+                    style={styles.productLink}
+                  >
                     <article style={styles.productCard}>
                       <div style={styles.productImageWrap}>
                         <img
-                          src={product.imageUrl ?? "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"}
+                          src={
+                            product.image ??
+                            "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"
+                          }
                           alt={product.name}
                           style={styles.productImage}
                         />
@@ -781,7 +831,9 @@ const Dashboard = () => {
                         <p style={styles.productName}>{product.name}</p>
                         <div style={styles.ratingRow}>
                           <span aria-hidden="true">★</span>
-                          <span>{product.isAvailable ? "Sẵn hàng" : "Tạm hết"}</span>
+                          <span>
+                            {product.available ? "Sẵn hàng" : "Tạm hết"}
+                          </span>
                         </div>
                         <div style={styles.priceRow}>
                           <div style={styles.prices}>
@@ -793,12 +845,31 @@ const Dashboard = () => {
                   </Link>
                   <button
                     type="button"
-                    style={{ ...styles.addButton, alignSelf: "flex-end", marginTop: "-50px", marginRight: "8px", position: "relative", zIndex: 10 }}
+                    style={{
+                      ...styles.addButton,
+                      alignSelf: "flex-end",
+                      marginTop: "-50px",
+                      marginRight: "8px",
+                      position: "relative",
+                      zIndex: 10,
+                    }}
                     aria-label={`Thêm ${product.name}`}
-                    onClick={() => void handleAddToCart(product.productId)}
+                    onClick={() => void handleAddToCart(product.id)}
+                    disabled={cartActionLoading || !product.available}
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M12 5v14M5 12h14"
+                        stroke="#FFFFFF"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -813,16 +884,29 @@ const Dashboard = () => {
                 Xem thêm
               </Link>
             </div>
-            {!loadingProducts && !productsError && dealProducts.length === 0 && <p style={styles.infoText}>Không có sản phẩm ưu đãi.</p>}
+            {!loadingProducts &&
+              !productsError &&
+              dealProducts.length === 0 && (
+                <p style={styles.infoText}>Không có sản phẩm ưu đãi.</p>
+              )}
             <div style={styles.productRow}>
               {dealProducts.map((product) => (
-                <div key={product.productId} style={{ display: "flex", flexDirection: "column" }}>
-                  <Link href={`/product-detail/${product.productId}?backTo=${encodeURIComponent("/dashboard")}`} style={styles.productLink}>
+                <div
+                  key={product.id}
+                  style={{ display: "flex", flexDirection: "column" }}
+                >
+                  <Link
+                    href={`/product-detail/${product.id}?backTo=${encodeURIComponent("/dashboard")}`}
+                    style={styles.productLink}
+                  >
                     <article style={styles.productCard}>
                       <div style={styles.productImageWrap}>
                         <div style={styles.productBadge}>Mua ngay</div>
                         <img
-                          src={product.imageUrl ?? "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"}
+                          src={
+                            product.image ??
+                            "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"
+                          }
                           alt={product.name}
                           style={styles.productImage}
                         />
@@ -844,12 +928,31 @@ const Dashboard = () => {
                   </Link>
                   <button
                     type="button"
-                    style={{ ...styles.addButton, alignSelf: "flex-end", marginTop: "-50px", marginRight: "8px", position: "relative", zIndex: 10 }}
+                    style={{
+                      ...styles.addButton,
+                      alignSelf: "flex-end",
+                      marginTop: "-50px",
+                      marginRight: "8px",
+                      position: "relative",
+                      zIndex: 10,
+                    }}
                     aria-label={`Thêm ${product.name}`}
-                    onClick={() => void handleAddToCart(product.productId)}
+                    onClick={() => void handleAddToCart(product.id)}
+                    disabled={cartActionLoading || !product.available}
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M12 5v14M5 12h14"
+                        stroke="#FFFFFF"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -870,4 +973,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default compose(withErrorBoundary)(BaseDashboard);

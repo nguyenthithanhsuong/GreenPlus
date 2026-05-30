@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 
 type PurchaseMode = "cart" | "subscription" | "group";
+type PurchaseModeOption = { id: PurchaseMode; label: string; icon: string };
 
 type PurchaseModeSelectorProps = {
   currentMode: PurchaseMode;
@@ -40,16 +42,16 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function PurchaseModeSelector({ currentMode, onModeChange }: PurchaseModeSelectorProps) {
-  const modes: { id: PurchaseMode; label: string; icon: string }[] = [
-    { id: "cart", label: "Mua thường", icon: "🛒" },
-    { id: "subscription", label: "Mua định kỳ", icon: "⏰" },
-    // { id: "group", label: "Mua chung" },
-  ];
+const PURCHASE_MODES: PurchaseModeOption[] = [
+  { id: "cart", label: "Mua thường", icon: "🛒" },
+  { id: "subscription", label: "Mua định kì", icon: "⏱" },
+  { id: "group", label: "Mua chung", icon: "👥" },
+];
 
+function BasePurchaseModeSelector({ currentMode, onModeChange }: PurchaseModeSelectorProps) {
   return (
     <div style={styles.container}>
-      {modes.map((mode) => (
+      {PURCHASE_MODES.map((mode) => (
         <button
           key={mode.id}
           type="button"
@@ -66,3 +68,5 @@ export default function PurchaseModeSelector({ currentMode, onModeChange }: Purc
     </div>
   );
 }
+
+export default compose(withErrorBoundary)(BasePurchaseModeSelector);

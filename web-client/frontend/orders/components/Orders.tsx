@@ -4,8 +4,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
-import ConfirmationDialog from "../../shared/components/ConfirmationDialog";
+import ConfirmationDialog from "../../shared/ConfirmationActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
+import {
+  ListFilterBuilder,
+  UrlBuilder,
+  compose,
+  withAuth,
+  withErrorBoundary,
+} from "@/lib";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -14,7 +21,13 @@ import {
   SCREEN_SIDE_PADDING_PX,
 } from "../../shared/screen.styles";
 
-type OrderStatus = "pending" | "confirmed" | "preparing" | "delivering" | "completed" | "cancelled";
+type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "delivering"
+  | "completed"
+  | "cancelled";
 type MainTab = "cart" | "orders";
 
 type CartItemView = {
@@ -59,20 +72,6 @@ type CreateOrderResponse = {
   total_amount: number;
 };
 
-type SubscriptionSummaryItem = {
-  subscriptionId: string;
-  userId: string;
-  productId: string;
-  schedule: string;
-  status: string;
-  startDate: string;
-  nextDeliveryPreview: string;
-};
-
-type SubscriptionListResponse = {
-  subscriptions: SubscriptionSummaryItem[];
-};
-
 type StatusConfig = {
   label: string;
   cardBorder: string;
@@ -81,25 +80,18 @@ type StatusConfig = {
   chipText: string;
 };
 
-type OrderCardActionKind = "contactShop" | "cancelOrder" | "trackOrder" | "review" | "complaint" | "buyAgain";
-
-type OrderCardAction = {
-  label: string;
-  kind: OrderCardActionKind;
-  tone?: "primary" | "danger" | "muted";
-};
-
-type OrderCardActions = {
-  left?: OrderCardAction;
-  middle?: OrderCardAction;
-  right: OrderCardAction;
-};
-
 type TabValue = "all" | OrderStatus;
 
 const DELIVERY_FEE = 15000;
 
-const ORDER_STATUS_SEQUENCE: OrderStatus[] = ["delivering", "preparing", "confirmed", "pending", "completed", "cancelled"];
+const ORDER_STATUS_SEQUENCE: OrderStatus[] = [
+  "delivering",
+  "preparing",
+  "confirmed",
+  "pending",
+  "completed",
+  "cancelled",
+];
 
 const STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
   pending: {
@@ -368,55 +360,6 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "flex-end",
   },
-  recurringNoticeBanner: {
-    borderRadius: "16px",
-    background: "linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%)",
-    border: "1px solid #FCD34D",
-    padding: "14px 16px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-    flexWrap: "wrap",
-  },
-  recurringNoticeTitle: {
-    margin: 0,
-    fontSize: "15px",
-    lineHeight: "22px",
-    fontWeight: 800,
-    color: "#92400E",
-  },
-  recurringNoticeText: {
-    margin: "4px 0 0 0",
-    fontSize: "13px",
-    lineHeight: "18px",
-    color: "#B45309",
-  },
-  recurringNoticeBadge: {
-    borderRadius: "9999px",
-    padding: "6px 10px",
-    background: "#FFF7ED",
-    border: "1px solid #FDBA74",
-    color: "#9A3412",
-    fontSize: "12px",
-    fontWeight: 700,
-    whiteSpace: "nowrap",
-  },
-  recurringNoticeButton: {
-    borderRadius: "12px",
-    padding: "10px 14px",
-    background: "#F97316",
-    color: "#FFFFFF",
-    border: "none",
-    fontSize: "14px",
-    fontWeight: 800,
-    cursor: "pointer",
-    boxShadow: "0px 8px 16px rgba(249, 115, 22, 0.18)",
-  },
-  recurringNoticeButtonDisabled: {
-    opacity: 0.7,
-    cursor: "not-allowed",
-  },
   cartSummaryBanner: {
     borderRadius: "16px",
     background: "#F9FAFB",
@@ -550,7 +493,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   actionButton: {
     flex: 1,
-    borderRadius: "14px",
+    borderRadius: "12px",
     height: "38px",
     border: "1px solid #D1D5DB",
     background: "#FFFFFF",
@@ -561,37 +504,18 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   actionButtonPrimary: {
-    flex: 1,
-    borderRadius: "14px",
-    height: "38px",
-    border: "1px solid #4EA96A",
     background: "#4EA96A",
+    border: "1px solid #4EA96A",
     color: "#FFFFFF",
-    fontSize: "14px",
-    lineHeight: "20px",
-    fontWeight: 600,
-  },
-  actionButtonDanger: {
-    flex: 1,
-    borderRadius: "14px",
-    height: "38px",
-    border: "1px solid #FCA5A5",
-    background: "#FEF2F2",
-    color: "#B91C1C",
-    fontSize: "14px",
-    lineHeight: "20px",
-    fontWeight: 600,
+    fontWeight: 700,
+    boxShadow:
+      "0px 4px 6px -1px rgba(78, 169, 106, 0.2), 0px 2px 4px -2px rgba(78, 169, 106, 0.2)",
   },
   actionButtonMuted: {
-    flex: 1,
-    borderRadius: "14px",
-    height: "38px",
-    background: "#FFFFFF",
-    border: "1px solid #D1D5DB",
+    background: "#F3F4F6",
+    border: "1px solid #E5E7EB",
     color: "#9CA3AF",
-    fontSize: "14px",
-    lineHeight: "20px",
-    fontWeight: 600,
+    fontWeight: 700,
   },
 };
 
@@ -614,21 +538,6 @@ function formatDateTime(value: string): string {
   }).format(date);
 }
 
-function getVietnamDateKey(date: Date = new Date()): string {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const parts = formatter.formatToParts(date);
-  const year = parts.find((part) => part.type === "year")?.value ?? "0000";
-  const month = parts.find((part) => part.type === "month")?.value ?? "00";
-  const day = parts.find((part) => part.type === "day")?.value ?? "00";
-
-  return `${year}-${month}-${day}`;
-}
-
 function toStatus(value: string): OrderStatus {
   if (ORDER_STATUS_SEQUENCE.includes(value as OrderStatus)) {
     return value as OrderStatus;
@@ -638,9 +547,12 @@ function toStatus(value: string): OrderStatus {
 }
 
 function buildPreviewTokens(orderId: string, count: number): string[] {
-  const seed = orderId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
+  const seed = orderId
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 6)
+    .toUpperCase();
   const tokens = [];
-  
+
   for (let i = 0; i < Math.min(count, 3); i++) {
     if (i === 2 && count > 3) {
       tokens.push(`+${count - 2}`);
@@ -650,7 +562,7 @@ function buildPreviewTokens(orderId: string, count: number): string[] {
       tokens.push(i === 0 ? "GP" : i === 1 ? "EC" : "+1");
     }
   }
-  
+
   return tokens;
 }
 
@@ -658,49 +570,28 @@ function buildPreviewImages(images: string[]): string[] {
   return images.filter((value) => value.trim().length > 0).slice(0, 3);
 }
 
-function getCardActions(status: OrderStatus): OrderCardActions {
-  if (status === "pending") {
-    return {
-      left: { label: "Liên hệ Shop", kind: "contactShop" },
-      middle: { label: "Hủy đơn hàng", kind: "cancelOrder", tone: "danger" },
-      right: { label: "Theo dõi đơn", kind: "trackOrder", tone: "primary" },
-    };
+function getCardActions(status: OrderStatus): {
+  left?: string;
+  right: string;
+  mutedRight?: boolean;
+} {
+  if (status === "pending" || status === "confirmed") {
+    return { left: "Hủy đơn hàng", right: "Đang xử lý...", mutedRight: true };
   }
 
-  if (status === "confirmed" || status === "preparing" || status === "delivering") {
-    return {
-      left: { label: "Liên hệ Shop", kind: "contactShop" },
-      right: { label: "Theo dõi đơn", kind: "trackOrder", tone: "primary" },
-    };
+  if (status === "delivering") {
+    return { left: "Liên hệ Shop", right: "Theo dõi đơn" };
   }
 
   if (status === "completed") {
-    return {
-      left: { label: "Đánh Giá", kind: "review" },
-      middle: { label: "Khiếu nại", kind: "complaint" },
-      right: { label: "Mua lại", kind: "buyAgain", tone: "primary" },
-    };
+    return { left: "Đánh giá ngay", right: "Mua lại" };
   }
 
-  return {
-    right: { label: "Mua lại", kind: "buyAgain", tone: "primary" },
-  };
-}
-
-function getActionButtonStyle(action: OrderCardAction): React.CSSProperties {
-  if (action.tone === "primary") {
-    return { ...styles.actionButton, ...styles.actionButtonPrimary };
+  if (status === "cancelled") {
+    return { right: "Mua lại sản phẩm" };
   }
 
-  if (action.tone === "danger") {
-    return { ...styles.actionButton, ...styles.actionButtonDanger };
-  }
-
-  if (action.tone === "muted") {
-    return { ...styles.actionButton, ...styles.actionButtonMuted };
-  }
-
-  return styles.actionButton;
+  return { right: "Đang xử lý...", mutedRight: true };
 }
 
 function getStatusGroupLabel(status: OrderStatus): string {
@@ -727,10 +618,8 @@ function getStatusGroupLabel(status: OrderStatus): string {
   return "Đơn đã hủy";
 }
 
-export default function Orders() {
+function BaseOrders() {
   const router = useRouter();
-  const initialized = useAuthStore((state) => state.initialized);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
   const [mainTab, setMainTab] = useState<MainTab>("cart");
@@ -738,112 +627,121 @@ export default function Orders() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  
+
+  // Cart state
   const [cartItems, setCartItems] = useState<CartItemView[]>([]);
   const [cartTotal, setCartTotal] = useState(0);
   const [cartId, setCartId] = useState<string>("");
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
-  const [subscriptions, setSubscriptions] = useState<SubscriptionSummaryItem[]>([]);
-  const [autoOrdering, setAutoOrdering] = useState(false);
+
+  // Orders state
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
 
-  const loadData = async (signal?: AbortSignal) => {
+  useEffect(() => {
     if (!user?.user_id) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const [cartResponse, ordersResponse, subscriptionsResponse] = await Promise.all([
-        fetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, { signal, cache: "no-store" }),
-        fetch(`/api/orders?userId=${encodeURIComponent(user.user_id)}`, { signal, cache: "no-store" }),
-        fetch(`/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`, { signal, cache: "no-store" }),
-      ]);
-
-      if (!cartResponse.ok) {
-        throw new Error("Không thể tải giỏ hàng.");
-      }
-
-      if (!ordersResponse.ok) {
-        throw new Error("Không thể tải danh sách đơn hàng.");
-      }
-
-      const cartData = (await cartResponse.json()) as CartResponse | { error?: string };
-      const ordersData = (await ordersResponse.json()) as OrdersResponse | { error?: string };
-
-      if ("items" in cartData) {
-        setCartItems(cartData.items ?? []);
-        setCartTotal(cartData.cart_total ?? 0);
-        setCartId(cartData.cart_id ?? "");
-        setNoteDrafts(
-          (cartData.items ?? []).reduce<Record<string, string>>((drafts, item) => {
-            drafts[item.cart_item_id] = item.note ?? "";
-            return drafts;
-          }, {}),
-        );
-      }
-
-      if ("items" in ordersData) {
-        const nextOrders = ((ordersData as OrdersResponse).items ?? []).map((item) => ({
-          ...item,
-          status: toStatus(item.status),
-        }));
-        setOrders(nextOrders);
-      }
-
-      if (subscriptionsResponse.ok) {
-        const subscriptionsData = (await subscriptionsResponse.json()) as SubscriptionListResponse | { error?: string };
-        if ("subscriptions" in subscriptionsData) {
-          setSubscriptions(subscriptionsData.subscriptions ?? []);
-        }
-      } else {
-        setSubscriptions([]);
-      }
-    } catch (requestError) {
-      if (requestError instanceof DOMException && requestError.name === "AbortError") {
-        return;
-      }
-
-      setCartItems([]);
-      setOrders([]);
-      setSubscriptions([]);
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!initialized) {
-      return;
-    }
-
-    if (!isAuthenticated || !user) {
-      router.replace("/login");
-      return;
-    }
-
     const controller = new AbortController();
-    void loadData(controller.signal);
+
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      setMessage(null);
+
+      try {
+        // Load both cart and orders in parallel
+        const [cartResponse, ordersResponse] = await Promise.all([
+          fetch(
+            UrlBuilder.from("/api/cart").query("userId", user.user_id).build(),
+            {
+              signal: controller.signal,
+            },
+          ),
+          fetch(
+            UrlBuilder.from("/api/orders").query("userId", user.user_id).build(),
+            {
+              signal: controller.signal,
+            },
+          ),
+        ]);
+
+        if (!cartResponse.ok) {
+          throw new Error("Không thể tải giỏ hàng.");
+        }
+
+        if (!ordersResponse.ok) {
+          throw new Error("Không thể tải danh sách đơn hàng.");
+        }
+
+        const cartData = (await cartResponse.json()) as
+          | CartResponse
+          | { error?: string };
+        const ordersData = (await ordersResponse.json()) as
+          | OrdersResponse
+          | { error?: string };
+
+        if ("items" in cartData) {
+          setCartItems(cartData.items ?? []);
+          setCartTotal(cartData.cart_total ?? 0);
+          setCartId(cartData.cart_id ?? "");
+          setNoteDrafts(
+            (cartData.items ?? []).reduce<Record<string, string>>(
+              (drafts, item) => {
+                drafts[item.cart_item_id] = item.note ?? "";
+                return drafts;
+              },
+              {},
+            ),
+          );
+        }
+
+        if ("items" in ordersData) {
+          const nextOrders = ((ordersData as OrdersResponse).items ?? []).map(
+            (item) => ({
+              ...item,
+              status: toStatus(item.status),
+            }),
+          );
+          setOrders(nextOrders);
+        }
+      } catch (requestError) {
+        if ((requestError as Error).name === "AbortError") {
+          return;
+        }
+
+        setCartItems([]);
+        setOrders([]);
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải dữ liệu.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadData();
 
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, user]);
+  }, [user?.user_id]);
 
   const filteredOrders = useMemo(() => {
     if (activeTab === "all") {
       return orders;
     }
 
-    return orders.filter((item) => item.status === activeTab);
+    return ListFilterBuilder.for<OrderItem>()
+      .where("status")
+      .equals(activeTab)
+      .apply(orders);
   }, [activeTab, orders]);
 
   const groupedOrders = useMemo(() => {
@@ -864,10 +762,9 @@ export default function Orders() {
   }, [filteredOrders]);
 
   const hasOrders = filteredOrders.length > 0;
-  const cartQuantity = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
-  const dueSubscriptions = useMemo(
-    () => subscriptions.filter((item) => item.status === "active" && item.nextDeliveryPreview === getVietnamDateKey()),
-    [subscriptions],
+  const cartQuantity = useMemo(
+    () => cartItems.reduce((total, item) => total + item.quantity, 0),
+    [cartItems],
   );
 
   useEffect(() => {
@@ -891,12 +788,19 @@ export default function Orders() {
     );
   };
 
-  const mutateCart = async (request: RequestInfo, init: RequestInit, fallbackMessage: string) => {
+  const mutateCart = async (
+    request: RequestInfo,
+    init: RequestInit,
+    fallbackMessage: string,
+  ) => {
     const response = await fetch(request, init);
     const data = (await response.json()) as CartResponse | { error?: string };
 
     if (!response.ok) {
-      const responseError = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+      const responseError =
+        typeof data === "object" && data && "error" in data
+          ? String(data.error ?? "")
+          : "";
       throw new Error(responseError || fallbackMessage);
     }
 
@@ -924,13 +828,20 @@ export default function Orders() {
         "Không thể xóa sản phẩm khỏi giỏ hàng.",
       );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể xóa sản phẩm khỏi giỏ hàng.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể xóa sản phẩm khỏi giỏ hàng.",
+      );
     } finally {
       setActiveItemId(null);
     }
   };
 
-  const handleChangeQuantity = async (item: CartItemView, nextQuantity: number) => {
+  const handleChangeQuantity = async (
+    item: CartItemView,
+    nextQuantity: number,
+  ) => {
     if (!user?.user_id) {
       return;
     }
@@ -957,7 +868,11 @@ export default function Orders() {
         "Không thể cập nhật số lượng sản phẩm.",
       );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật số lượng sản phẩm.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể cập nhật số lượng sản phẩm.",
+      );
     } finally {
       setActiveItemId(null);
     }
@@ -985,7 +900,11 @@ export default function Orders() {
         "Không thể lưu ghi chú cho sản phẩm.",
       );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể lưu ghi chú cho sản phẩm.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể lưu ghi chú cho sản phẩm.",
+      );
     } finally {
       setSavingNoteItemId(null);
     }
@@ -996,11 +915,18 @@ export default function Orders() {
   };
 
   const handleOpenComplaintPage = (orderId: string) => {
-    void router.push(`/complaints?orderId=${encodeURIComponent(orderId)}`);
+    void router.push(
+      UrlBuilder.from("/complaints").query("orderId", orderId).build(),
+    );
   };
 
   const handleOpenReviewFromOrder = (orderId: string) => {
-    void router.push(`/orders/${encodeURIComponent(orderId)}?mode=review`);
+    void router.push(
+      UrlBuilder.from("/orders")
+        .segment(orderId)
+        .query("mode", "review")
+        .build(),
+    );
   };
 
   const handleCloseCancelPrompt = () => {
@@ -1021,16 +947,22 @@ export default function Orders() {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(cancelTarget.order_id)}/cancel`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        UrlBuilder.from("/api/orders")
+          .segment(cancelTarget.order_id)
+          .segment("cancel")
+          .build(),
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.user_id,
+            note: "Hủy từ danh sách đơn hàng",
+          }),
         },
-        body: JSON.stringify({
-          userId: user.user_id,
-          note: "Hủy từ danh sách đơn hàng",
-        }),
-      });
+      );
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -1048,10 +980,16 @@ export default function Orders() {
             : item,
         ),
       );
-      setMessage(`Đã hủy đơn #${cancelTarget.order_id.slice(0, 8).toUpperCase()} thành công.`);
+      setMessage(
+        `Đã hủy đơn #${cancelTarget.order_id.slice(0, 8).toUpperCase()} thành công.`,
+      );
       setCancelTarget(null);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể hủy đơn hàng.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể hủy đơn hàng.",
+      );
     } finally {
       setSaving(false);
     }
@@ -1088,71 +1026,27 @@ export default function Orders() {
         }),
       });
 
-      const data = (await response.json()) as CreateOrderResponse | { error?: string };
+      const data = (await response.json()) as
+        | CreateOrderResponse
+        | { error?: string };
       if (!response.ok) {
-        const errorMsg = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+        const errorMsg =
+          typeof data === "object" && data && "error" in data
+            ? String(data.error ?? "")
+            : "";
         throw new Error(errorMsg || "Không thể tạo đơn hàng.");
       }
 
       const orderData = data as CreateOrderResponse;
       void router.push(`/orders/${orderData.order_id}`);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tạo đơn hàng.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tạo đơn hàng.",
+      );
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleAutoOrderSubscriptions = async () => {
-    if (!user?.user_id || dueSubscriptions.length === 0) {
-      return;
-    }
-
-    setAutoOrdering(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      let addedCount = 0;
-      const failedItems: string[] = [];
-
-      for (const subscription of dueSubscriptions) {
-        const response = await fetch("/api/cart", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: user.user_id,
-            productId: subscription.productId,
-            quantity: 1,
-          }),
-        });
-
-        if (!response.ok) {
-          failedItems.push(subscription.subscriptionId);
-          continue;
-        }
-
-        addedCount += 1;
-      }
-
-      setMainTab("cart");
-      await loadData();
-
-      if (addedCount > 0) {
-        setMessage(
-          failedItems.length > 0
-            ? `Đã thêm ${addedCount} đơn định kỳ vào giỏ, còn ${failedItems.length} đơn chưa thêm được.`
-            : `Đã tự động thêm ${addedCount} đơn định kỳ vào giỏ hàng.`,
-        );
-      } else {
-        setError("Không thể thêm đơn định kỳ vào giỏ hàng.");
-      }
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tự động đặt đơn định kỳ.");
-    } finally {
-      setAutoOrdering(false);
     }
   };
 
@@ -1164,22 +1058,31 @@ export default function Orders() {
 
   const renderCartSection = () => (
     <main style={styles.mainContent}>
-      {!initialized && <p style={styles.infoText}>Đang kiểm tra phiên đăng nhập...</p>}
-      {initialized && isAuthenticated && loading && <p style={styles.infoText}>Đang tải giỏ hàng...</p>}
-      {initialized && isAuthenticated && error && <p style={styles.errorText}>{error}</p>}
-      {initialized && isAuthenticated && message && <p style={styles.infoText}>{message}</p>}
-      {initialized && isAuthenticated && !loading && !error && cartItems.length === 0 && (
-        <p style={styles.infoText}>Giỏ hàng của bạn trống.</p>
+      {loading && (
+        <p style={styles.infoText}>Đang tải giỏ hàng...</p>
       )}
+      {error && (
+        <p style={styles.errorText}>{error}</p>
+      )}
+      {message && (
+        <p style={styles.infoText}>{message}</p>
+      )}
+      {!loading &&
+        !error &&
+        cartItems.length === 0 && (
+          <p style={styles.infoText}>Giỏ hàng của bạn trống.</p>
+        )}
 
-      {initialized && isAuthenticated && !loading && cartItems.length > 0 && (
+      {!loading && cartItems.length > 0 && (
         <div style={styles.orderList}>
           <div style={styles.cartSummaryBanner}>
             <div>
               <p style={styles.cartSummaryLabel}>Số sản phẩm trong giỏ</p>
               <p style={styles.cartSummaryCount}>{cartQuantity}</p>
             </div>
-            <p style={{ margin: 0, fontSize: "13px", color: "#6B7280" }}>Chỉnh số lượng, xóa hoặc thêm ghi chú ngay tại đây.</p>
+            <p style={{ margin: 0, fontSize: "13px", color: "#6B7280" }}>
+              Chỉnh số lượng, xóa hoặc thêm ghi chú ngay tại đây.
+            </p>
           </div>
           {cartItems.map((item) => (
             <div
@@ -1193,7 +1096,11 @@ export default function Orders() {
                 gap: "12px",
               }}
             >
-              <Link href={`/product-detail/${item.product_id}`} style={{ textDecoration: "none" }} aria-label={`Xem chi tiết ${item.product_name}`}>
+              <Link
+                href={`/product-detail/${item.product_id}`}
+                style={{ textDecoration: "none" }}
+                aria-label={`Xem chi tiết ${item.product_name}`}
+              >
                 {item.product_image_url ? (
                   <img
                     src={item.product_image_url}
@@ -1224,11 +1131,25 @@ export default function Orders() {
                   </div>
                 )}
               </Link>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
                 <div>
                   <Link
                     href={`/product-detail/${item.product_id}`}
-                    style={{ margin: "0 0 4px 0", fontSize: "14px", fontWeight: 600, color: "#111827", textDecoration: "none", display: "inline-block" }}
+                    style={{
+                      margin: "0 0 4px 0",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#111827",
+                      textDecoration: "none",
+                      display: "inline-block",
+                    }}
                   >
                     {item.product_name}
                   </Link>
@@ -1236,13 +1157,24 @@ export default function Orders() {
                     Số lượng: {item.quantity}
                   </p>
                 </div>
-                <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#111827" }}>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "#111827",
+                  }}
+                >
                   {formatPrice(item.subtotal)}
                 </p>
                 <div style={styles.noteSection}>
                   <div style={styles.noteSectionHeader}>
                     <p style={styles.noteLabel}>Ghi chú cho món hàng</p>
-                    <span style={{ margin: 0, fontSize: "12px", color: "#6B7280" }}>Bấm lưu để cập nhật</span>
+                    <span
+                      style={{ margin: 0, fontSize: "12px", color: "#6B7280" }}
+                    >
+                      Bấm lưu để cập nhật
+                    </span>
                   </div>
                   <input
                     type="text"
@@ -1269,7 +1201,9 @@ export default function Orders() {
                       <button
                         type="button"
                         style={styles.quantityButton}
-                        onClick={() => void handleChangeQuantity(item, item.quantity - 1)}
+                        onClick={() =>
+                          void handleChangeQuantity(item, item.quantity - 1)
+                        }
                         disabled={activeItemId === item.cart_item_id}
                         aria-label={`Giảm số lượng ${item.product_name}`}
                       >
@@ -1279,7 +1213,9 @@ export default function Orders() {
                       <button
                         type="button"
                         style={styles.quantityButton}
-                        onClick={() => void handleChangeQuantity(item, item.quantity + 1)}
+                        onClick={() =>
+                          void handleChangeQuantity(item, item.quantity + 1)
+                        }
                         disabled={activeItemId === item.cart_item_id}
                         aria-label={`Tăng số lượng ${item.product_name}`}
                       >
@@ -1301,7 +1237,9 @@ export default function Orders() {
                     onClick={() => void handleSaveNote(item)}
                     disabled={savingNoteItemId === item.cart_item_id}
                   >
-                    {savingNoteItemId === item.cart_item_id ? "Đang lưu..." : "Cập nhật ghi chú"}
+                    {savingNoteItemId === item.cart_item_id
+                      ? "Đang lưu..."
+                      : "Cập nhật ghi chú"}
                   </button>
                 </div>
               </div>
@@ -1317,13 +1255,29 @@ export default function Orders() {
               gap: "12px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "14px",
+              }}
+            >
               <span style={{ color: "#6B7280" }}>Tị̉n hàng:</span>
-              <span style={{ fontWeight: 600, color: "#111827" }}>{formatPrice(cartTotal)}</span>
+              <span style={{ fontWeight: 600, color: "#111827" }}>
+                {formatPrice(cartTotal)}
+              </span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "14px",
+              }}
+            >
               <span style={{ color: "#6B7280" }}>Phí giao hàng:</span>
-              <span style={{ fontWeight: 600, color: "#111827" }}>{formatPrice(DELIVERY_FEE)}</span>
+              <span style={{ fontWeight: 600, color: "#111827" }}>
+                {formatPrice(DELIVERY_FEE)}
+              </span>
             </div>
             <div
               style={{
@@ -1336,7 +1290,9 @@ export default function Orders() {
               }}
             >
               <span>Tổng cộng:</span>
-              <span style={{ color: "#4EA96A" }}>{formatPrice(cartTotal + DELIVERY_FEE)}</span>
+              <span style={{ color: "#4EA96A" }}>
+                {formatPrice(cartTotal + DELIVERY_FEE)}
+              </span>
             </div>
 
             <button
@@ -1380,15 +1336,20 @@ export default function Orders() {
       </section>
 
       <main style={styles.mainContent}>
-        {!initialized && <p style={styles.infoText}>Đang kiểm tra phiên đăng nhập...</p>}
-        {initialized && isAuthenticated && loading && <p style={styles.infoText}>Đang tải đơn hàng...</p>}
-        {initialized && isAuthenticated && error && <p style={styles.errorText}>{error}</p>}
-        {initialized && isAuthenticated && message && <p style={styles.infoText}>{message}</p>}
-        {initialized && isAuthenticated && !loading && !error && !hasOrders && (
+        {loading && (
+          <p style={styles.infoText}>Đang tải đơn hàng...</p>
+        )}
+        {error && (
+          <p style={styles.errorText}>{error}</p>
+        )}
+        {message && (
+          <p style={styles.infoText}>{message}</p>
+        )}
+        {!loading && !error && !hasOrders && (
           <p style={styles.infoText}>Bạn chưa có đơn hàng nào.</p>
         )}
 
-        {initialized && isAuthenticated && hasOrders && (
+        {hasOrders && (
           <>
             {ORDER_STATUS_SEQUENCE.map((status) => {
               if (activeTab !== "all" && activeTab !== status) {
@@ -1402,8 +1363,12 @@ export default function Orders() {
 
               return (
                 <section key={status} style={styles.statusSection}>
-                  <h2 style={styles.sectionTitle}>{getStatusGroupLabel(status)}</h2>
-                  <div style={styles.orderList}>{sectionOrders.map((order) => renderOrderCard(order))}</div>
+                  <h2 style={styles.sectionTitle}>
+                    {getStatusGroupLabel(status)}
+                  </h2>
+                  <div style={styles.orderList}>
+                    {sectionOrders.map((order) => renderOrderCard(order))}
+                  </div>
                 </section>
               );
             })}
@@ -1418,20 +1383,44 @@ export default function Orders() {
     const config = STATUS_CONFIG[status];
     const actions = getCardActions(status);
     const previewImages = buildPreviewImages(order.preview_images ?? []);
-    const previewTokens = buildPreviewTokens(order.order_id, previewImages.length);
+    const previewTokens = buildPreviewTokens(
+      order.order_id,
+      previewImages.length,
+    );
 
     return (
       <article
         key={order.order_id}
-        style={{ ...styles.orderCard, borderColor: config.cardBorder, opacity: status === "cancelled" ? 0.82 : 1 }}
+        style={{
+          ...styles.orderCard,
+          borderColor: config.cardBorder,
+          opacity: status === "cancelled" ? 0.82 : 1,
+        }}
         onClick={() => router.push(`/orders/${order.order_id}`)}
       >
         <div style={styles.orderTop}>
           <div style={styles.shopWrap}>
             <svg viewBox="0 0 24 24" fill="none" style={styles.shopIcon}>
-              <path d="M3 9.5V20h18V9.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M3 9.5L5.2 4h13.6L21 9.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M9 13h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path
+                d="M3 9.5V20h18V9.5"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M3 9.5L5.2 4h13.6L21 9.5"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M9 13h6"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
             </svg>
             <p style={styles.shopName}>GreenPlus Shop</p>
           </div>
@@ -1450,11 +1439,15 @@ export default function Orders() {
         <div style={styles.metaGroup}>
           <p style={styles.metaRow}>
             <span style={styles.metaLabel}>Mã đơn:</span>
-            <span style={styles.metaValue}>#{order.order_id.slice(0, 8).toUpperCase()}</span>
+            <span style={styles.metaValue}>
+              #{order.order_id.slice(0, 8).toUpperCase()}
+            </span>
           </p>
           <p style={styles.metaRow}>
             <span style={styles.metaLabel}>Đặt lúc:</span>
-            <span style={styles.metaValue}>{formatDateTime(order.order_date)}</span>
+            <span style={styles.metaValue}>
+              {formatDateTime(order.order_date)}
+            </span>
           </p>
         </div>
 
@@ -1464,13 +1457,23 @@ export default function Orders() {
 
             if (!imageUrl) {
               return (
-                <div key={`${order.order_id}-fallback-${index}`} style={styles.previewThumb}>
+                <div
+                  key={`${order.order_id}-fallback-${index}`}
+                  style={styles.previewThumb}
+                >
                   {fallbackToken}
                 </div>
               );
             }
 
-            return <img key={`${order.order_id}-img-${index}`} src={imageUrl} alt={`Sản phẩm ${index + 1}`} style={styles.previewThumb} />;
+            return (
+              <img
+                key={`${order.order_id}-img-${index}`}
+                src={imageUrl}
+                alt={`Sản phẩm ${index + 1}`}
+                style={styles.previewThumb}
+              />
+            );
           })}
           <div style={styles.previewSpacer}>
             <p style={styles.amountLabel}>Tổng tiền</p>
@@ -1482,81 +1485,51 @@ export default function Orders() {
           {actions.left ? (
             <button
               type="button"
-              style={getActionButtonStyle(actions.left)}
+              style={styles.actionButton}
               onClick={(event) => {
                 event.stopPropagation();
-                if (actions.left?.kind === "contactShop") {
-                  void router.push(`/orders/${encodeURIComponent(order.order_id)}?mode=contact`);
-                  return;
-                }
-
-                if (actions.left?.kind === "review") {
-                  handleOpenReviewFromOrder(order.order_id);
-                  return;
-                }
-
-                if (actions.left?.kind === "cancelOrder") {
+                if (status === "pending" || status === "confirmed") {
                   handleOpenCancelPrompt(order);
+                  return;
+                }
+
+                if (status === "completed") {
+                  handleOpenReviewFromOrder(order.order_id);
                 }
               }}
             >
-              {actions.left.label}
+              {actions.left}
             </button>
           ) : null}
-
-          {actions.middle ? (
+          {status === "completed" ? (
             <button
               type="button"
-              style={getActionButtonStyle(actions.middle)}
+              style={styles.actionButton}
               onClick={(event) => {
                 event.stopPropagation();
-                const middleAction = actions.middle;
-
-                if (!middleAction) {
-                  return;
-                }
-
-                if (middleAction.kind === "cancelOrder") {
-                  handleOpenCancelPrompt(order);
-                }
-
-                if (middleAction.kind === "complaint") {
-                  handleOpenComplaintPage(order.order_id);
-                }
+                handleOpenComplaintPage(order.order_id);
               }}
             >
-              {actions.middle.label}
+              Khiếu nại
             </button>
           ) : null}
           <button
             type="button"
             style={{
-              ...getActionButtonStyle(actions.right),
-              flex: 1,
+              ...styles.actionButton,
+              ...(actions.mutedRight
+                ? styles.actionButtonMuted
+                : styles.actionButtonPrimary),
+              flex: actions.left || status === "completed" ? 1 : 2,
             }}
             onClick={(event) => {
               event.stopPropagation();
-              if (actions.right.kind === "trackOrder") {
-                void router.push(`/orders/${encodeURIComponent(order.order_id)}?mode=track`);
-                return;
-              }
-
-              if (actions.right.kind === "buyAgain") {
+              if (status === "completed" || status === "cancelled") {
                 void router.push("/dashboard");
-                return;
-              }
-
-              if (actions.right.kind === "review") {
-                handleOpenReviewFromOrder(order.order_id);
-                return;
-              }
-
-              if (actions.right.kind === "complaint") {
-                handleOpenComplaintPage(order.order_id);
               }
             }}
           >
-            {actions.right.label}
+            {actions.right}
           </button>
         </div>
       </article>
@@ -1567,12 +1540,24 @@ export default function Orders() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href="/dashboard" style={styles.backLink} aria-label="Quay lại dashboard">
+          <Link
+            href="/dashboard"
+            style={styles.backLink}
+            aria-label="Quay lại dashboard"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
-          <h1 style={styles.headerTitle}>{mainTab === "cart" ? "Giỏ hàng" : "Đơn hàng"}</h1>
+          <h1 style={styles.headerTitle}>
+            {mainTab === "cart" ? "Giỏ hàng" : "Đơn hàng"}
+          </h1>
           <div style={{ width: "24px" }} />
         </header>
 
@@ -1616,7 +1601,16 @@ export default function Orders() {
           }}
         >
           <div>
-            <p style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#1A4331" }}>Đơn đặt định kỳ</p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "15px",
+                fontWeight: 700,
+                color: "#1A4331",
+              }}
+            >
+              Đơn đặt định kỳ
+            </p>
             <p style={{ margin: 0, fontSize: "13px", color: "#166534" }}>
               Quản lý lịch giao, trạng thái và hủy các đơn mua lặp lại của bạn.
             </p>
@@ -1637,44 +1631,6 @@ export default function Orders() {
             Mở quản lý
           </Link>
         </section>
-
-        {dueSubscriptions.length > 0 ? (
-          <section
-            style={{
-              margin: "12px 16px 0",
-              padding: "14px 16px",
-              borderRadius: "16px",
-              border: "1px solid #FCD34D",
-              background: "linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "12px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <p style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "#92400E" }}>Có đơn định kỳ đến hạn hôm nay</p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#B45309" }}>
-                Bạn có {dueSubscriptions.length} đơn định kỳ đã đến lịch giao. Bấm Auto đặt để thêm toàn bộ vào giỏ hàng ngay.
-              </p>
-            </div>
-            <div style={styles.buttonRow}>
-              <span style={styles.recurringNoticeBadge}>{dueSubscriptions.length} đơn chờ</span>
-              <button
-                type="button"
-                style={{
-                  ...styles.recurringNoticeButton,
-                  ...(autoOrdering ? styles.recurringNoticeButtonDisabled : {}),
-                }}
-                onClick={() => void handleAutoOrderSubscriptions()}
-                disabled={autoOrdering}
-              >
-                {autoOrdering ? "Đang thêm..." : "Auto đặt"}
-              </button>
-            </div>
-          </section>
-        ) : null}
 
         {mainTab === "cart" ? renderCartSection() : renderOrdersSection()}
 
@@ -1699,3 +1655,8 @@ export default function Orders() {
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary,
+  (Comp) => withAuth(Comp, "user")
+)(BaseOrders);

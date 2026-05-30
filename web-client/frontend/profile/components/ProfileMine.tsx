@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { supabase } from "@/lib/supabaseClient";
+import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -278,10 +279,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function ProfileMine() {
+function BaseProfileMine() {
   const router = useRouter();
-  const initialized = useAuthStore((state) => state.initialized);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -302,12 +301,7 @@ export default function ProfileMine() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!initialized) {
-      return;
-    }
-
-    if (!isAuthenticated || !userId) {
-      router.replace("/login");
+    if (!userId) {
       return;
     }
 
@@ -369,7 +363,7 @@ export default function ProfileMine() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, updateUser, userId]);
+  }, [router, updateUser, userId]);
 
   const displayName = profile?.name ?? user?.name ?? "Người dùng";
   const displayEmail = profile?.email ?? user?.email ?? "";
@@ -647,3 +641,8 @@ export default function ProfileMine() {
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary,
+  (Component) => withAuth(Component, "user")
+)(BaseProfileMine);

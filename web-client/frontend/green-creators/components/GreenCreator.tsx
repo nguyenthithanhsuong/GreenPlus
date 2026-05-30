@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 import { useAuthStore } from "@/lib/stores/authStore";
 import {
   SCREEN_BACKGROUND_GRADIENT,
@@ -560,7 +561,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-const GreenCreator = () => {
+function BaseGreenCreator() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "interacted" | "saved" | "own">("all");
@@ -1515,4 +1516,6 @@ const GreenCreator = () => {
   );
 };
 
-export default GreenCreator;
+export default compose(
+  withErrorBoundary
+)(BaseGreenCreator);

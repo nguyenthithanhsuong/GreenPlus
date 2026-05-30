@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useAuthStore } from "../../../src/lib/stores/authStore";
+import { useAuthStore } from "@/lib/stores/authStore";
+import { compose, withAuth, withErrorBoundary } from "@/lib/decorators";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import {
   SCREEN_BACKGROUND_GRADIENT,
@@ -59,20 +60,32 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function ProfileChangePassword() {
+function BaseProfileChangePassword() {
+  // Get current user from auth store
   const { user } = useAuthStore();
 
+  // Password Form State
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
+  // Request Handling State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ updated?: boolean; error?: string } | null>(null);
 
   const changePassword = async () => {
+    // Check if user is authenticated
     if (!user?.user_id) {
-      setError("Vui lòng đăng nhập trước.");
+      return;
+    }
+
+    if (
+      !currentPassword.trim() ||
+      !newPassword.trim() ||
+      !confirmPassword.trim()
+    ) {
+      setError("Please fill in all password fields.");
       return;
     }
 
@@ -99,7 +112,7 @@ export default function ProfileChangePassword() {
 
       const data = (await response.json()) as { updated?: boolean; error?: string };
       if (!response.ok) {
-        throw new Error(data.error ?? "Không thể đổi mật khẩu.");
+        throw new Error(data.error ?? "Change password failed");
       }
 
       setResult(data);
@@ -108,7 +121,7 @@ export default function ProfileChangePassword() {
       setConfirmPassword("");
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
@@ -118,28 +131,32 @@ export default function ProfileChangePassword() {
     <div style={styles.page}>
       <div style={styles.container}>
         
+        {/* Header */}
         <header style={styles.topNav}>
-          <Link href="/profile" style={styles.backLink} aria-label="Quay lại hồ sơ">
+          <Link href="/profile" style={styles.backLink} aria-label="Back to profile">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <h1 style={styles.title}>Đổi mật khẩu</h1>
-          <div style={{ width: "24px" }} />
+          <h1 style={styles.title}>Change Password</h1>
+          <div style={{ width: "24px" }} /> {/* Empty div to keep title centered */}
         </header>
 
+        {/* Main Content */}
         <main style={styles.main}>
           <section className="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
             <p className="mb-4 text-sm text-gray-600">
-              Đổi mật khẩu để giữ cho tài khoản của bạn an toàn.
+              Update your password to keep your account secure.
             </p>
 
+            {/* Inputs */}
             <div className="flex w-full flex-col gap-4">
+              {/* Optional: User ID field visible for testing purposes */}
               <div className="flex w-full flex-col gap-4">
   <input
     value={currentPassword}
     onChange={(event) => setCurrentPassword(event.target.value)}
-    placeholder="Mật khẩu hiện tại"
+    placeholder="Current password"
     type="password"
     className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
   />
@@ -147,7 +164,7 @@ export default function ProfileChangePassword() {
   <input
     value={newPassword}
     onChange={(event) => setNewPassword(event.target.value)}
-    placeholder="Mật khẩu mới"
+    placeholder="New password"
     type="password"
     className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
   />
@@ -155,25 +172,27 @@ export default function ProfileChangePassword() {
   <input
     value={confirmPassword}
     onChange={(event) => setConfirmPassword(event.target.value)}
-    placeholder="Xác nhận mật khẩu mới"
+    placeholder="Retype new password"
     type="password"
     className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
   />
 </div>
             </div>
 
+            {/* Status Messages */}
             {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
             {result?.updated && (
-              <p className="mt-3 text-sm font-medium text-green-600">Mật khẩu đã được thay đổi thành công!</p>
+              <p className="mt-3 text-sm font-medium text-green-600">Password changed successfully!</p>
             )}
 
+            {/* Action Buttons */}
             <div className="mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => void changePassword()}
                 disabled={loading || !currentPassword || !newPassword || !confirmPassword}
                 className="rounded bg-rose-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-800 disabled:opacity-60"
               >
-                {loading ? "Đang lưu..." : "Đổi mật khẩu"}
+                {loading ? "Saving..." : "Change Password"}
               </button>
             </div>
           </section>
@@ -184,3 +203,8 @@ export default function ProfileChangePassword() {
     </div>
   );
 }
+
+export default compose(
+  withErrorBoundary,
+  (Component) => withAuth(Component, "user")
+)(BaseProfileChangePassword);

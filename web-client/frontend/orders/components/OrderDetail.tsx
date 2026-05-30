@@ -4,8 +4,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
-import ConfirmationDialog from "../../shared/components/ConfirmationDialog";
+import ConfirmationDialog from "../../shared/ConfirmationActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
+import {
+  UrlBuilder,
+  compose,
+  withAuth,
+  withErrorBoundary,
+} from "@/lib";
+import { PaymentStrategyRegistry } from "@/lib/strategy";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -14,7 +21,13 @@ import {
   SCREEN_SIDE_PADDING_PX,
 } from "../../shared/screen.styles";
 
-type OrderStatus = "pending" | "confirmed" | "preparing" | "delivering" | "completed" | "cancelled";
+type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "delivering"
+  | "completed"
+  | "cancelled";
 type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "unknown";
 type PaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer" | "unknown";
 
@@ -48,7 +61,6 @@ type OrderDetailResponse = {
   total_amount: number;
   delivery_address: string;
   delivery_fee: number;
-  note: string | null;
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -113,7 +125,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     gap: "16px",
     overflowY: "auto",
-    background: "linear-gradient(0deg, #EFF6FF, #EFF6FF), linear-gradient(0deg, #E5E7EB, #E5E7EB), #FFFFFF",
+    background:
+      "linear-gradient(0deg, #EFF6FF, #EFF6FF), linear-gradient(0deg, #E5E7EB, #E5E7EB), #FFFFFF",
   },
   loadingText: {
     margin: 0,
@@ -449,7 +462,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#FFFFFF",
     border: "1px solid #4EA96A",
     fontWeight: 700,
-    boxShadow: "0px 10px 15px -3px rgba(16, 185, 129, 0.3), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)",
+    boxShadow:
+      "0px 10px 15px -3px rgba(16, 185, 129, 0.3), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)",
   },
   actionBtnDanger: {
     background: "#FFFFFF",
@@ -581,18 +595,14 @@ function formatDateTime(value: string): string {
 }
 
 function getMethodLabel(method: PaymentMethod): string {
-  if (method === "cod") {
-    return "Thanh toán tiền mặt (COD)";
+  try {
+    return PaymentStrategyRegistry.getStrategy(method).getMethod().displayName;
+  } catch {
+    if (method === "bank_transfer") {
+      return "Chuyển khoản";
+    }
   }
-  if (method === "momo") {
-    return "Ví MoMo";
-  }
-  if (method === "vnpay") {
-    return "VNPay";
-  }
-  if (method === "bank_transfer") {
-    return "Chuyển khoản";
-  }
+
   return "Chưa rõ phương thức";
 }
 
@@ -632,15 +642,39 @@ function getPaymentBadgeStyle(status: PaymentStatus): React.CSSProperties {
   return { color: "#6B7280", background: "#E5E7EB" };
 }
 
-const STEP_FLOW: Array<{ key: OrderStatus; label: string; defaultMeta: string }> = [
-  { key: "pending", label: "Đơn hàng đã đặt", defaultMeta: "Đơn hàng đã được tiếp nhận" },
-  { key: "confirmed", label: "Đã xác nhận", defaultMeta: "Cửa hàng đang chuẩn bị sản phẩm" },
-  { key: "preparing", label: "Đang chuẩn bị", defaultMeta: "Đơn hàng đang được đóng gói" },
-  { key: "delivering", label: "Đang giao hàng", defaultMeta: "Tài xế đang trên đường đến bạn" },
-  { key: "completed", label: "Giao hàng thành công", defaultMeta: "Đơn hàng đã giao thành công" },
+const STEP_FLOW: Array<{
+  key: OrderStatus;
+  label: string;
+  defaultMeta: string;
+}> = [
+  {
+    key: "pending",
+    label: "Đơn hàng đã đặt",
+    defaultMeta: "Đơn hàng đã được tiếp nhận",
+  },
+  {
+    key: "confirmed",
+    label: "Đã xác nhận",
+    defaultMeta: "Cửa hàng đang chuẩn bị sản phẩm",
+  },
+  {
+    key: "preparing",
+    label: "Đang chuẩn bị",
+    defaultMeta: "Đơn hàng đang được đóng gói",
+  },
+  {
+    key: "delivering",
+    label: "Đang giao hàng",
+    defaultMeta: "Tài xế đang trên đường đến bạn",
+  },
+  {
+    key: "completed",
+    label: "Giao hàng thành công",
+    defaultMeta: "Đơn hàng đã giao thành công",
+  },
 ];
 
-export default function OrderDetail() {
+function BaseOrderDetail() {
   const router = useRouter();
   const params = useParams<{ orderId: string }>();
   const searchParams = useSearchParams();
@@ -656,12 +690,16 @@ export default function OrderDetail() {
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
   const [cancelPromptOpen, setCancelPromptOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [reviewTarget, setReviewTarget] = useState<OrderItemDetail | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<OrderItemDetail | null>(
+    null,
+  );
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewSaving, setReviewSaving] = useState(false);
-  const [reviewedProductIds, setReviewedProductIds] = useState<Record<string, boolean>>({});
+  const [reviewedProductIds, setReviewedProductIds] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     if (!initialized) {
@@ -687,13 +725,24 @@ export default function OrderDetail() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}?userId=${encodeURIComponent(user.user_id)}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          UrlBuilder.from("/api/orders")
+            .segment(orderId)
+            .query("userId", user.user_id)
+            .build(),
+          {
+            signal: controller.signal,
+          },
+        );
 
-        const data = (await response.json()) as OrderDetailResponse | { error?: string };
+        const data = (await response.json()) as
+          | OrderDetailResponse
+          | { error?: string };
         if (!response.ok) {
-          const msg = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+          const msg =
+            typeof data === "object" && data && "error" in data
+              ? String(data.error ?? "")
+              : "";
           throw new Error(msg || "Không thể tải chi tiết đơn hàng.");
         }
 
@@ -704,7 +753,11 @@ export default function OrderDetail() {
         }
 
         setDetail(null);
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải chi tiết đơn hàng.");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải chi tiết đơn hàng.",
+        );
       } finally {
         setLoading(false);
       }
@@ -715,7 +768,14 @@ export default function OrderDetail() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, params?.orderId, refreshToken, router, user?.user_id]);
+  }, [
+    initialized,
+    isAuthenticated,
+    params?.orderId,
+    refreshToken,
+    router,
+    user?.user_id,
+  ]);
 
   const itemTotal = useMemo(() => {
     if (!detail) {
@@ -740,8 +800,10 @@ export default function OrderDetail() {
 
   const timelineRows = useMemo(() => {
     return STEP_FLOW.map((step, index) => {
-      const isCompleted = detail?.order_status === "cancelled" ? false : index < currentStepIndex;
-      const isActive = detail?.order_status !== "cancelled" && index === currentStepIndex;
+      const isCompleted =
+        detail?.order_status === "cancelled" ? false : index < currentStepIndex;
+      const isActive =
+        detail?.order_status !== "cancelled" && index === currentStepIndex;
 
       return {
         key: step.key,
@@ -768,7 +830,11 @@ export default function OrderDetail() {
       return;
     }
 
-    if (!(detail.order_status === "pending" || detail.order_status === "confirmed")) {
+    if (
+      !(
+        detail.order_status === "pending" || detail.order_status === "confirmed"
+      )
+    ) {
       setMessage("Đơn hàng này không thể hủy ở trạng thái hiện tại.");
       return;
     }
@@ -777,18 +843,27 @@ export default function OrderDetail() {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(detail.order_id)}/cancel`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        UrlBuilder.from("/api/orders")
+          .segment(detail.order_id)
+          .segment("cancel")
+          .build(),
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.user_id,
+            note: "Hủy từ màn hình theo dõi đơn hàng",
+          }),
         },
-        body: JSON.stringify({
-          userId: user.user_id,
-          note: "Hủy từ màn hình theo dõi đơn hàng",
-        }),
-      });
+      );
 
-      const data = (await response.json()) as { status?: string; error?: string };
+      const data = (await response.json()) as {
+        status?: string;
+        error?: string;
+      };
       if (!response.ok) {
         throw new Error(String(data.error ?? "Không thể hủy đơn hàng."));
       }
@@ -797,7 +872,11 @@ export default function OrderDetail() {
       setCancelPromptOpen(false);
       setRefreshToken((value) => value + 1);
     } catch (requestError) {
-      setMessage(requestError instanceof Error ? requestError.message : "Không thể hủy đơn hàng.");
+      setMessage(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể hủy đơn hàng.",
+      );
     } finally {
       setSaving(false);
     }
@@ -808,9 +887,17 @@ export default function OrderDetail() {
       return;
     }
 
-    const canOpenPayment = detail.payment_status !== "paid" && detail.payment_status !== "cancelled" && detail.order_status !== "cancelled";
+    const canOpenPayment =
+      detail.payment_status !== "paid" &&
+      detail.payment_status !== "cancelled" &&
+      detail.order_status !== "cancelled";
     if (canOpenPayment) {
-      router.push(`/orders/${encodeURIComponent(detail.order_id)}/payment`);
+      router.push(
+        UrlBuilder.from("/orders")
+          .segment(detail.order_id)
+          .segment("payment")
+          .build(),
+      );
       return;
     }
 
@@ -822,7 +909,11 @@ export default function OrderDetail() {
       return;
     }
 
-    void router.push(`/complaints?orderId=${encodeURIComponent(detail.order_id)}`);
+    void router.push(
+      UrlBuilder.from("/complaints")
+        .query("orderId", detail.order_id)
+        .build(),
+    );
   };
 
   const handleOpenReview = (item: OrderItemDetail) => {
@@ -887,7 +978,10 @@ export default function OrderDetail() {
         body: JSON.stringify(payload),
       });
 
-      const data = (await response.json()) as { error?: string; reviewId?: string };
+      const data = (await response.json()) as {
+        error?: string;
+        reviewId?: string;
+      };
       if (!response.ok) {
         throw new Error(String(data.error ?? "Không thể gửi đánh giá."));
       }
@@ -899,7 +993,11 @@ export default function OrderDetail() {
       setReviewOpen(false);
       setMessage("Đánh giá của bạn đã được gửi thành công.");
     } catch (requestError) {
-      setReviewError(requestError instanceof Error ? requestError.message : "Không thể gửi đánh giá.");
+      setReviewError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể gửi đánh giá.",
+      );
     } finally {
       setReviewSaving(false);
     }
@@ -909,22 +1007,40 @@ export default function OrderDetail() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topHeader}>
-          <Link href="/orders" style={styles.backLink} aria-label="Quay lại đơn hàng">
+          <Link
+            href="/orders"
+            style={styles.backLink}
+            aria-label="Quay lại đơn hàng"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1F2937" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1F2937"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
 
           <div style={styles.headerCenter}>
-            <h1 style={styles.headerTitle}>{detail ? `Mã đơn: #${detail.order_id.slice(0, 8).toUpperCase()}` : "Chi tiết đơn"}</h1>
-            <p style={styles.headerSub}>{detail ? `Đặt lúc ${formatDateTime(detail.order_date)}` : ""}</p>
+            <h1 style={styles.headerTitle}>
+              {detail
+                ? `Mã đơn: #${detail.order_id.slice(0, 8).toUpperCase()}`
+                : "Chi tiết đơn"}
+            </h1>
+            <p style={styles.headerSub}>
+              {detail ? `Đặt lúc ${formatDateTime(detail.order_date)}` : ""}
+            </p>
           </div>
 
           <div style={{ width: "24px" }} />
         </header>
 
         <main style={styles.mainContent}>
-          {loading && <p style={styles.loadingText}>Đang tải chi tiết đơn hàng...</p>}
+          {loading && (
+            <p style={styles.loadingText}>Đang tải chi tiết đơn hàng...</p>
+          )}
           {!loading && error && <p style={styles.errorText}>{error}</p>}
 
           {!loading && !error && detail && (
@@ -938,10 +1054,16 @@ export default function OrderDetail() {
                     <div style={styles.shipperInfo}>
                       <p style={styles.shipperHint}>Tài xế đang giao hàng</p>
                       <p style={styles.shipperName}>Nguyễn Văn Shipper</p>
-                      <p style={styles.shipperMeta}>59-A1 123.45 • Honda Wave</p>
+                      <p style={styles.shipperMeta}>
+                        59-A1 123.45 • Honda Wave
+                      </p>
                     </div>
                   </div>
-                  <a href="tel:0900000000" style={styles.callBtn} aria-label="Gọi shipper">
+                  <a
+                    href="tel:0900000000"
+                    style={styles.callBtn}
+                    aria-label="Gọi shipper"
+                  >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                       <path
                         d="M6.8 3h2.6c.5 0 1 .3 1.2.8l1.2 2.9c.2.5.1 1-.3 1.4L10 9.6a13.6 13.6 0 0 0 4.4 4.4l1.5-1.5c.4-.4.9-.5 1.4-.3l2.9 1.2c.5.2.8.7.8 1.2V17c0 .8-.6 1.4-1.4 1.5A15.7 15.7 0 0 1 5.5 4.4C5.6 3.6 6.2 3 7 3Z"
@@ -959,20 +1081,44 @@ export default function OrderDetail() {
                 <h2 style={styles.sectionTitle}>Tiến độ đơn hàng</h2>
                 <div style={styles.timelineWrap}>
                   <span style={styles.timelineTrack} />
-                  <span style={{ ...styles.timelineTrackActive, height: activeLineHeight }} />
+                  <span
+                    style={{
+                      ...styles.timelineTrackActive,
+                      height: activeLineHeight,
+                    }}
+                  />
 
                   {timelineRows.map((row) => (
                     <div key={row.key} style={styles.timelineItem}>
                       <p
                         style={{
                           ...styles.timelineTitle,
-                          color: row.isActive ? "#059669" : row.isCompleted ? "#111827" : "#9CA3AF",
-                          fontWeight: row.isActive ? 700 : row.isCompleted ? 600 : 500,
+                          color: row.isActive
+                            ? "#059669"
+                            : row.isCompleted
+                              ? "#111827"
+                              : "#9CA3AF",
+                          fontWeight: row.isActive
+                            ? 700
+                            : row.isCompleted
+                              ? 600
+                              : 500,
                         }}
                       >
                         {row.title}
                       </p>
-                      <p style={{ ...styles.timelineMeta, color: row.isActive ? "#4B5563" : row.isCompleted ? "#6B7280" : "#9CA3AF" }}>{row.meta}</p>
+                      <p
+                        style={{
+                          ...styles.timelineMeta,
+                          color: row.isActive
+                            ? "#4B5563"
+                            : row.isCompleted
+                              ? "#6B7280"
+                              : "#9CA3AF",
+                        }}
+                      >
+                        {row.meta}
+                      </p>
 
                       {row.isActive ? (
                         <span style={styles.timelineDotActive}>
@@ -999,7 +1145,9 @@ export default function OrderDetail() {
 
               <section style={styles.sectionCard}>
                 <h2 style={styles.sectionTitle}>Địa chỉ nhận hàng</h2>
-                <p style={styles.addressName}>{`${user?.name ?? "Khách hàng"} • ${user?.phone ?? "---"}`}</p>
+                <p
+                  style={styles.addressName}
+                >{`${user?.name ?? "Khách hàng"} • ${user?.phone ?? "---"}`}</p>
                 <p style={styles.addressText}>{detail.delivery_address}</p>
               </section>
 
@@ -1023,29 +1171,45 @@ export default function OrderDetail() {
                         <img
                           src={item.product_image_url}
                           alt={item.product_name ?? "Sản phẩm"}
-                          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                          }}
                         />
                       ) : (
                         <span>IMG</span>
                       )}
                     </div>
                     <div style={styles.itemBody}>
-                      <p style={styles.itemName}>{item.product_name ?? "Sản phẩm"}</p>
+                      <p style={styles.itemName}>
+                        {item.product_name ?? "Sản phẩm"}
+                      </p>
                       <div style={styles.itemBottom}>
                         <p style={styles.itemQty}>x{item.quantity}</p>
-                        <p style={styles.itemPrice}>{formatPrice(item.price * item.quantity)}</p>
+                        <p style={styles.itemPrice}>
+                          {formatPrice(item.price * item.quantity)}
+                        </p>
                       </div>
                       {detail.order_status === "completed" ? (
                         <button
                           type="button"
                           style={{
                             ...styles.inlineItemAction,
-                            ...(reviewedProductIds[item.product_id] ? styles.inlineItemActionMuted : {}),
+                            ...(reviewedProductIds[item.product_id]
+                              ? styles.inlineItemActionMuted
+                              : {}),
                           }}
                           onClick={() => handleOpenReview(item)}
-                          disabled={reviewSaving || Boolean(reviewedProductIds[item.product_id])}
+                          disabled={
+                            reviewSaving ||
+                            Boolean(reviewedProductIds[item.product_id])
+                          }
                         >
-                          {reviewedProductIds[item.product_id] ? "Đã đánh giá" : "Đánh giá sản phẩm"}
+                          {reviewedProductIds[item.product_id]
+                            ? "Đã đánh giá"
+                            : "Đánh giá sản phẩm"}
                         </button>
                       ) : null}
                     </div>
@@ -1073,11 +1237,27 @@ export default function OrderDetail() {
                 </p>
 
                 <div style={styles.paymentInfo}>
-                  <p style={styles.paymentText}>{getMethodLabel(detail.payment_method)}</p>
-                  <span style={{ ...styles.paymentBadge, ...getPaymentBadgeStyle(detail.payment_status) }}>{getPaymentStatusLabel(detail.payment_status)}</span>
+                  <p style={styles.paymentText}>
+                    {getMethodLabel(detail.payment_method)}
+                  </p>
+                  <span
+                    style={{
+                      ...styles.paymentBadge,
+                      ...getPaymentBadgeStyle(detail.payment_status),
+                    }}
+                  >
+                    {getPaymentStatusLabel(detail.payment_status)}
+                  </span>
                 </div>
-                {detail.payment_status !== "paid" && detail.payment_status !== "cancelled" && detail.order_status !== "cancelled" ? (
-                  <button type="button" style={styles.paymentActionBtn} onClick={handlePrimaryAction} disabled={saving}>
+                {detail.payment_status !== "paid" &&
+                detail.payment_status !== "cancelled" &&
+                detail.order_status !== "cancelled" ? (
+                  <button
+                    type="button"
+                    style={styles.paymentActionBtn}
+                    onClick={handlePrimaryAction}
+                    disabled={saving}
+                  >
                     Thanh toán
                   </button>
                 ) : null}
@@ -1102,7 +1282,13 @@ export default function OrderDetail() {
               type="button"
               style={styles.actionBtn}
               onClick={() => setCancelPromptOpen(true)}
-              disabled={saving || !(detail.order_status === "pending" || detail.order_status === "confirmed")}
+              disabled={
+                saving ||
+                !(
+                  detail.order_status === "pending" ||
+                  detail.order_status === "confirmed"
+                )
+              }
             >
               Hủy đơn hàng
             </button>
@@ -1112,7 +1298,11 @@ export default function OrderDetail() {
               onClick={handlePrimaryAction}
               disabled={saving}
             >
-              {detail.payment_status !== "paid" && detail.payment_status !== "cancelled" && detail.order_status !== "cancelled" ? "Thanh toán" : "Quay lại đơn hàng"}
+              {detail.payment_status !== "paid" &&
+              detail.payment_status !== "cancelled" &&
+              detail.order_status !== "cancelled"
+                ? "Thanh toán"
+                : "Quay lại đơn hàng"}
             </button>
           </div>
         )}
@@ -1133,7 +1323,9 @@ export default function OrderDetail() {
               }}
             >
               <h3 style={styles.complaintTitle}>Đánh giá sản phẩm</h3>
-              <p style={styles.complaintHint}>{reviewTarget.product_name ?? "Sản phẩm"}</p>
+              <p style={styles.complaintHint}>
+                {reviewTarget.product_name ?? "Sản phẩm"}
+              </p>
 
               <div>
                 <p style={styles.complaintLabel}>Số sao</p>
@@ -1144,7 +1336,9 @@ export default function OrderDetail() {
                       type="button"
                       style={{
                         ...styles.reviewStarButton,
-                        ...(star <= reviewRating ? styles.reviewStarButtonActive : {}),
+                        ...(star <= reviewRating
+                          ? styles.reviewStarButtonActive
+                          : {}),
                       }}
                       onClick={() => setReviewRating(star)}
                       disabled={reviewSaving}
@@ -1167,7 +1361,9 @@ export default function OrderDetail() {
                 />
               </label>
 
-              {reviewError ? <p style={{ ...styles.errorText, padding: 0 }}>{reviewError}</p> : null}
+              {reviewError ? (
+                <p style={{ ...styles.errorText, padding: 0 }}>{reviewError}</p>
+              ) : null}
 
               <div style={styles.complaintActions}>
                 <button
@@ -1220,3 +1416,7 @@ export default function OrderDetail() {
     </div>
   );
 }
+
+export default compose(withErrorBoundary, (Component) =>
+  withAuth(Component, "user"),
+)(BaseOrderDetail);

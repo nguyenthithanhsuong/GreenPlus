@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { compose, withErrorBoundary } from "@/lib/decorators";
 
 type ConfirmationDialogProps = {
   open: boolean;
@@ -8,7 +9,7 @@ type ConfirmationDialogProps = {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  confirmTone?: "danger" | "primary";
+  confirmTone?: "danger" | "primary" | "warning";
   busy?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -80,9 +81,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#FFFFFF",
     boxShadow: "0px 6px 14px -4px rgba(220, 38, 38, 0.45)",
   },
+  confirmWarning: {
+    border: "1px solid #D97706",
+    background: "#D97706",
+    color: "#FFFFFF",
+    boxShadow: "0px 6px 14px -4px rgba(217, 119, 6, 0.45)",
+  },
 };
 
-export default function ConfirmationDialog({
+function BaseConfirmationActionDialog({
   open,
   title,
   message,
@@ -98,20 +105,34 @@ export default function ConfirmationDialog({
   }
 
   return (
-    <div style={styles.backdrop} role="dialog" aria-modal="true" aria-label={title}>
+    <div
+      style={styles.backdrop}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div style={styles.panel}>
         <h3 style={styles.title}>{title}</h3>
         <p style={styles.message}>{message}</p>
 
         <div style={styles.actions}>
-          <button type="button" style={styles.buttonBase} onClick={onCancel} disabled={busy}>
+          <button
+            type="button"
+            style={styles.buttonBase}
+            onClick={onCancel}
+            disabled={busy}
+          >
             {cancelLabel}
           </button>
           <button
             type="button"
             style={{
               ...styles.buttonBase,
-              ...(confirmTone === "danger" ? styles.confirmDanger : styles.confirmPrimary),
+              ...(confirmTone === "danger"
+                ? styles.confirmDanger
+                : confirmTone === "warning"
+                  ? styles.confirmWarning
+                  : styles.confirmPrimary),
             }}
             onClick={onConfirm}
             disabled={busy}
@@ -123,3 +144,5 @@ export default function ConfirmationDialog({
     </div>
   );
 }
+
+export default compose(withErrorBoundary)(BaseConfirmationActionDialog);
