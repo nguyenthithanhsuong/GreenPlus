@@ -1,7 +1,6 @@
 # Web Client Frontend Pattern Guide
 
 This guide documents patterns used in `web-client/frontend` and `web-client/src/lib`.
-Pattern rule: use a pattern only when it removes real repetition, centralizes logic, or improves type safety.
 
 ## Public Imports
 
@@ -15,17 +14,14 @@ import { compose, withAuth, withErrorBoundary } from "@/lib";
 
 ## Pattern Decisions
 
-| Pattern        | Status           | Used For                                                  |
-| -------------- | ---------------- | --------------------------------------------------------- |
-| Builder        | Keep             | URL/query construction and typed list filtering.          |
-| Strategy       | Keep             | Payment method behavior.                                  |
-| Singleton      | Keep             | API service instances and shared request behavior.        |
-| Mapper         | Keep             | API DTO to UI model transformation.                       |
-| Decorator      | Keep             | Auth and error-boundary page wrappers.                    |
-| Observer/store | Keep             | Auth state subscriptions through Zustand.                 |
-| Factory        | Remove           | No current need for generic UI creation.                  |
-| Composite      | Remove           | No repeated nested form rendering need right now.         |
-| Adapter        | Rename to Mapper | Existing usage is data mapping, not interface adaptation. |
+| Pattern        | Status | Used For                                           |
+| -------------- | ------ | -------------------------------------------------- |
+| Builder        | Keep   | URL/query construction and typed list filtering.   |
+| Strategy       | Keep   | Payment method behavior.                           |
+| Singleton      | Keep   | API service instances and shared request behavior. |
+| Mapper         | Keep   | API DTO to UI model transformation.                |
+| Decorator      | Keep   | Auth and error-boundary page wrappers.             |
+| Observer/store | Keep   | Auth state subscriptions through Zustand.          |
 
 ### 1. Payment Component (Strategy Pattern)
 
