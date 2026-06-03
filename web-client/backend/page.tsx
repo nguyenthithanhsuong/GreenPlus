@@ -593,7 +593,9 @@ export default function Home() {
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <div className="rounded border border-slate-700 bg-slate-800/60 p-3">
                   <p className="mb-2 text-xs font-semibold text-emerald-300">Thêm mới</p>
-                  <p className="mb-2 text-[11px] text-slate-400">Để trống hoặc dùng "__auto__" để bỏ qua các trường tự sinh/mặc định.</p>
+                  <p className="mb-2 text-[11px] text-slate-400">
+  Để trống hoặc dùng &quot;__auto__&quot; để bỏ qua các trường tự sinh/mặc định.
+</p>
                   <textarea
                     value={insertPayload}
                     onChange={(e) => setInsertPayload(e.target.value)}
