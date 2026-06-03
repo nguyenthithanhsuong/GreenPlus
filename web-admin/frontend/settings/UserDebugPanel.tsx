@@ -12,7 +12,7 @@ const UserDebugPanel = () => {
 
   return (
     <div className="w-full bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-6">
-      <button
+      {/* <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between text-sm font-bold text-amber-900 hover:text-amber-800 transition-colors"
       >
@@ -21,9 +21,9 @@ const UserDebugPanel = () => {
           {loading && <span className="text-xs text-amber-700">(đang tải...)</span>}
         </span>
         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-      </button>
+      </button> */}
 
-      {isExpanded && (
+      {/* {isExpanded && (
         <div className="mt-4 space-y-4 text-xs text-amber-900">
           <div className="bg-white rounded border border-amber-200 p-3">
             <h4 className="font-bold text-amber-900 mb-2">1. Auth Store (từ Supabase)</h4>
@@ -130,7 +130,7 @@ const UserDebugPanel = () => {
             </ol>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

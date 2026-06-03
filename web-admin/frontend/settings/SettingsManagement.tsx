@@ -10,7 +10,7 @@ const SettingsManagement = () => {
       description="Quản lý hồ sơ cá nhân, bảo mật và thông báo tài khoản."
       searchPlaceholder="Tìm kiếm nhanh..."
     >
-      <UserDebugPanel />
+      {/* <UserDebugPanel /> */}
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         <SettingsNav />
         <ProfileForm />
