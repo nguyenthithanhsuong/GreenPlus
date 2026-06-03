@@ -175,8 +175,8 @@ export async function getPermissionsForRole(roleRow: RoleRow | null) {
 
     if (!error && Array.isArray(data)) {
       for (const row of data ?? []) {
-  const permissions = row.permissions as any[];
-
+    const permissions = row.permissions as { key?: string }[];
+    
   for (const permission of permissions ?? []) {
     if (permission?.key) {
       collected.add(permission.key);

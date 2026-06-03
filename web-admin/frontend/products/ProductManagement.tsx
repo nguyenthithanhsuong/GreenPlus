@@ -20,6 +20,7 @@ const emptyForm = (): ProductFormValues => ({
 });
 
 const ProductManagement = () => {
+  const { hasPermission, loading: permLoading } = usePermissions();
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -282,23 +283,17 @@ const ProductManagement = () => {
             <RefreshCw className="h-4 w-4" />
             Tải lại
           </button>
-          {(() => {
-            const { hasPermission, loading: permLoading } = usePermissions();
-            if (permLoading) return null;
-            if (!hasPermission('products.create')) return null;
-
-            return (
-              <button
-                type="button"
-                onClick={openCreateDrawer}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
-                disabled={loading || saving}
-              >
-                <Plus className="h-4 w-4" />
-                Thêm sản phẩm
-              </button>
-            );
-          })()}
+          {!permLoading && hasPermission("products.create") && (
+  <button
+    type="button"
+    onClick={openCreateDrawer}
+    className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
+    disabled={loading || saving}
+  >
+    <Plus className="h-4 w-4" />
+    Thêm sản phẩm
+  </button>
+)}
         </div>
       }
     >
