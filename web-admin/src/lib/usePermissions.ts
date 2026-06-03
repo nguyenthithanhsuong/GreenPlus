@@ -35,7 +35,7 @@ export function usePermissions() {
   const hasPermission = useCallback(
     (key: string) => {
       if (!permissions) return false;
-      // Admin role may not be represented here; permissions list will include admin shortcuts
+      
       return permissions.includes(key);
     },
     [permissions]

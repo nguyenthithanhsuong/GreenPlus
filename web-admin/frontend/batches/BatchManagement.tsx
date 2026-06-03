@@ -423,10 +423,7 @@ const BatchManagement = () => {
       searchPlaceholder="Tìm kiếm batch, sản phẩm, nhà cung cấp..."
       pageActions={(
         <div className="flex items-center gap-2">
-          {(() => {
-            const { hasPermission, loading: permLoading } = usePermissions();
-            if (permLoading) {
-              return (
+            {permLoading ? (
                 <>
                   <div ref={scannerMenuRef} className="relative">
                     <button
@@ -450,10 +447,7 @@ const BatchManagement = () => {
                     Tải lại
                   </button>
                 </>
-              );
-            }
-
-            return (
+            ) : (
               <>
                 <div ref={scannerMenuRef} className="relative">
                   {hasPermission('batches.qr_scan') ? (
@@ -511,8 +505,7 @@ const BatchManagement = () => {
                   </button>
                 ) : null}
               </>
-            );
-          })()}
+            )}
         </div>
       )}
     >

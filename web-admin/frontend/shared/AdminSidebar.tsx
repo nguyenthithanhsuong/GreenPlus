@@ -68,8 +68,8 @@ export default function AdminSidebar() {
   const { permissions, loading } = usePermissions();
 
   function allowed(href: string) {
-    if (!permissions) return false; // while loading, hide until resolved
-    // no permission required for dashboard and settings
+    if (!permissions) return false; 
+    
     if (href === "/dashboard" || href === "/settings") return true;
 
     const map: Record<string, string> = {
@@ -113,7 +113,7 @@ export default function AdminSidebar() {
             <ul className="space-y-1">
               {group.items
                 .filter((it) => {
-                  // while permission loading, show nothing to avoid flicker
+                  
                   if (loading) return false;
                   return allowed(it.href);
                 })

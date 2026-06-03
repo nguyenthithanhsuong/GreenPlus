@@ -30,7 +30,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    // verify session and permission
+    
     const authHeader = request.headers.get("authorization") ?? "";
     let accessToken = "";
     if (authHeader.toLowerCase().startsWith("bearer ")) accessToken = authHeader.slice("bearer ".length).trim();

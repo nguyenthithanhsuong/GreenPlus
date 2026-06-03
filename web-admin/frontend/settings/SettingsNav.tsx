@@ -67,7 +67,7 @@ const SettingsNav = () => {
         Cửa hàng của tôi
       </button>
       {
-        // show 'Các cửa hàng' only when user has stores.read permission
+        
       }
       {!permLoading && profile?.roleName?.toLowerCase()?.includes('admin') && (
         <button
