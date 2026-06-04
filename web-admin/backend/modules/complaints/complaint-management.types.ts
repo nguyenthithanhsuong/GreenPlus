@@ -3,6 +3,7 @@ export type ComplaintStatus = "pending" | "resolved" | "rejected";
 export type ComplaintRow = {
   complaint_id: string;
   user_id: string | null;
+  email: string | null;
   order_id: string | null;
   type: string;
   description: string;

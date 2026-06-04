@@ -9,12 +9,24 @@ export async function PUT(request: Request) {
       status?: string;
     };
 
-    const data = await authFacade.updateAccountStatus({
-      userId: body.userId ?? "",
-      status: body.status === "inactive" || body.status === "active" || body.status === "banned" || body.status === "suspended"
-        ? body.status
-        : "",
-    });
+    const status = body.status;
+
+if (
+  status !== "active" &&
+  status !== "inactive" &&
+  status !== "banned" &&
+  status !== "suspended"
+) {
+  return NextResponse.json(
+    { error: "Invalid status" },
+    { status: 400 }
+  );
+}
+
+const data = await authFacade.updateAccountStatus({
+  userId: body.userId ?? "",
+  status,
+});
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {

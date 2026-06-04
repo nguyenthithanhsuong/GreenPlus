@@ -13,7 +13,7 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  lint-and-test:
+  frontend-ci:
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
@@ -35,17 +35,50 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint web-client
+        run: npm run lint -w web-client
 
-      - name: Type check
-        run: npm run typecheck
+      - name: Type check web-client
+        run: npm run typecheck -w web-client
 
-      - name: Build
-        run: npm run build
+      - name: Build web-client
+        run: npm run build -w web-client
+
+  backend-ci:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "example-anon-key"
+      SUPABASE_SERVICE_ROLE_KEY: "example-service-role-key"
+      SENTRY_DSN: ""
+      NEXT_PUBLIC_SENTRY_DSN: ""
+      BETTER_STACK_SOURCE_TOKEN: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint web-admin
+        run: npm run lint -w web-admin
+
+      - name: Type check web-admin
+        run: npm run typecheck -w web-admin
+
+      - name: Build web-admin
+        run: npm run build -w web-admin
 
   docker-build:
-    needs: lint-and-test
+    needs:
+      - frontend-ci
+      - backend-ci
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -107,7 +140,9 @@ jobs:
           cache-to: type=gha,mode=max
 
   sentry-sourcemaps:
-    needs: lint-and-test
+    needs:
+      - frontend-ci
+      - backend-ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:

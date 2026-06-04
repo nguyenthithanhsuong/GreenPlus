@@ -1,6 +1,7 @@
 export type CommunityPostStatus = "pending" | "approved" | "rejected";
 
 export type CommunityMediaType = "JPG" | "PNG" | "MP4";
+
 export type CommunityPostType = "blog" | "video" | "community";
 
 export type CreateCommunityPostInput = {

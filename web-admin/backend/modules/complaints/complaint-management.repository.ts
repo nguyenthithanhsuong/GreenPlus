@@ -4,10 +4,12 @@ import { ComplaintRow, ComplaintStatus, UpdateComplaintStatusInput } from "./com
 type UserJoin =
   | {
       name?: string | null;
+      email?: string | null;
       image_url?: string | null;
     }
   | Array<{
       name?: string | null;
+      email?: string | null;
       image_url?: string | null;
     }>
   | null;
@@ -41,7 +43,7 @@ export class ComplaintManagementRepository {
         created_at,
         resolved_at,
         reject_reason,
-        users(name,image_url)
+        users(name,email,image_url)
       `)
       .order("created_at", { ascending: false, nullsFirst: false });
 
@@ -65,7 +67,7 @@ export class ComplaintManagementRepository {
         created_at,
         resolved_at,
         reject_reason,
-        users(name,image_url)
+        users(name,email,image_url)
       `)
       .eq("complaint_id", complaintId)
       .maybeSingle();
@@ -113,7 +115,7 @@ export class ComplaintManagementRepository {
         created_at,
         resolved_at,
         reject_reason,
-        users(name,image_url)
+        users(name,email,image_url)
       `)
       .maybeSingle();
 
@@ -135,6 +137,7 @@ export class ComplaintManagementRepository {
       created_at: row.created_at,
       resolved_at: row.resolved_at,
       reject_reason: row.reject_reason,
+      email: this.pickUserField(row.users ?? null, "email"),
       user_name: this.pickUserField(row.users ?? null, "name"),
       user_image_url: this.pickUserField(row.users ?? null, "image_url"),
     };
@@ -148,7 +151,7 @@ export class ComplaintManagementRepository {
     return "pending";
   }
 
-  private pickUserField(user: UserJoin, field: "name" | "image_url"): string | null {
+  private pickUserField(user: UserJoin, field: "name" | "email" | "image_url"): string | null {
     if (Array.isArray(user)) {
       return user[0]?.[field] ?? null;
     }

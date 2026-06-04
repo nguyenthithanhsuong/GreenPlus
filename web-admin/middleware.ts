@@ -1,5 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+
+const PUBLIC_PATHS = [
+  '/login',
+  '/api/auth',
+  '/api/health',
+  '/_next',
+  '/favicon.ico',
+];
+
+const hasAuthCookie = (request: NextRequest): boolean => {
+  return Boolean(request.cookies.get('gp_admin_auth')?.value);
+};
+
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 

@@ -150,8 +150,11 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
 
   const stats = useMemo(() => {
     const totalAvailable = items.reduce((sum, item) => sum + item.quantity_available, 0);
-    const totalReserved = items.reduce((sum, item) => sum + item.quantity_reserved, 0);
-    const lowStockCount = items.filter((item) => item.quantity_available > 0 && item.quantity_available < 10).length;
+const totalReserved = items.reduce(
+  (sum, item) => sum + (item.quantity_reserved ?? 0),
+  0
+);  
+const lowStockCount = items.filter((item) => item.quantity_available > 0 && item.quantity_available < 10).length;
     const outOfStockCount = items.filter((item) => item.quantity_available === 0).length;
 
     return {
@@ -167,7 +170,7 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
     setSelectedItem(item);
     setForm({
       quantityAvailable: String(item.quantity_available),
-      quantityReserved: String(item.quantity_reserved),
+      quantityReserved: String(item.quantity_reserved ?? ""),
       note: "",
     });
     setDrawerError(null);

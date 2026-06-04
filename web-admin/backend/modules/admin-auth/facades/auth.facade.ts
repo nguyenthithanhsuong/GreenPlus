@@ -282,6 +282,7 @@ console.log("=================================");
     const updated = await this.repository.updateProfile({
       userId: input.userId,
       name: input.name.trim(),
+      email: input.email.trim().toLowerCase(),
       phone: input.phone.trim(),
       address: (input.address ?? "").trim(),
       imageUrl: (input.imageUrl ?? "").trim(),
