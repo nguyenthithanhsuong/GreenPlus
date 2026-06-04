@@ -8,6 +8,7 @@ import { useAuthStore } from "@/lib/stores/authStore";
 import {
   ListFilterBuilder,
   UrlBuilder,
+  UrlDirector,
   compose,
   withAuth,
   withErrorBoundary,
@@ -242,7 +243,7 @@ function BaseComplaints() {
 
       try {
         const response = await fetch(
-          UrlBuilder.from("/api/orders").query("userId", user.user_id).build(),
+          UrlDirector.create("/api/orders").query("userId", user.user_id).build(),
           {
             signal: controller.signal,
           },

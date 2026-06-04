@@ -10,7 +10,6 @@ export class ProductService {
   constructor(private readonly repository: ProductRepository) {}
 
   async getActiveBrowseItems(): Promise<ProductBrowseItem[]> {
-    // Lay danh sach active + map gia moi nhat + map thong tin category/chung nhan.
     const products = await this.repository.listActiveProducts();
     const productIds = products.map((product) => product.product_id);
     const [latestPriceMap, supplierMap] = await Promise.all([
@@ -45,7 +44,6 @@ export class ProductService {
     const items = await this.getActiveBrowseItems();
     const sorted = createSortStrategy(sort).apply(items);
 
-    // Pagination theo offset: start = (page - 1) * limit.
     const startIndex = (page - 1) * limit;
     const paged = sorted.slice(startIndex, startIndex + limit);
 

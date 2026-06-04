@@ -11,6 +11,7 @@ import {
   SCREEN_MAX_WIDTH_PX,
   SCREEN_SIDE_PADDING_PX,
 } from "../../shared/screen.styles";
+import { useRouter } from "next/navigation";
 
 type CategoryItem = {
   categoryId: string;
@@ -217,6 +218,8 @@ function BaseCategory() {
   const [error, setError] = useState<string | null>(null);
   const [brokenImageIds, setBrokenImageIds] = useState<Record<string, boolean>>({});
 
+  const router = useRouter();
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -281,9 +284,21 @@ function BaseCategory() {
       <div style={styles.container}>
         <header style={styles.topNav}>
         <div style={styles.iconPlaceholder}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M15 18L9 12L15 6" stroke="#081B15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <button
+  type="button"
+  onClick={() => router.back()}
+  style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M15 18L9 12L15 6"
+      stroke="#081B15"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+</button>
         </div>
         <h1 style={styles.headerTitle}>Danh Mục</h1>
         <div style={{ width: "24px" }}></div>

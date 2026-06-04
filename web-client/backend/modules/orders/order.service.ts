@@ -410,7 +410,6 @@ export class OrderService {
           throw paymentUpdateError;
         }
 
-        // Backward compatibility for databases that still enforce pending/paid/failed only.
         await this.repository.updatePaymentStatus({
           orderId: order.order_id,
           status: "failed",

@@ -8,6 +8,7 @@ import ConfirmationDialog from "../../shared/ConfirmationActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
 import {
   UrlBuilder,
+  UrlDirector,
   compose,
   withAuth,
   withErrorBoundary,
@@ -726,7 +727,7 @@ function BaseOrderDetail() {
 
       try {
         const response = await fetch(
-          UrlBuilder.from("/api/orders")
+          UrlDirector.create("/api/orders")
             .segment(orderId)
             .query("userId", user.user_id)
             .build(),
@@ -844,7 +845,7 @@ function BaseOrderDetail() {
 
     try {
       const response = await fetch(
-        UrlBuilder.from("/api/orders")
+        UrlDirector.create("/api/orders")
           .segment(detail.order_id)
           .segment("cancel")
           .build(),
@@ -893,7 +894,7 @@ function BaseOrderDetail() {
       detail.order_status !== "cancelled";
     if (canOpenPayment) {
       router.push(
-        UrlBuilder.from("/orders")
+        UrlDirector.create("/orders")
           .segment(detail.order_id)
           .segment("payment")
           .build(),
@@ -910,7 +911,7 @@ function BaseOrderDetail() {
     }
 
     void router.push(
-      UrlBuilder.from("/complaints")
+      UrlDirector.create("/complaints")
         .query("orderId", detail.order_id)
         .build(),
     );

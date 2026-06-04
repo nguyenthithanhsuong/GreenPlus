@@ -54,7 +54,6 @@ const InventoryTable = ({
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      {/* Filters */}
       <div className="flex flex-col md:flex-row md:items-center p-5 border-b border-gray-50 gap-4">
         <div className="flex items-center gap-3 md:ml-auto w-full md:w-auto">
           <div className="relative w-full md:w-[28rem] max-w-md">
@@ -73,7 +72,6 @@ const InventoryTable = ({
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-white border-b border-gray-100">
@@ -205,7 +203,6 @@ const InventoryTable = ({
         </table>
       </div>
 
-      {/* Footer */}
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span className="text-sm text-gray-500">
           Hiển thị{" "}

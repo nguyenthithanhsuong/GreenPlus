@@ -13,5 +13,3 @@ export const supabaseServer = createClient(supabaseUrl, serviceRoleKey, {
     persistSession: false,
   },
 });
-
-// export const isUsingServiceRoleKey = true;

@@ -28,6 +28,11 @@ export async function PUT(request: Request, context: Context) {
       orderId,
     });
 
+    console.log("confirm-payment hit", {
+  userId,
+  orderId,
+});
+
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {

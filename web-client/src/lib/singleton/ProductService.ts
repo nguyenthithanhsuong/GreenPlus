@@ -1,5 +1,5 @@
 import apiService from "./ApiService";
-import { UrlBuilder } from "../builder";
+import { UrlBuilder, UrlDirector } from "../builder";
 
 export interface ProductBrowseItem {
   productId: string;
@@ -81,7 +81,7 @@ class ProductService {
 
   async getProductDetail(productId: string): Promise<ProductDetailData> {
     return apiService.get<ProductDetailData>(
-      UrlBuilder.from("/api/products").segment(productId).build(),
+      UrlDirector.create("/api/products").segment(productId).build(),
     );
   }
 
@@ -93,7 +93,7 @@ class ProductService {
     page?: number;
   }): Promise<ProductsResponse> {
     const response = await apiService.get<Partial<ProductsResponse>>(
-      UrlBuilder.from("/api/products").queries(params).build(),
+      UrlDirector.create("/api/products").queries(params).build(),
     );
 
     return {
@@ -106,7 +106,7 @@ class ProductService {
 
   async getReviews(productId: string, limit = 10): Promise<ReviewsResponse> {
     const response = await apiService.get<Partial<ReviewsResponse>>(
-      UrlBuilder.from("/api/reviews")
+      UrlDirector.create("/api/reviews")
         .query("productId", productId)
         .query("limit", limit)
         .build(),

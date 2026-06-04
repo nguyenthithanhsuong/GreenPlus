@@ -19,7 +19,6 @@ export class AuthService {
       throw new Error("Missing access token");
     }
 
-    // 1. verify token with Supabase
     const supabase = createAnonSupabaseClient(accessToken);
 
     const { data, error } = await supabase.auth.getUser();
@@ -28,15 +27,12 @@ export class AuthService {
       throw new Error("Invalid session");
     }
 
-    // 2. get role from DB
     let { data: profile, error: profileError } = await supabaseServer
       .from("users")
       .select("user_id, role_id, email, roles(role_name)")
       .eq("user_id", data.user.id)
       .single();
 
-    // Backward compatibility: some legacy users are keyed by business user_id,
-    // while auth identity uses a different id. Fall back to email mapping.
     if ((profileError || !profile) && data.user.email) {
       const fallback = await supabaseServer
         .from("users")
@@ -52,7 +48,6 @@ export class AuthService {
       throw new Error("User profile not found");
     }
 
-    // Resolve role name from join or fallback to direct lookup
     let roleName = resolveRoleName(profile);
     if (!roleName && profile.role_id && typeof profile.role_id === "string") {
       const { data: roleData, error: roleError } = await supabaseServer

@@ -174,7 +174,6 @@ const ProfileForm = () => {
   return (
     <form className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8" onSubmit={handleSubmit}>
       
-      {/* Form Header */}
       <div className="mb-8 border-b border-gray-100 pb-4">
         <h2 className="text-lg font-bold text-gray-900">Thông tin cơ bản</h2>
         <p className="text-sm text-gray-500 mt-1">
@@ -200,7 +199,6 @@ const ProfileForm = () => {
         </div>
       ) : null}
 
-      {/* Avatar Section */}
       <div className="flex items-center gap-6 mb-8">
         <div className="relative">
           <img 
@@ -255,7 +253,6 @@ const ProfileForm = () => {
         </div>
       </div>
 
-      {/* Form Fields grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Họ và tên</label>
@@ -295,7 +292,6 @@ const ProfileForm = () => {
         </div>
       </div>
 
-      {/* Store Information Section */}
       <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-6 flex gap-3">
         <Home className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
         <div>
@@ -325,7 +321,6 @@ const ProfileForm = () => {
         </div>
       </div>
 
-      {/* Save Action */}
       <div className="flex justify-end pt-4 border-t border-gray-100">
         <button
           type="submit"

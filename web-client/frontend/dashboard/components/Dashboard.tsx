@@ -398,7 +398,6 @@ const BaseDashboard = () => {
   const [cartActionLoading, setCartActionLoading] = useState(false);
 
   useEffect(() => {
-    // Add animation styles globally
     const style = document.createElement("style");
     style.innerHTML = `
       @keyframes slideUp {
@@ -483,15 +482,10 @@ const BaseDashboard = () => {
       setCategoryError(null);
 
       try {
-        const data = await ProductService.getProducts({ sort: "name_asc" });
+        const response = await fetch("/api/categories");
+        const data = await response.json();
         const items = Array.isArray(data.items) ? data.items : [];
-        setCategories(
-          items.slice(0, 10).map((item) => ({
-            categoryId: item.categoryId || "",
-            name: item.categoryName || item.name,
-            imageUrl: item.imageUrl,
-          })),
-        );
+        setCategories(data.items ?? []);
       } catch (requestError) {
         setCategories([]);
         setCategoryError(

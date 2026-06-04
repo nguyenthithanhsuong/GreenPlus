@@ -6,7 +6,6 @@ loadEnv({ path: resolve(process.cwd(), "../.env") });
 loadEnv({ path: resolve(process.cwd(), ".env.local"), override: true });
 
 const nextConfig: NextConfig = {
-  /* config options here */
   transpilePackages: ["@greenplus/supabase-shared"],
 };
 

@@ -694,6 +694,7 @@ function PaymentBase() {
         amount: grandTotal,
         currency: "VND",
         orderId: "checkout",
+        userId: user.user_id,
         customerEmail: user.email,
         customerPhone: user.phone ?? undefined,
       });
@@ -711,12 +712,12 @@ function PaymentBase() {
         paymentMethod,
       });
 
-      // Apply OrderMapper to get a typed UI model for the created order
       const orderUIModel = OrderMapper.toUIModel(createResult);
       const paymentResult = await selectedPaymentStrategy.process({
         amount: orderUIModel.total,
         currency: "VND",
         orderId: orderUIModel.id,
+        userId: user.user_id,
         customerEmail: user.email,
         customerPhone: user.phone ?? undefined,
       });

@@ -3,7 +3,7 @@ import type {
   ProductRow,
   ProductStatus,
 } from "../../../backend/modules/catalog/product-management.types";
-import { UrlBuilder } from "../builder";
+import { UrlBuilder, UrlDirector } from "../builder";
 import apiService from "./ApiService";
 
 export type ProductListResponse = {
@@ -43,7 +43,7 @@ class ProductManagementService {
   ): Promise<unknown> {
     if (productId) {
       return apiService.put(
-        UrlBuilder.from("/api/products").segment(productId).build(),
+        UrlDirector.create("/api/products").segment(productId).build(),
         payload,
       );
     }
@@ -53,13 +53,13 @@ class ProductManagementService {
 
   deleteProduct(productId: string): Promise<unknown> {
     return apiService.delete(
-      UrlBuilder.from("/api/products").segment(productId).build(),
+      UrlDirector.create("/api/products").segment(productId).build(),
     );
   }
 
   updateStatus(productId: string, status: ProductStatus): Promise<unknown> {
     return apiService.patch(
-      UrlBuilder.from("/api/products").segment(productId).build(),
+      UrlDirector.create("/api/products").segment(productId).build(),
       { status },
     );
   }

@@ -271,7 +271,6 @@ function BaseCategoryProducts({
   const [cartActionLoading, setCartActionLoading] = useState(false);
 
   useEffect(() => {
-    // Add animation styles globally
     const style = document.createElement("style");
     style.innerHTML = `
       @keyframes slideUp {
@@ -340,7 +339,6 @@ function BaseCategoryProducts({
         quantity: 1,
       });
 
-      // Find product name for the notification
       const product = products.find((p) => p.id === productId);
       const productName = product?.name || "sản phẩm";
       setCartActionMessage(`Đã thêm ${productName} vào Giỏ hàng!`);

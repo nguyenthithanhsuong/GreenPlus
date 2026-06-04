@@ -212,7 +212,6 @@ function BaseBackendPage() {
 
     if (!sourceField) return rows;
 
-    // Filter rows where the foreign key field matches the selected related ID
     return rows.filter((row) => {
       const fieldValue = String(row[sourceField] || "");
       return fieldValue === selectedRelatedId;
@@ -406,7 +405,6 @@ function BaseBackendPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-          {/* Main Feature Sidebar */}
           <aside className="rounded-xl border border-slate-800 bg-slate-900 p-3 lg:col-span-1">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-300">
               Client Features
@@ -428,7 +426,6 @@ function BaseBackendPage() {
             </div>
           </aside>
 
-          {/* Relationships Sub-Sidebar */}
           <aside
             className={`rounded-xl border transition-all duration-300 lg:col-span-1 ${
               expandedRelationships || tableRelationships
@@ -447,7 +444,6 @@ function BaseBackendPage() {
               {(expandedRelationships || tableRelationships) &&
                 tableRelationships && (
                   <div className="space-y-3 text-xs">
-                    {/* Category */}
                     <div className="rounded-md border border-slate-700 bg-slate-800/50 p-2">
                       <p className="font-semibold text-cyan-300">
                         {tableRelationships.category}
@@ -457,7 +453,6 @@ function BaseBackendPage() {
                       </p>
                     </div>
 
-                    {/* Outgoing Relationships */}
                     {tableRelationships.outgoing.length > 0 && (
                       <div className="space-y-2">
                         <p className="font-semibold text-amber-300">
@@ -492,7 +487,6 @@ function BaseBackendPage() {
                       </div>
                     )}
 
-                    {/* Incoming Relationships */}
                     {tableRelationships.incoming.length > 0 && (
                       <div className="space-y-2">
                         <p className="font-semibold text-emerald-300">

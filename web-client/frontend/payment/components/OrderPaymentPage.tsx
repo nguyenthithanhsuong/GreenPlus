@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PaymentStrategyRegistry } from "@/lib/strategy";
 import { useAuthStore } from "@/lib/stores/authStore";
-import { UrlBuilder } from "@/lib";
+import { UrlDirector } from "@/lib";
 import {
   SCREEN_CONTENT_PADDING_X,
   SCREEN_HEADER_PADDING_X,
@@ -166,6 +166,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
+
 function formatPrice(value: number): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
 }
@@ -183,6 +184,11 @@ function getMethodLabel(method: OrderPaymentMethod): string {
 }
 
 function OrderPaymentPageBase() {
+
+  const paymentMethods = useMemo(() => {
+  return PaymentStrategyRegistry.getAvailableMethods();
+}, []);
+
   const router = useRouter();
   const params = useParams<{ orderId: string }>();
   const user = useAuthStore((state) => state.user);
@@ -192,6 +198,8 @@ function OrderPaymentPageBase() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<OrderPaymentMethod>("unknown");
+
 
   useEffect(() => {
     if (!user?.user_id) {
@@ -213,7 +221,7 @@ function OrderPaymentPageBase() {
 
       try {
         const response = await fetch(
-          UrlBuilder.from("/api/orders")
+          UrlDirector.create("/api/orders")
             .segment(orderId)
             .query("userId", user.user_id)
             .build(),
@@ -248,6 +256,19 @@ function OrderPaymentPageBase() {
     };
   }, [params?.orderId, router, user?.user_id]);
 
+  useEffect(() => {
+    if (!detail?.payment_method) {
+      return;
+    }
+
+    if (PaymentStrategyRegistry.hasStrategy(detail.payment_method)) {
+      setSelectedMethod(detail.payment_method);
+      return;
+    }
+
+    setSelectedMethod((paymentMethods[0]?.id as OrderPaymentMethod | undefined) ?? "unknown");
+  }, [detail, paymentMethods]);
+
   const canPay = useMemo(() => {
     if (!detail) {
       return false;
@@ -277,45 +298,79 @@ function OrderPaymentPageBase() {
   }, [detail]);
 
   const handlePay = async () => {
-    if (!user?.user_id || !detail || !canPay) {
+  if (!user?.user_id || !detail || !canPay) {
+    return;
+  }
+
+  setPaying(true);
+  setMessage(null);
+
+  console.log("selectedMethod =", selectedMethod);
+  console.log("available methods =", paymentMethods); 
+
+  try {
+    const strategy = PaymentStrategyRegistry.getStrategy(selectedMethod);
+    const canProcessPayment = await strategy.validate({
+      amount: detail.total_amount,
+      currency: "VND",
+      orderId: detail.order_id,
+      userId: user.user_id,
+      customerEmail: user?.email,
+      customerPhone: user?.phone ?? undefined,
+    });
+
+    if (!canProcessPayment) {
+      setMessage("Phương thức thanh toán đã chọn chưa đủ điều kiện xử lý.");
       return;
     }
 
-    setPaying(true);
-    setMessage(null);
+    const result = await strategy.process({
+      amount: detail.total_amount,
+      currency: "VND",
+      orderId: detail.order_id,
+      userId: user.user_id,
+      customerEmail: user?.email,
+      customerPhone: user?.phone ?? undefined,
+    });
 
-    try {
-      const response = await fetch(
-        UrlBuilder.from("/api/orders")
-          .segment(detail.order_id)
-          .segment("confirm-payment")
-          .build(),
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: user.user_id,
-          }),
-        },
-      );
+    if (result.success && !result.redirectUrl) {
+      setMessage(result.message || "Thanh toán thành công.");
+      if (result.success) {
+  const refreshed = await fetch(
+    UrlDirector.create("/api/orders")
+      .segment(detail.order_id)
+      .query("userId", user.user_id)
+      .build()
+  );
 
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(String(data.error ?? "Không thể thanh toán đơn hàng."));
-      }
-
-      setMessage("Thanh toán thành công. Đang quay lại chi tiết đơn hàng...");
+  const updated = await refreshed.json();
+  setDetail(updated);
+}
       router.replace(
-        UrlBuilder.from("/orders").segment(detail.order_id).build(),
+        UrlDirector.create("/orders")
+          .segment(detail.order_id)
+          .build()
       );
-    } catch (requestError) {
-      setMessage(requestError instanceof Error ? requestError.message : "Không thể thanh toán đơn hàng.");
-    } finally {
-      setPaying(false);
+
+      return;
     }
-  };
+
+    if (result.redirectUrl) {
+      window.location.href = result.redirectUrl;
+      return;
+    }
+
+    setMessage(result.message || "Không thể xử lý thanh toán.");
+  } catch (requestError) {
+    setMessage(
+      requestError instanceof Error
+        ? requestError.message
+        : "Không thể thanh toán đơn hàng."
+    );
+  } finally {
+    setPaying(false);
+  }
+};
 
   return (
     <div style={styles.page}>
@@ -355,6 +410,43 @@ function OrderPaymentPageBase() {
 
           {message ? <p style={styles.infoText}>{message}</p> : null}
         </main>
+
+          {detail && (
+  <section style={styles.card}>
+    <p style={styles.title}>Chọn phương thức thanh toán</p>
+
+    {paymentMethods.map((method) => {
+      const isSelected = selectedMethod === method.id;
+
+      return (
+        <button
+          key={method.id}
+          type="button"
+          onClick={() => {
+  console.log("switching to:", method.id);
+  setSelectedMethod(method.id as OrderPaymentMethod);
+}}
+          style={{
+            padding: "12px",
+            borderRadius: "12px",
+            border: isSelected ? "2px solid #4EA96A" : "1px solid #E5E7EB",
+            background: isSelected ? "#ECFDF5" : "#FFFFFF",
+            marginBottom: "8px",
+            textAlign: "left",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{ fontWeight: 700 }}>
+            {method.icon} {method.displayName}
+          </div>
+          <div style={{ fontSize: "12px", color: "#6B7280" }}>
+            {method.description}
+          </div>
+        </button>
+      );
+    })}
+  </section>
+)}
 
         {!loading && detail && (
           <div style={styles.bottomBar}>

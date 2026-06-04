@@ -7,7 +7,7 @@ export interface ApiResponse<T> {
 export class ApiService {
   private static instance: ApiService;
   private cache: Map<string, { data: unknown; timestamp: number }> = new Map();
-  private cacheDuration = 5 * 60 * 1000; // 5 minutes
+  private cacheDuration = 5 * 60 * 1000; 
 
   static getInstance(): ApiService {
     if (!ApiService.instance) {

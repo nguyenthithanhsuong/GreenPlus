@@ -9,6 +9,7 @@ import { useAuthStore } from "@/lib/stores/authStore";
 import {
   ListFilterBuilder,
   UrlBuilder,
+  UrlDirector,
   compose,
   withAuth,
   withErrorBoundary,
@@ -628,7 +629,6 @@ function BaseOrders() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  // Cart state
   const [cartItems, setCartItems] = useState<CartItemView[]>([]);
   const [cartTotal, setCartTotal] = useState(0);
   const [cartId, setCartId] = useState<string>("");
@@ -636,7 +636,6 @@ function BaseOrders() {
   const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
-  // Orders state
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
@@ -654,16 +653,15 @@ function BaseOrders() {
       setMessage(null);
 
       try {
-        // Load both cart and orders in parallel
         const [cartResponse, ordersResponse] = await Promise.all([
           fetch(
-            UrlBuilder.from("/api/cart").query("userId", user.user_id).build(),
+            UrlDirector.create("/api/cart").query("userId", user.user_id).build(),
             {
               signal: controller.signal,
             },
           ),
           fetch(
-            UrlBuilder.from("/api/orders").query("userId", user.user_id).build(),
+            UrlDirector.create("/api/orders").query("userId", user.user_id).build(),
             {
               signal: controller.signal,
             },
@@ -916,13 +914,13 @@ function BaseOrders() {
 
   const handleOpenComplaintPage = (orderId: string) => {
     void router.push(
-      UrlBuilder.from("/complaints").query("orderId", orderId).build(),
+      UrlDirector.create("/complaints").query("orderId", orderId).build(),
     );
   };
 
   const handleOpenReviewFromOrder = (orderId: string) => {
     void router.push(
-      UrlBuilder.from("/orders")
+      UrlDirector.create("/orders")
         .segment(orderId)
         .query("mode", "review")
         .build(),
@@ -948,7 +946,7 @@ function BaseOrders() {
 
     try {
       const response = await fetch(
-        UrlBuilder.from("/api/orders")
+        UrlDirector.create("/api/orders")
           .segment(cancelTarget.order_id)
           .segment("cancel")
           .build(),

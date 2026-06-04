@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-/**
- * Edge middleware for request logging to Better Stack
- * Logs all requests, response times, and errors
- */
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -27,7 +23,6 @@ export function middleware(request: NextRequest) {
       timestamp: new Date().toISOString(),
     };
 
-    // Log via HTTP to Better Stack asynchronously (don't await to avoid blocking)
     fetch('https://in.betterstack.com/api/v1/logs', {
       method: 'POST',
       headers: {
@@ -42,7 +37,6 @@ export function middleware(request: NextRequest) {
         context: requestInfo,
       }),
     }).catch((err) => {
-      // Silently fail to prevent logging from affecting request
       console.error('[BetterStack Middleware] Log send error:', err);
     });
   }

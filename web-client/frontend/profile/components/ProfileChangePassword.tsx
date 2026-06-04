@@ -61,21 +61,17 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 function BaseProfileChangePassword() {
-  // Get current user from auth store
   const { user } = useAuthStore();
 
-  // Password Form State
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  // Request Handling State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ updated?: boolean; error?: string } | null>(null);
 
   const changePassword = async () => {
-    // Check if user is authenticated
     if (!user?.user_id) {
       return;
     }
@@ -131,7 +127,6 @@ function BaseProfileChangePassword() {
     <div style={styles.page}>
       <div style={styles.container}>
         
-        {/* Header */}
         <header style={styles.topNav}>
           <Link href="/profile" style={styles.backLink} aria-label="Back to profile">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -139,19 +134,16 @@ function BaseProfileChangePassword() {
             </svg>
           </Link>
           <h1 style={styles.title}>Change Password</h1>
-          <div style={{ width: "24px" }} /> {/* Empty div to keep title centered */}
+          <div style={{ width: "24px" }} /> 
         </header>
 
-        {/* Main Content */}
         <main style={styles.main}>
           <section className="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
             <p className="mb-4 text-sm text-gray-600">
               Update your password to keep your account secure.
             </p>
 
-            {/* Inputs */}
             <div className="flex w-full flex-col gap-4">
-              {/* Optional: User ID field visible for testing purposes */}
               <div className="flex w-full flex-col gap-4">
   <input
     value={currentPassword}
@@ -179,13 +171,11 @@ function BaseProfileChangePassword() {
 </div>
             </div>
 
-            {/* Status Messages */}
             {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
             {result?.updated && (
               <p className="mt-3 text-sm font-medium text-green-600">Password changed successfully!</p>
             )}
 
-            {/* Action Buttons */}
             <div className="mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => void changePassword()}

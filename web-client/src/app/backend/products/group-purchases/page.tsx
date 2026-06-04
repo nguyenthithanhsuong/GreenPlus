@@ -45,7 +45,6 @@ export default function GroupPurchaseTestPage() {
           setProductId((current) => current || products[0].product_id);
         }
       } catch {
-        // Keep page usable even if option loading fails.
       }
     };
 

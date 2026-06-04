@@ -25,7 +25,6 @@ const UserDebugPanel = () => {
 
       {isExpanded && (
         <div className="mt-4 space-y-4 text-xs text-amber-900">
-          {/* Auth Store Status */}
           <div className="bg-white rounded border border-amber-200 p-3">
             <h4 className="font-bold text-amber-900 mb-2">1. Auth Store (từ Supabase)</h4>
             <pre className="bg-amber-50 p-2 rounded overflow-auto max-h-48 text-[11px]">
@@ -46,7 +45,6 @@ const UserDebugPanel = () => {
             </pre>
           </div>
 
-          {/* Current User Profile */}
           <div className="bg-white rounded border border-amber-200 p-3">
             <h4 className="font-bold text-amber-900 mb-2">2. Current User Profile (từ /api/users/me)</h4>
             <pre className="bg-amber-50 p-2 rounded overflow-auto max-h-48 text-[11px]">
@@ -54,7 +52,6 @@ const UserDebugPanel = () => {
             </pre>
           </div>
 
-          {/* API Response Debug */}
           <div className="bg-white rounded border border-amber-200 p-3">
             <h4 className="font-bold text-amber-900 mb-2">3. Trạng thái tải dữ liệu</h4>
             <ul className="space-y-1">
@@ -66,7 +63,6 @@ const UserDebugPanel = () => {
             </ul>
           </div>
 
-          {/* Detailed Field Mapping */}
           <div className="bg-white rounded border border-amber-200 p-3">
             <h4 className="font-bold text-amber-900 mb-2">4. Ánh xạ dữ liệu (Data Mapping)</h4>
             {profile && (
@@ -124,7 +120,6 @@ const UserDebugPanel = () => {
             )}
           </div>
 
-          {/* Instructions */}
           <div className="bg-white rounded border border-amber-200 p-3">
             <h4 className="font-bold text-amber-900 mb-2">📋 Cách kiểm tra (How to check):</h4>
             <ol className="space-y-1 list-decimal list-inside">

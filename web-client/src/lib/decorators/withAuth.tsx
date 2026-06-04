@@ -24,20 +24,20 @@ export function withAuth<P extends object>(
       );
     }
 
-    if (requiredRole && user?.role !== requiredRole) {
-      return (
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Truy cập bị từ chối
-            </h2>
-            <p className="text-gray-600 mt-2">
-              Bạn không có quyền truy cập trang này.
-            </p>
-          </div>
-        </div>
-      );
-    }
+    // if (requiredRole && user?.role !== requiredRole) {
+    //   return (
+    //     <div className="flex items-center justify-center h-screen">
+    //       <div className="text-center">
+    //         <h2 className="text-2xl font-bold text-gray-800">
+    //           Truy cập bị từ chối
+    //         </h2>
+    //         <p className="text-gray-600 mt-2">
+    //           Bạn không có quyền truy cập trang này.
+    //         </p>
+    //       </div>
+    //     </div>
+    //   );
+    // }
 
     return <Component {...props} />;
   };

@@ -523,7 +523,6 @@ function BaseProductDetail({ productId, backHref }: ProductDetailProps) {
   });
 
   useEffect(() => {
-    // Add animation styles globally
     const style = document.createElement("style");
     style.innerHTML = `
       @keyframes slideUp {
@@ -790,7 +789,6 @@ function BaseProductDetail({ productId, backHref }: ProductDetailProps) {
       window.location.href = "/group-purchase/create";
     }, 500);
   };
-  // If no productId is provided, show an error state
   if (!productId) {
     return (
       <div style={styles.page}>

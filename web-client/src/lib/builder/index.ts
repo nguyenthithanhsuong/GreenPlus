@@ -22,7 +22,7 @@ export type {
 
 export {
   ConcreteUrlBuilder,
-  UrlBuilder,
+  ConcreteUrlBuilder as UrlBuilder,
   UrlDirector,
   UrlProduct,
 } from "./UrlBuilder";

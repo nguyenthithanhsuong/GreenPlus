@@ -85,6 +85,10 @@ export interface UrlBuilderInterface extends Builder<UrlProduct> {
 export class ConcreteUrlBuilder implements UrlBuilderInterface {
   private product = new UrlProduct();
 
+  static from(basePath: string): ConcreteUrlBuilder {
+  return new ConcreteUrlBuilder().setBasePath(basePath);
+}
+
   reset(): this {
     this.product = new UrlProduct();
     return this;

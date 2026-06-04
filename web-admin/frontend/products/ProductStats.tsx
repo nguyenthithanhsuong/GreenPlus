@@ -10,7 +10,6 @@ type ProductStatsProps = {
 const ProductStats = ({ totalProducts, activeProducts, inactiveProducts }: ProductStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Total Products */}
       <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-5">
         <div className="p-3.5 bg-gray-50 rounded-full">
           <Package className="w-6 h-6 text-gray-600" />
@@ -21,7 +20,6 @@ const ProductStats = ({ totalProducts, activeProducts, inactiveProducts }: Produ
         </div>
       </div>
 
-      {/* Active Products */}
       <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-5">
         <div className="p-3.5 bg-emerald-50 rounded-full">
           <CheckCircle2 className="w-6 h-6 text-emerald-600" />
@@ -32,7 +30,6 @@ const ProductStats = ({ totalProducts, activeProducts, inactiveProducts }: Produ
         </div>
       </div>
 
-      {/* Inactive Products */}
       <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-5">
         <div className="p-3.5 bg-gray-50 rounded-full">
           <Ban className="w-6 h-6 text-gray-600" />

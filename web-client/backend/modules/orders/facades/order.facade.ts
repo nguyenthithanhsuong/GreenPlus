@@ -54,6 +54,10 @@ export class OrderFacade {
   ): Promise<{ order_id: string; status: import("../order.types").OrderStatus; payment_status: "paid"; message: string }> {
     const result = await this.service.confirmPayment(input);
 
+    console.log("confirmPayment called", {
+  orderId: result.order_id,
+});
+
     this.notifier.notify({
       orderId: result.order_id,
       event: "updated",

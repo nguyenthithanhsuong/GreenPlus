@@ -8,7 +8,7 @@ export type PriceFormValues = {
   batchId: string;
   price: string;
   date: string;
-  status: PriceRow["status"] | ""; // ✅ added
+  status: PriceRow["status"] | ""; 
 };
 
 export type PriceDrawerMode = "create" | "edit" | "delete";
@@ -41,7 +41,6 @@ const actionByMode: Record<PriceDrawerMode, string> = {
   delete: "Xác nhận xóa",
 };
 
-// ✅ status options
 const STATUS_OPTIONS = [
   { value: "pending", label: "Chờ áp dụng" },
   { value: "active", label: "Đang áp dụng" },
@@ -106,7 +105,7 @@ const PriceDrawer = ({
                     <p><span className="font-semibold">Sản phẩm:</span> {selectedPrice?.product_name ?? "Chưa gán sản phẩm"}</p>
                     <p><span className="font-semibold">Giá:</span> {selectedPrice ? formatCurrency(selectedPrice.price) : "-"}</p>
                     <p><span className="font-semibold">Ngày áp dụng:</span> {selectedPrice?.date ?? "-"}</p>
-                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice?.status ?? "-"}</p> {/* ✅ */}
+                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice?.status ?? "-"}</p> 
                   </div>
                 </div>
               </div>
@@ -165,7 +164,6 @@ const PriceDrawer = ({
                   </div>
                 </div>
 
-                {/* ✅ STATUS (same style as inputs) */}
                 <div>
                   <label className="mb-1.5 block text-sm font-bold text-gray-800">
                     Trạng thái
@@ -190,7 +188,7 @@ const PriceDrawer = ({
                     <p><span className="font-semibold">Mã giá:</span> {selectedPrice.price_id}</p>
                     <p><span className="font-semibold">Sản phẩm:</span> {selectedPrice.product_name ?? "Chưa gán sản phẩm"}</p>
                     <p><span className="font-semibold">Supplier:</span> {selectedPrice.supplier_name ?? "-"}</p>
-                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice.status ?? "-"}</p> {/* ✅ */}
+                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice.status ?? "-"}</p> 
                   </div>
                 ) : null}
               </form>
