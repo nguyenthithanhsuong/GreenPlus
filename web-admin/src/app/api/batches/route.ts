@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       importPrice?: number;
       qrCode?: string | null;
       status?: "pending" | "available" | "expired" | "sold_out";
+      force?: boolean;
     };
 
     const created = await batchManagementFacade.createBatch({

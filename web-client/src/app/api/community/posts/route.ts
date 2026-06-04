@@ -32,8 +32,7 @@ export async function POST(request: Request) {
       userId,
       title: body.title,
       content,
-      type: type || undefined,
-      mediaType: mediaType || undefined,
+type: (type || undefined) as "blog" | "video" | "community" | undefined,      mediaType: mediaType || undefined,
       mediaUrl: body.mediaUrl ?? body.media_url,
       mediaUrls: body.mediaUrls ?? body.media_urls,
     });
@@ -115,8 +114,7 @@ export async function PUT(request: Request) {
       postId,
       title: body.title,
       content,
-      type: type || undefined,
-      mediaType: mediaType || undefined,
+type: (type || undefined) as "blog" | "video" | "community" | undefined,      mediaType: mediaType || undefined,
       mediaUrl: body.mediaUrl ?? body.media_url,
       mediaUrls: body.mediaUrls ?? body.media_urls,
     });

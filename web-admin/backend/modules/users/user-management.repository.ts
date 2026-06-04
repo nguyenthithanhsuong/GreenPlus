@@ -141,6 +141,7 @@ export class UserManagementRepository {
       .select(`
   user_id,
   role_id,
+  store_id,
   name,
   email,
   password,
@@ -186,6 +187,7 @@ export class UserManagementRepository {
       .select(`
   user_id,
   role_id,
+  store_id,
   name,
   email,
   password,

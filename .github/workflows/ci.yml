@@ -8,13 +8,12 @@ on:
   pull_request:
 
   workflow_dispatch:
-
 env:
   NEXT_TELEMETRY_DISABLED: "1"
   REGISTRY: ghcr.io
 
 jobs:
-  lint-and-test:
+  frontend-ci:
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
@@ -36,18 +35,58 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint web-client
+        run: npm run lint -w web-client
 
-      - name: Type check
-        run: npm run typecheck
+      - name: Type check web-client
+        run: npm run typecheck -w web-client
 
-      - name: Build
-        run: npm run build
+      - name: Build web-client
+        run: npm run build -w web-client
+
+  backend-ci:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "example-anon-key"
+      SUPABASE_SERVICE_ROLE_KEY: "example-service-role-key"
+      SENTRY_DSN: ""
+      NEXT_PUBLIC_SENTRY_DSN: ""
+      BETTER_STACK_SOURCE_TOKEN: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint web-admin
+        run: npm run lint -w web-admin
+
+      - name: Type check web-admin
+        run: npm run typecheck -w web-admin
+
+      - name: Build web-admin
+        run: npm run build -w web-admin
 
   docker-build:
-    needs: lint-and-test
+    needs:
+      - frontend-ci
+      - backend-ci
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-anon-key' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY || 'example-service-role-key' }}
+      SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN || '' }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN || '' }}
+      BETTER_STACK_SOURCE_TOKEN: ""
     permissions:
       contents: read
       packages: write
@@ -83,6 +122,12 @@ jobs:
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta-client.outputs.tags }}
           labels: ${{ steps.meta-client.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ env.NEXT_PUBLIC_SENTRY_DSN }}
+            SENTRY_DSN=${{ env.SENTRY_DSN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -104,11 +149,19 @@ jobs:
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta-admin.outputs.tags }}
           labels: ${{ steps.meta-admin.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ env.NEXT_PUBLIC_SENTRY_DSN }}
+            SENTRY_DSN=${{ env.SENTRY_DSN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   sentry-sourcemaps:
-    needs: lint-and-test
+    needs:
+      - frontend-ci
+      - backend-ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:

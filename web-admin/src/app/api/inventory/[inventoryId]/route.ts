@@ -22,7 +22,7 @@ export async function PUT(request: Request, context: Context) {
     const updated = await inventoryManagementFacade.updateInventory({
       inventoryId,
       quantityAvailable: Number(body.quantityAvailable ?? 0),
-      quantityReserved: typeof body.quantityReserved === "number" ? Number(body.quantityReserved) : undefined,
+      quantityReserved: typeof body.quantityReserved === "number" ? Number(body.quantityReserved) : null,
       note: body.note,
       type: body.type,
     });

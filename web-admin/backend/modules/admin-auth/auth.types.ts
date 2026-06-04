@@ -15,6 +15,7 @@ export type SignInInput = {
 export type UpdateProfileInput = {
   userId: string;
   name: string;
+  email: string;
   phone: string;
   address?: string;
   imageUrl?: string;

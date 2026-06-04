@@ -28,44 +28,16 @@ const CreatePostModal = ({ open, loading, onClose, onSubmit }: CreatePostModalPr
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      return;
-    }
-
-    setTitle((previous) => (previous ? "" : previous));
-    setContent((previous) => (previous ? "" : previous));
-    setFiles((previous) => (previous.length ? [] : previous));
-    setPreviewUrls((previous) => (previous.length ? [] : previous));
-    setError((previous) => (previous ? null : previous));
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    if (!files.length) {
-      setPreviewUrls((previous) => (previous.length ? [] : previous));
-      return;
-    }
-
-    const nextPreviewUrls = files.map((file) => URL.createObjectURL(file));
-    setPreviewUrls(nextPreviewUrls);
-
-    return () => {
-      nextPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [files, open]);
 
   const inferredType = useMemo(() => inferTypeFromFiles(files), [files]);
 
-  if (!open) {
-    return null;
-  }
+  const resetForm = () => {
+    setTitle("");
+    setContent("");
+    setFiles([]);
+    setError(null);
+  };
 
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files ?? []);
@@ -105,14 +77,36 @@ const CreatePostModal = ({ open, loading, onClose, onSubmit }: CreatePostModalPr
       return;
     }
 
-    setError(null);
-    await onSubmit({
-      title: title.trim(),
-      content: content.trim(),
-      type: inferredType,
-      files,
-    });
+     setError(null);
+
+  await onSubmit({
+    title: title.trim(),
+    content: content.trim(),
+    type: inferredType,
+    files,
+  });
+
+  resetForm();
   };
+
+  const previewUrls = useMemo(
+  () =>
+    files.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    })),
+  [files]
+);
+
+useEffect(() => {
+  return () => {
+    previewUrls.forEach(({ url }) => URL.revokeObjectURL(url));
+  };
+}, [previewUrls]);
+
+if (!open) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
@@ -120,7 +114,10 @@ const CreatePostModal = ({ open, loading, onClose, onSubmit }: CreatePostModalPr
         type="button"
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
         aria-label="Đóng modal tạo bài"
-        onClick={onClose}
+        onClick={() => {
+  resetForm();
+  onClose();
+}}
       />
 
       <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
@@ -131,7 +128,10 @@ const CreatePostModal = ({ open, loading, onClose, onSubmit }: CreatePostModalPr
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+  resetForm();
+  onClose();
+}}
             className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
             disabled={loading}
           >
@@ -195,8 +195,8 @@ const CreatePostModal = ({ open, loading, onClose, onSubmit }: CreatePostModalPr
             <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
               <p className="mb-2 text-sm font-semibold text-gray-700">Xem trước</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                {previewUrls.map((url, index) => {
-                  const currentFile = files[index];
+                {previewUrls.map(({ file, url }, index) => {
+                  const currentFile = file;
                   if (!currentFile) {
                     return null;
                   }
@@ -227,7 +227,10 @@ const CreatePostModal = ({ open, loading, onClose, onSubmit }: CreatePostModalPr
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+  resetForm();
+  onClose();
+}}
               className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               disabled={loading}
             >

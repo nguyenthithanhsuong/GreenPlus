@@ -18,6 +18,25 @@ type OrderDetailPanelProps = {
 
 const statusOrder: OrderStatus[] = ["pending", "confirmed", "preparing", "delivering", "completed"];
 
+const getDefaultNextStatus = (status: OrderStatus): OrderStatus => {
+  switch (status) {
+    case "pending":
+      return "confirmed";
+
+    case "confirmed":
+      return "preparing";
+
+    case "preparing":
+      return "delivering";
+
+    case "delivering":
+      return "completed";
+
+    default:
+      return status;
+  }
+};
+
 const formatDateTime = (value: string | null): string => {
   if (!value) {
     return "-";
@@ -52,39 +71,22 @@ const statusLabel = (status: OrderStatus): string => {
 };
 
 const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUpdateStatus, onViewDelivery }: OrderDetailPanelProps) => {
-  const [mounted, setMounted] = useState(false);
-  const [nextStatus, setNextStatus] = useState<OrderStatus>("confirmed");
+  const [nextStatus, setNextStatus] = useState<OrderStatus | null>(null);
   const [note, setNote] = useState("");
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const defaultNextStatus = useMemo<OrderStatus>(() => {
+  if (!order) {
+    return "confirmed";
+  }
 
-  useEffect(() => {
-    if (!order) {
-      return;
-    }
-
-    const defaultNext: OrderStatus =
-      order.status === "pending"
-        ? "confirmed"
-        : order.status === "confirmed"
-          ? "preparing"
-          : order.status === "preparing"
-            ? "delivering"
-            : order.status === "delivering"
-              ? "completed"
-              : order.status;
-
-    setNextStatus(defaultNext);
-    setNote("");
-  }, [order]);
+  return getDefaultNextStatus(order.status);
+}, [order]);
 
   const subtotal = useMemo(() => {
     return (order?.items ?? []).reduce((sum, item) => sum + item.line_total, 0);
   }, [order]);
 
-  if (!isOpen || !mounted) {
+  if (!isOpen) {
     return null;
   }
 
@@ -235,7 +237,7 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
         <div className="p-5 bg-white border-t border-gray-100 shrink-0 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-2">
             <select
-              value={nextStatus}
+              value={nextStatus ?? defaultNextStatus}
               onChange={(event) => setNextStatus(event.target.value as OrderStatus)}
               className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               disabled={saving || !order}
@@ -274,8 +276,17 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
             </button>
             <button
               type="button"
-              onClick={() => onUpdateStatus(nextStatus, note)}
-              disabled={saving || !order || order.status === nextStatus}
+              onClick={() =>
+  onUpdateStatus(
+    nextStatus ?? defaultNextStatus,
+    note
+  )
+}
+              disabled={
+  saving ||
+  !order ||
+  order.status === (nextStatus ?? defaultNextStatus)
+}
               className="flex items-center gap-2 px-6 py-2.5 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
             >
               {saving ? "Đang cập nhật..." : "Cập nhật trạng thái"} <Check className="w-4 h-4" strokeWidth={3} />

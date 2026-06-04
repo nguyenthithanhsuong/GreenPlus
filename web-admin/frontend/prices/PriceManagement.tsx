@@ -24,6 +24,7 @@ const emptyForm = (): PriceFormValues => ({
   batchId: "",
   price: "",
   date: todayIso(),
+  status: "",
 });
 
 const PriceManagement = () => {
@@ -126,6 +127,7 @@ const PriceManagement = () => {
       batchId: item.batch_id ?? "",
       price: String(item.price),
       date: item.date,
+      status: item.status ?? "",
     });
     setDrawerError(null);
     setDrawerOpen(true);
@@ -138,6 +140,7 @@ const PriceManagement = () => {
       batchId: item.batch_id ?? "",
       price: String(item.price),
       date: item.date,
+      status: item.status ?? "",
     });
     setDrawerError(null);
     setDrawerOpen(true);

@@ -165,10 +165,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     cursor: "pointer",
     transition: "background 0.2s",
-    disabled: {
-      opacity: 0.6,
-      cursor: "not-allowed",
-    },
   },
   infoText: {
     margin: 0,
@@ -183,6 +179,11 @@ const frequencyOptions = [
   { value: "biweekly", label: "Hai tuần một lần", description: "Giao 1 lần/2 tuần - Tiết kiệm 15%" },
   { value: "monthly", label: "Hàng tháng", description: "Giao 1 lần/tháng - Tiết kiệm 20%" },
 ];
+
+const disabledSubmitButtonStyle: React.CSSProperties = {
+  opacity: 0.6,
+  cursor: "not-allowed",
+};
 
 export default function SubscriptionModal({ isOpen, productId, productName, price, onClose, onSubmit }: SubscriptionModalProps) {
   const [frequency, setFrequency] = useState("weekly");
@@ -262,7 +263,7 @@ export default function SubscriptionModal({ isOpen, productId, productName, pric
             type="button"
             style={{
               ...styles.submitButton,
-              ...(loading ? (styles.submitButton.disabled as React.CSSProperties) : {}),
+              ...(loading ? disabledSubmitButtonStyle : {}),
             }}
             onClick={() => void handleSubmit()}
             disabled={loading}

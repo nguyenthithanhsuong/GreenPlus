@@ -1,5 +1,7 @@
 import type { DeliveryTrackingRow } from "../../backend/modules/delivery-tracking/delivery-tracking.types";
+import type { InventoryRow } from "../../backend/modules/inventory/inventory-management.types";
 import type { OrderListRow } from "../../backend/modules/orders/order-tracking.types";
+import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 import type { RoleSummary } from "../../backend/modules/roles/role-management.types";
 
 export interface SearchStrategy<T> {
@@ -186,48 +188,33 @@ class CategorySearchStrategy extends BaseSearchStrategy<{
   }
 }
 
-class InventorySearchStrategy extends BaseSearchStrategy<{
-  batch_id: string | null;
-  product_name: string | null;
-  supplier_name: string | null;
-  quantity_available: number;
-  quantity_reserved: number;
-  batch_status: string | null;
-}> {
-  protected getSearchableText(item: {
-    batch_id: string | null;
-    product_name: string | null;
-    supplier_name: string | null;
-    quantity_available: number;
-    quantity_reserved: number;
-    batch_status: string | null;
-  }): Array<string | number | null | undefined> {
+class InventorySearchStrategy extends BaseSearchStrategy<InventoryRow> {
+  protected getSearchableText(item: InventoryRow): Array<string | number | null | undefined> {
     return [
+      item.inventory_id,
       item.batch_id,
       item.product_name,
       item.supplier_name,
       item.quantity_available,
       item.quantity_reserved,
       item.batch_status,
+      item.last_updated,
     ];
   }
 }
 
-class PriceSearchStrategy extends BaseSearchStrategy<{
-  batch_id: string | null;
-  product_name: string | null;
-  supplier_name: string | null;
-  price: number;
-  date: string;
-}> {
-  protected getSearchableText(item: {
-    batch_id: string | null;
-    product_name: string | null;
-    supplier_name: string | null;
-    price: number;
-    date: string;
-  }): Array<string | number | null | undefined> {
-    return [item.batch_id, item.product_name, item.supplier_name, item.price, item.date];
+class PriceSearchStrategy extends BaseSearchStrategy<PriceRow> {
+  protected getSearchableText(item: PriceRow): Array<string | number | null | undefined> {
+    return [
+      item.price_id,
+      item.batch_id,
+      item.product_name,
+      item.supplier_name,
+      item.price,
+      item.date,
+      item.created_at,
+      item.status,
+    ];
   }
 }
 
