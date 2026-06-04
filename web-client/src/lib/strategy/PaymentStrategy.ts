@@ -7,6 +7,7 @@ export interface PaymentMethod {
   isAvailable: boolean;
 }
 
+//data context - not context in Strategy pattern
 export interface PaymentContext {
   amount: number;
   currency: string;

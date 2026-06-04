@@ -14,10 +14,6 @@ export type OrderTrackingEvent =
       actor: "manager";
     };
 
-export interface OrderTrackingObserver {
-  update(event: OrderTrackingEvent): Promise<void>;
-}
-
 export class OrderTrackingSubject {
   private readonly observers = new Set<OrderTrackingObserver>();
 
@@ -26,8 +22,14 @@ export class OrderTrackingSubject {
   }
 
   async notify(event: OrderTrackingEvent): Promise<void> {
-    await Promise.all(Array.from(this.observers).map((observer) => observer.update(event)));
+    await Promise.all(
+      Array.from(this.observers).map((observer) => observer.update(event)),
+    );
   }
+}
+
+export interface OrderTrackingObserver {
+  update(event: OrderTrackingEvent): Promise<void>;
 }
 
 export class OrderTrackingAuditObserver implements OrderTrackingObserver {

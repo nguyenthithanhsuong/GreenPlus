@@ -1,4 +1,5 @@
 import React from "react";
+import { DialogFormBuilder } from "@/lib";
 
 type Props = {
   open: boolean;
@@ -8,11 +9,24 @@ type Props = {
   onConfirm: (reason: string) => void;
 };
 
+type RejectReasonFormValues = {
+  reason: string;
+};
+
+const rejectReasonFormDirector = DialogFormBuilder.withDefaults<RejectReasonFormValues>({
+  reason: "",
+});
+
+const formFrom = (values: Partial<RejectReasonFormValues>): RejectReasonFormValues =>
+  rejectReasonFormDirector.constructFrom(values);
+
 export default function RejectReasonDialog({ open, loading = false, initial = "", onCancel, onConfirm }: Props) {
-  const [value, setValue] = React.useState(initial);
+  const [form, setForm] = React.useState<RejectReasonFormValues>(formFrom({ reason: initial }));
 
   React.useEffect(() => {
-    if (open) setValue(initial ?? "");
+    if (open) {
+      setForm(formFrom({ reason: initial ?? "" }));
+    }
   }, [open, initial]);
 
   if (!open) return null;
@@ -31,8 +45,10 @@ export default function RejectReasonDialog({ open, loading = false, initial = ""
         <p className="mt-2 text-sm leading-6 text-gray-600">Vui lòng nhập lý do từ chối để ghi vào hồ sơ.</p>
 
         <textarea
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
+          value={form.reason}
+          onChange={(e) => {
+            setForm((current) => DialogFormBuilder.patch(current, { reason: e.target.value }));
+          }}
           rows={6}
           className="mt-4 w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
         />
@@ -48,8 +64,8 @@ export default function RejectReasonDialog({ open, loading = false, initial = ""
           </button>
           <button
             type="button"
-            onClick={() => onConfirm(value.trim())}
-            disabled={loading || value.trim().length === 0}
+            onClick={() => onConfirm(form.reason.trim())}
+            disabled={loading || form.reason.trim().length === 0}
             className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
           >
             Xác nhận từ chối

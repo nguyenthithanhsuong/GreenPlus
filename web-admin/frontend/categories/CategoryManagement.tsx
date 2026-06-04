@@ -2,6 +2,7 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
+import { DialogFormBuilder } from "@/lib";
 import AdminShell from "../shared/AdminShell";
 import CategoryDrawer, { CategoryFormValues } from "./CategoryDrawer";
 import CategoryStats from "./CategoryStats";
@@ -9,11 +10,13 @@ import CategoryTable from "./CategoryTable";
 import type { CategoryRow } from "../../backend/modules/catalog/category-management.types";
 import { categorySearchStrategy } from "../shared/searchStrategies";
 
-const emptyForm = (): CategoryFormValues => ({
+const categoryFormDirector = DialogFormBuilder.withDefaults<CategoryFormValues>({
   name: "",
   description: "",
   imageUrl: "",
 });
+
+const emptyForm = (): CategoryFormValues => categoryFormDirector.constructEmpty();
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
@@ -82,11 +85,11 @@ const CategoryManagement = () => {
 
   const openEditDrawer = useCallback((category: CategoryRow) => {
     setSelectedCategory(category);
-    setForm({
+    setForm(categoryFormDirector.constructFrom({
       name: category.name,
       description: category.description ?? "",
       imageUrl: category.image_url ?? "",
-    });
+    }));
     setDrawerOpen(true);
   }, []);
 
@@ -97,7 +100,7 @@ const CategoryManagement = () => {
   }, []);
 
   const patchForm = useCallback((patch: Partial<CategoryFormValues>) => {
-    setForm((current) => ({ ...current, ...patch }));
+    setForm((current) => DialogFormBuilder.patch(current, patch));
   }, []);
 
   const reloadData = useCallback(async () => {
@@ -157,8 +160,7 @@ const CategoryManagement = () => {
         throw new Error(data.error ?? "Upload ảnh danh mục thất bại");
       }
 
-      setForm((previous) => ({
-        ...previous,
+      setForm((previous) => DialogFormBuilder.patch(previous, {
         imageUrl: data.publicUrl ?? previous.imageUrl,
       }));
     } catch (requestError) {

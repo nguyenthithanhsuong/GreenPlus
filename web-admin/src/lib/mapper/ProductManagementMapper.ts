@@ -2,6 +2,7 @@ import type {
   ProductRow,
   ProductStatus,
 } from "../../../backend/modules/catalog/product-management.types";
+import { DialogFormBuilder } from "../builder";
 import type { ProductMutationPayload } from "../singleton";
 
 export type ProductFormValues = {
@@ -14,21 +15,23 @@ export type ProductFormValues = {
   status: ProductStatus;
 };
 
+const productFormDirector = DialogFormBuilder.withDefaults<ProductFormValues>({
+  categoryId: "",
+  name: "",
+  description: "",
+  unit: "",
+  imageUrl: "",
+  nutrition: "",
+  status: "active",
+});
+
 export class ProductManagementMapper {
   static emptyForm(): ProductFormValues {
-    return {
-      categoryId: "",
-      name: "",
-      description: "",
-      unit: "",
-      imageUrl: "",
-      nutrition: "",
-      status: "active",
-    };
+    return productFormDirector.constructEmpty();
   }
 
   static toFormValues(product: ProductRow): ProductFormValues {
-    return {
+    return productFormDirector.constructFrom({
       categoryId: product.category_id ?? "",
       name: product.name,
       description: product.description ?? "",
@@ -36,7 +39,7 @@ export class ProductManagementMapper {
       imageUrl: product.image_url ?? "",
       nutrition: product.nutrition ?? "",
       status: product.status,
-    };
+    });
   }
 
   static toMutationPayload(form: ProductFormValues): ProductMutationPayload {

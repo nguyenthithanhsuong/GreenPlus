@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
+import { DialogFormBuilder } from "@/lib";
 import AdminShell from "../shared/AdminShell";
 import BatchDrawer, { BatchFormValues } from "./BatchDrawer";
 import BatchStats from "./BatchStats";
@@ -15,7 +16,7 @@ type OptionRow = {
   label: string;
 };
 
-const emptyForm = (): BatchFormValues => ({
+const batchFormDirector = DialogFormBuilder.withDefaults<BatchFormValues>({
   productId: "",
   supplierId: "",
   harvestDate: "",
@@ -24,6 +25,11 @@ const emptyForm = (): BatchFormValues => ({
   qrCode: "",
   status: "pending",
 });
+
+const emptyForm = (): BatchFormValues => batchFormDirector.constructEmpty();
+
+const formFrom = (values: Partial<BatchFormValues>): BatchFormValues =>
+  batchFormDirector.constructFrom(values);
 
 const daysUntilExpire = (expireDate: string): number => {
   const today = new Date();
@@ -154,7 +160,7 @@ const BatchManagement = () => {
 
   const openEditDrawer = useCallback((batch: BatchRow) => {
     setSelectedBatch(batch);
-    setForm({
+    setForm(formFrom({
       productId: batch.product_id,
       supplierId: batch.supplier_id,
       harvestDate: batch.harvest_date,
@@ -162,7 +168,7 @@ const BatchManagement = () => {
       quantity: batch.quantity,
       qrCode: batch.qr_code ?? "",
       status: batch.status,
-    });
+    }));
     setDrawerOpen(true);
   }, []);
 
@@ -173,7 +179,7 @@ const BatchManagement = () => {
   }, []);
 
   const patchForm = useCallback((patch: Partial<BatchFormValues>) => {
-    setForm((previous) => ({ ...previous, ...patch }));
+    setForm((previous) => DialogFormBuilder.patch(previous, patch));
   }, []);
 
   const reloadData = useCallback(async () => {

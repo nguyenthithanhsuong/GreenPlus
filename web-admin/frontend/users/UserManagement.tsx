@@ -5,6 +5,7 @@ import UserStats from "./UserStats";
 import UserTable, { UserViewModel } from "./UserTable";
 import UserDrawer, { UserDrawerMode, UserFormValues } from "./UserDrawer";
 import ConfirmActionDialog from "./ConfirmActionDialog";
+import { DialogFormBuilder } from "@/lib";
 import AdminShell from "../shared/AdminShell";
 
 type RoleOption = {
@@ -12,7 +13,7 @@ type RoleOption = {
   roleName: string;
 };
 
-const emptyForm: UserFormValues = {
+const userFormDirector = DialogFormBuilder.withDefaults<UserFormValues>({
   name: "",
   email: "",
   password: "",
@@ -21,7 +22,12 @@ const emptyForm: UserFormValues = {
   address: "",
   imageUrl: "",
   status: "active",
-};
+});
+
+const emptyForm = (): UserFormValues => userFormDirector.constructEmpty();
+
+const formFrom = (values: Partial<UserFormValues>): UserFormValues =>
+  userFormDirector.constructFrom(values);
 
 const UserManagement = () => {
   const [users, setUsers] = useState<UserViewModel[]>([]);
@@ -30,7 +36,7 @@ const UserManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [drawerMode, setDrawerMode] = useState<UserDrawerMode | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserViewModel | null>(null);
-  const [form, setForm] = useState<UserFormValues>(emptyForm);
+  const [form, setForm] = useState<UserFormValues>(emptyForm());
   const [showPassword, setShowPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
@@ -202,7 +208,7 @@ const UserManagement = () => {
   const openCreateDrawer = useCallback(() => {
     setSelectedUser(null);
     setShowPassword(false);
-    setForm(emptyForm);
+    setForm(emptyForm());
     setDrawerMode("create");
   }, []);
 
@@ -214,7 +220,7 @@ const UserManagement = () => {
   const openEditDrawer = useCallback((user: UserViewModel) => {
     setSelectedUser(user);
     setShowPassword(false);
-    setForm({
+    setForm(formFrom({
       name: user.name,
       email: user.email,
       password: "",
@@ -223,7 +229,7 @@ const UserManagement = () => {
       address: user.address ?? "",
       imageUrl: user.image_url ?? "",
       status: user.status,
-    });
+    }));
     setDrawerMode("edit");
   }, []);
 
@@ -248,7 +254,7 @@ const UserManagement = () => {
   }, []);
 
   const patchForm = useCallback((patch: Partial<UserFormValues>) => {
-    setForm((previous) => ({ ...previous, ...patch }));
+    setForm((previous) => DialogFormBuilder.patch(previous, patch));
   }, []);
 
   const handleSubmitDrawer = useCallback(async () => {
@@ -355,8 +361,7 @@ const UserManagement = () => {
         throw new Error(data.error ?? "Upload ảnh thất bại");
       }
 
-      setForm((previous) => ({
-        ...previous,
+      setForm((previous) => DialogFormBuilder.patch(previous, {
         imageUrl: data.publicUrl ?? previous.imageUrl,
       }));
     } catch (requestError) {

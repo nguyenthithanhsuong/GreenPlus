@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import {
   compose,
+  DialogFormBuilder,
   ProductManagementMapper,
   ProductManagementService,
   withErrorBoundary,
@@ -100,7 +101,7 @@ const BaseProductManagement = () => {
   }, []);
 
   const patchForm = useCallback((patch: Partial<ProductFormValues>) => {
-    setForm((previous) => ({ ...previous, ...patch }));
+    setForm((previous) => DialogFormBuilder.patch(previous, patch));
   }, []);
 
   const reloadData = useCallback(async () => {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { DialogFormBuilder } from "@/lib";
 import AdminShell from "../shared/AdminShell";
 import InventoryStats from "./InventoryStats";
 import InventoryTable from "./InventoryTable";
@@ -13,12 +14,17 @@ import type {
 } from "../../backend/modules/inventory/inventory-management.types";
 import { inventorySearchStrategy } from "../shared/searchStrategies";
 
-const emptyForm = (): InventoryFormValues => ({
+const inventoryFormDirector = DialogFormBuilder.withDefaults<InventoryFormValues>({
   quantityAvailable: "0",
   quantityReserved: "0",
   note: "",
   type: "adjustment",
 });
+
+const emptyForm = (): InventoryFormValues => inventoryFormDirector.constructEmpty();
+
+const formFrom = (values: Partial<InventoryFormValues>): InventoryFormValues =>
+  inventoryFormDirector.constructFrom(values);
 
 const InventoryManagement = () => {
   const [items, setItems] = useState<InventoryRow[]>([]);
@@ -159,12 +165,12 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
   const openEditDrawer = useCallback((item: InventoryRow) => {
     setDrawerMode("edit");
     setSelectedItem(item);
-    setForm({
+    setForm(formFrom({
       quantityAvailable: String(item.quantity_available),
       quantityReserved: String(item.quantity_reserved),
       note: "",
       type: "adjustment",
-    });
+    }));
     setDrawerError(null);
     setDrawerOpen(true);
   }, []);
@@ -172,12 +178,12 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
   const openDeleteDrawer = useCallback((item: InventoryRow) => {
     setDrawerMode("delete");
     setSelectedItem(item);
-    setForm({
+    setForm(formFrom({
       quantityAvailable: String(item.quantity_available),
       quantityReserved: String(item.quantity_reserved),
       note: "",
       type: "adjustment",
-    });
+    }));
     setDrawerError(null);
     setDrawerOpen(true);
   }, []);
@@ -190,7 +196,7 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
   }, []);
 
   const patchForm = useCallback((patch: Partial<InventoryFormValues>) => {
-    setForm((current) => ({ ...current, ...patch }));
+    setForm((current) => DialogFormBuilder.patch(current, patch));
   }, []);
 
   const submitDrawer = useCallback(async () => {

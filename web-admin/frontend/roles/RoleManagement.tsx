@@ -2,13 +2,14 @@
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw, Search } from "lucide-react";
+import { DialogFormBuilder } from "@/lib";
 import AdminShell from "../shared/AdminShell";
 import RoleDrawer, { RoleFormValues } from "./RoleDrawer";
 import RoleGrid from "./RoleGrid";
 import type { RoleSummary } from "../../backend/modules/roles/role-management.types";
 import { roleSearchStrategy } from "../shared/searchStrategies";
 
-const emptyForm = (): RoleFormValues => ({
+const roleFormDirector = DialogFormBuilder.withDefaults<RoleFormValues>({
   roleName: "",
   description: "",
   isCustomer: false,
@@ -17,6 +18,8 @@ const emptyForm = (): RoleFormValues => ({
   isEmployee: false,
   isShipper: false,
 });
+
+const emptyForm = (): RoleFormValues => roleFormDirector.constructEmpty();
 
 const RoleManagement = () => {
   const [roles, setRoles] = useState<RoleSummary[]>([]);
@@ -71,7 +74,7 @@ const RoleManagement = () => {
 
   const openEditDrawer = (role: RoleSummary) => {
     setSelectedRole(role);
-    setForm({
+    setForm(roleFormDirector.constructFrom({
       roleName: role.role_name,
       description: role.description ?? "",
       isCustomer: Boolean(role.is_customer),
@@ -79,7 +82,7 @@ const RoleManagement = () => {
       isManager: Boolean(role.is_manager),
       isEmployee: Boolean(role.is_employee),
       isShipper: Boolean(role.is_shipper),
-    });
+    }));
     setDrawerOpen(true);
   };
 
@@ -228,7 +231,9 @@ const RoleManagement = () => {
         onSubmit={() => {
           void submitRole();
         }}
-        onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
+        onChange={(patch) => {
+          setForm((current) => DialogFormBuilder.patch(current, patch));
+        }}
       />
     </AdminShell>
   );

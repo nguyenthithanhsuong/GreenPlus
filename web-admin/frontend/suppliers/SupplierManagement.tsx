@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw, X } from "lucide-react";
+import { DialogFormBuilder } from "@/lib";
 import AdminShell from "../shared/AdminShell";
 import SupplierStats from "./SupplierStats";
 import SupplierTable from "./SupplierTable";
@@ -15,13 +16,18 @@ type SupplierFormState = {
   status: SupplierStatus;
 };
 
-const emptyForm = (): SupplierFormState => ({
+const supplierFormDirector = DialogFormBuilder.withDefaults<SupplierFormState>({
   name: "",
   address: "",
   certificate: "",
   description: "",
   status: "pending",
 });
+
+const emptyForm = (): SupplierFormState => supplierFormDirector.constructEmpty();
+
+const formFrom = (values: Partial<SupplierFormState>): SupplierFormState =>
+  supplierFormDirector.constructFrom(values);
 
 const SupplierManagement = () => {
   const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
@@ -71,13 +77,13 @@ const SupplierManagement = () => {
 
   const openEditForm = (supplier: SupplierRow) => {
     setEditingSupplier(supplier);
-    setForm({
+    setForm(formFrom({
       name: supplier.name,
       address: supplier.address,
       certificate: supplier.certificate ?? "",
       description: supplier.description ?? "",
       status: supplier.status,
-    });
+    }));
     setFormOpen(true);
   };
 
@@ -270,7 +276,9 @@ const SupplierManagement = () => {
                     </label>
                     <input
                       value={form.name}
-                      onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                      onChange={(event) => {
+                        setForm((current) => DialogFormBuilder.patch(current, { name: event.target.value }));
+                      }}
                       type="text"
                       placeholder="Ví dụ: Green Farm Củ Chi"
                       className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -283,7 +291,9 @@ const SupplierManagement = () => {
                     </label>
                     <input
                       value={form.address}
-                      onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))}
+                      onChange={(event) => {
+                        setForm((current) => DialogFormBuilder.patch(current, { address: event.target.value }));
+                      }}
                       type="text"
                       placeholder="Nhập địa chỉ supplier"
                       className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -295,7 +305,11 @@ const SupplierManagement = () => {
                       <label className="mb-1.5 block text-sm font-bold text-gray-800">Trạng thái</label>
                       <select
                         value={form.status}
-                        onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as SupplierStatus }))}
+                        onChange={(event) => {
+                          setForm((current) =>
+                            DialogFormBuilder.patch(current, { status: event.target.value as SupplierStatus })
+                          );
+                        }}
                         className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                       >
                         <option value="pending">Pending</option>
@@ -308,7 +322,9 @@ const SupplierManagement = () => {
                       <label className="mb-1.5 block text-sm font-bold text-gray-800">Certificate</label>
                       <input
                         value={form.certificate}
-                        onChange={(event) => setForm((current) => ({ ...current, certificate: event.target.value }))}
+                        onChange={(event) => {
+                          setForm((current) => DialogFormBuilder.patch(current, { certificate: event.target.value }));
+                        }}
                         type="text"
                         placeholder="URL hoặc mã chứng nhận"
                         className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -320,7 +336,9 @@ const SupplierManagement = () => {
                     <label className="mb-1.5 block text-sm font-bold text-gray-800">Mô tả</label>
                     <textarea
                       value={form.description}
-                      onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                      onChange={(event) => {
+                        setForm((current) => DialogFormBuilder.patch(current, { description: event.target.value }));
+                      }}
                       placeholder="Mô tả ngắn về supplier"
                       rows={4}
                       className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"

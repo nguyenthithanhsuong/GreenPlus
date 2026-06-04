@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { RefreshCw } from "lucide-react";
+import { DialogFormBuilder } from "@/lib";
 import AdminShell from "../shared/AdminShell";
 import ShipperStats from "./ShipperStats";
 import ShipperTable from "./ShipperTable";
@@ -17,11 +18,16 @@ import { deliveryTrackingSearchStrategy } from "../shared/searchStrategies";
 
 type StatusFilter = "all" | DeliveryStatus;
 
-const emptyForm = (): ShipperFormValues => ({
+const shipperFormDirector = DialogFormBuilder.withDefaults<ShipperFormValues>({
   employeeId: "",
   status: "assigned",
   note: "",
 });
+
+const emptyForm = (): ShipperFormValues => shipperFormDirector.constructEmpty();
+
+const formFrom = (values: Partial<ShipperFormValues>): ShipperFormValues =>
+  shipperFormDirector.constructFrom(values);
 
 const ShipperManagement = () => {
   const searchParams = useSearchParams();
@@ -137,11 +143,11 @@ const ShipperManagement = () => {
       }
 
       setSelectedDetail(data);
-      setForm({
+      setForm(formFrom({
         employeeId: data.employee_id ?? "",
         status: data.status,
         note: "",
-      });
+      }));
     } catch (requestError) {
       setDrawerError(requestError instanceof Error ? requestError.message : "Không thể tải chi tiết giao hàng");
       setSelectedDetail(null);
@@ -258,7 +264,9 @@ const ShipperManagement = () => {
         onSubmit={() => {
           void submitStatus();
         }}
-        onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
+        onChange={(patch) => {
+          setForm((current) => DialogFormBuilder.patch(current, patch));
+        }}
       />
     </AdminShell>
   );

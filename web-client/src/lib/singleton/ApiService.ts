@@ -1,8 +1,3 @@
-/**
- * Base API Service - Singleton pattern for centralized API communication
- * Handles common concerns: error handling, response parsing, request/response logging
- */
-
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -11,13 +6,8 @@ export interface ApiResponse<T> {
 
 export class ApiService {
   private static instance: ApiService;
-  private baseUrl: string;
   private cache: Map<string, { data: unknown; timestamp: number }> = new Map();
   private cacheDuration = 5 * 60 * 1000; // 5 minutes
-
-  private constructor() {
-    this.baseUrl = typeof window !== "undefined" ? "" : "";
-  }
 
   static getInstance(): ApiService {
     if (!ApiService.instance) {
@@ -35,11 +25,7 @@ export class ApiService {
   }
 
   private unwrapResponse<T>(payload: unknown): T {
-    if (
-      payload &&
-      typeof payload === "object" &&
-      "data" in payload
-    ) {
+    if (payload && typeof payload === "object" && "data" in payload) {
       return (payload as ApiResponse<T>).data as T;
     }
 

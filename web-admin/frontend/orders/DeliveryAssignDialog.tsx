@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Loader, Phone, X } from "lucide-react";
+import { DialogFormBuilder } from "@/lib";
 import type { DeliveryShipperOption } from "../../backend/modules/delivery-tracking/delivery-tracking.types";
 
 type DeliveryAssignDialogProps = {
@@ -12,6 +13,19 @@ type DeliveryAssignDialogProps = {
   onSubmit: (employeeId: string, note: string) => void;
 };
 
+type DeliveryAssignFormValues = {
+  selectedEmployeeId: string;
+  note: string;
+};
+
+const deliveryAssignFormDirector = DialogFormBuilder.withDefaults<DeliveryAssignFormValues>({
+  selectedEmployeeId: "",
+  note: "",
+});
+
+const emptyForm = (): DeliveryAssignFormValues =>
+  deliveryAssignFormDirector.constructEmpty();
+
 const DeliveryAssignDialog = ({
   isOpen,
   orderId,
@@ -21,8 +35,7 @@ const DeliveryAssignDialog = ({
 }: DeliveryAssignDialogProps) => {
   const [shippers, setShippers] = useState<DeliveryShipperOption[]>([]);
   const [loadingShippers, setLoadingShippers] = useState(false);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
-  const [note, setNote] = useState("");
+  const [form, setForm] = useState<DeliveryAssignFormValues>(emptyForm());
 
   useEffect(() => {
     if (!isOpen) {
@@ -49,19 +62,17 @@ const DeliveryAssignDialog = ({
   }, [isOpen]);
 
   const handleSubmit = () => {
-    if (!selectedEmployeeId.trim()) {
+    if (!form.selectedEmployeeId.trim()) {
       alert("Vui lòng chọn shipper");
       return;
     }
 
-    onSubmit(selectedEmployeeId, note);
-    setSelectedEmployeeId("");
-    setNote("");
+    onSubmit(form.selectedEmployeeId, form.note);
+    setForm(emptyForm());
   };
 
   const handleClose = () => {
-    setSelectedEmployeeId("");
-    setNote("");
+    setForm(emptyForm());
     onClose();
   };
 
@@ -109,7 +120,7 @@ const DeliveryAssignDialog = ({
                     <label
                       key={shipper.user_id}
                       className={`flex items-center gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors ${
-                        selectedEmployeeId === shipper.user_id
+                        form.selectedEmployeeId === shipper.user_id
                           ? "border-[#059669] bg-emerald-50"
                           : "border-gray-200 bg-white hover:border-gray-300"
                       }`}
@@ -118,8 +129,12 @@ const DeliveryAssignDialog = ({
                         type="radio"
                         name="shipper"
                         value={shipper.user_id}
-                        checked={selectedEmployeeId === shipper.user_id}
-                        onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                        checked={form.selectedEmployeeId === shipper.user_id}
+                        onChange={(e) => {
+                          setForm((current) =>
+                            DialogFormBuilder.patch(current, { selectedEmployeeId: e.target.value })
+                          );
+                        }}
                         className="h-4 w-4 border-gray-300 text-[#059669] focus:ring-[#059669]"
                       />
                       <div className="flex-1">
@@ -148,8 +163,10 @@ const DeliveryAssignDialog = ({
             <div>
               <label className="mb-2 block text-sm font-bold text-gray-800">Ghi chú giao hàng</label>
               <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
+                value={form.note}
+                onChange={(e) => {
+                  setForm((current) => DialogFormBuilder.patch(current, { note: e.target.value }));
+                }}
                 placeholder="Nhập ghi chú khi giao hàng..."
                 rows={3}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#059669] focus:outline-none focus:ring-1 focus:ring-[#059669]"
@@ -169,7 +186,7 @@ const DeliveryAssignDialog = ({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={saving || !selectedEmployeeId || loadingShippers}
+              disabled={saving || !form.selectedEmployeeId || loadingShippers}
               className="rounded-lg bg-[#059669] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#047857] disabled:opacity-60 inline-flex items-center gap-2"
             >
               {saving ? (

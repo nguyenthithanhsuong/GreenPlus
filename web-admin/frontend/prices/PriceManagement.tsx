@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { DialogFormBuilder } from "@/lib";
 import AdminShell from "../shared/AdminShell";
 import PriceStats from "./PriceStats";
 import PriceTable from "./PriceTable";
@@ -16,11 +17,17 @@ const todayIso = () => {
   return `${now.getUTCFullYear()}-${month}-${day}`;
 };
 
-const emptyForm = (): PriceFormValues => ({
+const createPriceFormDirector = () => DialogFormBuilder.withDefaults<PriceFormValues>({
   batchId: "",
   price: "",
   date: todayIso(),
+  status: "",
 });
+
+const emptyForm = (): PriceFormValues => createPriceFormDirector().constructEmpty();
+
+const formFrom = (values: Partial<PriceFormValues>): PriceFormValues =>
+  createPriceFormDirector().constructFrom(values);
 
 const PriceManagement = () => {
   const [items, setItems] = useState<PriceRow[]>([]);
@@ -85,11 +92,12 @@ const PriceManagement = () => {
   const openEditDrawer = useCallback((item: PriceRow) => {
     setDrawerMode("edit");
     setSelectedPrice(item);
-    setForm({
+    setForm(formFrom({
       batchId: item.batch_id ?? "",
       price: String(item.price),
       date: item.date,
-    });
+      status: item.status ?? "",
+    }));
     setDrawerError(null);
     setDrawerOpen(true);
   }, []);
@@ -97,11 +105,12 @@ const PriceManagement = () => {
   const openDeleteDrawer = useCallback((item: PriceRow) => {
     setDrawerMode("delete");
     setSelectedPrice(item);
-    setForm({
+    setForm(formFrom({
       batchId: item.batch_id ?? "",
       price: String(item.price),
       date: item.date,
-    });
+      status: item.status ?? "",
+    }));
     setDrawerError(null);
     setDrawerOpen(true);
   }, []);
@@ -114,7 +123,7 @@ const PriceManagement = () => {
   }, []);
 
   const patchForm = useCallback((patch: Partial<PriceFormValues>) => {
-    setForm((current) => ({ ...current, ...patch }));
+    setForm((current) => DialogFormBuilder.patch(current, patch));
   }, []);
 
   const submitDrawer = useCallback(async () => {
