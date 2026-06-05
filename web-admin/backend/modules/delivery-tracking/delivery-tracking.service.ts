@@ -104,9 +104,12 @@ export class DeliveryTrackingService {
     const currentStatus: DeliveryStatus = existing.status;
 
     const state = createDeliveryStatusState(currentStatus);
+    console.log(`Attempting to transition delivery ${orderId} from ${currentStatus} to ${nextStatus}`);
+    if(currentStatus!=nextStatus){
     if (!state.canTransitionTo(nextStatus)) {
       throw new AppError(`Cannot transition delivery from ${currentStatus} to ${nextStatus}`, 400);
     }
+  }
 
     await this.repository.updateDeliveryStatus({
       deliveryId: existing.delivery_id,
