@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { getRelationshipsForTable } from "@/lib/databaseRelationships";
 import { TABLE_CRUD_PRESETS } from "@/lib/crudPresets";
 
@@ -119,6 +119,7 @@ export default function Home() {
       setError(null);
       setSelectedRelatedId(null);
 
+      const supabase = getSupabaseClient();
       const { data, error: queryError } = await supabase
         .from(activeFeature.table)
         .select("*")
@@ -153,6 +154,7 @@ export default function Home() {
         }
 
         setRelatedLoading(true);
+        const supabase = getSupabaseClient();
         const { data, error: queryError } = await supabase
           .from(selectedRelationship.tableName)
           .select("*")
@@ -169,6 +171,7 @@ export default function Home() {
       }
 
       setRelatedLoading(true);
+      const supabase = getSupabaseClient();
       const { data, error: queryError } = await supabase
         .from(selectedRelationship.tableName)
         .select("*")
@@ -278,6 +281,7 @@ export default function Home() {
       if (Object.keys(payload).length === 0) {
         throw new Error("Insert payload is empty after removing blank/auto fields");
       }
+      const supabase = getSupabaseClient();
       const { data, error: queryError } = await supabase
         .from(activeFeature.table)
         .insert([payload])
@@ -302,6 +306,7 @@ export default function Home() {
       const payload = parseJsonPayload(updatePayload);
       const idValue = coercePrimaryKeyValue(updateId.trim());
 
+      const supabase = getSupabaseClient();
       const { data, error: queryError } = await supabase
         .from(activeFeature.table)
         .update(payload)
@@ -326,6 +331,7 @@ export default function Home() {
       if (!deleteId.trim()) throw new Error(`Enter ${primaryKeyColumn} to delete`);
       const idValue = coercePrimaryKeyValue(deleteId.trim());
 
+      const supabase = getSupabaseClient();
       const { data, error: queryError } = await supabase
         .from(activeFeature.table)
         .delete()
