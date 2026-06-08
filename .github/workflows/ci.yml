@@ -198,6 +198,15 @@ jobs:
       - name: Build apps
         run: npm run build
 
+      - name: Sentry CLI Version
+        run: sentry-cli --version
+
+      - name: Sentry Releases Help
+        run: sentry-cli releases --help
+
+      - name: Sentry Sourcemaps Help
+        run: sentry-cli sourcemaps --help
+
       - name: Upload web-client sourcemaps to Sentry
         if: env.SENTRY_DSN != ''
         run: |
