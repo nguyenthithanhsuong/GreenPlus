@@ -98,8 +98,15 @@ jobs:
       - name: Lowercase the repo name
         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Check Sentry secrets
+        run: |
+          echo "TOKEN=$([[ -n \"$SENTRY_AUTH_TOKEN\" ]] && echo SET || echo EMPTY)"
+          echo "ORG=$([[ -n \"$SENTRY_ORG\" ]] && echo SET || echo EMPTY)"
+          echo "CLIENT=$([[ -n \"$SENTRY_PROJECT_CLIENT\" ]] && echo SET || echo EMPTY)"
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT_CLIENT: ${{ secrets.SENTRY_PROJECT_CLIENT }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
