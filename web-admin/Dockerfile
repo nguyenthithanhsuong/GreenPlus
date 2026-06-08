@@ -33,6 +33,10 @@ ENV SENTRY_PROJECT_ADMIN=$SENTRY_PROJECT_ADMIN
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+RUN echo "ORG=$SENTRY_ORG"
+RUN echo "PROJECT=$SENTRY_PROJECT_CLIENT"
+RUN test -n "$SENTRY_AUTH_TOKEN" && echo "TOKEN=SET" || echo "TOKEN=EMPTY"
+
 RUN npm run build -w web-admin
 
 FROM node:20-alpine AS runner
