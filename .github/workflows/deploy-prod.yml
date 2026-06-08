@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: environment
     permissions:
-      contents: read
+      contents: write # Upgraded to 'write' to allow creating GitHub Releases
       packages: write
     steps:
       - name: Checkout
@@ -46,45 +46,40 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push images for production
-        run: |
-          VERSION=${{ github.ref_name }}-${{ github.sha }}
-          
-          docker buildx build \
-             --file web-admin/Dockerfile \
-              --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ env.NEXT_PUBLIC_SUPABASE_URL }}" \
-              --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-              --build-arg SUPABASE_SERVICE_ROLE_KEY="${{ env.SUPABASE_SERVICE_ROLE_KEY }}" \
-              --build-arg NEXT_PUBLIC_SENTRY_DSN="${{ env.NEXT_PUBLIC_SENTRY_DSN }}" \
-              --build-arg SENTRY_DSN="${{ env.SENTRY_DSN }}" \
-              --build-arg SENTRY_AUTH_TOKEN="${{ env.SENTRY_AUTH_TOKEN }}" \
-              --build-arg SENTRY_ORG="${{ env.SENTRY_ORG }}" \
-              --build-arg SENTRY_PROJECT_ADMIN="${{ env.SENTRY_PROJECT_ADMIN }}" \
-              --build-arg SENTRY_PROJECT_CLIENT="${{ env.SENTRY_PROJECT_CLIENT }}" \
-              --tags: |
-                  type=ref,event=branch
-                  type=sha
-                  type=raw,value=latest,enable={{is_default_branch}}
-              --push \
-            .
-          
-          docker buildx build \
-            --file web-admin/Dockerfile \
-              --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ env.NEXT_PUBLIC_SUPABASE_URL }}" \
-              --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-              --build-arg SUPABASE_SERVICE_ROLE_KEY="${{ env.SUPABASE_SERVICE_ROLE_KEY }}" \
-              --build-arg NEXT_PUBLIC_SENTRY_DSN="${{ env.NEXT_PUBLIC_SENTRY_DSN }}" \
-              --build-arg SENTRY_DSN="${{ env.SENTRY_DSN }}" \
-              --build-arg SENTRY_AUTH_TOKEN="${{ env.SENTRY_AUTH_TOKEN }}" \
-              --build-arg SENTRY_ORG="${{ env.SENTRY_ORG }}" \
-              --build-arg SENTRY_PROJECT_ADMIN="${{ env.SENTRY_PROJECT_ADMIN }}" \
-              --build-arg SENTRY_PROJECT_CLIENT="${{ env.SENTRY_PROJECT_CLIENT }}" \
-              --tags: |
-                  type=ref,event=branch
-                  type=sha
-                  type=raw,value=latest,enable={{is_default_branch}}
-              --push \
-            .
+      # Generates tags, INCLUDING the custom ref_name-sha tag needed for your Release step
+      # Appends '/web-admin' to the image name to match your release notes
+      - name: Extract Docker metadata for web-admin
+        id: meta-admin
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}/web-admin
+          tags: |
+            type=ref,event=branch
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.ref_name }}-${{ github.sha }}
+
+      - name: Build and push web-admin image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: web-admin/Dockerfile
+          push: true
+          tags: ${{ steps.meta-admin.outputs.tags }}
+          labels: ${{ steps.meta-admin.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ env.NEXT_PUBLIC_SENTRY_DSN }}
+            SENTRY_DSN=${{ env.SENTRY_DSN }}
+            SENTRY_AUTH_TOKEN=${{ env.SENTRY_AUTH_TOKEN }}
+            SENTRY_ORG=${{ env.SENTRY_ORG }}
+            SENTRY_PROJECT_ADMIN=${{ env.SENTRY_PROJECT_ADMIN }}
+            SENTRY_PROJECT_CLIENT=${{ env.SENTRY_PROJECT_CLIENT }}
+
+      # NOTE: To build web-client, duplicate the two steps above ("Extract Docker metadata..." and "Build and push...")
+      # changing the ID, file path, and image names to 'web-client'.
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -99,22 +94,13 @@ jobs:
         run: |
           echo "Deploying to production..."
           # TODO: Add your deployment commands here
-          # Example: 
-          # - Update docker-compose.yml with new image tags
-          # - Run docker-compose pull && docker-compose up -d
-          # - Or trigger your deployment pipeline (AWS CodeDeploy, Kubernetes, etc.)
-          # 
-          # WARNING: Be careful with production deployments!
-          # Consider adding approval steps in GitHub environments
 
       - name: Run smoke tests
         run: |
           echo "Running smoke tests..."
           # TODO: Add health checks and smoke tests
-          # Example: curl https://your-production-url.com/health
 
       - name: Notify deployment
         if: always()
         run: |
           echo "Production deployment complete"
-          # TODO: Add Slack/email notification to team
