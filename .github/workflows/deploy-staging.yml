@@ -59,7 +59,10 @@ jobs:
               --build-arg SENTRY_ORG="${{ env.SENTRY_ORG }}" \
               --build-arg SENTRY_PROJECT_ADMIN="${{ env.SENTRY_PROJECT_ADMIN }}" \
               --build-arg SENTRY_PROJECT_CLIENT="${{ env.SENTRY_PROJECT_CLIENT }}" \
-              --tag ... \
+              --tags: |
+                  type=ref,event=branch
+                  type=sha
+                  type=raw,value=latest,enable={{is_default_branch}}
               --push \
             .
           
@@ -74,7 +77,10 @@ jobs:
               --build-arg SENTRY_ORG="${{ env.SENTRY_ORG }}" \
               --build-arg SENTRY_PROJECT_ADMIN="${{ env.SENTRY_PROJECT_ADMIN }}" \
               --build-arg SENTRY_PROJECT_CLIENT="${{ env.SENTRY_PROJECT_CLIENT }}" \
-              --tag ... \
+              --tags: |
+                  type=ref,event=branch
+                  type=sha
+                  type=raw,value=latest,enable={{is_default_branch}}
               --push \
             .
 
