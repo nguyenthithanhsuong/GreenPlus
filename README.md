@@ -2,6 +2,12 @@
 
 Production-ready SaaS platform built with Next.js, Supabase, and Turborepo.
 
+[![CI](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/ci.yml/badge.svg)](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/ci.yml)
+
+[![Deploy to Staging](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/deploy-staging.yml/badge.svg)](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/deploy-staging.yml)
+
+[![Deploy to Production](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/deploy-prod.yml/badge.svg)](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/deploy-prod.yml)
+
 ## Features
 
 ✅ **Phase 1**: Supabase Auth + State Management (Zustand + React Query)
