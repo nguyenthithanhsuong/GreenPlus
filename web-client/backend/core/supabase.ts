@@ -17,3 +17,9 @@ export function getSupabaseServer() {
     },
   });
 }
+
+export const supabaseServer = new Proxy({} as ReturnType<typeof getSupabaseServer>, {
+  get(_target, prop) {
+    return Reflect.get(getSupabaseServer(), prop);
+  },
+});
