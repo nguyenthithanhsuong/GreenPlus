@@ -1,3 +1,11 @@
 import { createSupabaseBrowserClient } from "@greenplus/supabase-shared/supabaseClient";
 
-export const supabase = createSupabaseBrowserClient("web-client");
+let supabaseInstance: ReturnType<typeof createSupabaseBrowserClient> | null = null;
+
+export function getSupabaseClient() {
+  if (!supabaseInstance) {
+    supabaseInstance = createSupabaseBrowserClient("web-client");
+  }
+
+  return supabaseInstance;
+}

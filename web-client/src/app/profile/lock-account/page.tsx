@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../../../frontend/dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import ConfirmActionDialog from '../../../../frontend/shared/ConfirmActionDialog';
 import {
   SCREEN_BACKGROUND_GRADIENT,
@@ -187,6 +187,7 @@ export default function LockAccountPage() {
     setMessage(null);
 
     try {
+      const supabase = getSupabaseClient();
       await supabase.auth.signOut();
     } finally {
       clearAuth();
@@ -220,6 +221,7 @@ export default function LockAccountPage() {
         throw new Error(data?.error ?? "Không thể khóa tài khoản.");
       }
 
+      const supabase = getSupabaseClient();
       await supabase.auth.signOut();
       clearAuth();
       await fetch("/api/auth/sync", { method: "DELETE" }).catch(() => undefined);
