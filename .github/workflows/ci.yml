@@ -17,9 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: environment
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL}}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN || '' }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN || '' }}
+      BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,9 +49,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: environment
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL}}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN || '' }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN || '' }}
+      BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
