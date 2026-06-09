@@ -14,8 +14,8 @@ class BetterStackLogger {
   private sourceUrl: string;
 
   constructor() {
-    this.sourceToken = process.env.BETTER_STACK_SOURCE_TOKEN || "y7SJa28B3JXbgzeagRrbbyTK";
-    this.sourceUrl = process.env.BETTER_STACK_URL || "https://s2507202.eu-fsn-3.betterstackdata.com/logs";
+    this.sourceToken = process.env.BETTER_STACK_SOURCE_TOKEN || "qA7MX6usgBWHvMG2zMsVRpqi";
+    this.sourceUrl = process.env.BETTER_STACK_URL || "https://s2507461.eu-fsn-3.betterstackdata.com";
   }
 
   isEnabled(): boolean {
@@ -32,7 +32,7 @@ class BetterStackLogger {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.sourceToken}`,
+          Authorization: this.sourceToken,
         },
         body: JSON.stringify({
           dt: new Date().toISOString(),
