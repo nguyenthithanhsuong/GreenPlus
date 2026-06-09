@@ -16,12 +16,12 @@ jobs:
   frontend-ci:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: "example-anon-key"
-      SUPABASE_SERVICE_ROLE_KEY: "example-service-role-key"
-      SENTRY_DSN: ""
-      NEXT_PUBLIC_SENTRY_DSN: ""
-      BETTER_STACK_SOURCE_TOKEN: ""
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL}}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN || '' }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN || '' }}
+      BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,12 +47,12 @@ jobs:
   backend-ci:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: "example-anon-key"
-      SUPABASE_SERVICE_ROLE_KEY: "example-service-role-key"
-      SENTRY_DSN: ""
-      NEXT_PUBLIC_SENTRY_DSN: ""
-      BETTER_STACK_SOURCE_TOKEN: ""
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL}}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN || '' }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN || '' }}
+      BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -82,12 +82,12 @@ jobs:
       - backend-ci
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-anon-key' }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY || 'example-service-role-key' }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL}}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY }}
       SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN || '' }}
       NEXT_PUBLIC_SENTRY_DSN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN || '' }}
-      BETTER_STACK_SOURCE_TOKEN: ""
+      BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
     permissions:
       contents: read
       packages: write

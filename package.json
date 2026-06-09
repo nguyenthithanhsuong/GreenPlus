@@ -16,10 +16,12 @@
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "@types/node": "^25.9.2",
     "dotenv": "^16.6.1",
     "turbo": "^2.8.19"
   },
   "dependencies": {
+    "@logtail/next": "^0.3.1",
     "@supabase/supabase-js": "^2.102.1"
   }
 }
