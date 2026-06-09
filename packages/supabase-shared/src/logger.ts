@@ -14,9 +14,9 @@ class BetterStackLogger {
   private sourceUrl: string;
 
   constructor() {
-    this.sourceToken = process.env.BETTER_STACK_SOURCE_TOKEN || null;
-    this.sourceUrl = process.env.BETTER_STACK_URL || 'https://in.logs.betterstack.com/logs';
-}
+    this.sourceToken = process.env.BETTER_STACK_SOURCE_TOKEN || "y7SJa28B3JXbgzeagRrbbyTK";
+    this.sourceUrl = process.env.BETTER_STACK_URL || "https://s2507202.eu-fsn-3.betterstackdata.com/logs";
+  }
 
   isEnabled(): boolean {
     return !!this.sourceToken;
@@ -46,7 +46,8 @@ class BetterStackLogger {
       });
 
       if (!response.ok) {
-        console.error(`[BetterStack] Failed to send log: ${response.status}`);
+          const text = await response.text();
+          console.error(`[BetterStack] Failed: ${response.status}`, text);
       }
     } catch (error) {
       
