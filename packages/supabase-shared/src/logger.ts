@@ -1,80 +1,31 @@
-
-
-interface BetterStackLogPayload {
-  message: string;
-  level: 'debug' | 'info' | 'warning' | 'error' | 'critical';
-  source?: string;
-  context?: Record<string, any>;
-  userId?: string;
-  traceId?: string;
-}
-
 class BetterStackLogger {
-  private sourceToken: string | null = null;
-  private sourceUrl: string;
+  private token = process.env.BETTER_STACK_SOURCE_TOKEN!;
+  private url = "https://s2507495.eu-fsn-3.betterstackdata.com/logs";
 
-  constructor() {
-    this.sourceToken = process.env.BETTER_STACK_SOURCE_TOKEN || "qA7MX6usgBWHvMG2zMsVRpqi";
-    this.sourceUrl = process.env.BETTER_STACK_URL || "https://s2507461.eu-fsn-3.betterstackdata.com";
+  async send(payload: any) {
+    await fetch(this.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": this.token,
+      },
+      body: JSON.stringify({
+        dt: new Date().toISOString(),
+        level: payload.level.toUpperCase(),
+        message: payload.message,
+        source: "app",
+        context: payload.context || {},
+      }),
+    });
   }
 
-  isEnabled(): boolean {
-    return !!this.sourceToken;
+  info(msg: string, context?: any) {
+    void this.send({ level: "info", message: msg, context });
   }
 
-  private async send(payload: BetterStackLogPayload): Promise<void> {
-    if (!this.isEnabled()) {
-      return;
-    }
-
-    try {
-      const response = await fetch(this.sourceUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: this.sourceToken!,
-        },
-        body: JSON.stringify({
-          dt: new Date().toISOString(),
-          level: payload.level.toUpperCase(),
-          message: payload.message,
-          source: payload.source || 'app',
-          context: payload.context || {},
-          user_id: payload.userId,
-          trace_id: payload.traceId,
-        }),
-      });
-
-      if (!response.ok) {
-          const text = await response.text();
-          console.error(`[BetterStack] Failed: ${response.status}`, text);
-      }
-    } catch (error) {
-      
-      console.error('[BetterStack] Error sending log:', error);
-    }
-  }
-
-  debug(message: string, context?: Record<string, any>): void {
-    void this.send({ message, level: 'debug', context });
-  }
-
-  info(message: string, context?: Record<string, any>): void {
-    void this.send({ message, level: 'info', context });
-  }
-
-  warning(message: string, context?: Record<string, any>): void {
-    void this.send({ message, level: 'warning', context });
-  }
-
-  error(message: string, context?: Record<string, any>, userId?: string): void {
-    void this.send({ message, level: 'error', context, userId });
-  }
-
-  critical(message: string, context?: Record<string, any>): void {
-    void this.send({ message, level: 'critical', context });
+  error(msg: string, context?: any) {
+    void this.send({ level: "error", message: msg, context });
   }
 }
-
 
 export const logger = new BetterStackLogger();
