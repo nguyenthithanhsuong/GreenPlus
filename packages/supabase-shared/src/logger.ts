@@ -15,8 +15,8 @@ class BetterStackLogger {
 
   constructor() {
     this.sourceToken = process.env.BETTER_STACK_SOURCE_TOKEN || null;
-    this.sourceUrl = 'https://in.betterstack.com/api/v1/logs';
-  }
+    this.sourceUrl = process.env.BETTER_STACK_URL || 'https://in.logs.betterstack.com/logs';
+}
 
   isEnabled(): boolean {
     return !!this.sourceToken;
