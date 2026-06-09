@@ -7,6 +7,7 @@ import { useState } from "react";
 import ConfirmActionDialog from "../../../frontend/shared/ConfirmActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Eye, EyeOff } from "lucide-react";
+import { logger } from "../../../../packages/supabase-shared/src/logger";
 
 type AuthMode = "login" | "register";
 
@@ -118,131 +119,164 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
+  event.preventDefault();
+  setLoading(true);
+  setError(null);
+  setSuccess(null);
 
-    try {
-      if (isLogin) {
-        const signInResponse = await fetch("/api/auth/sign-in", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
+  try {
+    if (isLogin) {
+      logger.info("Login attempt", { email });
+      const start = Date.now();
 
-        const signInData = (await signInResponse.json().catch(() => null)) as unknown;
+      const signInResponse = await fetch("/api/auth/sign-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-        if (!signInResponse.ok) {
-          const message =
-            typeof signInData === "object" && signInData !== null && "error" in signInData
-              ? String((signInData as { error: string }).error)
-              : "Không thể đăng nhập.";
+      const signInData = (await signInResponse.json().catch(() => null)) as unknown;
+      const duration_ms = Date.now() - start;
 
-          if (typeof signInData === "object" && signInData !== null && "status" in signInData) {
-            const status = (signInData as { status?: string }).status;
-            if (status === "banned") {
-              setBannedDialogOpen(true);
-              return;
-            } else if (status === "inactive" || status === "suspended") {
-              setUnlockDialogOpen(true);
-              return;
-            }
-          }
+      if (!signInResponse.ok) {
+        const message =
+          typeof signInData === "object" && signInData !== null && "error" in signInData
+            ? String((signInData as { error: string }).error)
+            : "Không thể đăng nhập.";
 
-          if (message.includes("banned")) {
+        if (typeof signInData === "object" && signInData !== null && "status" in signInData) {
+          const status = (signInData as { status?: string }).status;
+          if (status === "banned") {
+            logger.warn("Login blocked: account banned", { email });
             setBannedDialogOpen(true);
             return;
-          }
-
-          if (message.includes("account is not active")) {
+          } else if (status === "inactive" || status === "suspended") {
+            logger.warn("Login blocked: account inactive/suspended", { email, status });
             setUnlockDialogOpen(true);
             return;
           }
-
-          throw new Error(message);
         }
 
-        setSuccess("Đăng nhập thành công.");
-        applyLoginResponse(signInData);
-        return;
-      }
+        if (message.includes("banned")) {
+          logger.warn("Login blocked: banned (message)", { email });
+          setBannedDialogOpen(true);
+          return;
+        }
 
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          confirmPassword,
-        }),
-      });
+        if (message.includes("account is not active")) {
+          logger.warn("Login blocked: account not active (message)", { email });
+          setUnlockDialogOpen(true);
+          return;
+        }
 
-      const data = (await response.json().catch(() => null)) as unknown;
-
-      if (!response.ok) {
-        const message =
-          typeof data === "object" && data !== null && "error" in data
-            ? String((data as { error: string }).error)
-            : "Không thể đăng ký.";
+        logger.error("Login failed", { email, message, status: signInResponse.status, duration_ms });
         throw new Error(message);
       }
 
-      setSuccess("Tài khoản đã được tạo thành công.");
-    } catch (submitError) {
-      setSuccess(null);
-      setError(submitError instanceof Error ? submitError.message : "Đã xảy ra lỗi không mong muốn.");
-    } finally {
-      setLoading(false);
+      logger.info("Login success", { email, duration_ms });
+      setSuccess("Đăng nhập thành công.");
+      applyLoginResponse(signInData);
+      return;
     }
-  };
 
-  async function handleConfirmUnlock() {
-    setUnlockDialogOpen(false);
-    setLoading(true);
-    setError(null);
+    // Register
+    logger.info("Register attempt", { email, name });
+    const start = Date.now();
+
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password, confirmPassword }),
+    });
+
+    const data = (await response.json().catch(() => null)) as unknown;
+    const duration_ms = Date.now() - start;
+
+    if (!response.ok) {
+      const message =
+        typeof data === "object" && data !== null && "error" in data
+          ? String((data as { error: string }).error)
+          : "Không thể đăng ký.";
+      logger.error("Register failed", { email, message, status: response.status, duration_ms });
+      throw new Error(message);
+    }
+
+    logger.info("Register success", { email, duration_ms });
+    setSuccess("Tài khoản đã được tạo thành công.");
+
+  } catch (submitError) {
+    // Only log here if it wasn't already logged above (i.e. unexpected throws)
+    if (!(submitError instanceof Error && submitError.message !== "Đã xảy ra lỗi không mong muốn.")) {
+      logger.error("Unexpected auth error", {
+        error: submitError instanceof Error ? submitError.message : String(submitError),
+        mode,
+        email,
+      });
+    }
     setSuccess(null);
-
-    try {
-      const unlockResponse = await fetch("/api/auth/unlock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const unlockData = (await unlockResponse.json().catch(() => null)) as unknown;
-      if (!unlockResponse.ok) {
-        const unlockMessage =
-          typeof unlockData === "object" && unlockData !== null && "error" in unlockData
-            ? String((unlockData as { error: string }).error)
-            : "Không thể mở khóa tài khoản.";
-        throw new Error(unlockMessage);
-      }
-
-      const retryResponse = await fetch("/api/auth/sign-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const retryData = (await retryResponse.json().catch(() => null)) as unknown;
-      if (!retryResponse.ok) {
-        const retryMessage =
-          typeof retryData === "object" && retryData !== null && "error" in retryData
-            ? String((retryData as { error: string }).error)
-            : "Không thể đăng nhập.";
-        throw new Error(retryMessage);
-      }
-
-      setSuccess("Tài khoản đã được mở khóa và đăng nhập thành công.");
-      applyLoginResponse(retryData);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Đã xảy ra lỗi không mong muốn.");
-    } finally {
-      setLoading(false);
-    }
+    setError(submitError instanceof Error ? submitError.message : "Đã xảy ra lỗi không mong muốn.");
+  } finally {
+    setLoading(false);
   }
+};
+
+async function handleConfirmUnlock() {
+  setUnlockDialogOpen(false);
+  setLoading(true);
+  setError(null);
+  setSuccess(null);
+
+  try {
+    logger.info("Unlock attempt", { email });
+
+    const unlockResponse = await fetch("/api/auth/unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const unlockData = (await unlockResponse.json().catch(() => null)) as unknown;
+    if (!unlockResponse.ok) {
+      const unlockMessage =
+        typeof unlockData === "object" && unlockData !== null && "error" in unlockData
+          ? String((unlockData as { error: string }).error)
+          : "Không thể mở khóa tài khoản.";
+      logger.error("Unlock failed", { email, message: unlockMessage, status: unlockResponse.status });
+      throw new Error(unlockMessage);
+    }
+
+    logger.info("Unlock success, retrying login", { email });
+
+    const retryResponse = await fetch("/api/auth/sign-in", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const retryData = (await retryResponse.json().catch(() => null)) as unknown;
+    if (!retryResponse.ok) {
+      const retryMessage =
+        typeof retryData === "object" && retryData !== null && "error" in retryData
+          ? String((retryData as { error: string }).error)
+          : "Không thể đăng nhập.";
+      logger.error("Login after unlock failed", { email, message: retryMessage });
+      throw new Error(retryMessage);
+    }
+
+    logger.info("Login after unlock success", { email });
+    setSuccess("Tài khoản đã được mở khóa và đăng nhập thành công.");
+    applyLoginResponse(retryData);
+
+  } catch (e) {
+    logger.error("Unlock flow error", {
+      error: e instanceof Error ? e.message : String(e),
+      email,
+    });
+    setError(e instanceof Error ? e.message : "Đã xảy ra lỗi không mong muốn.");
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">

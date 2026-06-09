@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Eye, EyeOff } from "lucide-react";
+import { logger } from "../../../../packages/supabase-shared/src/logger";
 
 
 type AuthMode = "login" | "register";
@@ -66,116 +67,140 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const [success, setSuccess] = useState<string | null>(null);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
+  event.preventDefault();
+  setLoading(true);
+  setError(null);
+  setSuccess(null);
 
-    try {
-      const response = await fetch(
-        isLogin ? "/api/auth/sign-in" : "/api/auth/register",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(
-            isLogin
-              ? { email, password }
-              : {
-                  name,
-                  email,
-                  password,
-                  confirmPassword,
-                }
-          ),
-        }
-      );
+  try {
+    const start = Date.now();
 
-      const data = (await response.json().catch(() => null)) as unknown;
+    if (isLogin) {
+      logger.info("Admin login attempt", { email });
+    } else {
+      logger.info("Admin register attempt", { email, name });
+    }
 
-      if (!response.ok) {
-        const message =
-          typeof data === "object" && data !== null && "error" in data
-            ? String((data as { error: string }).error)
-            : isLogin
-            ? "Không thể đăng nhập."
-            : "Không thể đăng ký.";
-        throw new Error(message);
+    const response = await fetch(
+      isLogin ? "/api/auth/sign-in" : "/api/auth/register",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          isLogin
+            ? { email, password }
+            : { name, email, password, confirmPassword }
+        ),
       }
+    );
 
-      setSuccess(
-        isLogin
-          ? "Đăng nhập thành công."
-          : "Tài khoản đã được tạo thành công."
-      );
+    const data = (await response.json().catch(() => null)) as unknown;
+    const duration_ms = Date.now() - start;
 
-      if (isLogin && typeof data === "object" && data !== null) {
-        const payload = data as {
-          session?: {
-            session_id: string;
-            user_id: string;
-            login_time: string;
-            role_name?: string | null;
-            access_token?: string;
-          };
-          user?: {
-            user_id: string;
-            name: string;
-            email: string;
-            phone?: string | null;
-            address?: string | null;
-            image_url?: string | null;
-            status?: string;
-            role_name?: string | null;
-          };
+    if (!response.ok) {
+      const message =
+        typeof data === "object" && data !== null && "error" in data
+          ? String((data as { error: string }).error)
+          : isLogin
+          ? "Không thể đăng nhập."
+          : "Không thể đăng ký.";
+      logger.error(isLogin ? "Admin login failed" : "Admin register failed", {
+        email,
+        message,
+        status: response.status,
+        duration_ms,
+      });
+      throw new Error(message);
+    }
+
+    if (isLogin && typeof data === "object" && data !== null) {
+      const payload = data as {
+        session?: {
+          session_id: string;
+          user_id: string;
+          login_time: string;
+          role_name?: string | null;
+          access_token?: string;
+        };
+        user?: {
+          user_id: string;
+          name: string;
+          email: string;
+          phone?: string | null;
+          address?: string | null;
+          image_url?: string | null;
+          status?: string;
           role_name?: string | null;
         };
+        role_name?: string | null;
+      };
 
-        const session = payload.session ?? null;
-        const user = payload.user ?? null;
-        const roleName = String(payload.role_name ?? user?.role_name ?? "")
-          .trim()
-          .toLowerCase();
+      const session = payload.session ?? null;
+      const user = payload.user ?? null;
+      const roleName = String(payload.role_name ?? user?.role_name ?? "")
+        .trim()
+        .toLowerCase();
 
-        const allowedRoles = ["admin", "manager", "employee"];
+      const allowedRoles = ["admin", "manager", "employee"];
 
-        if (!allowedRoles.includes(roleName)) {
-          throw new Error("Chỉ quản trị viên, quản lý hoặc nhân viên mới có thể truy cập cổng này.");
-        }
-
-        if (!session || !user) {
-          throw new Error("Phản hồi đăng nhập thiếu dữ liệu phiên.");
-        }
-
-        setAuth(
-          {
-            ...session,
-            role_name: roleName,
-          },
-          {
-            user_id: user.user_id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone ?? null,
-            address: user.address ?? null,
-            image_url: user.image_url ?? null,
-            status: user.status ?? "active",
-            role_name: roleName,
-          }
-        );
-
-        router.replace("/dashboard");
+      if (!allowedRoles.includes(roleName)) {
+        logger.warn("Admin login blocked: insufficient role", {
+          email,
+          roleName,
+          duration_ms,
+        });
+        throw new Error("Chỉ quản trị viên, quản lý hoặc nhân viên mới có thể truy cập cổng này.");
       }
-    } catch (submitError) {
-      setSuccess(null);
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Đã xảy ra lỗi không mong muốn."
+
+      if (!session || !user) {
+        logger.error("Admin login failed: missing session data", {
+          email,
+          hasSession: !!session,
+          hasUser: !!user,
+          duration_ms,
+        });
+        throw new Error("Phản hồi đăng nhập thiếu dữ liệu phiên.");
+      }
+
+      logger.info("Admin login success", { email, roleName, duration_ms });
+
+      setAuth(
+        { ...session, role_name: roleName },
+        {
+          user_id: user.user_id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone ?? null,
+          address: user.address ?? null,
+          image_url: user.image_url ?? null,
+          status: user.status ?? "active",
+          role_name: roleName,
+        }
       );
-    } finally {
-      setLoading(false);
+
+      router.replace("/dashboard");
+      return;
     }
-  };
+
+    logger.info("Admin register success", { email, duration_ms });
+    setSuccess(isLogin ? "Đăng nhập thành công." : "Tài khoản đã được tạo thành công.");
+
+  } catch (submitError) {
+    logger.error("Admin auth unexpected error", {
+      error: submitError instanceof Error ? submitError.message : String(submitError),
+      mode,
+      email,
+    });
+    setSuccess(null);
+    setError(
+      submitError instanceof Error
+        ? submitError.message
+        : "Đã xảy ra lỗi không mong muốn."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">

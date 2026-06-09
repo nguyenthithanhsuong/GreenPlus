@@ -53,6 +53,18 @@ class BetterStackLogger {
   error(message: string, context?: Record<string, unknown>) {
     void this.send({ level: "error", message, context });
   }
+
+  warn(message: string, context?: Record<string, unknown>) {
+  void this.send({ level: "warning", message, context });
+}
+
+debug(message: string, context?: Record<string, unknown>) {
+  void this.send({ level: "debug", message, context });
+}
+
+critical(message: string, context?: Record<string, unknown>) {
+  void this.send({ level: "critical", message, context });
+}
 }
 
 export const logger = new BetterStackLogger();
