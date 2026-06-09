@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
+import { logger } from "../../../../../../packages/supabase-shared/src/logger";
 
 type PortalPayload = {
   sub: string;
@@ -95,12 +96,17 @@ export async function GET(request: Request) {
   const cookieHeader = request.headers.get("cookie") ?? "";
   const cookies = parseCookieHeader(cookieHeader);
   const roleCookie = cookies.gp_role_name;
+
+  logger.info("Get session attempt");
+
   if (!roleCookie) {
+    logger.warn("Get session failed - missing role cookie");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const roleName = decodeURIComponent(roleCookie).trim().toLowerCase();
   if (!roleName) {
+    logger.warn("Get session failed - invalid role name");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -108,6 +114,7 @@ export async function GET(request: Request) {
   const portalPayload = portalSession ? parsePortalPayload(portalSession) : null;
 
   if (portalPayload) {
+    logger.info("Get session success - portal user", { userId: portalPayload.sub });
     return NextResponse.json(
       {
         item: {
@@ -126,6 +133,7 @@ export async function GET(request: Request) {
   }
 
   if (roleName === "admin") {
+    logger.info("Get session success - admin fallback");
     return NextResponse.json(
       {
         item: {
@@ -143,5 +151,6 @@ export async function GET(request: Request) {
     );
   }
 
+  logger.info("Get session success - minimal response", { roleName });
   return NextResponse.json({ item: { role_name: roleName } }, { status: 200 });
 }

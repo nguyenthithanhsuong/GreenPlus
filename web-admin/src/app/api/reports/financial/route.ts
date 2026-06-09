@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "../../../../../backend/core/supabase";
+import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { toErrorMessage } from "../../../../../backend/core/errors";
 
 type BatchReportRow = {
   batch_id: string;
@@ -62,7 +64,10 @@ type MonthlyTrend = {
 const emptyTrend = (): MonthlyTrend[] => Array.from({ length: 12 }, (_, month) => ({ month, revenue: 0, importCost: 0, profit: 0 }));
 
 export async function GET() {
+  logger.info("Get financial report attempt");
+
   try {
+    const start = Date.now();
     const [batchesResult, paymentsResult] = await Promise.all([
       supabaseServer
         .from("batches")
@@ -74,13 +79,8 @@ export async function GET() {
         .order("payment_date", { ascending: false, nullsFirst: false }),
     ]);
 
-    if (batchesResult.error) {
-      throw new Error(batchesResult.error.message);
-    }
-
-    if (paymentsResult.error) {
-      throw new Error(paymentsResult.error.message);
-    }
+    if (batchesResult.error) throw new Error(batchesResult.error.message);
+    if (paymentsResult.error) throw new Error(paymentsResult.error.message);
 
     const batches = ((batchesResult.data ?? []) as BatchReportRow[]).map((batch) => ({
       ...batch,
@@ -171,9 +171,11 @@ export async function GET() {
 
     transactions.sort((left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime());
 
+    logger.info("Get financial report success", { duration_ms: Date.now() - start });
+
     return NextResponse.json({ summary, monthlyTrend, transactions }, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("Get financial report unexpected error", { error: toErrorMessage(error) });
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }

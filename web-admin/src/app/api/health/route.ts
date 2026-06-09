@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
+import { logger } from "../../../../../packages/supabase-shared/src/logger";
 
 export const runtime = 'nodejs';
 
 export async function GET() {
+  logger.info("Health check attempt");
+
   try {
     const timestamp = new Date().toISOString();
     
@@ -18,6 +21,8 @@ export async function GET() {
       { status: 200 }
     );
   } catch (error) {
+    logger.error("Health check failed", { error: error instanceof Error ? error.message : 'Unknown error' });
+    
     return NextResponse.json(
       {
         status: 'error',

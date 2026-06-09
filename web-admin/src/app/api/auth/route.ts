@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { AuthController } from "../../../../backend/modules/auth/auth.controller";
 import { AuthService } from "../../../../backend/modules/auth/auth.service";
+import { logger } from "../../../../../packages/supabase-shared/src/logger";
 
 function readAccessToken(request: Request, fallbackToken?: string): string {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -11,6 +12,8 @@ function readAccessToken(request: Request, fallbackToken?: string): string {
 }
 
 export async function GET() {
+  logger.info("Auth API health check");
+
   return NextResponse.json(
     {
       message: "auth api is ready",
@@ -22,6 +25,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const start = Date.now();
+  let userId = "";
+
   try {
     const body = (await request.json()) as {
       accessToken?: string;
@@ -29,20 +35,39 @@ export async function POST(request: Request) {
 
     const accessToken = readAccessToken(request, body.accessToken);
 
+    logger.info("Auth session verification attempt");
+
     if (!accessToken) {
-      return NextResponse.json({ error: "accessToken is required" }, { status: 400 });
+      logger.error("Auth session verification failed - missing accessToken");
+
+      return NextResponse.json(
+        { error: "accessToken is required" },
+        { status: 400 }
+      );
     }
 
     const controller = new AuthController(new AuthService());
     const result = await controller.verifySession(accessToken);
 
+    userId = result?.id ?? "";
+
+    logger.info("Auth session verification success", {
+      userId,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     const status = /invalid|jwt|token|auth|session/i.test(message) ? 401 : 500;
-    return NextResponse.json(
-      { error: message },
-      { status }
-    );
+
+    logger.error("Auth session verification failed", {
+      userId,
+      error: message,
+      status,
+      duration_ms: Date.now() - start,
+    });
+
+    return NextResponse.json({ error: message }, { status });
   }
 }

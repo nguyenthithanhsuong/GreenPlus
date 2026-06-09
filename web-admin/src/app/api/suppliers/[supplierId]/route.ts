@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { AppError } from "../../../../../backend/core/errors";
+import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { supplierManagementFacade } from "../../../../../backend/modules/suppliers/facades/supplier-management.facade";
+import { logger } from "../../../../../../packages/supabase-shared/src/logger";
 
 type Context = {
   params: Promise<{
@@ -9,8 +10,9 @@ type Context = {
 };
 
 export async function PUT(request: Request, context: Context) {
+  const { supplierId } = await context.params;
+
   try {
-    const { supplierId } = await context.params;
     const body = (await request.json()) as {
       name?: string;
       address?: string;
@@ -19,6 +21,9 @@ export async function PUT(request: Request, context: Context) {
       status?: "pending" | "approved" | "rejected";
     };
 
+    logger.info("Update supplier attempt", { supplierId, name: body.name });
+
+    const start = Date.now();
     const updated = await supplierManagementFacade.updateSupplier({
       supplierId,
       name: body.name,
@@ -28,67 +33,96 @@ export async function PUT(request: Request, context: Context) {
       status: body.status,
     });
 
+    logger.info("Update supplier success", {
+      supplierId,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("Update supplier failed", { supplierId, message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("Update supplier unexpected error", { supplierId, error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
+      { error: toErrorMessage(error) },
       { status: 500 },
     );
   }
 }
 
 export async function PATCH(request: Request, context: Context) {
+  const { supplierId } = await context.params;
+
   try {
-    const { supplierId } = await context.params;
     const body = (await request.json()) as {
       action?: "approve" | "reject";
       status?: "pending" | "approved" | "rejected";
     };
 
-    if (body.action === "approve") {
-      const updated = await supplierManagementFacade.changeStatus(supplierId, "approved");
-      return NextResponse.json(updated, { status: 200 });
+    const statusToSet = body.action === "approve" 
+      ? "approved" 
+      : body.action === "reject" 
+        ? "rejected" 
+        : body.status;
+
+    if (!statusToSet) {
+      logger.warn("Change supplier status failed - missing status", { supplierId });
+      return NextResponse.json({ error: "action or status is required" }, { status: 400 });
     }
 
-    if (body.action === "reject") {
-      const updated = await supplierManagementFacade.changeStatus(supplierId, "rejected");
-      return NextResponse.json(updated, { status: 200 });
-    }
+    logger.info("Change supplier status attempt", { supplierId, status: statusToSet });
 
-    if (typeof body.status !== "undefined") {
-      const updated = await supplierManagementFacade.changeStatus(supplierId, body.status);
-      return NextResponse.json(updated, { status: 200 });
-    }
+    const start = Date.now();
+    const updated = await supplierManagementFacade.changeStatus(supplierId, statusToSet);
 
-    return NextResponse.json({ error: "action or status is required" }, { status: 400 });
+    logger.info("Change supplier status success", {
+      supplierId,
+      status: statusToSet,
+      duration_ms: Date.now() - start,
+    });
+
+    return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("Change supplier status failed", { supplierId, message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("Change supplier status unexpected error", { supplierId, error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
+      { error: toErrorMessage(error) },
       { status: 500 },
     );
   }
 }
 
 export async function DELETE(_: Request, context: Context) {
+  const { supplierId } = await context.params;
+
+  logger.info("Delete supplier attempt", { supplierId });
+
   try {
-    const { supplierId } = await context.params;
+    const start = Date.now();
     await supplierManagementFacade.deleteSupplier(supplierId);
+    
+    logger.info("Delete supplier success", {
+      supplierId,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json({ deleted: true }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("Delete supplier failed", { supplierId, message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("Delete supplier unexpected error", { supplierId, error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
+      { error: toErrorMessage(error) },
       { status: 500 },
     );
   }

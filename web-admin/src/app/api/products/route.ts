@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server";
 import { ProductService } from "../../../../backend/modules/catalog/product.service";
-import { AppError } from "../../../../backend/core/errors";
+import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { AuthService } from "../../../../backend/modules/auth/auth.service";
 import { requirePermissionForUser } from "../../../../backend/core/authorization";
+import { logger } from "../../../../../packages/supabase-shared/src/logger";
 
 export async function GET() {
+  logger.info("List products attempt");
+
   try {
+    const start = Date.now();
     const service = new ProductService();
     const items = await service.listProducts();
+
+    logger.info("List products success", {
+      count: items.length,
+      duration_ms: Date.now() - start,
+    });
 
     return NextResponse.json(
       {
@@ -18,19 +27,20 @@ export async function GET() {
     );
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("List products failed", { message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("List products unexpected error", { error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
-      { status: 500 },
+      { error: toErrorMessage(error) },
+      { status: 500 }
     );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    
     const authHeader = request.headers.get("authorization") ?? "";
     let accessToken = "";
     if (authHeader.toLowerCase().startsWith("bearer ")) accessToken = authHeader.slice("bearer ".length).trim();
@@ -40,7 +50,10 @@ export async function POST(request: Request) {
       accessToken = cookieMatch ? decodeURIComponent(cookieMatch[1]).trim() : "";
     }
 
-    if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!accessToken) {
+      logger.warn("Create product failed - unauthorized");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const authService = new AuthService();
     const verified = await authService.verifySession(accessToken);
@@ -56,6 +69,9 @@ export async function POST(request: Request) {
       status?: "active" | "inactive";
     };
 
+    logger.info("Create product attempt", { name: body.name, userId: verified.id });
+
+    const start = Date.now();
     const service = new ProductService();
     const created = await service.createProduct({
       categoryId: body.categoryId,
@@ -67,15 +83,22 @@ export async function POST(request: Request) {
       status: body.status,
     });
 
+    logger.info("Create product success", {
+      productId: created.product_id,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("Create product failed", { message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("Create product unexpected error", { error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
-      { status: 500 },
+      { error: toErrorMessage(error) },
+      { status: 500 }
     );
   }
 }

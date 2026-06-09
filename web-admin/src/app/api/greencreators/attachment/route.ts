@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { AppError } from "../../../../../backend/core/errors";
+import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
 import { greenCreatorContentFacade } from "../../../../../backend/modules/greencreators/greencreator-content.facade";
+import { logger } from "../../../../../../packages/supabase-shared/src/logger";
 
 function readAccessToken(request: Request): string {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
   try {
     const accessToken = readAccessToken(request);
     if (!accessToken) {
+      logger.warn("Upload attachment failed - unauthorized");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -52,19 +54,33 @@ export async function POST(request: Request) {
         ? [singleFile]
         : [];
 
+    logger.info("Upload attachment attempt", { 
+      postId, 
+      fileCount: files.length, 
+      userId: verified.id 
+    });
+
     if (!postId) {
+      logger.error("Upload attachment failed - missing postId");
       return NextResponse.json({ error: "postId is required" }, { status: 400 });
     }
 
     if (!files.length) {
+      logger.error("Upload attachment failed - missing files", { postId });
       return NextResponse.json({ error: "files are required" }, { status: 400 });
     }
 
+    const start = Date.now();
     const result = await greenCreatorContentFacade.uploadAttachment({
       userId: verified.id,
       postId,
       files,
       replaceExisting: true,
+    });
+
+    logger.info("Upload attachment success", { 
+      postId, 
+      duration_ms: Date.now() - start 
     });
 
     return NextResponse.json(
@@ -76,11 +92,13 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("Upload attachment failed", { message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("Upload attachment unexpected error", { error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
+      { error: toErrorMessage(error) },
       { status: 500 },
     );
   }

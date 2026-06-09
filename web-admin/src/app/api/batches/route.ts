@@ -1,19 +1,31 @@
 import { NextResponse } from "next/server";
-import { AppError } from "../../../../backend/core/errors";
+import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { batchManagementFacade } from "../../../../backend/modules/batches/facades/batch-management.facade";
+import { logger } from "../../../../../packages/supabase-shared/src/logger";
 
 export async function GET() {
+  logger.info("List batches attempt");
+
   try {
+    const start = Date.now();
     const items = await batchManagementFacade.listBatches();
+
+    logger.info("List batches success", {
+      count: items.length,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json({ items, total: items.length }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("List batches failed", { message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("List batches unexpected error", { error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
-      { status: 500 },
+      { error: toErrorMessage(error) },
+      { status: 500 }
     );
   }
 }
@@ -32,6 +44,9 @@ export async function POST(request: Request) {
       force?: boolean;
     };
 
+    logger.info("Create batch attempt", { productId: body.productId, supplierId: body.supplierId });
+
+    const start = Date.now();
     const created = await batchManagementFacade.createBatch({
       productId: body.productId ?? "",
       supplierId: body.supplierId ?? "",
@@ -44,15 +59,22 @@ export async function POST(request: Request) {
       force: body.force === true,
     });
 
+    logger.info("Create batch success", {
+      batchId: created.batch_id,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("Create batch failed", { message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("Create batch unexpected error", { error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
-      { status: 500 },
+      { error: toErrorMessage(error) },
+      { status: 500 }
     );
   }
 }

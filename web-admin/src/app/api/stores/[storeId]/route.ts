@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { AppError } from "../../../../../backend/core/errors";
+import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { storesManagementFacade } from "../../../../../backend/modules/stores/facades/stores-management.facade";
+import { logger } from "../../../../../../packages/supabase-shared/src/logger";
 
 type Context = {
   params: Promise<{
@@ -9,8 +10,9 @@ type Context = {
 };
 
 export async function PUT(request: Request, context: Context) {
+  const { storeId } = await context.params;
+
   try {
-    const { storeId } = await context.params;
     const body = (await request.json()) as {
       name?: string;
       description?: string | null;
@@ -28,6 +30,9 @@ export async function PUT(request: Request, context: Context) {
       closingTime?: string | null;
     };
 
+    logger.info("Update store attempt", { storeId, name: body.name });
+
+    const start = Date.now();
     const updated = await storesManagementFacade.updateStore({
       storeId,
       name: body.name,
@@ -46,56 +51,89 @@ export async function PUT(request: Request, context: Context) {
       closingTime: body.closingTime,
     });
 
+    logger.info("Update store success", {
+      storeId,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("Update store failed", { storeId, message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("Update store unexpected error", { storeId, error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
+      { error: toErrorMessage(error) },
       { status: 500 },
     );
   }
 }
 
 export async function PATCH(request: Request, context: Context) {
+  const { storeId } = await context.params;
+
   try {
-    const { storeId } = await context.params;
     const body = (await request.json()) as {
       status?: "active" | "inactive" | "closed";
     };
 
     if (typeof body.status === "undefined") {
+      logger.warn("Patch store status failed - missing status", { storeId });
       return NextResponse.json({ error: "status is required" }, { status: 400 });
     }
 
+    logger.info("Change store status attempt", { storeId, status: body.status });
+
+    const start = Date.now();
     const updated = await storesManagementFacade.changeStatus(storeId, body.status);
+
+    logger.info("Change store status success", {
+      storeId,
+      status: body.status,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("Change store status failed", { storeId, message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("Change store status unexpected error", { storeId, error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
+      { error: toErrorMessage(error) },
       { status: 500 },
     );
   }
 }
 
 export async function DELETE(_: Request, context: Context) {
+  const { storeId } = await context.params;
+
+  logger.info("Delete store attempt", { storeId });
+
   try {
-    const { storeId } = await context.params;
+    const start = Date.now();
     await storesManagementFacade.deleteStore(storeId);
+    
+    logger.info("Delete store success", {
+      storeId,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json({ deleted: true }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
+      logger.error("Delete store failed", { storeId, message: error.message });
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
+    logger.error("Delete store unexpected error", { storeId, error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
+      { error: toErrorMessage(error) },
       { status: 500 },
     );
   }

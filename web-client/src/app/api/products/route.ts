@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { productFacade } from "../../../../backend/modules/products/facades/product.facade";
-import { ProductSort, SearchCriteria } from "../../../../backend/modules/products/product.types";
+import {
+  ProductSort,
+  SearchCriteria,
+} from "../../../../backend/modules/products/product.types";
+import { logger } from "../../../../../packages/supabase-shared/src/logger";
 
 const VALID_SORTS: ProductSort[] = ["newest", "price_asc", "price_desc"];
 
@@ -19,10 +23,19 @@ function parseSort(value: string | null): ProductSort | undefined {
     return undefined;
   }
 
-  return VALID_SORTS.includes(value as ProductSort) ? (value as ProductSort) : undefined;
+  return VALID_SORTS.includes(value as ProductSort)
+    ? (value as ProductSort)
+    : undefined;
 }
 
 export async function GET(request: Request) {
+  const start = Date.now();
+  let userContext = {
+    keyword: "",
+    categoryId: "",
+    certification: "",
+  };
+
   try {
     const { searchParams } = new URL(request.url);
 
@@ -35,6 +48,21 @@ export async function GET(request: Request) {
     const limit = parseNumber(searchParams.get("limit")) ?? 20;
     const sort = parseSort(searchParams.get("sort")) ?? "newest";
 
+    userContext = {
+      keyword: keyword ?? "",
+      categoryId: categoryId ?? "",
+      certification: certification ?? "",
+    };
+
+    logger.info("Product search/browse attempt", {
+      ...userContext,
+      page,
+      limit,
+      sort,
+      minPrice,
+      maxPrice,
+    });
+
     const hasSearchIntent =
       keyword !== null ||
       categoryId !== undefined ||
@@ -42,8 +70,21 @@ export async function GET(request: Request) {
       minPrice !== undefined ||
       maxPrice !== undefined;
 
+    let result;
+
     if (!hasSearchIntent) {
-      const result = await productFacade.browseProducts(page, sort, limit);
+      logger.info("Browsing products (no search intent detected)", {
+        page,
+        limit,
+        sort,
+      });
+
+      result = await productFacade.browseProducts(page, sort, limit);
+
+      logger.info("Browse products success", {
+        duration_ms: Date.now() - start,
+      });
+
       return NextResponse.json(result, { status: 200 });
     }
 
@@ -58,13 +99,44 @@ export async function GET(request: Request) {
       sort,
     };
 
-    const result = await productFacade.searchProducts(criteria);
+    logger.info("Searching products with criteria", {
+      criteria,
+    });
+
+    result = await productFacade.searchProducts(criteria);
+
+    logger.info("Product search success", {
+      resultCount: Array.isArray(result?.items)
+        ? result.items.length
+        : undefined,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      logger.error("Product search failed (AppError)", {
+        ...userContext,
+        message: error.message,
+        status: error.statusCode,
+        duration_ms: Date.now() - start,
+      });
+
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
     }
 
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    logger.error("Product search unexpected error", {
+      ...userContext,
+      error: toErrorMessage(error),
+      duration_ms: Date.now() - start,
+    });
+
+    return NextResponse.json(
+      { error: toErrorMessage(error) },
+      { status: 500 }
+    );
   }
 }

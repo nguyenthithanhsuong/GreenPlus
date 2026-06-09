@@ -1,23 +1,65 @@
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { orderFacade } from "../../../../backend/modules/orders/facades/order.facade";
+import { logger } from "../../../../../packages/supabase-shared/src/logger";
 
 export async function GET(request: Request) {
+  let userId = "";
+
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId")?.trim() ?? searchParams.get("user_id")?.trim() ?? "";
+
+    userId =
+      searchParams.get("userId")?.trim() ??
+      searchParams.get("user_id")?.trim() ??
+      "";
+
+    logger.info("Track payment history attempt", { userId });
 
     if (!userId) {
-      return NextResponse.json({ error: "userId is required" }, { status: 400 });
+      logger.error("Track payment history failed - missing userId", {
+        userId,
+      });
+
+      return NextResponse.json(
+        { error: "userId is required" },
+        { status: 400 }
+      );
     }
 
+    const start = Date.now();
+
     const items = await orderFacade.trackMyPaymentHistory(userId);
+
+    logger.info("Track payment history success", {
+      userId,
+      count: Array.isArray(items) ? items.length : 0,
+      duration_ms: Date.now() - start,
+    });
+
     return NextResponse.json({ items }, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      logger.error("Track payment history failed", {
+        userId,
+        message: error.message,
+        status: error.statusCode,
+      });
+
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
     }
 
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    logger.error("Track payment history unexpected error", {
+      userId,
+      error: toErrorMessage(error),
+    });
+
+    return NextResponse.json(
+      { error: toErrorMessage(error) },
+      { status: 500 }
+    );
   }
 }

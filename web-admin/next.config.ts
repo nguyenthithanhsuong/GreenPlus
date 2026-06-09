@@ -20,6 +20,8 @@ export default withSentryConfig(nextConfig, {
 
   authToken: process.env.SENTRY_AUTH_TOKEN,
 
+  //tunnelRoute: "/monitoring",
+
   release: {
     name: process.env.GITHUB_SHA,
   },
