@@ -15,6 +15,11 @@ env:
 jobs:
   frontend-ci:
     runs-on: ubuntu-latest
+    environment: environment
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,6 +44,11 @@ jobs:
 
   backend-ci:
     runs-on: ubuntu-latest
+    environment: environment
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
