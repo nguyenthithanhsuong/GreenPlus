@@ -1,11 +1,19 @@
+type LogLevel = "debug" | "info" | "warning" | "error" | "critical";
+
+interface LogPayload {
+  level: LogLevel;
+  message: string;
+  context?: Record<string, unknown>;
+}
+
 class BetterStackLogger {
   private token: string;
   private url: string;
 
   constructor() {
-    this.token = process.env.BETTER_STACK_SOURCE_TOKEN || "";
+    this.token = process.env.BETTER_STACK_SOURCE_TOKEN ?? "";
     this.url =
-      process.env.BETTER_STACK_URL ||
+      process.env.BETTER_STACK_URL ??
       "https://s2507495.eu-fsn-3.betterstackdata.com/logs";
 
     if (!this.token) {
@@ -13,11 +21,7 @@ class BetterStackLogger {
     }
   }
 
-  async send(payload: {
-    level: string;
-    message: string;
-    context?: any;
-  }) {
+  async send(payload: LogPayload): Promise<void> {
     try {
       const response = await fetch(this.url, {
         method: "POST",
@@ -30,7 +34,7 @@ class BetterStackLogger {
           level: payload.level.toUpperCase(),
           message: payload.message,
           source: "app",
-          context: payload.context || {},
+          context: payload.context ?? {},
         }),
       });
 
@@ -42,12 +46,12 @@ class BetterStackLogger {
     }
   }
 
-  info(msg: string, context?: any) {
-    void this.send({ level: "info", message: msg, context });
+  info(message: string, context?: Record<string, unknown>) {
+    void this.send({ level: "info", message, context });
   }
 
-  error(msg: string, context?: any) {
-    void this.send({ level: "error", message: msg, context });
+  error(message: string, context?: Record<string, unknown>) {
+    void this.send({ level: "error", message, context });
   }
 }
 
