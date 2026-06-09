@@ -1,4 +1,4 @@
-name: CD
+name: Simulated CD
 
 on:
   workflow_run:
@@ -10,29 +10,18 @@ on:
 
 jobs:
   deploy:
+    # Only run this if the CI workflow actually succeeded
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    environment: production 
+    environment: environment 
 
     steps:
-      - name: Deploy to Server via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            # Log in to GitHub Container Registry on the server
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Pull the latest images you just built
-            docker pull ghcr.io/${{ github.repository }}/web-client:main
-            docker pull ghcr.io/${{ github.repository }}/web-admin:main
-            
-            # Restart the containers (assuming you use docker-compose on your server)
-            # Adjust this path to wherever your docker-compose.yml lives on your server
-            cd /path/to/your/app
-            docker compose up -d --build
-            
-            # Clean up old unused images to save disk space
-            docker image prune -f
+      - name: Simulate CD Deployment after CI Success
+        run: |
+          echo "Initiating simulated deployment..."
+
+          echo "⬇Pulling the latest images:"
+          echo "   - ghcr.io/${{ github.repository }}/web-client:main"
+          echo "   - ghcr.io/${{ github.repository }}/web-admin:main"
+          
+          echo "Simulated deployment completed successfully! Your local app is ready for manual update."

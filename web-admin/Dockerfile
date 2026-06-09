@@ -2,7 +2,6 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json turbo.json ./
-COPY web-client/package.json ./web-client/package.json
 COPY web-admin/package.json ./web-admin/package.json
 COPY supabase-playground/package.json ./supabase-playground/package.json
 COPY packages/supabase-shared/package.json ./packages/supabase-shared/package.json
@@ -34,7 +33,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 RUN echo "ORG=$SENTRY_ORG"
-RUN echo "PROJECT=$SENTRY_PROJECT_CLIENT"
+RUN echo "PROJECT=$SENTRY_PROJECT_ADMIN"
 RUN test -n "$SENTRY_AUTH_TOKEN" && echo "TOKEN=SET" || echo "TOKEN=EMPTY"
 
 RUN npm run build -w web-admin
