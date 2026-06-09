@@ -1,3 +1,4 @@
+import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../backend/core/errors";
 import { complaintManagementFacade } from "../../../../backend/modules/complaints/complaint-management.facade";
@@ -24,3 +25,4 @@ export async function GET() {
     );
   }
 }
+

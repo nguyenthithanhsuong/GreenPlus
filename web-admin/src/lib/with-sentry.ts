@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../backend/core/errors";
 
 export function withSentry(
-  handler: (request: Request) => Promise<NextResponse>
+  handler: (request: Request, context?: unknown) => Promise<NextResponse>
 ) {
-  return async (request: Request) => {
+  return async (request: Request, context?: unknown) => {
     try {
-      return await handler(request);
+      return await handler(request, context);
     } catch (error) {
       Sentry.captureException(error);
       await Sentry.flush(2000);

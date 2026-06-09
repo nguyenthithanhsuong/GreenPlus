@@ -1,10 +1,11 @@
+import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
 import { AuthRepository } from "../../../../../backend/modules/customer-auth/auth.repository";
 import { logger } from "../../../../../../packages/supabase-shared/src/logger";
 
-export async function POST(request: Request) {
+export const POST = withSentry(async (request) => {
   let email = "";
 
   try {
@@ -42,26 +43,25 @@ export async function POST(request: Request) {
             if (user.status === "banned") {
               logger.warn("Login blocked: account banned", { email });
             } else {
-              logger.warn("Login blocked: account inactive/suspended", { email, status: user.status });
+              logger.warn("Login blocked: account inactive/suspended", {
+                email,
+                status: user.status,
+              });
             }
           }
         } catch {
         }
       } else {
-        logger.error("Login failed", { email, message: error.message, status: error.statusCode });
+        logger.error("Login failed", {
+          email,
+          message: error.message,
+          status: error.statusCode,
+        });
       }
 
       return NextResponse.json(errorResponse, { status: error.statusCode });
     }
 
-    logger.error("Login unexpected error", {
-      email,
-      error: toErrorMessage(error),
-    });
-
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});

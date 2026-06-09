@@ -1,3 +1,4 @@
+import { withSentry } from "@/lib/with-sentry";
 import { logger } from "../../../../../packages/supabase-shared/src/logger";
 
 export async function GET() {

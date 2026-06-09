@@ -1,3 +1,4 @@
+import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { ProductService } from "../../../../backend/modules/catalog/product.service";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";

@@ -179,7 +179,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       return;
     }
 
-    // Register
     logger.info("Register attempt", { email, name });
     const start = Date.now();
 
@@ -205,7 +204,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
     setSuccess("Tài khoản đã được tạo thành công.");
 
   } catch (submitError) {
-    // Only log here if it wasn't already logged above (i.e. unexpected throws)
     if (!(submitError instanceof Error && submitError.message !== "Đã xảy ra lỗi không mong muốn.")) {
       logger.error("Unexpected auth error", {
         error: submitError instanceof Error ? submitError.message : String(submitError),

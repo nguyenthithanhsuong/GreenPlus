@@ -1,23 +1,22 @@
+import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
 import { logger } from "../../../../../../packages/supabase-shared/src/logger";
 
-export async function POST(request: Request) {
-  let email = "";
+export const POST = withSentry(async (request) => {
+  const body = (await request.json()) as {
+    email?: string;
+    password?: string;
+  };
+
+  const email = body.email ?? "";
+
+  logger.info("Unlock account attempt", { email });
+
+  const start = Date.now();
 
   try {
-    const body = (await request.json()) as {
-      email?: string;
-      password?: string;
-    };
-
-    email = body.email ?? "";
-
-    logger.info("Unlock account attempt", { email });
-
-    const start = Date.now();
-
     const data = await authFacade.unlockAccount({
       email,
       password: body.password ?? "",
@@ -43,14 +42,6 @@ export async function POST(request: Request) {
       );
     }
 
-    logger.error("Unlock account unexpected error", {
-      email,
-      error: toErrorMessage(error),
-    });
-
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});

@@ -1,3 +1,4 @@
+import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { inventoryManagementFacade } from "../../../../../backend/modules/inventory/facades/inventory-management.facade";
 import { logger } from "../../../../../../packages/supabase-shared/src/logger";

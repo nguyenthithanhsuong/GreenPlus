@@ -1,3 +1,4 @@
+import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { supabaseServer } from "../../../../../backend/core/supabase";
 import { logger } from "../../../../../../packages/supabase-shared/src/logger";

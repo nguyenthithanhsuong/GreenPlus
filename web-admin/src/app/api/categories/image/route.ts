@@ -1,3 +1,4 @@
+import { withSentry } from "@/lib/with-sentry";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createServiceRoleSupabaseClient } from "../../../../../backend/core/supabase";

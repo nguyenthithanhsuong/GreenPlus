@@ -1,3 +1,4 @@
+import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { logger } from "../../../../../../packages/supabase-shared/src/logger";

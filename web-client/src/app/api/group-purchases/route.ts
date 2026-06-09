@@ -1,3 +1,4 @@
+import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { groupPurchaseFacade } from "../../../../backend/modules/group-purchases/facades/group-purchase.facade";
