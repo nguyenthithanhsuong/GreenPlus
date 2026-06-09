@@ -27,7 +27,7 @@ class BetterStackLogger {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: this.token,
+          Authorization: `Bearer ${this.token}`,
         },
         body: JSON.stringify({
           dt: new Date().toISOString(),
