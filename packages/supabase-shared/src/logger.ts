@@ -32,7 +32,7 @@ class BetterStackLogger {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.sourceToken}`,
+          Authorization: this.sourceToken!,
         },
         body: JSON.stringify({
           dt: new Date().toISOString(),
@@ -55,23 +55,23 @@ class BetterStackLogger {
   }
 
   debug(message: string, context?: Record<string, any>): void {
-    this.send({ message, level: 'debug', context });
+    void this.send({ message, level: 'debug', context });
   }
 
   info(message: string, context?: Record<string, any>): void {
-    this.send({ message, level: 'info', context });
+    void this.send({ message, level: 'info', context });
   }
 
   warning(message: string, context?: Record<string, any>): void {
-    this.send({ message, level: 'warning', context });
+    void this.send({ message, level: 'warning', context });
   }
 
   error(message: string, context?: Record<string, any>, userId?: string): void {
-    this.send({ message, level: 'error', context, userId });
+    void this.send({ message, level: 'error', context, userId });
   }
 
   critical(message: string, context?: Record<string, any>): void {
-    this.send({ message, level: 'critical', context });
+    void this.send({ message, level: 'critical', context });
   }
 }
 
