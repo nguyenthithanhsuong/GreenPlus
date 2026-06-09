@@ -3,6 +3,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json turbo.json ./
 COPY web-client/package.json ./web-client/package.json
+COPY web-admin/package.json ./web-admin/package.json
 COPY supabase-playground/package.json ./supabase-playground/package.json
 COPY packages/supabase-shared/package.json ./packages/supabase-shared/package.json
 
