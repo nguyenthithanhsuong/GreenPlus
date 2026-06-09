@@ -19,4 +19,8 @@ export default withSentryConfig(nextConfig, {
   project: process.env.SENTRY_PROJECT_ADMIN,
 
   authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  release: {
+    name: process.env.GITHUB_SHA,
+  },
 });

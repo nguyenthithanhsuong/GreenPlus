@@ -1,3 +1,4 @@
+
 import { resolve } from "node:path";
 import { config as loadEnv } from "dotenv";
 import { withSentryConfig } from "@sentry/nextjs";
@@ -19,4 +20,8 @@ export default withSentryConfig(nextConfig, {
   project: process.env.SENTRY_PROJECT_CLIENT,
 
   authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  release: {
+    name: process.env.GITHUB_SHA,
+  },
 });
