@@ -114,7 +114,7 @@ jobs:
       - name: Test Sentry connection
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: DSN ${{ secrets.SENTRY_DSN }}" \
+            -H "Authorization: DSN ${{ secrets.SENTRY_AUTH_TOKEN }}" \
             https://sentry.io/api/0/projects/${{ secrets.SENTRY_ORG }}/${{ secrets.SENTRY_PROJECT_CLIENT }}/)
           echo "Sentry API status: $STATUS"
           if [ "$STATUS" != "200" ]; then
@@ -153,6 +153,7 @@ jobs:
           labels: ${{ steps.meta-client.outputs.labels }}
           build-args: |
             GITHUB_SHA=${{ github.sha }}
+            NEXT_PUBLIC_GITHUB_SHA=${{ github.sha }}
             NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
             SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
@@ -184,6 +185,7 @@ jobs:
           labels: ${{ steps.meta-admin.outputs.labels }}
           build-args: |
             GITHUB_SHA=${{ github.sha }}
+            NEXT_PUBLIC_GITHUB_SHA=${{ github.sha }}
             NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
             SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
