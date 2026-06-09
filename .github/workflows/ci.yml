@@ -84,6 +84,7 @@ jobs:
       - backend-ci
     runs-on: ubuntu-latest
     env:
+      GITHUB_SHA: ${{ github.sha }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL}}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -149,6 +150,7 @@ jobs:
           tags: ${{ steps.meta-client.outputs.tags }}
           labels: ${{ steps.meta-client.outputs.labels }}
           build-args: |
+            GITHUB_SHA: ${{ github.sha }}
             NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
             SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
