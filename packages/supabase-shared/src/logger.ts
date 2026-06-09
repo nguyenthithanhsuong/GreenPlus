@@ -32,7 +32,7 @@ class BetterStackLogger {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: this.sourceToken!,
+          Authorization: `Bearer ${this.sourceToken}`,
         },
         body: JSON.stringify({
           dt: new Date().toISOString(),
