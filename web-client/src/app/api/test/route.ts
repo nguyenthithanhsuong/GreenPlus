@@ -1,4 +1,4 @@
-import { logger } from "@/lib/logger";
+import { logger } from "../../../../../packages/supabase-shared/src/logger";
 
 export async function GET() {
   console.log("API route hit");
