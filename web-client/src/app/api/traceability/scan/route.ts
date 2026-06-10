@@ -2,13 +2,13 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { traceabilityFacade } from "../../../../../backend/modules/traceability/facades/traceability.facade";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger";
 
 type ScanBody = {
   qrCode?: string;
 };
 
-export async function POST(request: Request) {
+export const POST = withSentry(async (request: Request) => {
   const start = Date.now();
   let qrCode = "";
 
@@ -47,15 +47,6 @@ export async function POST(request: Request) {
       );
     }
 
-    logger.error("Traceability scan unexpected error", {
-      qrCode,
-      error: toErrorMessage(error),
-      duration_ms: Date.now() - start,
-    });
-
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});

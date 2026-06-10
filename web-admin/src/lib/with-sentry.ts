@@ -2,21 +2,36 @@ import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../backend/core/errors";
 
-export function withSentry(
-  handler: (request: Request, context?: unknown) => Promise<NextResponse>
-) {
-  return async (request: Request, context?: unknown) => {
+type Handler<TRequest extends Request, TContext> = (
+  request: TRequest,
+  context: TContext,
+) => Promise<Response>;
+
+export function withSentry<TRequest extends Request, TContext = { params: Promise<Record<string, string>> }>(handler: Handler<TRequest, TContext>): Handler<TRequest, TContext> {
+  return async (request: TRequest, context: TContext): Promise<Response> => {
     try {
       return await handler(request, context);
     } catch (error) {
-      Sentry.captureException(error);
-      await Sentry.flush(2000);
+      console.error("[Unhandled API error]:", error);
 
-      if (error instanceof AppError) {
-        return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      Sentry.captureException(error);
+      const flushed = await Sentry.flush(2000);
+
+      if (!flushed) {
+        console.error("[Sentry unavailable] Exception not delivered:", error);
       }
 
-      return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+      if (error instanceof AppError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: error.statusCode },
+        );
+      }
+
+      return NextResponse.json(
+        { error: toErrorMessage(error) },
+        { status: 500 },
+      );
     }
   };
 }

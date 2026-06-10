@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../../backend/core/errors";
 import { traceabilityFacade } from "../../../../../../backend/modules/traceability/facades/traceability.facade";
-import { logger } from "../../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger";
 
 type Params = {
   params: Promise<{
@@ -10,7 +10,7 @@ type Params = {
   }>;
 };
 
-export async function GET(_: Request, context: Params) {
+export const GET = withSentry(async (_: Request, context: Params) => {
   const { batchId } = await context.params;
   const normalizedBatchId = decodeURIComponent(batchId ?? "").trim();
 
@@ -40,10 +40,6 @@ export async function GET(_: Request, context: Params) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
-    logger.error("Get batch origin unexpected error", {
-      batchId: normalizedBatchId,
-      error: toErrorMessage(error),
-    });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    throw error;
   }
-}
+});

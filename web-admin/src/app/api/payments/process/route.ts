@@ -4,50 +4,67 @@ import {
   HandleOrderPaymentInput,
   handleOrderPayment,
 } from "../../../../../backend/modules/payments/payment.service";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
-import { toErrorMessage } from "../../../../../backend/core/errors";
+import { logger } from "@/lib/logger"; 
 
-export async function POST(request: Request) {
-  try {
-    const body = (await request.json()) as Partial<HandleOrderPaymentInput>;
-    const { orderId, amount, method } = body;
+export const POST = withSentry(async (request: Request) => {
+  const body = (await request.json()) as Partial<HandleOrderPaymentInput>;
 
-    logger.info("Handle order payment attempt", { orderId, amount, method });
+  const { orderId, amount, method } = body;
 
-    if (!orderId || typeof orderId !== "string") {
-      logger.error("Handle order payment failed - invalid orderId");
-      return NextResponse.json({ error: "Invalid orderId" }, { status: 400 });
-    }
+  logger.info("Handle order payment attempt", {
+    orderId,
+    amount,
+    method,
+  });
 
-    if (typeof amount !== "number" || Number.isNaN(amount) || amount <= 0) {
-      logger.error("Handle order payment failed - invalid amount", { orderId });
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
-    }
+  if (!orderId || typeof orderId !== "string") {
+    logger.error("Handle order payment failed - invalid orderId");
 
-    if (!method || !["momo", "vnpay", "cod"].includes(method)) {
-      logger.error("Handle order payment failed - unsupported method", { orderId, method });
-      return NextResponse.json({ error: "Unsupported payment method" }, { status: 400 });
-    }
+    return NextResponse.json(
+      { error: "Invalid orderId" },
+      { status: 400 },
+    );
+  }
 
-    const start = Date.now();
-    const result = await handleOrderPayment({
+  if (
+    typeof amount !== "number" ||
+    Number.isNaN(amount) ||
+    amount <= 0
+  ) {
+    logger.error("Handle order payment failed - invalid amount", {
       orderId,
-      amount,
+    });
+
+    return NextResponse.json(
+      { error: "Invalid amount" },
+      { status: 400 },
+    );
+  }
+
+  if (!method || !["momo", "vnpay", "cod"].includes(method)) {
+    logger.error("Handle order payment failed - unsupported method", {
+      orderId,
       method,
     });
 
-    logger.info("Handle order payment success", {
-      orderId,
-      duration_ms: Date.now() - start,
-    });
-
-    return NextResponse.json(result, { status: 200 });
-  } catch (error) {
-    logger.error("Handle order payment unexpected error", { error: toErrorMessage(error) });
-
     return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
+      { error: "Unsupported payment method" },
+      { status: 400 },
     );
   }
-}
+
+  const start = Date.now();
+
+  const result = await handleOrderPayment({
+    orderId,
+    amount,
+    method,
+  });
+
+  logger.info("Handle order payment success", {
+    orderId,
+    duration_ms: Date.now() - start,
+  });
+
+  return NextResponse.json(result, { status: 200 });
+});

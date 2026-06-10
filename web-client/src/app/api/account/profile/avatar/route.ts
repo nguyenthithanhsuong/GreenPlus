@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../../backend/core/errors";
 import { authFacade } from "../../../../../../backend/modules/customer-auth/facades/auth.facade";
-import { logger } from "../../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
 export async function POST(request: Request) {
   let userId = "";

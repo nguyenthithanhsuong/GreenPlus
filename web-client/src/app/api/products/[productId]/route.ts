@@ -9,7 +9,7 @@ type Context = {
   }>;
 };
 
-export async function GET(_: Request, context: Context) {
+export const GET = withSentry(async (_: Request, context: Context) => {
   try {
     const { productId } = await context.params;
 
@@ -20,6 +20,6 @@ export async function GET(_: Request, context: Context) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    throw error;
   }
-}
+});

@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { orderFacade } from "../../../../../backend/modules/orders/facades/order.facade";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger";
 
 type Context = {
   params: Promise<{
@@ -20,7 +20,7 @@ type UpdateOrderBody = {
   note?: string;
 };
 
-export async function GET(request: Request, context: Context) {
+export const GET = withSentry(async (request: Request, context: Context) => {
   let userId = "";
   let orderId = "";
 
@@ -75,20 +75,11 @@ export async function GET(request: Request, context: Context) {
       );
     }
 
-    logger.error("Get order detail unexpected error", {
-      userId,
-      orderId,
-      error: toErrorMessage(error),
-    });
-
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});
 
-export async function PUT(request: Request, context: Context) {
+export const PUT = withSentry(async (request: Request, context: Context) => {
   let userId = "";
   let orderId = "";
 
@@ -157,15 +148,6 @@ export async function PUT(request: Request, context: Context) {
       );
     }
 
-    logger.error("Update order unexpected error", {
-      userId,
-      orderId,
-      error: toErrorMessage(error),
-    });
-
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});

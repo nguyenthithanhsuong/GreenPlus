@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { communityPostFacade } from "../../../../../backend/modules/community-posts/facades/community-post.facade";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
 type CreateCommunityPostBody = {
   userId?: string;

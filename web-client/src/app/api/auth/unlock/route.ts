@@ -1,10 +1,10 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
+import { AppError } from "../../../../../backend/core/errors";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
-export const POST = withSentry(async (request) => {
+export const POST = withSentry(async (request: Request) => {
   const body = (await request.json()) as {
     email?: string;
     password?: string;
@@ -29,19 +29,19 @@ export const POST = withSentry(async (request) => {
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("Unlock account failed", {
-        email,
-        message: error.message,
-        status: error.statusCode,
-      });
-
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.statusCode }
-      );
+    if (!(error instanceof AppError)) {
+      throw error;
     }
 
-    throw error;
+    logger.error("Unlock account failed", {
+      email,
+      message: error.message,
+      status: error.statusCode,
+    });
+
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.statusCode },
+    );
   }
 });

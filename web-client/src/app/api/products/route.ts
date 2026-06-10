@@ -6,7 +6,7 @@ import {
   ProductSort,
   SearchCriteria,
 } from "../../../../backend/modules/products/product.types";
-import { logger } from "../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger";
 
 const VALID_SORTS: ProductSort[] = ["newest", "price_asc", "price_desc"];
 
@@ -29,7 +29,7 @@ function parseSort(value: string | null): ProductSort | undefined {
     : undefined;
 }
 
-export async function GET(request: Request) {
+export const GET = withSentry(async (request: Request) => {
   const start = Date.now();
   let userContext = {
     keyword: "",
@@ -129,15 +129,6 @@ export async function GET(request: Request) {
       );
     }
 
-    logger.error("Product search unexpected error", {
-      ...userContext,
-      error: toErrorMessage(error),
-      duration_ms: Date.now() - start,
-    });
-
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});

@@ -1,8 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { groupPurchaseFacade } from "../../../../backend/modules/group-purchases/facades/group-purchase.facade";
-import { logger } from "../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
 type JoinBody = {
   action?: "join" | "create";
@@ -22,160 +21,118 @@ type JoinBody = {
   deadline?: string;
 };
 
-export async function GET() {
-  try {
-    logger.info("List group purchases attempt");
+export const GET = withSentry(async () => {
+  logger.info("List group purchases attempt");
 
-    const start = Date.now();
+  const start = Date.now();
 
-    const items = await groupPurchaseFacade.listGroups();
+  const items = await groupPurchaseFacade.listGroups();
 
-    logger.info("List group purchases success", {
-      count: Array.isArray(items) ? items.length : 0,
-      duration_ms: Date.now() - start,
-    });
+  logger.info("List group purchases success", {
+    count: Array.isArray(items) ? items.length : 0,
+    duration_ms: Date.now() - start,
+  });
 
-    return NextResponse.json({ items }, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("List group purchases failed", {
-        message: error.message,
-        status: error.statusCode,
-      });
+  return NextResponse.json({ items }, { status: 200 });
+});
 
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.statusCode }
-      );
-    }
+export const POST = withSentry(async (request: Request) => {
+  const body = (await request.json()) as JoinBody;
 
-    logger.error("List group purchases unexpected error", {
-      error: toErrorMessage(error),
-    });
+  const action = body.action ?? "join";
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
+  const userId =
+    body.userId?.trim() ?? body.user_id?.trim() ?? "";
+
+  logger.info("Group purchase action attempt", {
+    userId,
+    action,
+  });
+
+  if (action === "create") {
+    const productId =
+      body.productId?.trim() ?? body.product_id?.trim() ?? "";
+
+    const targetQuantity = Number(
+      body.targetQuantity ?? body.target_quantity ?? 0
     );
-  }
-}
 
-export async function POST(request: Request) {
-  let userId = "";
+    const minQuantity = Number(
+      body.minQuantity ?? body.min_quantity ?? 0
+    );
 
-  try {
-    const body = (await request.json()) as JoinBody;
+    const discountPriceRaw =
+      body.discountPrice ?? body.discount_price;
 
-    const action = body.action ?? "join";
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    const deadline = body.deadline?.trim() ?? "";
 
-    logger.info("Group purchase action attempt", {
-      userId,
-      action,
-    });
-
-    if (action === "create") {
-      const productId = body.productId?.trim() ?? body.product_id?.trim() ?? "";
-      const targetQuantity = Number(
-        body.targetQuantity ?? body.target_quantity ?? 0
-      );
-      const minQuantity = Number(
-        body.minQuantity ?? body.min_quantity ?? 0
-      );
-      const discountPriceRaw =
-        body.discountPrice ?? body.discount_price;
-      const deadline = body.deadline?.trim() ?? "";
-
-      if (!userId || !productId || !deadline) {
-        logger.error("Create group purchase failed - missing fields", {
-          userId,
-          productId,
-          deadline,
-        });
-
-        return NextResponse.json(
-          { error: "userId, productId and deadline are required" },
-          { status: 400 }
-        );
-      }
-
-      const start = Date.now();
-
-      const result = await groupPurchaseFacade.createGroup({
+    if (!userId || !productId || !deadline) {
+      logger.error("Create group purchase failed - missing fields", {
         userId,
         productId,
-        targetQuantity,
-        minQuantity,
-        discountPrice:
-          typeof discountPriceRaw === "undefined"
-            ? undefined
-            : Number(discountPriceRaw),
         deadline,
       });
 
-      logger.info("Create group purchase success", {
-        userId,
-        productId,
-        duration_ms: Date.now() - start,
-      });
-
-      return NextResponse.json(result, { status: 201 });
-    }
-
-    const groupId =
-      body.groupId?.trim() ?? body.group_id?.trim() ?? "";
-    const quantity = Number(body.quantity ?? 1);
-
-    if (!groupId || !userId) {
-      logger.error("Join group purchase failed - missing fields", {
-        userId,
-        groupId,
-      });
-
       return NextResponse.json(
-        { error: "groupId and userId are required" },
-        { status: 400 }
+        { error: "userId, productId and deadline are required" },
+        { status: 400 },
       );
     }
 
     const start = Date.now();
 
-    const result = await groupPurchaseFacade.joinGroup({
-      groupId,
+    const result = await groupPurchaseFacade.createGroup({
       userId,
-      quantity,
+      productId,
+      targetQuantity,
+      minQuantity,
+      discountPrice:
+        typeof discountPriceRaw === "undefined"
+          ? undefined
+          : Number(discountPriceRaw),
+      deadline,
     });
 
-    logger.info("Join group purchase success", {
+    logger.info("Create group purchase success", {
       userId,
-      groupId,
-      quantity,
+      productId,
       duration_ms: Date.now() - start,
     });
 
-    return NextResponse.json(result, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("Group purchase action failed", {
-        userId,
-        message: error.message,
-        status: error.statusCode,
-      });
+    return NextResponse.json(result, { status: 201 });
+  }
 
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.statusCode }
-      );
-    }
+  const groupId =
+    body.groupId?.trim() ?? body.group_id?.trim() ?? "";
 
-    logger.error("Group purchase action unexpected error", {
+  const quantity = Number(body.quantity ?? 1);
+
+  if (!groupId || !userId) {
+    logger.error("Join group purchase failed - missing fields", {
       userId,
-      error: toErrorMessage(error),
+      groupId,
     });
 
     return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
+      { error: "groupId and userId are required" },
+      { status: 400 },
     );
   }
-}
+
+  const start = Date.now();
+
+  const result = await groupPurchaseFacade.joinGroup({
+    groupId,
+    userId,
+    quantity,
+  });
+
+  logger.info("Join group purchase success", {
+    userId,
+    groupId,
+    quantity,
+    duration_ms: Date.now() - start,
+  });
+
+  return NextResponse.json(result, { status: 200 });
+});

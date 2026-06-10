@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
 import { authFacade } from "../../../../../backend/modules/admin-auth/facades/auth.facade";
 import { AuthRepository as AdminAuthRepository } from "../../../../../backend/modules/admin-auth/auth.repository";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
 const ALLOWED_ROLES = new Set(["admin", "manager", "employee"]);
 

@@ -8,7 +8,8 @@
     "./supabaseClient": "./src/supabaseClient.ts",
     "./databaseRelationships": "./src/databaseRelationships.ts",
     "./crudPresets": "./src/crudPresets.ts",
-    "./accessPolicy": "./src/accessPolicy.ts"
+    "./accessPolicy": "./src/accessPolicy.ts",
+    "./logger": "./src/logger.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2"

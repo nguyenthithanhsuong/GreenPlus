@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
 import { authFacade } from "../../../../../backend/modules/admin-auth/facades/auth.facade";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
 function readAccessToken(request: Request): string {
   const authHeader = request.headers.get("authorization") ?? "";

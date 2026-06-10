@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { reviewFacade } from "../../../../backend/modules/reviews/facades/review.facade";
-import { logger } from "../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger";
 
 type ReviewBody = {
   userId?: string;
@@ -13,7 +13,7 @@ type ReviewBody = {
   comment?: string;
 };
 
-export async function GET(request: Request) {
+export const GET = withSentry(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const productId = (searchParams.get("productId") ?? "").trim();
   const limit = Number(searchParams.get("limit") ?? "20");
@@ -42,12 +42,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
-    logger.error("List reviews unexpected error", { productId, error: toErrorMessage(error) });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    throw error;
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withSentry(async (request: Request) => {
   let userId = "";
   let productId = "";
 
@@ -86,7 +85,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
-    logger.error("Submit review unexpected error", { userId, productId, error: toErrorMessage(error) });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    throw error;
   }
-}
+});

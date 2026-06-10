@@ -2,9 +2,9 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { orderFacade } from "../../../../backend/modules/orders/facades/order.facade";
-import { logger } from "../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger";
 
-export async function GET(request: Request) {
+export const GET = withSentry(async (request: Request) => {
   let userId = "";
 
   try {
@@ -53,14 +53,6 @@ export async function GET(request: Request) {
       );
     }
 
-    logger.error("Track payment history unexpected error", {
-      userId,
-      error: toErrorMessage(error),
-    });
-
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});

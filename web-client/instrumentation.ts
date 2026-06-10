@@ -1,4 +1,4 @@
-import { logger } from "../packages/supabase-shared/src"; 
+import { logger } from "@/lib/logger"; 
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {

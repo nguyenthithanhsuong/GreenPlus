@@ -7,7 +7,7 @@ import { useState } from "react";
 import ConfirmActionDialog from "../../../frontend/shared/ConfirmActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Eye, EyeOff } from "lucide-react";
-import { logger } from "../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger";
 
 type AuthMode = "login" | "register";
 

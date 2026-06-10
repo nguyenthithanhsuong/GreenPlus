@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { orderFacade } from "../../../../backend/modules/orders/facades/order.facade";
 import { PaymentMethod } from "../../../../backend/modules/orders/order.types";
-import { logger } from "../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
 type CreateOrderBody = {
   userId?: string;
@@ -17,7 +17,7 @@ type CreateOrderBody = {
   payment_method?: string;
 };
 
-export async function GET(request: Request) {
+export const GET = withSentry(async (request: Request) => {
   let userId = "";
 
   try {
@@ -66,22 +66,11 @@ export async function GET(request: Request) {
       );
     }
 
-    logger.error("Track orders unexpected error", {
-      userId,
-      error: toErrorMessage(error),
-    });
-
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});
 
-/* =========================
-   CREATE ORDER
-========================= */
-export async function POST(request: Request) {
+export const POST = withSentry(async (request: Request) => {
   let userId = "";
 
   try {
@@ -161,14 +150,6 @@ export async function POST(request: Request) {
       );
     }
 
-    logger.error("Create order unexpected error", {
-      userId,
-      error: toErrorMessage(error),
-    });
-
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});

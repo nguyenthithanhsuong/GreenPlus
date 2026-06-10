@@ -1,69 +1,49 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { priceManagementFacade } from "../../../../backend/modules/prices/facades/price-management.facade";
-import { logger } from "../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
-export async function GET() {
+export const GET = withSentry(async () => {
   logger.info("List prices attempt");
 
-  try {
-    const start = Date.now();
-    const items = await priceManagementFacade.listPrices();
+  const start = Date.now();
 
-    logger.info("List prices success", {
-      count: items.length,
-      duration_ms: Date.now() - start,
-    });
+  const items = await priceManagementFacade.listPrices();
 
-    return NextResponse.json({ items, total: items.length }, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("List prices failed", { message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
+  logger.info("List prices success", {
+    count: items.length,
+    duration_ms: Date.now() - start,
+  });
 
-    logger.error("List prices unexpected error", { error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
-  }
-}
+  return NextResponse.json(
+    { items, total: items.length },
+    { status: 200 },
+  );
+});
 
-export async function POST(request: Request) {
-  try {
-    const body = (await request.json()) as {
-      batchId?: string | null;
-      price?: number;
-      date?: string;
-    };
+export const POST = withSentry(async (request: Request) => {
+  const body = (await request.json()) as {
+    batchId?: string | null;
+    price?: number;
+    date?: string;
+  };
 
-    logger.info("Create price attempt", { batchId: body.batchId });
+  logger.info("Create price attempt", {
+    batchId: body.batchId,
+  });
 
-    const start = Date.now();
-    const created = await priceManagementFacade.createPrice({
-      batchId: body.batchId,
-      price: Number(body.price),
-      date: String(body.date ?? ""),
-    });
+  const start = Date.now();
 
-    logger.info("Create price success", {
-      priceId: created.price_id,
-      duration_ms: Date.now() - start,
-    });
+  const created = await priceManagementFacade.createPrice({
+    batchId: body.batchId,
+    price: Number(body.price),
+    date: String(body.date ?? ""),
+  });
 
-    return NextResponse.json(created, { status: 201 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("Create price failed", { message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
+  logger.info("Create price success", {
+    priceId: created.price_id,
+    duration_ms: Date.now() - start,
+  });
 
-    logger.error("Create price unexpected error", { error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
-  }
-}
+  return NextResponse.json(created, { status: 201 });
+});

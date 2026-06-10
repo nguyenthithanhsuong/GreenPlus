@@ -1,9 +1,9 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
+import { AppError } from "../../../../../backend/core/errors";
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
 import { greenCreatorContentFacade } from "../../../../../backend/modules/greencreators/greencreator-content.facade";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
 function readAccessToken(request: Request): string {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -17,11 +17,13 @@ function readAccessToken(request: Request): string {
 
   const cookieHeader = request.headers.get("cookie") ?? "";
   const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_portal_session=([^;]+)/);
+
   return cookieMatch ? decodeURIComponent(cookieMatch[1]).trim() : "";
 }
 
 function ensureAdminOrManager(role: string): void {
   const normalized = (role ?? "").toLowerCase();
+
   if (normalized.includes("admin") || normalized.includes("manager")) {
     return;
   }
@@ -29,72 +31,101 @@ function ensureAdminOrManager(role: string): void {
   throw new AppError("Forbidden", 403);
 }
 
-export async function PATCH(request: Request, context: { params: Promise<{ postId: string }> }) {
-  const { postId } = await context.params;
+type Context = {
+  params: Promise<{
+    postId: string;
+  }>;
+};
 
-  try {
+export const PATCH = withSentry(
+  async (request: Request, context: Context) => {
+    const { postId } = await context.params;
+
     const accessToken = readAccessToken(request);
+
     if (!accessToken) {
       logger.warn("Update post status failed - unauthorized");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
     const authService = new AuthService();
     const verified = await authService.verifySession(accessToken);
+
     ensureAdminOrManager(verified.role);
 
-    const body = (await request.json()) as { status?: "pending" | "approved" | "rejected" };
-    
-    logger.info("Update post status attempt", { postId, status: body.status});
+    const body = (await request.json()) as {
+      status?: "pending" | "approved" | "rejected";
+    };
+
+    logger.info("Update post status attempt", {
+      postId,
+      status: body.status,
+    });
 
     const start = Date.now();
-    const updated = await greenCreatorContentFacade.changeStatus(postId, body.status ?? "pending");
 
-    logger.info("Update post status success", { postId, duration_ms: Date.now() - start });
+    const updated = await greenCreatorContentFacade.changeStatus(
+      postId,
+      body.status ?? "pending",
+    );
+
+    logger.info("Update post status success", {
+      postId,
+      duration_ms: Date.now() - start,
+    });
 
     return NextResponse.json(updated, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("Update post status failed", { postId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
+  },
+);
 
-    logger.error("Update post status unexpected error", { postId, error: toErrorMessage(error) });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
-  }
-}
+export const DELETE = withSentry(
+  async (request: Request, context: Context) => {
+    const { postId } = await context.params;
 
-export async function DELETE(request: Request, context: { params: Promise<{ postId: string }> }) {
-  const { postId } = await context.params;
-
-  try {
     const accessToken = readAccessToken(request);
+
     if (!accessToken) {
       logger.warn("Delete post failed - unauthorized");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
     const authService = new AuthService();
     const verified = await authService.verifySession(accessToken);
+
     ensureAdminOrManager(verified.role);
 
-    const body = (await request.json().catch(() => ({}))) as { force?: boolean };
-    
-    logger.info("Delete post attempt", { postId, force: !!body.force });
+    const body = (await request.json().catch(
+      (): { force?: boolean } => ({}),
+    )) as { force?: boolean };
+
+    logger.info("Delete post attempt", {
+      postId,
+      force: Boolean(body.force),
+    });
 
     const start = Date.now();
-    await greenCreatorContentFacade.deletePost(postId, Boolean(body.force));
 
-    logger.info("Delete post success", { postId, duration_ms: Date.now() - start });
+    await greenCreatorContentFacade.deletePost(
+      postId,
+      Boolean(body.force),
+    );
 
-    return NextResponse.json({ deleted: true }, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("Delete post failed", { postId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
+    logger.info("Delete post success", {
+      postId,
+      duration_ms: Date.now() - start,
+    });
 
-    logger.error("Delete post unexpected error", { postId, error: toErrorMessage(error) });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
-  }
-}
+    return NextResponse.json(
+      { deleted: true },
+      { status: 200 },
+    );
+  },
+);

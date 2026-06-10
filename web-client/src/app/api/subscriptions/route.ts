@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { subscriptionFacade } from "../../../../backend/modules/subscriptions/facades/subscription.facade";
-import { logger } from "../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger";
 
 type SubscriptionBody = {
   userId?: string;
@@ -18,7 +18,7 @@ type SubscriptionBody = {
   subscription_id?: string;
 };
 
-export async function GET(request: Request) {
+export const GET = withSentry(async (request: Request) => {
   const start = Date.now();
   let userId = "";
 
@@ -55,17 +55,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
-    logger.error("List subscriptions unexpected error", {
-      userId,
-      error: toErrorMessage(error),
-      duration_ms: Date.now() - start,
-    });
-
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    throw error;
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withSentry(async (request: Request) => {
   const start = Date.now();
 
   try {
@@ -114,16 +108,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
-    logger.error("Subscribe unexpected error", {
-      error: toErrorMessage(error),
-      duration_ms: Date.now() - start,
-    });
-
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    throw error;
   }
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = withSentry(async (request: Request) => {
   const start = Date.now();
 
   try {
@@ -169,16 +158,11 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
-    logger.error("Unsubscribe unexpected error", {
-      error: toErrorMessage(error),
-      duration_ms: Date.now() - start,
-    });
-
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    throw error;
   }
-}
+});
 
-export async function PATCH(request: Request) {
+export const PATCH = withSentry(async (request: Request) => {
   const start = Date.now();
 
   try {
@@ -236,11 +220,6 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
-    logger.error("Update subscription unexpected error", {
-      error: toErrorMessage(error),
-      duration_ms: Date.now() - start,
-    });
-
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    throw error;
   }
-}
+});

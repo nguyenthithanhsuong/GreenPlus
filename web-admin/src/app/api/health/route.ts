@@ -1,10 +1,10 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from 'next/server';
-import { logger } from "../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export const GET = withSentry(async (request: Request) => {
   logger.info("Health check attempt");
 
   try {
@@ -34,4 +34,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});

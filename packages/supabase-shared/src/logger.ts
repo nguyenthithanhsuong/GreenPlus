@@ -6,22 +6,14 @@ interface LogPayload {
   context?: Record<string, unknown>;
 }
 
-class BetterStackLogger {
-  private token: string;
-  private url: string;
-
-  constructor() {
-    this.token = process.env.BETTER_STACK_SOURCE_TOKEN ?? "";
-    this.url =
-      process.env.BETTER_STACK_URL ??
-      "https://s2507495.eu-fsn-3.betterstackdata.com/logs";
-
-    if (!this.token) {
-      console.error("[BetterStack] Missing token");
-    }
-  }
+export class BetterStackLogger {
+  constructor(private token: string, private url: string) {}
 
   async send(payload: LogPayload): Promise<void> {
+    if (!this.token) {
+      console.error("[BetterStack] Missing token");
+      return;
+    }
     try {
       const response = await fetch(this.url, {
         method: "POST",
@@ -39,7 +31,6 @@ class BetterStackLogger {
       });
 
       const text = await response.text();
-
       console.log("[BetterStack]", response.status, text);
     } catch (err) {
       console.error("[BetterStack] NETWORK ERROR:", err);
@@ -55,16 +46,14 @@ class BetterStackLogger {
   }
 
   warn(message: string, context?: Record<string, unknown>) {
-  void this.send({ level: "warning", message, context });
-}
+    void this.send({ level: "warning", message, context });
+  }
 
-debug(message: string, context?: Record<string, unknown>) {
-  void this.send({ level: "debug", message, context });
-}
+  debug(message: string, context?: Record<string, unknown>) {
+    void this.send({ level: "debug", message, context });
+  }
 
-critical(message: string, context?: Record<string, unknown>) {
-  void this.send({ level: "critical", message, context });
+  critical(message: string, context?: Record<string, unknown>) {
+    void this.send({ level: "critical", message, context });
+  }
 }
-}
-
-export const logger = new BetterStackLogger();

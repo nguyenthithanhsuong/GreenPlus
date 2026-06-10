@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger";
 
 type PortalPayload = {
   sub: string;
@@ -93,7 +93,7 @@ function buildDisplayNameFromEmail(email: string): string {
     .join(" ");
 }
 
-export async function GET(request: Request) {
+export const GET = withSentry(async (request: Request) => {
   const cookieHeader = request.headers.get("cookie") ?? "";
   const cookies = parseCookieHeader(cookieHeader);
   const roleCookie = cookies.gp_role_name;
@@ -154,4 +154,4 @@ export async function GET(request: Request) {
 
   logger.info("Get session success - minimal response", { roleName });
   return NextResponse.json({ item: { role_name: roleName } }, { status: 200 });
-}
+});

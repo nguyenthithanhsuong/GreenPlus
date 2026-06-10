@@ -1,37 +1,25 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { inventoryManagementFacade } from "../../../../../backend/modules/inventory/facades/inventory-management.facade";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
-import { toErrorMessage } from "../../../../../backend/core/errors";
+import { logger } from "@/lib/logger"; 
 
-export async function GET() {
+export const GET = withSentry(async () => {
   logger.info("List inventory transactions attempt");
 
-  try {
-    const start = Date.now();
-    const items = await inventoryManagementFacade.listTransactions();
+  const start = Date.now();
 
-    logger.info("List inventory transactions success", {
-      count: items.length,
-      duration_ms: Date.now() - start,
-    });
+  const items = await inventoryManagementFacade.listTransactions();
 
-    return NextResponse.json({
+  logger.info("List inventory transactions success", {
+    count: items.length,
+    duration_ms: Date.now() - start,
+  });
+
+  return NextResponse.json(
+    {
       items,
       total: items.length,
-    }, { status: 200 });
-  } catch (error) {
-    logger.error("List inventory transactions unexpected error", { 
-      error: toErrorMessage(error) 
-    });
-
-    return NextResponse.json(
-      {
-        error: toErrorMessage(error),
-      },
-      {
-        status: 500,
-      }
-    );
-  }
-}
+    },
+    { status: 200 },
+  );
+});

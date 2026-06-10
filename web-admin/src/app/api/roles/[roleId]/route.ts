@@ -1,8 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { roleManagementFacade } from "../../../../../backend/modules/roles/facades/role-management.facade";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
 type Context = {
   params: Promise<{
@@ -10,10 +9,10 @@ type Context = {
   }>;
 };
 
-export async function PUT(request: Request, context: Context) {
-  const { roleId } = await context.params;
+export const PUT = withSentry(
+  async (request: Request, context: Context) => {
+    const { roleId } = await context.params;
 
-  try {
     const body = (await request.json()) as {
       roleName?: string;
       description?: string | null;
@@ -24,9 +23,13 @@ export async function PUT(request: Request, context: Context) {
       isShipper?: boolean;
     };
 
-    logger.info("Update role attempt", { roleId, roleName: body.roleName });
+    logger.info("Update role attempt", {
+      roleId,
+      roleName: body.roleName,
+    });
 
     const start = Date.now();
+
     const updated = await roleManagementFacade.updateRole({
       roleId,
       roleName: body.roleName,
@@ -44,24 +47,13 @@ export async function PUT(request: Request, context: Context) {
     });
 
     return NextResponse.json(updated, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("Update role failed", { roleId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
+  },
+);
 
-    logger.error("Update role unexpected error", { roleId, error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
-  }
-}
+export const PATCH = withSentry(
+  async (request: Request, context: Context) => {
+    const { roleId } = await context.params;
 
-export async function PATCH(request: Request, context: Context) {
-  const { roleId } = await context.params;
-
-  try {
     const body = (await request.json()) as {
       action?: "rename";
       roleName?: string;
@@ -74,13 +66,24 @@ export async function PATCH(request: Request, context: Context) {
     };
 
     if (body.action !== "rename") {
-      logger.warn("Patch role failed - invalid action", { roleId, action: body.action });
-      return NextResponse.json({ error: "action is required" }, { status: 400 });
+      logger.warn("Patch role failed - invalid action", {
+        roleId,
+        action: body.action,
+      });
+
+      return NextResponse.json(
+        { error: "action is required" },
+        { status: 400 },
+      );
     }
 
-    logger.info("Rename role attempt", { roleId, roleName: body.roleName });
+    logger.info("Rename role attempt", {
+      roleId,
+      roleName: body.roleName,
+    });
 
     const start = Date.now();
+
     const updated = await roleManagementFacade.updateRole({
       roleId,
       roleName: body.roleName,
@@ -98,45 +101,27 @@ export async function PATCH(request: Request, context: Context) {
     });
 
     return NextResponse.json(updated, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("Rename role failed", { roleId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
+  },
+);
 
-    logger.error("Rename role unexpected error", { roleId, error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
-  }
-}
+export const DELETE = withSentry(
+  async (_: Request, context: Context) => {
+    const { roleId } = await context.params;
 
-export async function DELETE(_: Request, context: Context) {
-  const { roleId } = await context.params;
+    logger.info("Delete role attempt", { roleId });
 
-  logger.info("Delete role attempt", { roleId });
-
-  try {
     const start = Date.now();
+
     await roleManagementFacade.deleteRole(roleId);
-    
+
     logger.info("Delete role success", {
       roleId,
       duration_ms: Date.now() - start,
     });
 
-    return NextResponse.json({ deleted: true }, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("Delete role failed", { roleId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-
-    logger.error("Delete role unexpected error", { roleId, error: toErrorMessage(error) });
     return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
+      { deleted: true },
+      { status: 200 },
     );
-  }
-}
+  },
+);

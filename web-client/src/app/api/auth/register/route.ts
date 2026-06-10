@@ -1,9 +1,9 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
-import { logger } from "../../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
-export const POST = withSentry(async (request) => {
+export const POST = withSentry(async (request: Request) => {
   const body = (await request.json()) as {
     name?: string;
     email?: string;
@@ -13,7 +13,11 @@ export const POST = withSentry(async (request) => {
 
   const email = body.email ?? "";
 
-  logger.info("Register attempt", { email, name: body.name ?? "" });
+  logger.info("Register attempt", {
+    email,
+    name: body.name ?? "",
+  });
+
   const start = Date.now();
 
   const data = await authFacade.register({
@@ -23,7 +27,10 @@ export const POST = withSentry(async (request) => {
     confirmPassword: body.confirmPassword ?? "",
   });
 
-  logger.info("Register success", { email, duration_ms: Date.now() - start });
+  logger.info("Register success", {
+    email,
+    duration_ms: Date.now() - start,
+  });
 
   return NextResponse.json(data, { status: 201 });
 });

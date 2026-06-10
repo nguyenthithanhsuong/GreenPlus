@@ -2,52 +2,40 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { batchManagementFacade } from "../../../../backend/modules/batches/facades/batch-management.facade";
-import { logger } from "../../../../../packages/supabase-shared/src/logger";
+import { logger } from "@/lib/logger"; 
 
-export async function GET() {
+export const GET = withSentry(async () => {
   logger.info("List batches attempt");
 
+  const start = Date.now();
+  const items = await batchManagementFacade.listBatches();
+
+  logger.info("List batches success", {
+    count: items.length,
+    duration_ms: Date.now() - start,
+  });
+
+  return NextResponse.json({ items, total: items.length }, { status: 200 });
+});
+
+export const POST = withSentry(async (request: Request) => {
+  const body = (await request.json()) as {
+    productId?: string;
+    supplierId?: string;
+    harvestDate?: string;
+    expireDate?: string;
+    quantity?: number;
+    importPrice?: number;
+    qrCode?: string | null;
+    status?: "pending" | "available" | "expired" | "sold_out";
+    force?: boolean;
+  };
+
+  logger.info("Create batch attempt", { productId: body.productId, supplierId: body.supplierId });
+
+  const start = Date.now();
+  
   try {
-    const start = Date.now();
-    const items = await batchManagementFacade.listBatches();
-
-    logger.info("List batches success", {
-      count: items.length,
-      duration_ms: Date.now() - start,
-    });
-
-    return NextResponse.json({ items, total: items.length }, { status: 200 });
-  } catch (error) {
-    if (error instanceof AppError) {
-      logger.error("List batches failed", { message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-
-    logger.error("List batches unexpected error", { error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const body = (await request.json()) as {
-      productId?: string;
-      supplierId?: string;
-      harvestDate?: string;
-      expireDate?: string;
-      quantity?: number;
-      importPrice?: number;
-      qrCode?: string | null;
-      status?: "pending" | "available" | "expired" | "sold_out";
-      force?: boolean;
-    };
-
-    logger.info("Create batch attempt", { productId: body.productId, supplierId: body.supplierId });
-
-    const start = Date.now();
     const created = await batchManagementFacade.createBatch({
       productId: body.productId ?? "",
       supplierId: body.supplierId ?? "",
@@ -72,10 +60,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
-    logger.error("Create batch unexpected error", { error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});
