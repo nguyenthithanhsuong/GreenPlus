@@ -991,6 +991,19 @@ export default function Orders() {
     }
   };
 
+  const flushNote = async (item: CartItemView) => {
+  const note = (noteDrafts[item.cart_item_id] ?? "").trim();
+  await fetch("/api/cart/note", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId: user?.user_id,
+      cartItemId: item.cart_item_id,
+      note,
+    }),
+  });
+};
+
   const handleOpenCancelPrompt = (order: OrderItem) => {
     setCancelTarget(order);
   };
@@ -1074,6 +1087,7 @@ export default function Orders() {
     setMessage(null);
 
     try {
+      await Promise.all(cartItems.map(flushNote));
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -1084,7 +1098,6 @@ export default function Orders() {
           deliveryAddress,
           cartId: cartId,
           deliveryFee: DELIVERY_FEE,
-          note: "",
         }),
       });
 

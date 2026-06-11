@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowLeftRight, Search, Trash2 } from "lucide-react";
+import { ArrowLeftRight, ChevronLeft, ChevronRight, Search, Trash2 } from "lucide-react";
 import { usePermissions } from "@/lib/usePermissions";
 import type { InventoryRow } from "../../backend/modules/inventory/inventory-management.types";
 
@@ -11,6 +11,24 @@ type InventoryTableProps = {
   onSearchQueryChange: (value: string) => void;
   onUpdate: (item: InventoryRow) => void;
   onDelete: (item: InventoryRow) => void;
+};
+
+const PAGE_SIZE = 8;
+
+const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) {
+    return [1, 2, 3, 4, "ellipsis", totalPages];
+  }
+
+  if (currentPage >= totalPages - 2) {
+    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
 };
 
 const formatLastUpdated = (value: string | null) => {
@@ -51,10 +69,37 @@ const InventoryTable = ({
   onUpdate,
   onDelete,
 }: InventoryTableProps) => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+
   const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+  // Reset về trang 1 khi search thay đổi
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Clamp page nếu totalPages thu hẹp lại
+  React.useEffect(() => {
+    setCurrentPage((prev) => {
+      if (prev > totalPages) return totalPages;
+      if (prev < 1) return 1;
+      return prev;
+    });
+  }, [totalPages]);
+
+  const visibleItems = React.useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return items.slice(start, start + PAGE_SIZE);
+  }, [currentPage, items]);
+
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+
   const { hasPermission } = usePermissions();
-  const canUpdateGlobal = hasPermission('inventory.update');
-  const canDeleteGlobal = hasPermission('inventory.delete');
+  const canUpdateGlobal = hasPermission("inventory.update");
+  const canDeleteGlobal = hasPermission("inventory.delete");
   const anyActions = canUpdateGlobal || canDeleteGlobal;
 
   return (
@@ -66,9 +111,7 @@ const InventoryTable = ({
 
             <input
               value={searchQuery}
-              onChange={(event) =>
-                onSearchQueryChange(event.target.value)
-              }
+              onChange={(event) => onSearchQueryChange(event.target.value)}
               type="text"
               placeholder="Tìm inventory ID hoặc batch ID..."
               className="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
@@ -81,42 +124,22 @@ const InventoryTable = ({
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 bg-white border-b border-gray-100">
             <tr>
-              <th className="px-6 py-4 font-medium">
-                Inventory ID
-              </th>
-
-              <th className="px-6 py-4 font-medium">
-                Batch ID
-              </th>
-
-              <th className="px-6 py-4 font-medium">
-                Sản phẩm
-              </th>
-
+              <th className="px-6 py-4 font-medium">Inventory ID</th>
+              <th className="px-6 py-4 font-medium">Batch ID</th>
+              <th className="px-6 py-4 font-medium">Sản phẩm</th>
               <th className="px-6 py-4 font-medium text-center">
                 Tồn thực tế
                 <br />
-                <span className="font-normal">
-                  (Available)
-                </span>
+                <span className="font-normal">(Available)</span>
               </th>
-
               <th className="px-6 py-4 font-medium text-center">
                 Chờ giao
                 <br />
-                <span className="font-normal">
-                  (Reserved)
-                </span>
+                <span className="font-normal">(Reserved)</span>
               </th>
-
-              <th className="px-6 py-4 font-medium">
-                Cập nhật lần cuối
-              </th>
-
+              <th className="px-6 py-4 font-medium">Cập nhật lần cuối</th>
               {anyActions && (
-                <th className="px-6 py-4 font-medium text-right">
-                  Thao tác
-                </th>
+                <th className="px-6 py-4 font-medium text-right">Thao tác</th>
               )}
             </tr>
           </thead>
@@ -124,47 +147,35 @@ const InventoryTable = ({
           <tbody>
             {loading ? (
               <tr>
-                <td
-                  className="px-6 py-10 text-center text-gray-500"
-                  colSpan={7}
-                >
+                <td className="px-6 py-10 text-center text-gray-500" colSpan={7}>
                   Đang tải dữ liệu tồn kho...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td
-                  className="px-6 py-10 text-center text-gray-500"
-                  colSpan={7}
-                >
+                <td className="px-6 py-10 text-center text-gray-500" colSpan={7}>
                   {searchQuery.trim()
                     ? "Không tìm thấy dữ liệu tồn kho phù hợp."
                     : "Chưa có dữ liệu tồn kho."}
                 </td>
               </tr>
             ) : (
-              items.map((item) => (
+              visibleItems.map((item) => (
                 <tr
                   key={item.inventory_id}
                   className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
                 >
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-semibold text-gray-900">
-                        {item.inventory_id}
-                      </span>
+                      <span className="font-semibold text-gray-900">{item.inventory_id}</span>
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 text-gray-600 font-medium">
-                    {item.batch_id ?? "-"}
-                  </td>
+                  <td className="px-6 py-4 text-gray-600 font-medium">{item.batch_id ?? "-"}</td>
 
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-semibold text-gray-900">
-                        {item.product_name ?? "-"}
-                      </span>
+                      <span className="font-semibold text-gray-900">{item.product_name ?? "-"}</span>
                     </div>
                   </td>
 
@@ -183,9 +194,7 @@ const InventoryTable = ({
                   </td>
 
                   <td className="px-6 py-4 text-gray-600 font-medium">
-                    {formatLastUpdated(
-                      item.last_updated
-                    )}
+                    {formatLastUpdated(item.last_updated)}
                   </td>
 
                   {anyActions ? (
@@ -227,19 +236,58 @@ const InventoryTable = ({
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span className="text-sm text-gray-500">
           Hiển thị{" "}
-          <span className="font-bold text-gray-900">
-            {totalItems === 0 ? 0 : 1} - {totalItems}
-          </span>{" "}
+          <span className="font-bold text-gray-900">{startItem} - {endItem}</span>{" "}
           trong tổng số{" "}
-          <span className="font-bold text-gray-900">
-            {totalItems}
-          </span>{" "}
-          inventory
+          <span className="font-bold text-gray-900">{totalItems}</span>{" "}
+          tồn kho
         </span>
 
         <div className="flex items-center gap-1">
-          <button className="w-8 h-8 flex items-center justify-center border border-[#059669] bg-[#059669] text-white rounded-lg text-sm font-medium">
-            1
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            aria-label="Trang trước"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {pageItems.map((item, index) => {
+            if (item === "ellipsis") {
+              return (
+                <span key={`ellipsis-${index}`} className="px-1 text-gray-400">
+                  ...
+                </span>
+              );
+            }
+
+            const isActive = item === currentPage;
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCurrentPage(item)}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium ${
+                  isActive
+                    ? "border border-emerald-500 bg-emerald-500 text-white"
+                    : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {item}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            aria-label="Trang sau"
+          >
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>

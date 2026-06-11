@@ -41,10 +41,11 @@ type ProductsResponse = {
 };
 
 type SubscriptionStatus = "active" | "paused" | "cancelled";
-type ScheduleValue = "weekly" | "monthly";
+type ScheduleValue = "weekly" | "biweekly" | "monthly";
 
 const SCHEDULE_OPTIONS: Array<{ value: ScheduleValue; label: string; description: string }> = [
   { value: "weekly", label: "Hàng tuần", description: "Giao mỗi 7 ngày" },
+  { value: "biweekly", label: "Hai tuần một lần", description: "Giao mỗi 14 ngày" },
   { value: "monthly", label: "Hàng tháng", description: "Giao mỗi 30 ngày" },
 ];
 

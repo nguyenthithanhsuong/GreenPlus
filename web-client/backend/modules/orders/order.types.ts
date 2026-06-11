@@ -46,6 +46,7 @@ export type OrderItemDetail = {
   price: number;
   product_name: string | null;
   product_image_url: string | null;
+  note: string | null;
 };
 
 export type OrderDetail = {

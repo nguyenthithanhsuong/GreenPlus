@@ -1,6 +1,6 @@
 import { AppError } from "../../../core/errors";
 
-export type SubscriptionFrequency = "weekly" | "monthly";
+export type SubscriptionFrequency = "weekly" | "biweekly" | "monthly";
 
 export interface SubscriptionStrategy {
   getNextDate(startDate: Date): Date;
@@ -10,6 +10,14 @@ class WeeklySubscriptionStrategy implements SubscriptionStrategy {
   getNextDate(startDate: Date): Date {
     const date = new Date(startDate);
     date.setDate(date.getDate() + 7);
+    return date;
+  }
+}
+
+class BiweeklySubscriptionStrategy implements SubscriptionStrategy {
+  getNextDate(startDate: Date): Date {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + 14);
     return date;
   }
 }
@@ -28,9 +36,11 @@ export function createSubscriptionStrategy(frequency: string): SubscriptionStrat
   switch (normalized) {
     case "weekly":
       return new WeeklySubscriptionStrategy();
+    case "biweekly":
+      return new BiweeklySubscriptionStrategy();
     case "monthly":
       return new MonthlySubscriptionStrategy();
     default:
-      throw new AppError("frequency must be one of: weekly, monthly", 400);
+      throw new AppError("frequency must be one of: weekly, biweekly, monthly", 400);
   }
 }

@@ -186,6 +186,7 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
                       <th className="px-5 py-3 font-medium text-center">SL</th>
                       <th className="px-5 py-3 font-medium text-right">Đơn giá</th>
                       <th className="px-5 py-3 font-medium text-right">Thành tiền</th>
+                      <th className="px-5 py-3 font-medium text-right">Ghi chú</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -200,6 +201,7 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
                         <td className="px-5 py-3 text-center font-bold text-gray-900">{item.quantity}</td>
                         <td className="px-5 py-3 text-right text-gray-600">{formatCurrency(item.price)}</td>
                         <td className="px-5 py-3 text-right font-bold text-gray-900">{formatCurrency(item.line_total)}</td>
+                        <td className="px-5 py-3 text-right text-gray-600">{item.note || "-"}</td>
                       </tr>
                     ))}
                   </tbody>

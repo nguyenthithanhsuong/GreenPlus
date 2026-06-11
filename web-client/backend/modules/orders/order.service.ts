@@ -197,6 +197,7 @@ export class OrderService {
       price: Number(row.price),
       product_name: readRelationValue<string>(row.products, "name"),
       product_image_url: readRelationValue<string>(row.products, "image_url"),
+      note: row.note,
     }));
 
     const normalizedPaymentStatus = this.normalizePaymentStatus(paymentStatus);
@@ -223,7 +224,7 @@ export class OrderService {
   }
 
   private async resolveOrderItemsFromCart(userId: string): Promise<
-    Array<{ productId: string; batchId: string; quantity: number; price: number; subtotal: number }>
+    Array<{ productId: string; batchId: string; quantity: number; price: number; subtotal: number , note?: string | null | undefined}>
   > {
     let cart: Awaited<ReturnType<OrderRepository["findCartByUserId"]>> = null;
     try {
@@ -263,7 +264,7 @@ export class OrderService {
       }
     });
 
-    const resolved: Array<{ productId: string; batchId: string; quantity: number; price: number; subtotal: number }> = [];
+    const resolved: Array<{ productId: string; batchId: string; quantity: number; price: number; subtotal: number; note?: string | null | undefined }> = [];
 
     for (const item of cartItems) {
       const price = priceMap.get(item.product_id);
@@ -289,6 +290,7 @@ export class OrderService {
         quantity: item.quantity,
         price,
         subtotal: price * item.quantity,
+        note: item.note,
       });
     }
 
@@ -367,6 +369,7 @@ export class OrderService {
           batchId: item.batchId,
           quantity: item.quantity,
           price: item.price,
+          note: item.note ?? null,
         });
       }
 

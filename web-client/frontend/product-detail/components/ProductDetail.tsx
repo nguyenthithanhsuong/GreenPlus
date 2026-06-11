@@ -879,8 +879,8 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
       }
 
       try {
-        await postCartItem(1);
-        setCartActionMessage("✓ Đã đặt lịch mua định kì thành công và tự thêm 1 sản phẩm vào giỏ hàng!");
+        await postCartItem(quantity);
+        setCartActionMessage("✓ Đã đặt lịch mua định kì thành công và tự thêm sản phẩm vào giỏ hàng!");
       } catch (cartError) {
         setCartActionMessage(
           cartError instanceof Error

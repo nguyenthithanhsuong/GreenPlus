@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, Eye, Loader, Phone, Search, Truck } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Eye, Loader, Phone, Search, Truck } from "lucide-react";
 import type { OrderListRow, OrderStatus } from "../../backend/modules/orders/order-tracking.types";
 
 type StatusFilter = "all" | OrderStatus;
@@ -33,6 +33,24 @@ const statusMeta: Record<OrderStatus, { label: string; dot: string; text: string
   delivering: { label: "Delivering", dot: "bg-purple-500", text: "text-purple-600" },
   completed: { label: "Completed", dot: "bg-[#059669]", text: "text-[#059669]" },
   cancelled: { label: "Cancelled", dot: "bg-red-500", text: "text-red-500" },
+};
+
+const PAGE_SIZE = 8;
+
+const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) {
+    return [1, 2, 3, 4, "ellipsis", totalPages];
+  }
+
+  if (currentPage >= totalPages - 2) {
+    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
 };
 
 const formatCurrency = (value: number): string => {
@@ -98,7 +116,31 @@ const OrderTable = ({
   onStartPreparing,
   onStartDelivering,
 }: OrderTableProps) => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+
   const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, fromDate, toDate]);
+
+  React.useEffect(() => {
+    setCurrentPage((prev) => {
+      if (prev > totalPages) return totalPages;
+      if (prev < 1) return 1;
+      return prev;
+    });
+  }, [totalPages]);
+
+  const visibleItems = React.useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return items.slice(start, start + PAGE_SIZE);
+  }, [currentPage, items]);
+
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -208,7 +250,7 @@ const OrderTable = ({
                 </td>
               </tr>
             ) : (
-              items.map((order) => {
+              visibleItems.map((order) => {
                 const status = statusMeta[order.status];
                 const payment = paymentBadge(order.payment_method, order.payment_status);
 
@@ -309,11 +351,61 @@ const OrderTable = ({
 
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span className="text-sm text-gray-500">
-          Hiển thị <span className="font-bold text-gray-900">{totalItems === 0 ? 0 : 1} - {totalItems}</span> trong tổng số <span className="font-bold text-gray-900">{totalItems}</span> đơn hàng
+          Hiển thị{" "}
+          <span className="font-bold text-gray-900">
+            {startItem} - {endItem}
+          </span>{" "}
+          trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>{" "}
+          đơn hàng
         </span>
 
         <div className="flex items-center gap-1">
-          <button className="w-8 h-8 flex items-center justify-center border border-[#059669] bg-[#059669] text-white rounded-lg text-sm font-medium">1</button>
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            aria-label="Trang trước"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {pageItems.map((item, index) => {
+            if (item === "ellipsis") {
+              return (
+                <span key={`ellipsis-${index}`} className="px-1 text-gray-400">
+                  ...
+                </span>
+              );
+            }
+
+            const isActive = item === currentPage;
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCurrentPage(item)}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium ${
+                  isActive
+                    ? "border border-emerald-500 bg-emerald-500 text-white"
+                    : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {item}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            aria-label="Trang sau"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>

@@ -35,6 +35,7 @@ type OrderItemJoin = Array<{
   products?: {
     name?: string | null;
   } | null;
+  note?: string | null;
 }>;
 
 type OrderDbRow = {
@@ -93,7 +94,7 @@ export class OrderTrackingRepository {
   async findOrderById(orderId: string): Promise<OrderDetailRow | null> {
     const { data, error } = await this.supabase
       .from("orders")
-      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(order_item_id,order_id,product_id,batch_id,quantity,price,products(name))")
+      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(order_item_id,order_id,product_id,batch_id,quantity,price,products(name),note)")
       .eq("order_id", orderId)
       .maybeSingle();
 
@@ -115,7 +116,7 @@ export class OrderTrackingRepository {
         updated_at: new Date().toISOString(),
       })
       .eq("order_id", input.orderId)
-      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(order_item_id,order_id,product_id,batch_id,quantity,price,products(name))")
+      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(order_item_id,order_id,product_id,batch_id,quantity,price,products(name),note)")
       .maybeSingle();
 
     if (error) {
@@ -251,6 +252,7 @@ export class OrderTrackingRepository {
       quantity,
       price,
       line_total: quantity * price,
+      note: item.note || null,
     };
   }
 

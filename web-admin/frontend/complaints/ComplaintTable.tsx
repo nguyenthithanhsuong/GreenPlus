@@ -1,6 +1,7 @@
 "use client";
 
-import { CreditCard, Eye, MessageSquare, Package, RefreshCcw, Search, XCircle, CircleCheck } from "lucide-react";
+import React from "react";
+import { ChevronLeft, ChevronRight, CreditCard, Eye, MessageSquare, Package, RefreshCcw, Search, XCircle, CircleCheck } from "lucide-react";
 import { ComplaintRow, ComplaintStatus } from "../../backend/modules/complaints/complaint-management.types";
 
 type ComplaintStatusFilter = "all" | ComplaintStatus;
@@ -24,6 +25,24 @@ const statusTabs: Array<{ value: ComplaintStatusFilter; label: string }> = [
   { value: "resolved", label: "Đã giải quyết" },
   { value: "rejected", label: "Đã từ chối" },
 ];
+
+const PAGE_SIZE = 8;
+
+const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) {
+    return [1, 2, 3, 4, "ellipsis", totalPages];
+  }
+
+  if (currentPage >= totalPages - 2) {
+    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+};
 
 const normalizeType = (type: string) => type.trim().toLowerCase();
 
@@ -76,6 +95,32 @@ const ComplaintTable = ({
   onResolve,
   onReject,
 }: ComplaintTableProps) => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+
+  const totalItems = complaints.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchValue, activeStatus]);
+
+  React.useEffect(() => {
+    setCurrentPage((prev) => {
+      if (prev > totalPages) return totalPages;
+      if (prev < 1) return 1;
+      return prev;
+    });
+  }, [totalPages]);
+
+  const visibleItems = React.useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return complaints.slice(start, start + PAGE_SIZE);
+  }, [currentPage, complaints]);
+
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
       <div className="flex flex-col gap-4 border-b border-gray-50 p-5 md:flex-row md:items-center md:justify-between">
@@ -136,7 +181,7 @@ const ComplaintTable = ({
                 </td>
               </tr>
             ) : (
-              complaints.map((item) => {
+              visibleItems.map((item) => {
                 const status = statusUi(item.status);
                 const saving = savingComplaintId === item.complaint_id;
 
@@ -231,13 +276,64 @@ const ComplaintTable = ({
         </table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-sm text-gray-500">
-        <span>
-          Hiển thị <span className="font-bold text-gray-900">{complaints.length.toLocaleString("vi-VN")}</span> khiếu nại
+      <div className="flex items-center justify-between border-t border-gray-50 px-6 py-4">
+        <span className="text-sm text-gray-500">
+          Hiển thị{" "}
+          <span className="font-bold text-gray-900">
+            {startItem} - {endItem}
+          </span>{" "}
+          trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>{" "}
+          khiếu nại
         </span>
-        <span>
-          Trạng thái hiện tại: <span className="font-bold text-gray-900">{activeStatus === "all" ? "Tất cả" : activeStatus}</span>
-        </span>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            aria-label="Trang trước"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {pageItems.map((item, index) => {
+            if (item === "ellipsis") {
+              return (
+                <span key={`ellipsis-${index}`} className="px-1 text-gray-400">
+                  ...
+                </span>
+              );
+            }
+
+            const isActive = item === currentPage;
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCurrentPage(item)}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium ${
+                  isActive
+                    ? "border border-emerald-500 bg-emerald-500 text-white"
+                    : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {item}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            aria-label="Trang sau"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

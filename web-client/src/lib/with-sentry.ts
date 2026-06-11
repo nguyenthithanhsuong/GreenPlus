@@ -12,8 +12,14 @@ export function withSentry<TRequest extends Request, TContext = { params: Promis
     try {
       return await handler(request, context);
     } catch (error) {
+      console.error("[Unhandled API error]:", error);
+
       Sentry.captureException(error);
-      await Sentry.flush(2000);
+      const flushed = await Sentry.flush(2000);
+
+      if (!flushed) {
+        console.error("[Sentry unavailable] Exception not delivered:", error);
+      }
 
       if (error instanceof AppError) {
         return NextResponse.json(

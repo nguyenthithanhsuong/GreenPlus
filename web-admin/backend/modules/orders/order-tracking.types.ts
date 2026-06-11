@@ -29,6 +29,7 @@ export type OrderItemRow = {
   quantity: number;
   price: number;
   line_total: number;
+  note: string | null;
 };
 
 export type OrderDetailRow = OrderListRow & {

@@ -147,6 +147,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  note VARCHAR(255),
   UNIQUE (order_id, product_id, batch_id)
 );
 

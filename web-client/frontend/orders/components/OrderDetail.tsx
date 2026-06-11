@@ -33,6 +33,7 @@ type OrderItemDetail = {
   price: number;
   product_name: string | null;
   product_image_url: string | null;
+  note: string | null;
 };
 
 type OrderDetailResponse = {
@@ -1031,6 +1032,7 @@ export default function OrderDetail() {
                     </div>
                     <div style={styles.itemBody}>
                       <p style={styles.itemName}>{item.product_name ?? "Sản phẩm"}</p>
+                      <p style={styles.itemQty}>Ghi chú: {item.note ?? "-"}</p>
                       <div style={styles.itemBottom}>
                         <p style={styles.itemQty}>x{item.quantity}</p>
                         <p style={styles.itemPrice}>{formatPrice(item.price * item.quantity)}</p>

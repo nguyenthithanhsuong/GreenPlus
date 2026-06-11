@@ -909,7 +909,7 @@ const GreenCreator = () => {
       return [];
     }
 
-    let results = allPosts;
+    let results = activeTab === "own" ? allPosts : allPosts.filter((post) => post.status === "approved");
     const actorUserId = resolveActorUserId();
 
     if (activeTab === "own") {

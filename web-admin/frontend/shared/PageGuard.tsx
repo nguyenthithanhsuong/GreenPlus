@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { usePermissions } from "@/lib/usePermissions";
+import { useAuthStore } from "@/lib/stores/authStore";
 
 type Props = {
   children: React.ReactNode;
@@ -12,7 +13,9 @@ export default function PageGuard({ children }: Props) {
   const { permissions, loading } = usePermissions();
   const pathname = usePathname();
   const router = useRouter();
-
+  const initialized = useAuthStore((state) => state.initialized);
+  const isAuthenticated = useAuthStore((state) => Boolean(state.session && state.user));
+  
   const map: Record<string, string> = {
     "/users": "users.read",
     "/roles": "roles.read",
@@ -39,7 +42,16 @@ export default function PageGuard({ children }: Props) {
 
   const required = requiredPermissionForPath(pathname || "/");
 
-  if (loading) return null;
+  useEffect(() => {
+  if (!initialized) return;
+  if (!isAuthenticated && pathname !== "/login") {
+    router.replace("/login");
+  }
+}, [initialized, isAuthenticated, pathname, router]);
+
+  if (!initialized || loading) return null;
+
+  if (!isAuthenticated && pathname !== "/login") return null;
 
   if (required && permissions && !permissions.includes(required)) {
     return (

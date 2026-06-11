@@ -1,9 +1,9 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN_CLIENT,
   tracesSampleRate: 1.0,
-  enabled: Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN),
+  enabled: Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN_CLIENT),
   environment: process.env.NODE_ENV,
   release: process.env.NEXT_PUBLIC_GITHUB_SHA,
 });

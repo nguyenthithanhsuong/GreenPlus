@@ -1,6 +1,16 @@
 import React from "react";
 import { usePermissions } from "@/lib/usePermissions";
-import { CheckCircle2, Edit2, Package, Plus, Search, XCircle, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  Edit2,
+  Package,
+  Plus,
+  Search,
+  XCircle,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 
 type PriceTableProps = {
@@ -17,8 +27,46 @@ type PriceTableProps = {
   onQuickReject: (item: PriceRow) => void;
 };
 
+const PAGE_SIZE = 8;
+
+const buildPageItems = (
+  currentPage: number,
+  totalPages: number
+): Array<number | "ellipsis"> => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) {
+    return [1, 2, 3, 4, "ellipsis", totalPages];
+  }
+
+  if (currentPage >= totalPages - 2) {
+    return [
+      1,
+      "ellipsis",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  }
+
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    totalPages,
+  ];
+};
+
 const formatCurrency = (value: number): string => {
-  return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(value)} đ`;
+  return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(
+    value
+  )} đ`;
 };
 
 const formatDate = (value: string): string => {
@@ -76,13 +124,43 @@ const PriceTable = ({
   onQuickReject,
 }: PriceTableProps) => {
   const { hasPermission } = usePermissions();
-  const canCreateGlobal = hasPermission('prices.create');
-  const canUpdateGlobal = hasPermission('prices.update');
-  const canDeleteGlobal = hasPermission('prices.delete');
+  const canCreateGlobal = hasPermission("prices.create");
+  const canUpdateGlobal = hasPermission("prices.update");
+  const canDeleteGlobal = hasPermission("prices.delete");
+
+  const [currentPage, setCurrentPage] = React.useState(1);
+
+  const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  React.useEffect(() => {
+    setCurrentPage((prev) => {
+      if (prev > totalPages) return totalPages;
+      if (prev < 1) return 1;
+      return prev;
+    });
+  }, [totalPages]);
+
+  const visibleItems = React.useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return items.slice(start, start + PAGE_SIZE);
+  }, [currentPage, items]);
+
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem =
+    totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(
+    () => buildPageItems(currentPage, totalPages),
+    [currentPage, totalPages]
+  );
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between p-5 border-b border-gray-50 gap-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between p-5 border-b border-gray-50 gap-3">
         {/* {canCreateGlobal && (
           <button
             type="button"
@@ -135,14 +213,19 @@ const PriceTable = ({
                 </td>
               </tr>
             ) : (
-              items.map((item) => {
-                const deletable = canDelete(item.status) || (item.status === "active" && canForceManagePrice);
-                const canEdit = item.status !== "active" || canForceManagePrice;
+              visibleItems.map((item) => {
+                const deletable =
+                  canDelete(item.status) ||
+                  (item.status === "active" && canForceManagePrice);
+                const canEdit =
+                  item.status !== "active" || canForceManagePrice;
                 const canModerate = canQuickModerate(item.status);
 
                 return (
-                  <tr key={item.price_id} className="border-b border-gray-50 hover:bg-gray-50/50">
-
+                  <tr
+                    key={item.price_id}
+                    className="border-b border-gray-50 hover:bg-gray-50/50"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         {/* <div className="w-10 h-10 rounded-lg border bg-gray-50 flex items-center justify-center text-xs font-semibold text-gray-500">
@@ -155,11 +238,13 @@ const PriceTable = ({
                     </td>
 
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold border ${
-                        item.batch_id
-                          ? "text-orange-700 bg-orange-50 border-orange-100"
-                          : "text-blue-600 bg-blue-50 border-blue-100"
-                      }`}>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold border ${
+                          item.batch_id
+                            ? "text-orange-700 bg-orange-50 border-orange-100"
+                            : "text-blue-600 bg-blue-50 border-blue-100"
+                        }`}
+                      >
                         <Package className="w-3.5 h-3.5" />
                         {item.batch_id ? `Lô: ${item.batch_id}` : "Áp dụng chung"}
                       </span>
@@ -182,7 +267,11 @@ const PriceTable = ({
                     </td>
 
                     <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex px-2.5 py-1 rounded text-[11px] font-bold border ${getStatusBadge(item.status)}`}>
+                      <span
+                        className={`inline-flex px-2.5 py-1 rounded text-[11px] font-bold border ${getStatusBadge(
+                          item.status
+                        )}`}
+                      >
                         {getStatusLabel(item.status)}
                       </span>
                     </td>
@@ -248,13 +337,72 @@ const PriceTable = ({
                         )}
                       </div>
                     </td>
-
                   </tr>
                 );
               })
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+        <span className="text-sm text-gray-500">
+          Hiển thị{" "}
+          <span className="font-bold text-gray-900">
+            {startItem} - {endItem}
+          </span>{" "}
+          trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>{" "}
+          mức giá
+        </span>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            aria-label="Trang trước"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {pageItems.map((item, index) => {
+            if (item === "ellipsis") {
+              return (
+                <span key={`ellipsis-${index}`} className="px-1 text-gray-400">
+                  ...
+                </span>
+              );
+            }
+
+            const isActive = item === currentPage;
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCurrentPage(item)}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium ${
+                  isActive
+                    ? "border border-emerald-500 bg-emerald-500 text-white"
+                    : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {item}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            aria-label="Trang sau"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

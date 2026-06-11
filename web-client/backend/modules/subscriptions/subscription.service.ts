@@ -84,12 +84,17 @@ export class SubscriptionService {
       const strategy = createSubscriptionStrategy(schedule);
       const parsedStart = new Date(startDate);
       const state = createSubscriptionState((status as "active" | "paused" | "cancelled") ?? "cancelled");
-      if (!Number.isNaN(parsedStart.getTime()) && state.canGenerateOrder()) {
-        nextDeliveryPreview = formatVietnamDateKey(strategy.getNextDate(parsedStart));
-      }
-    } catch {
-      nextDeliveryPreview = "not-schedulable";
-    }
+
+    if (!Number.isNaN(parsedStart.getTime()) && state.canGenerateOrder()) {
+      const today = formatVietnamDateKey(new Date());
+      const startDateKey = formatVietnamDateKey(parsedStart);
+      const nextDateKey = formatVietnamDateKey(strategy.getNextDate(parsedStart));
+
+    nextDeliveryPreview = startDateKey === today ? today : nextDateKey;
+  }
+} catch {
+  nextDeliveryPreview = "not-schedulable";
+}
 
     return {
       subscriptionId: String(data.subscription_id),

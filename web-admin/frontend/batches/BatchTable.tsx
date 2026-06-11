@@ -445,7 +445,7 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
 
       <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
         <span className="text-sm text-gray-500">
-          Hiển thị <span className="font-bold text-gray-900">{startItem} - {endItem}</span> trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>
+          Hiển thị <span className="font-bold text-gray-900">{startItem} - {endItem}</span> trong tổng số <span className="font-bold text-gray-900">{totalItems}</span> lô hàng
         </span>
 
         <div className="flex items-center gap-1">

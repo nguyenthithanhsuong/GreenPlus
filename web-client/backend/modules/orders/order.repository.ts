@@ -23,6 +23,7 @@ export type OrderItemRow = {
   quantity: number;
   price: number;
   products: RelObj;
+  note: string | null;
 };
 
 export type OrderItemImageRow = {
@@ -127,7 +128,7 @@ export class OrderRepository {
   async listOrderItems(orderId: string): Promise<OrderItemRow[]> {
     const { data, error } = await supabaseServer
       .from("order_items")
-      .select("order_item_id,order_id,product_id,batch_id,quantity,price,products(name,image_url)")
+      .select("order_item_id,order_id,product_id,batch_id,quantity,price,products(name,image_url),note")
       .eq("order_id", orderId);
 
     if (error) {
@@ -221,22 +222,23 @@ export class OrderRepository {
     return (data as { cart_id: string; user_id: string } | null) ?? null;
   }
 
-  async listCartItems(cartId: string): Promise<Array<{ cart_item_id: string; product_id: string; quantity: number }>> {
-    const { data, error } = await supabaseServer
-      .from("cart_items")
-      .select("cart_item_id,product_id,quantity")
-      .eq("cart_id", cartId);
+  async listCartItems(cartId: string): Promise<Array<{ cart_item_id: string; product_id: string; quantity: number; note: string | null }>> {
+  const { data, error } = await supabaseServer
+    .from("cart_items")
+    .select("cart_item_id,product_id,quantity,note") 
+    .eq("cart_id", cartId);
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return ((data ?? []) as Array<{ cart_item_id: string; product_id: string; quantity: number }>).map((row) => ({
-      cart_item_id: String(row.cart_item_id),
-      product_id: String(row.product_id),
-      quantity: Number(row.quantity),
-    }));
+  if (error) {
+    throw new Error(error.message);
   }
+
+  return ((data ?? []) as Array<{ cart_item_id: string; product_id: string; quantity: number; note: string | null }>).map((row) => ({
+    cart_item_id: String(row.cart_item_id),
+    product_id: String(row.product_id),
+    quantity: Number(row.quantity),
+    note: row.note ?? null, 
+  }));
+}
 
   async listLatestPriceRows(productIds: string[]): Promise<Array<{ product_id: string; price: number }>> {
     if (productIds.length === 0) {
@@ -361,6 +363,7 @@ export class OrderRepository {
     batchId: string;
     quantity: number;
     price: number;
+    note: string | null | undefined;
   }): Promise<void> {
     const { error } = await supabaseServer.from("order_items").insert({
       order_id: input.orderId,
@@ -368,6 +371,7 @@ export class OrderRepository {
       batch_id: input.batchId,
       quantity: input.quantity,
       price: input.price,
+      note: input.note 
     });
 
     if (error) {
