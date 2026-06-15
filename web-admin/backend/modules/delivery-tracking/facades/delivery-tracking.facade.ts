@@ -1,3 +1,4 @@
+import { orderTrackingFacade } from "../../orders/facades/order-tracking.facade";
 import { DeliveryTrackingRepository } from "../delivery-tracking.repository";
 import { DeliveryTrackingService } from "../delivery-tracking.service";
 import {
@@ -56,19 +57,28 @@ export class DeliveryTrackingFacade {
   }
 
   async updateDeliveryStatus(input: UpdateDeliveryStatusInput): Promise<DeliveryTrackingDetailRow> {
-    const previous = await this.service.getDeliveryDetail(input.orderId).catch(() => null);
-    const updated = await this.service.updateDeliveryStatus(input);
+  const previous = await this.service.getDeliveryDetail(input.orderId).catch(() => null);
+  const updated = await this.service.updateDeliveryStatus(input);
 
-    await this.subject.notify({
-      type: "delivery_status_updated",
+  await this.subject.notify({
+    type: "delivery_status_updated",
+    orderId: updated.order_id,
+    actor: "manager",
+    from: previous?.status ?? "assigned",
+    to: updated.status,
+  });
+
+  // Khi delivery chuyển sang "delivered" → đồng bộ order sang "completed"
+  if (updated.status === "delivered" && previous?.status !== "delivered") {
+    await orderTrackingFacade.updateOrderStatus({
       orderId: updated.order_id,
-      actor: "manager",
-      from: previous?.status ?? "assigned",
-      to: updated.status,
+      status: "completed",
+      note: input.note ?? "Giao hàng thành công, tự động hoàn tất đơn",
     });
-
-    return updated;
   }
+
+  return updated;
+}
 }
 
 export const deliveryTrackingFacade = new DeliveryTrackingFacade();

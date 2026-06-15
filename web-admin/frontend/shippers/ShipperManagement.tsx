@@ -97,7 +97,10 @@ const ShipperManagement = () => {
     return items.filter((item) => item.status === statusFilter);
   }, [items, statusFilter]);
 
-  const filteredItems = useMemo(() => deliveryTrackingSearchStrategy.filter(filteredByStatus, searchQuery), [filteredByStatus, searchQuery]);
+  const filteredItems = useMemo(
+    () => deliveryTrackingSearchStrategy.filter(filteredByStatus, searchQuery),
+    [filteredByStatus, searchQuery],
+  );
 
   const counts = useMemo(() => {
     const result: Record<StatusFilter, number> = {
@@ -117,11 +120,16 @@ const ShipperManagement = () => {
     return result;
   }, [items]);
 
-  const stats = useMemo(() => ({
-    totalDeliveries: items.length,
-    inProgressCount: items.filter((item) => ["assigned", "picked_up", "delivering"].includes(item.status)).length,
-    deliveredCount: items.filter((item) => item.status === "delivered").length,
-  }), [items]);
+  const stats = useMemo(
+    () => ({
+      totalDeliveries: items.length,
+      inProgressCount: items.filter((item) =>
+        ["assigned", "picked_up", "delivering"].includes(item.status),
+      ).length,
+      deliveredCount: items.filter((item) => item.status === "delivered").length,
+    }),
+    [items],
+  );
 
   const openDetail = useCallback(async (orderId: string) => {
     setDrawerOpen(true);
@@ -129,7 +137,9 @@ const ShipperManagement = () => {
     setDrawerError(null);
 
     try {
-      const response = await fetch(`/api/deliveries/${encodeURIComponent(orderId)}`, { cache: "no-store" });
+      const response = await fetch(`/api/deliveries/${encodeURIComponent(orderId)}`, {
+        cache: "no-store",
+      });
       const data = (await response.json()) as DeliveryTrackingDetailRow & { error?: string };
 
       if (!response.ok) {
@@ -143,7 +153,11 @@ const ShipperManagement = () => {
         note: "",
       });
     } catch (requestError) {
-      setDrawerError(requestError instanceof Error ? requestError.message : "Không thể tải chi tiết giao hàng");
+      setDrawerError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải chi tiết giao hàng",
+      );
       setSelectedDetail(null);
     } finally {
       setDetailLoading(false);
@@ -168,46 +182,64 @@ const ShipperManagement = () => {
     setForm(emptyForm());
   }, []);
 
-  const submitStatus = useCallback(async () => {
-    if (!selectedDetail) {
-      setDrawerError("Không tìm thấy đơn giao hàng cần cập nhật");
-      return;
-    }
+  // Hàm core — nhận statusOverride để dùng chung cho cả 2 nút
+  const submitStatusWithStatus = useCallback(
+    async (statusOverride?: DeliveryStatus) => {
+      if (!selectedDetail) {
+        setDrawerError("Không tìm thấy đơn giao hàng cần cập nhật");
+        return;
+      }
 
-    setSaving(true);
-    setError(null);
-    setDrawerError(null);
-
-    try {
       if (!form.employeeId) {
-        throw new Error("Vui lòng chọn shipper phụ trách");
+        setDrawerError("Vui lòng chọn shipper phụ trách");
+        return;
       }
 
-      const response = await fetch(`/api/deliveries/${encodeURIComponent(selectedDetail.order_id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employeeId: form.employeeId,
-          status: form.status,
-          note: form.note,
-        }),
-      });
+      setSaving(true);
+      setError(null);
+      setDrawerError(null);
 
-      const data = (await response.json()) as DeliveryTrackingDetailRow & { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể cập nhật trạng thái giao hàng");
+      const resolvedStatus = statusOverride ?? form.status;
+      const resolvedNote =
+        form.note || (statusOverride === "delivered" ? "Giao hàng thành công" : "");
+
+      try {
+        const response = await fetch(
+          `/api/deliveries/${encodeURIComponent(selectedDetail.order_id)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              employeeId: form.employeeId,
+              status: resolvedStatus,
+              note: resolvedNote,
+            }),
+          },
+        );
+
+        const data = (await response.json()) as DeliveryTrackingDetailRow & { error?: string };
+
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể cập nhật trạng thái giao hàng");
+        }
+
+        setSelectedDetail(data);
+        setForm((current) => ({ ...current, status: data.status, note: "" }));
+        closeDrawer();
+        await loadDeliveries();
+      } catch (requestError) {
+        const message =
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể cập nhật trạng thái giao hàng";
+        setError(message);
+        setDrawerError(message);
+      } finally {
+        setSaving(false);
       }
-
-      setSelectedDetail(data);
-      await loadDeliveries();
-    } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Không thể cập nhật trạng thái giao hàng";
-      setError(message);
-      setDrawerError(message);
-    } finally {
-      setSaving(false);
-    }
-  }, [form.employeeId, form.note, form.status, loadDeliveries, selectedDetail]);
+    },
+    [form.employeeId, form.note, form.status, loadDeliveries, selectedDetail],
+  );
 
   return (
     <AdminShell
@@ -225,7 +257,11 @@ const ShipperManagement = () => {
         </button>
       }
     >
-      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <ShipperStats {...stats} />
       <ShipperTable
@@ -256,7 +292,10 @@ const ShipperManagement = () => {
         form={form}
         onClose={closeDrawer}
         onSubmit={() => {
-          void submitStatus();
+          void submitStatusWithStatus();
+        }}
+        onCompleteDelivery={() => {
+          void submitStatusWithStatus("delivered");
         }}
         onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
       />

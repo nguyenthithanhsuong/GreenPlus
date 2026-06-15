@@ -25,6 +25,7 @@ type ShipperDrawerProps = {
   onClose: () => void;
   onSubmit: () => void;
   onChange: (patch: Partial<ShipperFormValues>) => void;
+  onCompleteDelivery?: () => void;
 };
 
 const formatDateTime = (value: string | null): string => {
@@ -47,8 +48,7 @@ const statusLabel: Record<DeliveryStatus, string> = {
   delivered: "Đã giao",
 };
 
-const ShipperDrawer = ({ isOpen, loading, saving, error, detail, shippers, form, onClose, onSubmit, onChange }: ShipperDrawerProps) => {
-  if (!isOpen) {
+const ShipperDrawer = ({ isOpen, loading, saving, error, detail, shippers, form, onClose, onSubmit, onChange, onCompleteDelivery }: ShipperDrawerProps) => {  if (!isOpen) {
     return null;
   }
 
@@ -186,6 +186,19 @@ const ShipperDrawer = ({ isOpen, loading, saving, error, detail, shippers, form,
             <button type="button" onClick={onClose} className="rounded-md border border-gray-300 bg-white px-6 py-2.5 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50" disabled={saving}>
               Hủy
             </button>
+
+            {detail?.status === "delivering" && onCompleteDelivery && (
+      <button
+        type="button"
+        onClick={onCompleteDelivery}
+        disabled={saving}
+        className="rounded-md bg-purple-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-purple-700 disabled:opacity-60 flex items-center gap-2"
+      >
+        <CheckCircle2 className="h-4 w-4" />
+        {saving ? "Đang lưu..." : "Hoàn tất giao hàng"}
+      </button>
+    )}
+
             <button type="button" onClick={onSubmit} className="rounded-md bg-[#1da453] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#168a44] disabled:opacity-60" disabled={saving || !detail}>
               {saving ? "Đang lưu..." : "Cập nhật trạng thái"}
             </button>
