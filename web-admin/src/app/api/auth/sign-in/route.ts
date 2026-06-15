@@ -47,14 +47,24 @@ export const POST = withSentry(async (request) => {
   }
 
   logger.info("Admin sign-in success", {
-    email,
-    roleName,
-    duration_ms: Date.now() - start,
-  });
+  email,
+  roleName,
+  duration_ms: Date.now() - start,
+});
 
-  return NextResponse.json({
-    session: data.session,
-    user: { ...data.user, role_name: roleName },
-    role_name: roleName || null,
-  });
+const response = NextResponse.json({
+  session: data.session,
+  user: { ...data.user, role_name: roleName },
+  role_name: roleName || null,
+});
+
+response.cookies.set("gp_admin_auth", data.session.access_token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7, // 7 ngày
+});
+
+return response;
 });
