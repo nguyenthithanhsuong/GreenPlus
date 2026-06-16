@@ -1,51 +1,42 @@
 import { withSentry } from "@/lib/with-sentry";
-import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { createServiceRoleSupabaseClient } from "../../../../../backend/core/supabase";
+import { categoryManagementFacade } from "../../../../../backend/modules/catalog/facades/category-management.facade";
+import { logger } from "@/lib/logger";
 
-const BUCKET = "Category-Image";
-const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+type Context = {
+  params: Promise<{ categoryId: string }>;
+};
 
-function extensionFromMime(mime: string): string {
-  if (mime === "image/jpeg") return "jpg";
-  if (mime === "image/png") return "png";
-  if (mime === "image/webp") return "webp";
-  if (mime === "image/gif") return "gif";
-  return "bin";
-}
+export const PUT = withSentry(async (request: Request, context: Context) => {
+  const { categoryId } = await context.params;
+  const body = (await request.json()) as {
+    name?: string;
+    description?: string;
+    imageUrl?: string;
+  };
 
-export const POST = withSentry(async (request: Request) => {
-  const formData = await request.formData();
-  const file = formData.get("file");
+  logger.info("Update category attempt", { categoryId, name: body.name });
+  const start = Date.now();
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "file is required" }, { status: 400 });
-  }
+  const updated = await categoryManagementFacade.updateCategory({
+    categoryId,
+    name: body.name,
+    description: body.description,
+    imageUrl: body.imageUrl,
+  });
 
-  if (!ALLOWED_MIME.has(file.type)) {
-    return NextResponse.json({ error: "Only jpeg/png/webp/gif are allowed" }, { status: 400 });
-  }
+  logger.info("Update category success", { categoryId, duration_ms: Date.now() - start });
+  return NextResponse.json(updated, { status: 200 });
+});
 
-  const ext = extensionFromMime(file.type);
-  const objectPath = `categories/${new Date().getFullYear()}/${randomUUID()}.${ext}`;
+export const DELETE = withSentry(async (request: Request, context: Context) => {
+  const { categoryId } = await context.params;
 
-  const client = createServiceRoleSupabaseClient();
-  const { error: uploadError } = await client.storage
-    .from(BUCKET)
-    .upload(objectPath, file, { contentType: file.type, upsert: false });
+  logger.info("Delete category attempt", { categoryId });
+  const start = Date.now();
 
-  if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 400 });
-  }
+  await categoryManagementFacade.deleteCategory(categoryId);
 
-  const { data: publicUrlData } = client.storage.from(BUCKET).getPublicUrl(objectPath);
-
-  return NextResponse.json(
-    {
-      bucket: BUCKET,
-      path: objectPath,
-      publicUrl: publicUrlData.publicUrl,
-    },
-    { status: 200 },
-  );
+  logger.info("Delete category success", { categoryId, duration_ms: Date.now() - start });
+  return NextResponse.json({ deleted: true }, { status: 200 });
 });
