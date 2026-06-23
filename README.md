@@ -1,6 +1,6 @@
 # GreenPlus
 
-Production-ready SaaS platform built with Next.js, Supabase, and Turborepo.
+A Full-Stack Smart E-Grocery Platform for Organic Produce, with two web applications: Web Admin and Web Client. Frontend built with Next.js, Tailwind CSS, Zustand, and TanStack Query. Backend powered by Supabase (PostgreSQL · Auth · Realtime · Storage). DevOps via Docker, Nginx, and GitHub Actions · Monitoring via Sentry + BetterStack.
 
 [![CI](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/ci.yml/badge.svg)](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/ci.yml)
 
@@ -8,17 +8,25 @@ Production-ready SaaS platform built with Next.js, Supabase, and Turborepo.
 
 [![Deploy to Production](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/deploy-prod.yml/badge.svg)](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/deploy-prod.yml)
 
-## Features
+## Technology Stack
 
-**Phase 1**: Supabase Auth + State Management (Zustand + React Query)
-**Phase 2**: Realtime Subscriptions + File Storage
-**Phase 3**: Unified API Gateway + Observability + CI/CD
-- 🔗 Single unified port (8080) with path-based routing
-- 📊 Health checks & uptime monitoring (Better Stack)
-- 🔄 GitHub Actions CI/CD with Docker builds
-- 📝 Comprehensive logging and alerting
+| Layer | Technology |
+|-------|-----------|
+| **Framework** | Next.js 15, React 19, TypeScript |
+| **Styling** | Tailwind CSS |
+| **State** | Zustand, TanStack Query v5 |
+| **API** | Next.js App Router, REST |
+| **Authentication** | Supabase Auth (JWT) |
+| **Database** | Supabase PostgreSQL + RLS |
+| **Realtime** | Supabase Realtime (postgres_changes) |
+| **Storage** | Supabase Storage (signed uploads) |
+| **Gateway** | Nginx with path-based routing |
+| **Containerization** | Docker, Docker Compose |
+| **Monorepo** | Turborepo |
+| **CI/CD** | GitHub Actions |
+| **Error Tracking** | Sentry |
+| **Observability** | Sentry, Better Stack, GitHub Actions |
 
-## Quick Start
 
 ### Local Development
 
@@ -38,19 +46,6 @@ npm run lint        # ESLint
 npm run typecheck   # TypeScript
 npm run build       # Full production build
 ```
-
-### Docker Deployment
-
-```bash
-# Start all services with unified gateway
-docker-compose up -d
-
-# Gateway runs on port 8080
-curl http://localhost:8080/health
-curl http://localhost:8080/api/health
-curl http://localhost:8080/admin
-```
-
 ## Project Structure
 
 ```
@@ -64,47 +59,48 @@ GreenPlus/
 └── README.md
 ```
 
-## Technology Stack
+### Docker Deployment
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 16, React 19, TypeScript |
-| **State** | Zustand, React Query v5 |
-| **API** | Next.js App Router, REST |
-| **Authentication** | Supabase Auth |
-| **Database** | Supabase PostgreSQL + RLS |
-| **Realtime** | Supabase Realtime (postgres_changes) |
-| **Storage** | Supabase Storage (signed uploads) |
-| **Observability** | Sentry, Better Stack, GitHub Actions |
-| **Containerization** | Docker, Docker Compose |
-| **Gateway** | Nginx with path-based routing |
-| **Monorepo** | Turborepo |
+```bash
+# Start all services with unified gateway
+docker-compose up -d
+
+# Gateway runs on port 8080
+curl http://localhost:8080/health
+curl http://localhost:8080/api/health
+curl http://localhost:8080/admin
+```
 
 ## Environment Variables
 
-Create `.env.local` in project root:
+Create `.env` in project root:
 
 ```bash
 # Required
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Admin only
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=       # Admin app only — protected API routes
+SUPABASE_PASS=                   # DB direct connection / migrations
+AUTH_HANDOFF_SECRET=             # Cross-app auth between web-client and web-admin
+NEXT_PUBLIC_WEB_CLIENT_URL=http://localhost:3000
+NEXT_PUBLIC_WEB_ADMIN_URL=http://localhost:3001
 
 # Optional
-BETTER_STACK_SOURCE_TOKEN=              # Logging
-SENTRY_DSN=                             # Error tracking
-NEXT_PUBLIC_SENTRY_DSN=                 # Client errors
+SENTRY_DSN_ADMIN=
+SENTRY_DSN_CLIENT=
+SENTRY_AUTH_TOKEN=               # Only needed in CI for sourcemap uploads
+SENTRY_ORG=
+NEXT_PUBLIC_SENTRY_ORG=
+SENTRY_PROJECT_CLIENT=
+NEXT_PUBLIC_SENTRY_PROJECT_CLIENT=
+SENTRY_PROJECT_ADMIN=
+NEXT_PUBLIC_SENTRY_PROJECT_ADMIN=
+
+BETTER_STACK_SOURCE_TOKEN=
+NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN=
+BETTER_STACK_URL=
+NEXT_PUBLIC_BETTER_STACK_URL=
 ```
-
-See [ENV_VARS_REFERENCE.md](ENV_VARS_REFERENCE.md) for complete documentation.
-
-## Documentation
-
-- 📖 [ENV_VARS_REFERENCE.md](ENV_VARS_REFERENCE.md) - Environment configuration guide
-- 🚀 [PHASE_3_QUICKSTART.md](PHASE_3_QUICKSTART.md) - Quick setup & validation
-- 🏗️ [PHASE_3_SETUP.md](PHASE_3_SETUP.md) - Complete Phase 3 reference
-- 📊 [BETTER_STACK_SETUP.md](BETTER_STACK_SETUP.md) - Monitoring & alerting guide
-- 🎯 [DesignPattern.MD](DesignPattern.MD) - Architecture patterns
 
 ## API Gateway Routes
 
@@ -138,7 +134,8 @@ Configure GitHub Secrets: Settings → Secrets → Add repository secrets
 curl http://localhost:8080/health
 
 # Service health endpoints
-curl http://localhost:8080/api/health      # web-client
+curl http://localhost:8080/health           # Nginx
+curl http://localhost:8080/api/health       # web-client
 curl http://localhost:8080/admin/api/health # web-admin
 ```
 
@@ -147,7 +144,6 @@ curl http://localhost:8080/admin/api/health # web-admin
 - Automatic request logging via middleware
 - Custom application logging via `logger` utility
 - Uptime monitoring with alerts
-- See [BETTER_STACK_SETUP.md](BETTER_STACK_SETUP.md)
 
 ### Error Tracking (Sentry)
 
@@ -262,8 +258,6 @@ docker system prune
 docker-compose build --no-cache
 ```
 
-See [PHASE_3_SETUP.md](PHASE_3_SETUP.md#9-troubleshooting) for more.
-
 ## Contributing
 
 1. Create feature branch: `git checkout -b feature/my-feature`
@@ -272,18 +266,3 @@ See [PHASE_3_SETUP.md](PHASE_3_SETUP.md#9-troubleshooting) for more.
 4. GitHub Actions CI will run automatically
 5. Create Pull Request
 6. After approval, merge to develop (staging) or main (production)
-
-## Support & Next Steps
-
-- 📚 Start with [PHASE_3_QUICKSTART.md](PHASE_3_QUICKSTART.md) for immediate validation
-- 🔧 Follow [BETTER_STACK_SETUP.md](BETTER_STACK_SETUP.md) to enable monitoring
-- 🚀 Customize deployment workflows in `.github/workflows/deploy-*.yml`
-- 📖 Reference [PHASE_3_SETUP.md](PHASE_3_SETUP.md) for detailed architecture
-
----
-
-**Status**: ✅ Phase 3 Complete  
-**Build**: ✅ Passing (web-client + web-admin)  
-**Gateway**: ✅ Unified on port 8080  
-**CI/CD**: ✅ GitHub Actions active  
-**Monitoring**: ✅ Better Stack ready  
