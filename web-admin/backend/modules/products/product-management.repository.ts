@@ -1,5 +1,5 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { CreateProductInput, ProductRow, ProductStatus, UpdateProductInput } from "./product-management.types";
+import { CreateProductInput, ProductRow, ProductStatus, UpdateProductInput } from "../products/product-management.types";
 
 type ProductDbRow = {
   product_id: string;

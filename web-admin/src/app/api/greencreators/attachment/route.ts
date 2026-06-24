@@ -3,7 +3,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
-import { greenCreatorContentFacade } from "../../../../../backend/modules/greencreators/greencreator-content.facade";
+import { greenCreatorContentFacade } from "../../../../../backend/modules/greencreators/facade/greencreator-content.facade";
 import { AppError } from "../../../../../backend/core/errors";
 import { logger } from "@/lib/logger"; 
 

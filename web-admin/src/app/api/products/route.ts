@@ -1,6 +1,6 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { ProductService } from "../../../../backend/modules/catalog/product.service";
+import { ProductService } from "../../../../backend/modules/products/product.service";
 import { AuthService } from "../../../../backend/modules/auth/auth.service";
 import { requirePermissionForUser } from "../../../../backend/core/authorization";
 import { logger } from "@/lib/logger"; 

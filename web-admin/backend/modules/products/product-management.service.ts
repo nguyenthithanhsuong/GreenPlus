@@ -1,5 +1,5 @@
 import { AppError } from "../../core/errors";
-import { CategoryManagementRepository } from "./category-management.repository";
+import { CategoryManagementRepository } from "../categories/category-management.repository";
 import { ProductManagementRepository } from "./product-management.repository";
 import { CreateProductInput, ProductRow, ProductStatus, UpdateProductInput } from "./product-management.types";
 import { DefaultProductStatusStrategy } from "./strategies/product-status.strategy";

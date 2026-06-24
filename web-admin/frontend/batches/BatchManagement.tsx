@@ -11,7 +11,7 @@ import BatchScannerDialog from "./BatchScannerDialog";
 import BatchStats from "./BatchStats";
 import BatchTable from "./BatchTable";
 import type { BatchRow } from "../../backend/modules/batches/batch-management.types";
-import type { ProductRow } from "../../backend/modules/catalog/product-management.types";
+import type { ProductRow } from "../../backend/modules/products/product-management.types";
 import type { SupplierRow } from "../../backend/modules/suppliers/supplier-management.types";
 
 type OptionRow = {

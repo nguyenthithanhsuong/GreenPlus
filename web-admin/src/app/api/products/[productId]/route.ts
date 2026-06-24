@@ -1,6 +1,6 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { productManagementFacade } from "../../../../../backend/modules/catalog/facades/product-management.facade";
+import { productManagementFacade } from "../../../../../backend/modules/products/facades/product-management.facade";
 import { logger } from "@/lib/logger"; 
 
 type Context = {

@@ -1,6 +1,6 @@
-import { ComplaintManagementRepository } from "./complaint-management.repository";
-import { ComplaintManagementService } from "./complaint-management.service";
-import { ComplaintRow, ComplaintStatus } from "./complaint-management.types";
+import { ComplaintManagementRepository } from "../complaint-management.repository";
+import { ComplaintManagementService } from "../complaint-management.service";
+import { ComplaintRow, ComplaintStatus } from "../complaint-management.types";
 
 export class ComplaintManagementFacade {
   private readonly repository = new ComplaintManagementRepository();

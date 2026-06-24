@@ -7,7 +7,7 @@ import AdminShell from "../shared/AdminShell";
 import ProductDrawer, { ProductFormValues } from "./ProductDrawer";
 import ProductStats from "./ProductStats";
 import ProductTable from "./ProductTable";
-import type { CategoryRow, ProductRow, ProductStatus } from "../../backend/modules/catalog/product-management.types";
+import type { CategoryRow, ProductRow, ProductStatus } from "../../backend/modules/products/product-management.types";
 
 const emptyForm = (): ProductFormValues => ({
   categoryId: "",

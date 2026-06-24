@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../backend/core/errors";
 import { AuthService } from "../../../../backend/modules/auth/auth.service";
-import { greenCreatorContentFacade } from "../../../../backend/modules/greencreators/greencreator-content.facade";
+import { greenCreatorContentFacade } from "../../../../backend/modules/greencreators/facade/greencreator-content.facade";
 import { logger } from "@/lib/logger"; 
 
 type CreateGreenCreatorPostBody = {

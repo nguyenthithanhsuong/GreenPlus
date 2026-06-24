@@ -1,6 +1,6 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { complaintManagementFacade } from "../../../../../backend/modules/complaints/complaint-management.facade";
+import { complaintManagementFacade } from "../../../../../backend/modules/complaints/facade/complaint-management.facade";
 import { logger } from "@/lib/logger"; 
 
 const handler = async (request: Request, context: { params: Promise<{ complaintId: string }> }) => {

@@ -7,7 +7,7 @@ import AdminShell from "../shared/AdminShell";
 import CategoryDrawer, { CategoryFormValues } from "./CategoryDrawer";
 import CategoryStats from "./CategoryStats";
 import CategoryTable from "./CategoryTable";
-import type { CategoryRow } from "../../backend/modules/catalog/category-management.types";
+import type { CategoryRow } from "../../backend/modules/categories/category-management.types";
 import { categorySearchStrategy } from "../shared/searchStrategies";
 
 const emptyForm = (): CategoryFormValues => ({

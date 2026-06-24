@@ -1,7 +1,7 @@
 import React from 'react';
 import { usePermissions } from "@/lib/usePermissions";
 import { ChevronLeft, ChevronRight, Edit2, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
-import type { ProductRow, ProductStatus } from '../../backend/modules/catalog/product-management.types';
+import type { ProductRow, ProductStatus } from '../../backend/modules/products/product-management.types';
 
 type ProductTab = 'all' | ProductStatus;
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { X } from "lucide-react";
-import type { CategoryRow, ProductRow, ProductStatus } from "../../backend/modules/catalog/product-management.types";
+import type { CategoryRow, ProductRow, ProductStatus } from "../../backend/modules/products/product-management.types";
 
 export type ProductFormValues = {
   categoryId: string;

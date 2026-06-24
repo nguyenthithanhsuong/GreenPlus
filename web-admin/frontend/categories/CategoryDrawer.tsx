@@ -2,7 +2,7 @@
 
 import React from "react";
 import { X } from "lucide-react";
-import type { CategoryRow } from "../../backend/modules/catalog/category-management.types";
+import type { CategoryRow } from "../../backend/modules/categories/category-management.types";
 
 export type CategoryFormValues = {
   name: string;

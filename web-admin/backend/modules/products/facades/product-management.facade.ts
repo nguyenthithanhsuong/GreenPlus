@@ -1,4 +1,4 @@
-import { CategoryManagementRepository } from "../category-management.repository";
+import { CategoryManagementRepository } from "../../categories/category-management.repository";
 import { ProductManagementRepository } from "../product-management.repository";
 import { ProductManagementService } from "../product-management.service";
 import { ProductManagementAuditObserver, ProductManagementSubject } from "../observers/product-management.observer";

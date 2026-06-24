@@ -1,12 +1,12 @@
-import { GreenCreatorContentRepository } from "./greencreator-content.repository";
-import { GreenCreatorContentService } from "./greencreator-content.service";
+import { GreenCreatorContentRepository } from "../greencreator-content.repository";
+import { GreenCreatorContentService } from "../greencreator-content.service";
 import {
   CreateGreenCreatorPostInput,
   GreenCreatorPostRow,
   GreenCreatorPostStatus,
   UploadGreenCreatorAttachmentInput,
   UploadGreenCreatorAttachmentResult,
-} from "./greencreator-content.types";
+} from "../greencreator-content.types";
 
 export class GreenCreatorContentFacade {
   private readonly repository = new GreenCreatorContentRepository();
