@@ -25,5 +25,8 @@
     "@logtail/next": "^0.3.1",
     "@logtail/node": "^0.5.8",
     "@supabase/supabase-js": "^2.102.1"
+  },
+  "overrides": {
+    "next": "16.3.8"
   }
 }

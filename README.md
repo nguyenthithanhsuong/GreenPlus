@@ -27,6 +27,12 @@ A Full-Stack Smart E-Grocery Platform for Organic Produce, with two web applicat
 | **Error Tracking** | Sentry |
 | **Observability** | Sentry, Better Stack, GitHub Actions |
 
+### 
+npx supabase migration new <ten_thay_doi>   # tạo file SQL rỗng, bạn viết SQL vào
+npx supabase db reset                       # test lại trên local
+npx supabase db push --dry-run              # xem sẽ áp dụng gì lên cloud
+npx supabase db push                        # áp dụng thật
+npx supabase migration list                 # đối chiếu local và remote
 
 ### Local Development
 
