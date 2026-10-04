@@ -24,6 +24,7 @@ jobs:
       NEXT_PUBLIC_SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_CLIENT || '' }}
       SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_ADMIN || '' }}
       NEXT_PUBLIC_SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_ADMIN || '' }}
+      SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: "1"
       BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
     steps:
       - name: Checkout
@@ -58,6 +59,7 @@ jobs:
       NEXT_PUBLIC_SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_CLIENT || '' }}
       SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_ADMIN || '' }}
       NEXT_PUBLIC_SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_ADMIN || '' }}
+      SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: "1"
       BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
     steps:
       - name: Checkout

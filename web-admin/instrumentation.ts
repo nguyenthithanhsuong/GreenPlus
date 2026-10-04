@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/logger";
 
 export async function register() {
@@ -10,4 +11,20 @@ export async function register() {
     await import("./sentry.edge.config");
     logger.info("web-admin started", { runtime: "edge" });
   }
+}
+
+export function onRequestError(
+  err: unknown,
+  request: {
+    path: string;
+    method: string;
+    headers: Record<string, string | string[] | undefined>;
+  },
+  context: {
+    routerKind: string;
+    routePath: string;
+    routeType: string;
+  },
+) {
+  Sentry.captureRequestError(err, request, context);
 }
