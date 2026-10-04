@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import { usePermissions } from "@/lib/usePermissions";
 import AdminShell from "../shared/AdminShell";
@@ -23,7 +29,9 @@ const CategoryManagement = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryRow | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryRow | null>(
+    null,
+  );
   const [form, setForm] = useState<CategoryFormValues>(emptyForm());
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -36,7 +44,10 @@ const CategoryManagement = () => {
 
     try {
       const response = await fetch("/api/categories", { cache: "no-store" });
-      const data = (await response.json()) as { items?: CategoryRow[]; error?: string };
+      const data = (await response.json()) as {
+        items?: CategoryRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh mục");
@@ -44,7 +55,11 @@ const CategoryManagement = () => {
 
       setCategories(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải danh mục");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải danh mục",
+      );
       setCategories([]);
     } finally {
       setLoading(false);
@@ -57,18 +72,24 @@ const CategoryManagement = () => {
 
   const filteredCategories = useMemo(
     () => categorySearchStrategy.filter(categories, deferredSearchQuery),
-    [categories, deferredSearchQuery]
+    [categories, deferredSearchQuery],
   );
 
   const stats = useMemo(() => {
-    const totalProducts = categories.reduce((sum, category) => sum + category.product_count, 0);
-    const topCategory = categories.reduce<CategoryRow | null>((best, category) => {
-      if (!best || category.product_count > best.product_count) {
-        return category;
-      }
+    const totalProducts = categories.reduce(
+      (sum, category) => sum + category.product_count,
+      0,
+    );
+    const topCategory = categories.reduce<CategoryRow | null>(
+      (best, category) => {
+        if (!best || category.product_count > best.product_count) {
+          return category;
+        }
 
-      return best;
-    }, null);
+        return best;
+      },
+      null,
+    );
 
     return {
       totalCategories: categories.length,
@@ -117,15 +138,20 @@ const CategoryManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch(selectedCategory ? `/api/categories/${encodeURIComponent(selectedCategory.category_id)}` : "/api/categories", {
-        method: selectedCategory ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          description: form.description,
-          imageUrl: form.imageUrl,
-        }),
-      });
+      const response = await fetch(
+        selectedCategory
+          ? `/api/categories/${encodeURIComponent(selectedCategory.category_id)}`
+          : "/api/categories",
+        {
+          method: selectedCategory ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            description: form.description,
+            imageUrl: form.imageUrl,
+          }),
+        },
+      );
 
       const data = (await response.json()) as { error?: string };
 
@@ -136,7 +162,11 @@ const CategoryManagement = () => {
       closeDrawer();
       await reloadData();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể lưu danh mục");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể lưu danh mục",
+      );
     } finally {
       setSaving(false);
     }
@@ -155,7 +185,10 @@ const CategoryManagement = () => {
         body,
       });
 
-      const data = (await response.json()) as { publicUrl?: string; error?: string };
+      const data = (await response.json()) as {
+        publicUrl?: string;
+        error?: string;
+      };
       if (!response.ok || !data.publicUrl) {
         throw new Error(data.error ?? "Upload ảnh danh mục thất bại");
       }
@@ -165,34 +198,48 @@ const CategoryManagement = () => {
         imageUrl: data.publicUrl ?? previous.imageUrl,
       }));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Upload ảnh danh mục thất bại");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Upload ảnh danh mục thất bại",
+      );
     } finally {
       setUploadingImage(false);
     }
   }, []);
 
-  const deleteCategory = useCallback(async (category: CategoryRow) => {
-    setSaving(true);
-    setError(null);
+  const deleteCategory = useCallback(
+    async (category: CategoryRow) => {
+      setSaving(true);
+      setError(null);
 
-    try {
-      const response = await fetch(`/api/categories/${encodeURIComponent(category.category_id)}`, {
-        method: "DELETE",
-      });
+      try {
+        const response = await fetch(
+          `/api/categories/${encodeURIComponent(category.category_id)}`,
+          {
+            method: "DELETE",
+          },
+        );
 
-      const data = (await response.json()) as { error?: string };
+        const data = (await response.json()) as { error?: string };
 
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể xóa danh mục");
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể xóa danh mục");
+        }
+
+        await reloadData();
+      } catch (requestError) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể xóa danh mục",
+        );
+      } finally {
+        setSaving(false);
       }
-
-      await reloadData();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể xóa danh mục");
-    } finally {
-      setSaving(false);
-    }
-  }, [reloadData]);
+    },
+    [reloadData],
+  );
 
   return (
     <AdminShell
@@ -209,7 +256,7 @@ const CategoryManagement = () => {
             <RefreshCw className="h-4 w-4" />
             Tải lại
           </button>
-          {!permLoading && hasPermission('categories.create') && (
+          {!permLoading && hasPermission("categories.create") && (
             <button
               type="button"
               onClick={openCreateDrawer}

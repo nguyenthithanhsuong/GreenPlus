@@ -1,4 +1,3 @@
-
 import { resolve } from "node:path";
 import { config as loadEnv } from "dotenv";
 import { withSentryConfig } from "@sentry/nextjs";
@@ -22,7 +21,7 @@ export default withSentryConfig(nextConfig, {
   authToken: process.env.SENTRY_AUTH_TOKEN,
 
   //tunnelRoute: "/monitoring",
-  
+
   release: {
     name: process.env.GITHUB_SHA,
   },

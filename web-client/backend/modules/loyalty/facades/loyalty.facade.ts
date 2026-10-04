@@ -1,4 +1,7 @@
-import { LoyaltyNotificationObserver, LoyaltySubject } from "../observers/loyalty.observer";
+import {
+  LoyaltyNotificationObserver,
+  LoyaltySubject,
+} from "../observers/loyalty.observer";
 import { LoyaltyService } from "../loyalty.service";
 import { LoyaltyAwardInput, LoyaltyAwardResult } from "../loyalty.types";
 

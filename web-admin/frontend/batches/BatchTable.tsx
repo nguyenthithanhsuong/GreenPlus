@@ -1,7 +1,20 @@
 import React, { useDeferredValue } from "react";
 import { usePermissions } from "@/lib/usePermissions";
-import { Check, ChevronLeft, ChevronRight, Copy, Edit2, RotateCcw, Search, Trash2, X } from "lucide-react";
-import type { BatchRow, BatchStatus } from "../../backend/modules/batches/batch-management.types";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Edit2,
+  RotateCcw,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+import type {
+  BatchRow,
+  BatchStatus,
+} from "../../backend/modules/batches/batch-management.types";
 import { batchSearchStrategy } from "../shared/searchStrategies";
 
 type BatchTab = "all" | BatchStatus | "expiring";
@@ -20,7 +33,10 @@ type BatchTableProps = {
 
 const PAGE_SIZE = 8;
 
-const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+const buildPageItems = (
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
@@ -30,10 +46,25 @@ const buildPageItems = (currentPage: number, totalPages: number): Array<number |
   }
 
   if (currentPage >= totalPages - 2) {
-    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [
+      1,
+      "ellipsis",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
   }
 
-  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    totalPages,
+  ];
 };
 
 const formatDate = (value: string): string => {
@@ -53,7 +84,9 @@ const daysUntilExpire = (expireDate: string): number => {
   const expire = new Date(`${expireDate}T00:00:00`);
   expire.setHours(0, 0, 0, 0);
 
-  return Math.ceil((expire.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.ceil(
+    (expire.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
 };
 
 const deriveBatchStatus = (batch: BatchRow): BatchStatus => {
@@ -107,7 +140,9 @@ const getStatusLabel = (batch: BatchRow): string => {
   return `Còn ${daysLeft} ngày`;
 };
 
-const getStatusStyles = (batch: BatchRow): { badge: string; dot: string; text: string; label: string } => {
+const getStatusStyles = (
+  batch: BatchRow,
+): { badge: string; dot: string; text: string; label: string } => {
   const effectiveStatus = deriveBatchStatus(batch);
 
   if (effectiveStatus === "pending") {
@@ -180,7 +215,17 @@ const formatPrice = (value: number | null): string => {
   return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(value)} đ`;
 };
 
-const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprove, onReject, onRestore, onEdit, onDelete }: BatchTableProps) => {
+const BatchTable = ({
+  batches,
+  loading,
+  saving,
+  canForceManageApproved,
+  onApprove,
+  onReject,
+  onRestore,
+  onEdit,
+  onDelete,
+}: BatchTableProps) => {
   const [activeTab, setActiveTab] = React.useState<BatchTab>("all");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -189,25 +234,34 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
   const tabCounts = React.useMemo(
     () => ({
       all: batches.length,
-      pending: batches.filter((batch) => deriveBatchStatus(batch) === "pending").length,
-      rejected: batches.filter((batch) => deriveBatchStatus(batch) === "rejected").length,
-      available: batches.filter((batch) => deriveBatchStatus(batch) === "available").length,
+      pending: batches.filter((batch) => deriveBatchStatus(batch) === "pending")
+        .length,
+      rejected: batches.filter(
+        (batch) => deriveBatchStatus(batch) === "rejected",
+      ).length,
+      available: batches.filter(
+        (batch) => deriveBatchStatus(batch) === "available",
+      ).length,
       expiring: batches.filter((batch) => {
         const status = deriveBatchStatus(batch);
         const daysLeft = daysUntilExpire(batch.expire_date);
         return status === "available" && daysLeft >= 0 && daysLeft <= 3;
       }).length,
-      expired: batches.filter((batch) => deriveBatchStatus(batch) === "expired").length,
-      sold_out: batches.filter((batch) => deriveBatchStatus(batch) === "sold_out").length,
+      expired: batches.filter((batch) => deriveBatchStatus(batch) === "expired")
+        .length,
+      sold_out: batches.filter(
+        (batch) => deriveBatchStatus(batch) === "sold_out",
+      ).length,
     }),
-    [batches]
+    [batches],
   );
 
   const filteredBatches = React.useMemo(() => {
     const scopedBatches = batches.filter((batch) => {
       const effectiveStatus = deriveBatchStatus(batch);
       const daysLeft = daysUntilExpire(batch.expire_date);
-      const isExpiringSoon = effectiveStatus === "available" && daysLeft >= 0 && daysLeft <= 3;
+      const isExpiringSoon =
+        effectiveStatus === "available" && daysLeft >= 0 && daysLeft <= 3;
 
       return (
         activeTab === "all" ||
@@ -219,7 +273,10 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
       );
     });
 
-    return batchSearchStrategy.filter(scopedBatches, deferredSearchQuery) as BatchRow[];
+    return batchSearchStrategy.filter(
+      scopedBatches,
+      deferredSearchQuery,
+    ) as BatchRow[];
   }, [activeTab, batches, deferredSearchQuery]);
 
   const totalItems = filteredBatches.length;
@@ -249,8 +306,12 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
   }, [currentPage, filteredBatches]);
 
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
-  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const endItem =
+    totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(
+    () => buildPageItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   const copyToClipboard = async (value: string) => {
     try {
@@ -261,33 +322,61 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
   };
 
   const { hasPermission } = usePermissions();
-  const canApproveGlobal = hasPermission('batches.update');
-  const canEditGlobal = hasPermission('batches.update');
-  const canDeleteGlobal = hasPermission('batches.delete');
+  const canApproveGlobal = hasPermission("batches.update");
+  const canEditGlobal = hasPermission("batches.update");
+  const canDeleteGlobal = hasPermission("batches.delete");
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
       <div className="flex flex-col justify-between gap-4 border-b border-gray-50 p-5 md:flex-row md:items-center">
         <div className="flex items-center space-x-1 overflow-x-auto rounded-lg bg-gray-50 p-1">
-          <button type="button" onClick={() => setActiveTab("all")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => setActiveTab("all")}
+            className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
             Tất cả ({tabCounts.all})
           </button>
-          <button type="button" onClick={() => setActiveTab("available")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "available" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => setActiveTab("available")}
+            className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "available" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
             Khả dụng ({tabCounts.available})
           </button>
-          <button type="button" onClick={() => setActiveTab("pending")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "pending" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => setActiveTab("pending")}
+            className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "pending" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
             Chờ duyệt ({tabCounts.pending})
           </button>
-          <button type="button" onClick={() => setActiveTab("rejected")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "rejected" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => setActiveTab("rejected")}
+            className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "rejected" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
             Từ chối ({tabCounts.rejected})
           </button>
-          <button type="button" onClick={() => setActiveTab("expiring")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "expiring" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => setActiveTab("expiring")}
+            className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "expiring" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
             Cận date ({tabCounts.expiring})
           </button>
-          <button type="button" onClick={() => setActiveTab("expired")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "expired" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => setActiveTab("expired")}
+            className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "expired" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
             Hết hạn ({tabCounts.expired})
           </button>
-          <button type="button" onClick={() => setActiveTab("sold_out")} className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "sold_out" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => setActiveTab("sold_out")}
+            className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${activeTab === "sold_out" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
             Hết hàng ({tabCounts.sold_out})
           </button>
         </div>
@@ -323,46 +412,78 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">Đang tải danh sách batch...</td>
+                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
+                  Đang tải danh sách batch...
+                </td>
               </tr>
             )}
 
             {!loading && filteredBatches.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">Không có dữ liệu batch.</td>
+                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
+                  Không có dữ liệu batch.
+                </td>
               </tr>
             )}
 
-            {!loading && visibleBatches.map((batch) => {
-              const statusStyles = getStatusStyles(batch);
+            {!loading &&
+              visibleBatches.map((batch) => {
+                const statusStyles = getStatusStyles(batch);
 
-              return (
-                <tr key={batch.batch_id} className="border-b border-gray-50 transition-colors hover:bg-gray-50/50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <p className="font-semibold text-gray-900">{formatCode(batch.batch_id)}</p>
-                        <p className="text-[11px] text-gray-400">{batch.batch_id}</p>
+                return (
+                  <tr
+                    key={batch.batch_id}
+                    className="border-b border-gray-50 transition-colors hover:bg-gray-50/50"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {formatCode(batch.batch_id)}
+                          </p>
+                          <p className="text-[11px] text-gray-400">
+                            {batch.batch_id}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void copyToClipboard(batch.batch_id)}
+                          className="text-gray-400 transition-colors hover:text-gray-600"
+                          title="Copy batch id"
+                          disabled={saving}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
                       </div>
-                      <button type="button" onClick={() => void copyToClipboard(batch.batch_id)} className="text-gray-400 transition-colors hover:text-gray-600" title="Copy batch id" disabled={saving}>
-                        <Copy className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="mb-0.5 font-bold text-gray-900">{batch.product_name ?? "Chưa gán sản phẩm"}</p>
-                    <p className="text-[11px] text-gray-500">NCC: {batch.supplier_name ?? "Chưa gán nhà cung cấp"}</p>
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-gray-900">{formatPrice(batch.import_price)}</td>
-                  <td className="px-6 py-4 text-gray-600">{formatDate(batch.harvest_date)}</td>
-                  <td className="px-6 py-4">
-                    <p className="mb-0.5 font-bold text-gray-800">{formatDate(batch.expire_date)}</p>
-                    <p className={`text-[11px] ${deriveBatchStatus(batch) === "expired" ? "font-bold text-red-500" : deriveBatchStatus(batch) === "sold_out" ? "font-bold text-gray-500" : daysUntilExpire(batch.expire_date) <= 3 ? "font-bold text-orange-500" : "text-emerald-600"}`}>
-                      {getStatusLabel(batch)}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4 text-center font-bold text-gray-900">{batch.quantity.toLocaleString("vi-VN")}</td>
-                  {/* <td className="px-6 py-4">
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="mb-0.5 font-bold text-gray-900">
+                        {batch.product_name ?? "Chưa gán sản phẩm"}
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        NCC: {batch.supplier_name ?? "Chưa gán nhà cung cấp"}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4 font-semibold text-gray-900">
+                      {formatPrice(batch.import_price)}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {formatDate(batch.harvest_date)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="mb-0.5 font-bold text-gray-800">
+                        {formatDate(batch.expire_date)}
+                      </p>
+                      <p
+                        className={`text-[11px] ${deriveBatchStatus(batch) === "expired" ? "font-bold text-red-500" : deriveBatchStatus(batch) === "sold_out" ? "font-bold text-gray-500" : daysUntilExpire(batch.expire_date) <= 3 ? "font-bold text-orange-500" : "text-emerald-600"}`}
+                      >
+                        {getStatusLabel(batch)}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold text-gray-900">
+                      {batch.quantity.toLocaleString("vi-VN")}
+                    </td>
+                    {/* <td className="px-6 py-4">
                     {batch.qr_code ? (
                       <div className="flex items-center gap-2">
                         <span className="max-w-40 truncate rounded bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{batch.qr_code}</span>
@@ -374,99 +495,147 @@ const BatchTable = ({ batches, loading, saving, canForceManageApproved, onApprov
                       <span className="text-gray-400">-</span>
                     )}
                   </td> */}
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-2 rounded px-2.5 py-1 text-[11px] font-bold ${statusStyles.badge} ${statusStyles.text}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${statusStyles.dot}`} />
-                      {statusStyles.label}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {batch.status === "pending" ? (
-                        <>
-                          {canApproveGlobal && (
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center gap-2 rounded px-2.5 py-1 text-[11px] font-bold ${statusStyles.badge} ${statusStyles.text}`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${statusStyles.dot}`}
+                        />
+                        {statusStyles.label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {batch.status === "pending" ? (
+                          <>
+                            {canApproveGlobal && (
+                              <button
+                                type="button"
+                                onClick={() => onApprove(batch)}
+                                className="rounded-lg p-2 text-emerald-600 transition-colors hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-60"
+                                title="Duyệt nhanh"
+                                disabled={saving}
+                              >
+                                <Check className="h-4 w-4" />
+                              </button>
+                            )}
+                            {canApproveGlobal && (
+                              <button
+                                type="button"
+                                onClick={() => onReject(batch)}
+                                className="rounded-lg p-2 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
+                                title="Từ chối nhanh"
+                                disabled={saving}
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </>
+                        ) : batch.status === "rejected" ? (
+                          canApproveGlobal ? (
                             <button
                               type="button"
-                              onClick={() => onApprove(batch)}
-                              className="rounded-lg p-2 text-emerald-600 transition-colors hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-60"
-                              title="Duyệt nhanh"
+                              onClick={() => onRestore(batch)}
+                              className="rounded-lg p-2 text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-700 disabled:opacity-60"
+                              title="Quay lại chờ duyệt"
                               disabled={saving}
                             >
-                              <Check className="h-4 w-4" />
+                              <RotateCcw className="h-4 w-4" />
                             </button>
-                          )}
-                          {canApproveGlobal && (
-                            <button
-                              type="button"
-                              onClick={() => onReject(batch)}
-                              className="rounded-lg p-2 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
-                              title="Từ chối nhanh"
-                              disabled={saving}
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          )}
-                        </>
-                      ) : batch.status === "rejected" ? (
-                        canApproveGlobal ? (
-                          <button
-                            type="button"
-                            onClick={() => onRestore(batch)}
-                            className="rounded-lg p-2 text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-700 disabled:opacity-60"
-                            title="Quay lại chờ duyệt"
-                            disabled={saving}
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </button>
-                        ) : null
-                      ) : null}
-                      {batch.status !== "available" || canForceManageApproved ? (
-                        <>
-                          {canEditGlobal && (
-                            <button type="button" onClick={() => onEdit(batch)} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-60" title="Sửa" disabled={saving}>
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                          )}
-                          {canDeleteGlobal && (
-                            <button type="button" onClick={() => onDelete(batch)} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60" title="Xóa" disabled={saving}>
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                          ) : null
+                        ) : null}
+                        {batch.status !== "available" ||
+                        canForceManageApproved ? (
+                          <>
+                            {canEditGlobal && (
+                              <button
+                                type="button"
+                                onClick={() => onEdit(batch)}
+                                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-60"
+                                title="Sửa"
+                                disabled={saving}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                            )}
+                            {canDeleteGlobal && (
+                              <button
+                                type="button"
+                                onClick={() => onDelete(batch)}
+                                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
+                                title="Xóa"
+                                disabled={saving}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
 
       <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
         <span className="text-sm text-gray-500">
-          Hiển thị <span className="font-bold text-gray-900">{startItem} - {endItem}</span> trong tổng số <span className="font-bold text-gray-900">{totalItems}</span> lô hàng
+          Hiển thị{" "}
+          <span className="font-bold text-gray-900">
+            {startItem} - {endItem}
+          </span>{" "}
+          trong tổng số{" "}
+          <span className="font-bold text-gray-900">{totalItems}</span> lô hàng
         </span>
 
         <div className="flex items-center gap-1">
-          <button type="button" className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50" onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))} disabled={currentPage === 1} aria-label="Trang trước">
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() =>
+              setCurrentPage((previous) => Math.max(1, previous - 1))
+            }
+            disabled={currentPage === 1}
+            aria-label="Trang trước"
+          >
             <ChevronLeft className="h-4 w-4" />
           </button>
 
           {pageItems.map((item, index) => {
             if (item === "ellipsis") {
-              return <span key={`ellipsis-${index}`} className="px-1 text-gray-400">...</span>;
+              return (
+                <span key={`ellipsis-${index}`} className="px-1 text-gray-400">
+                  ...
+                </span>
+              );
             }
 
             const isActive = item === currentPage;
             return (
-              <button key={item} type="button" onClick={() => setCurrentPage(item)} className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium ${isActive ? "border border-emerald-500 bg-emerald-500 text-white" : "border border-gray-200 text-gray-600 hover:bg-gray-50"}`} aria-current={isActive ? "page" : undefined}>
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCurrentPage(item)}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium ${isActive ? "border border-emerald-500 bg-emerald-500 text-white" : "border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                aria-current={isActive ? "page" : undefined}
+              >
                 {item}
               </button>
             );
           })}
 
-          <button type="button" className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50" onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))} disabled={currentPage === totalPages} aria-label="Trang sau">
+          <button
+            type="button"
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            onClick={() =>
+              setCurrentPage((previous) => Math.min(totalPages, previous + 1))
+            }
+            disabled={currentPage === totalPages}
+            aria-label="Trang sau"
+          >
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>

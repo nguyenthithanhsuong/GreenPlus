@@ -14,7 +14,9 @@ class IneligibleLoyaltyState implements LoyaltyEligibilityState {
   }
 }
 
-export function createLoyaltyEligibilityState(isEligible: boolean): LoyaltyEligibilityState {
+export function createLoyaltyEligibilityState(
+  isEligible: boolean,
+): LoyaltyEligibilityState {
   if (isEligible) {
     return new EligibleLoyaltyState();
   }

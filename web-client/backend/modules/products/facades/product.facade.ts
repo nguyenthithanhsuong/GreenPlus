@@ -7,7 +7,12 @@ import {
   ProductChangeNotifier,
   SearchIndexUpdaterObserver,
 } from "../observers/product.observer";
-import { BrowseResult, ProductChangedEvent, ProductDetail, SearchCriteria } from "../product.types";
+import {
+  BrowseResult,
+  ProductChangedEvent,
+  ProductDetail,
+  SearchCriteria,
+} from "../product.types";
 
 export class ProductFacade {
   private readonly notifier: ProductChangeNotifier;
@@ -25,7 +30,11 @@ export class ProductFacade {
     this.notifier.attach(new SearchIndexUpdaterObserver());
     this.notifier.attach(new CacheUpdaterObserver());
   }
-  async browseProducts(page: number, sort?: SearchCriteria["sort"], limit?: number): Promise<BrowseResult> {
+  async browseProducts(
+    page: number,
+    sort?: SearchCriteria["sort"],
+    limit?: number,
+  ): Promise<BrowseResult> {
     return this.productService.browseProducts(page, limit, sort ?? "newest");
   }
 
@@ -37,7 +46,10 @@ export class ProductFacade {
     return this.productDetailService.getDetail(productId);
   }
 
-  notifyProductChanged(productId: string, event: ProductChangedEvent["event"]): void {
+  notifyProductChanged(
+    productId: string,
+    event: ProductChangedEvent["event"],
+  ): void {
     this.notifier.notify({
       productId,
       event,

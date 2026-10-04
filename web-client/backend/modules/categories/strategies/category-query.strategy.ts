@@ -22,7 +22,9 @@ export class NewestSortStrategy implements CategorySortStrategy {
   }
 }
 
-export function createCategorySortStrategy(sort: CategorySort): CategorySortStrategy {
+export function createCategorySortStrategy(
+  sort: CategorySort,
+): CategorySortStrategy {
   if (sort === "name_asc") {
     return new NameAscSortStrategy();
   }

@@ -1,4 +1,5 @@
-export type BatchStatus = "pending" | "available" | "rejected" | "expired" | "sold_out";
+export type BatchStatus =
+  "pending" | "available" | "rejected" | "expired" | "sold_out";
 
 export type BatchRow = {
   batch_id: string;

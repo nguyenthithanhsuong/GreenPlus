@@ -29,7 +29,9 @@ export function createPriceState(dateValue: string): PriceState {
 
   const target = new Date(timestamp);
   const today = new Date();
-  const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const todayUtc = new Date(
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
+  );
 
   if (target.getTime() > todayUtc.getTime()) {
     return new FuturePriceState();

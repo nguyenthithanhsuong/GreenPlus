@@ -26,7 +26,9 @@ export class OrderTrackingSubject {
   }
 
   async notify(event: OrderTrackingEvent): Promise<void> {
-    await Promise.all(Array.from(this.observers).map((observer) => observer.update(event)));
+    await Promise.all(
+      Array.from(this.observers).map((observer) => observer.update(event)),
+    );
   }
 }
 

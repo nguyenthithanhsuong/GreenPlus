@@ -1,4 +1,10 @@
-export type OrderStatus = "pending" | "confirmed" | "preparing" | "delivering" | "completed" | "cancelled";
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "delivering"
+  | "completed"
+  | "cancelled";
 
 export type PaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer";
 export type PaymentStatus = "pending" | "paid" | "failed" | "cancelled";

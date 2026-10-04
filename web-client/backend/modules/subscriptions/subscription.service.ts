@@ -83,18 +83,22 @@ export class SubscriptionService {
     try {
       const strategy = createSubscriptionStrategy(schedule);
       const parsedStart = new Date(startDate);
-      const state = createSubscriptionState((status as "active" | "paused" | "cancelled") ?? "cancelled");
+      const state = createSubscriptionState(
+        (status as "active" | "paused" | "cancelled") ?? "cancelled",
+      );
 
-    if (!Number.isNaN(parsedStart.getTime()) && state.canGenerateOrder()) {
-      const today = formatVietnamDateKey(new Date());
-      const startDateKey = formatVietnamDateKey(parsedStart);
-      const nextDateKey = formatVietnamDateKey(strategy.getNextDate(parsedStart));
+      if (!Number.isNaN(parsedStart.getTime()) && state.canGenerateOrder()) {
+        const today = formatVietnamDateKey(new Date());
+        const startDateKey = formatVietnamDateKey(parsedStart);
+        const nextDateKey = formatVietnamDateKey(
+          strategy.getNextDate(parsedStart),
+        );
 
-    nextDeliveryPreview = startDateKey === today ? today : nextDateKey;
-  }
-} catch {
-  nextDeliveryPreview = "not-schedulable";
-}
+        nextDeliveryPreview = startDateKey === today ? today : nextDateKey;
+      }
+    } catch {
+      nextDeliveryPreview = "not-schedulable";
+    }
 
     return {
       subscriptionId: String(data.subscription_id),
@@ -107,7 +111,9 @@ export class SubscriptionService {
     };
   }
 
-  async createSubscription(input: CreateSubscriptionInput): Promise<CreateSubscriptionResult> {
+  async createSubscription(
+    input: CreateSubscriptionInput,
+  ): Promise<CreateSubscriptionResult> {
     if (!input.userId || !input.productId) {
       throw new AppError("userId and productId are required", 400);
     }
@@ -116,9 +122,14 @@ export class SubscriptionService {
 
     let productData: { product_id: string; status: string } | null = null;
     try {
-      productData = await this.repository.findActiveProductById(input.productId);
+      productData = await this.repository.findActiveProductById(
+        input.productId,
+      );
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to verify product", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to verify product",
+        500,
+      );
     }
 
     if (!productData) {
@@ -127,9 +138,17 @@ export class SubscriptionService {
 
     let duplicate: { subscription_id: string; status: string } | null = null;
     try {
-      duplicate = await this.repository.findActiveSubscription(input.userId, input.productId);
+      duplicate = await this.repository.findActiveSubscription(
+        input.userId,
+        input.productId,
+      );
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to check duplicate subscription", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to check duplicate subscription",
+        500,
+      );
     }
 
     if (duplicate) {
@@ -156,10 +175,17 @@ export class SubscriptionService {
         startDate: startDate.toISOString().slice(0, 10),
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to create subscription", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to create subscription",
+        500,
+      );
     }
 
-    const state = createSubscriptionState((data.status as "active" | "paused" | "cancelled") ?? "active");
+    const state = createSubscriptionState(
+      (data.status as "active" | "paused" | "cancelled") ?? "active",
+    );
 
     return {
       subscriptionId: String(data.subscription_id),
@@ -168,11 +194,15 @@ export class SubscriptionService {
       schedule: String(data.schedule),
       status: String(data.status),
       startDate: String(data.start_date),
-      nextDeliveryPreview: state.canGenerateOrder() ? formatVietnamDateKey(nextDelivery) : "not-schedulable",
+      nextDeliveryPreview: state.canGenerateOrder()
+        ? formatVietnamDateKey(nextDelivery)
+        : "not-schedulable",
     };
   }
 
-  async listSubscriptionsByUserId(userId: string): Promise<SubscriptionSummary[]> {
+  async listSubscriptionsByUserId(
+    userId: string,
+  ): Promise<SubscriptionSummary[]> {
     if (!userId) {
       throw new AppError("userId is required", 400);
     }
@@ -188,13 +218,18 @@ export class SubscriptionService {
     try {
       rows = await this.repository.listSubscriptionsByUserId(userId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to list subscriptions", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to list subscriptions",
+        500,
+      );
     }
 
     return rows.map((row) => this.toSummary(row));
   }
 
-  async cancelSubscription(input: CancelSubscriptionInput): Promise<CancelSubscriptionResult> {
+  async cancelSubscription(
+    input: CancelSubscriptionInput,
+  ): Promise<CancelSubscriptionResult> {
     if (!input.userId || !input.subscriptionId) {
       throw new AppError("userId and subscriptionId are required", 400);
     }
@@ -208,9 +243,17 @@ export class SubscriptionService {
       start_date: string;
     } | null = null;
     try {
-      updated = await this.repository.cancelSubscription(input.userId, input.subscriptionId);
+      updated = await this.repository.cancelSubscription(
+        input.userId,
+        input.subscriptionId,
+      );
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to cancel subscription", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to cancel subscription",
+        500,
+      );
     }
 
     if (!updated) {
@@ -225,7 +268,9 @@ export class SubscriptionService {
     };
   }
 
-  async updateSubscription(input: UpdateSubscriptionInput): Promise<SubscriptionSummary> {
+  async updateSubscription(
+    input: UpdateSubscriptionInput,
+  ): Promise<SubscriptionSummary> {
     if (!input.userId || !input.subscriptionId) {
       throw new AppError("userId and subscriptionId are required", 400);
     }
@@ -243,7 +288,10 @@ export class SubscriptionService {
     }
 
     if (status && !["active", "paused", "cancelled"].includes(status)) {
-      throw new AppError("status must be one of: active, paused, cancelled", 400);
+      throw new AppError(
+        "status must be one of: active, paused, cancelled",
+        400,
+      );
     }
 
     if (startDate) {
@@ -271,7 +319,12 @@ export class SubscriptionService {
         startDate,
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to update subscription", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update subscription",
+        500,
+      );
     }
 
     if (!updated) {

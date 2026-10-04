@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { supplierManagementFacade } from "../../../../backend/modules/suppliers/facades/supplier-management.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const GET = withSentry(async () => {
   logger.info("List suppliers attempt");

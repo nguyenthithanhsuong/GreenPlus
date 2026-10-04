@@ -281,7 +281,12 @@ export default function GreenUpload() {
   const [error, setError] = useState<string | null>(null);
 
   const authUserId = useAuthStore((state) => state.user?.user_id ?? "");
-  const activeUserId = authUserId || (typeof window !== "undefined" ? window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "" : "");
+  const activeUserId =
+    authUserId ||
+    (typeof window !== "undefined"
+      ? (window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ??
+        "")
+      : "");
 
   const loadMyPosts = async () => {
     if (!activeUserId) {
@@ -293,17 +298,26 @@ export default function GreenUpload() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/community/posts?userId=${encodeURIComponent(activeUserId)}`);
+      const response = await fetch(
+        `/api/community/posts?userId=${encodeURIComponent(activeUserId)}`,
+      );
       const data = (await response.json()) as PostSummary[] | { error: string };
 
       if (!response.ok || !Array.isArray(data)) {
-        const messageText = !Array.isArray(data) && "error" in data ? data.error : "Không thể tải danh sách bài đăng";
+        const messageText =
+          !Array.isArray(data) && "error" in data
+            ? data.error
+            : "Không thể tải danh sách bài đăng";
         throw new Error(messageText);
       }
 
       setPosts(data);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -339,18 +353,27 @@ export default function GreenUpload() {
     return "community";
   }, [files]);
 
-  const uploadAttachment = async (ownerUserId: string, postId: string, selectedFiles: File[]): Promise<string[]> => {
+  const uploadAttachment = async (
+    ownerUserId: string,
+    postId: string,
+    selectedFiles: File[],
+  ): Promise<string[]> => {
     const formData = new FormData();
     formData.append("userId", ownerUserId);
     formData.append("postId", postId);
-    selectedFiles.forEach((selectedFile) => formData.append("files", selectedFile));
+    selectedFiles.forEach((selectedFile) =>
+      formData.append("files", selectedFile),
+    );
 
     const response = await fetch("/api/community/posts/attachment", {
       method: "POST",
       body: formData,
     });
 
-    const data = (await response.json()) as { mediaUrls?: string[]; error?: string };
+    const data = (await response.json()) as {
+      mediaUrls?: string[];
+      error?: string;
+    };
     if (!response.ok || !Array.isArray(data.mediaUrls)) {
       throw new Error(data.error ?? "Upload file thất bại");
     }
@@ -366,8 +389,12 @@ export default function GreenUpload() {
       return;
     }
 
-    const imageCount = picked.filter((item) => item.type.startsWith("image/")).length;
-    const videoCount = picked.filter((item) => item.type.startsWith("video/")).length;
+    const imageCount = picked.filter((item) =>
+      item.type.startsWith("image/"),
+    ).length;
+    const videoCount = picked.filter((item) =>
+      item.type.startsWith("video/"),
+    ).length;
     const unknownCount = picked.length - imageCount - videoCount;
 
     if (unknownCount > 0) {
@@ -412,9 +439,11 @@ export default function GreenUpload() {
         }),
       });
 
-      const createData = (await createResponse.json()) as CreatedPostResult | { error?: string };
+      const createData = (await createResponse.json()) as
+        CreatedPostResult | { error?: string };
       if (!createResponse.ok || !("post_id" in createData)) {
-        const errorMessage = "error" in createData ? createData.error : undefined;
+        const errorMessage =
+          "error" in createData ? createData.error : undefined;
         throw new Error(errorMessage ?? "Tạo bài đăng thất bại");
       }
 
@@ -422,13 +451,21 @@ export default function GreenUpload() {
         await uploadAttachment(activeUserId, createData.post_id, files);
       }
 
-      setMessage(files.length ? "Đăng bài và upload tệp thành công. Bài viết đang ở trạng thái pending." : "Đăng bài thành công. Bài viết đang ở trạng thái pending.");
+      setMessage(
+        files.length
+          ? "Đăng bài và upload tệp thành công. Bài viết đang ở trạng thái pending."
+          : "Đăng bài thành công. Bài viết đang ở trạng thái pending.",
+      );
       setTitle("");
       setContent("");
       setFiles([]);
       await loadMyPosts();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -438,9 +475,19 @@ export default function GreenUpload() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href="/green-creators" style={styles.iconButton} aria-label="Quay lại nhà sáng tạo">
+          <Link
+            href="/green-creators"
+            style={styles.iconButton}
+            aria-label="Quay lại nhà sáng tạo"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.title}>Green Upload</h1>
@@ -451,24 +498,54 @@ export default function GreenUpload() {
           <section style={styles.card}>
             {/* <p style={styles.helperText}>Theo schema posts: title, content, type và status mặc định pending.</p> */}
             <div style={styles.row}>
-              <label style={styles.label} htmlFor="post-title">Tiêu đề</label>
-              <input id="post-title" style={styles.input} value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} placeholder="Nhập tiêu đề bài viết" />
+              <label style={styles.label} htmlFor="post-title">
+                Tiêu đề
+              </label>
+              <input
+                id="post-title"
+                style={styles.input}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                maxLength={200}
+                placeholder="Nhập tiêu đề bài viết"
+              />
             </div>
 
             <div style={styles.row}>
-              <label style={styles.label} htmlFor="post-content">Nội dung</label>
-              <textarea id="post-content" style={styles.textarea} value={content} onChange={(event) => setContent(event.target.value)} maxLength={1000} placeholder="Nhập nội dung bài viết" />
+              <label style={styles.label} htmlFor="post-content">
+                Nội dung
+              </label>
+              <textarea
+                id="post-content"
+                style={styles.textarea}
+                value={content}
+                onChange={(event) => setContent(event.target.value)}
+                maxLength={1000}
+                placeholder="Nhập nội dung bài viết"
+              />
               <p style={styles.helperText}>{content.length}/1000 ký tự</p>
             </div>
 
             <div style={styles.row}>
-              <label style={styles.label} htmlFor="post-type">Loại bài (tự động)</label>
-              <input id="post-type" style={styles.input} value={inferredType} disabled readOnly />
-              <p style={styles.helperText}>Hệ thống tự gán: video nếu chọn video, blog nếu chọn ảnh.</p>
+              <label style={styles.label} htmlFor="post-type">
+                Loại bài (tự động)
+              </label>
+              <input
+                id="post-type"
+                style={styles.input}
+                value={inferredType}
+                disabled
+                readOnly
+              />
+              <p style={styles.helperText}>
+                Hệ thống tự gán: video nếu chọn video, blog nếu chọn ảnh.
+              </p>
             </div>
 
             <div style={styles.row}>
-              <label style={styles.label} htmlFor="post-attachment">Tệp đính kèm (tùy chọn)</label>
+              <label style={styles.label} htmlFor="post-attachment">
+                Tệp đính kèm (tùy chọn)
+              </label>
               <input
                 id="post-attachment"
                 type="file"
@@ -483,7 +560,14 @@ export default function GreenUpload() {
               {filePreviewUrls.length ? (
                 <div style={styles.previewCard}>
                   <p style={styles.label}>Xem trước</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px" }}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(180px, 1fr))",
+                      gap: "10px",
+                    }}
+                  >
                     {filePreviewUrls.map((url, index) => {
                       const currentFile = files[index];
                       if (!currentFile) {
@@ -491,13 +575,33 @@ export default function GreenUpload() {
                       }
 
                       return (
-                        <div key={`${currentFile.name}-${index}`} style={styles.previewFrame}>
+                        <div
+                          key={`${currentFile.name}-${index}`}
+                          style={styles.previewFrame}
+                        >
                           {currentFile.type.startsWith("image/") ? (
-                            <img src={url} alt={`Xem trước ${currentFile.name}`} style={styles.previewImage} />
+                            <img
+                              src={url}
+                              alt={`Xem trước ${currentFile.name}`}
+                              style={styles.previewImage}
+                            />
                           ) : currentFile.type.startsWith("video/") ? (
-                            <video src={url} controls playsInline preload="metadata" style={styles.previewVideo} />
+                            <video
+                              src={url}
+                              controls
+                              playsInline
+                              preload="metadata"
+                              style={styles.previewVideo}
+                            />
                           ) : (
-                            <p style={{ ...styles.helperText, color: "#FFFFFF", textAlign: "center", padding: "0 12px" }}>
+                            <p
+                              style={{
+                                ...styles.helperText,
+                                color: "#FFFFFF",
+                                textAlign: "center",
+                                padding: "0 12px",
+                              }}
+                            >
                               Không hỗ trợ xem trước định dạng này.
                             </p>
                           )}
@@ -512,7 +616,10 @@ export default function GreenUpload() {
             <div style={styles.actionRow}>
               <button
                 type="button"
-                style={{ ...styles.buttonPrimary, ...(loading ? styles.disabledButton : {}) }}
+                style={{
+                  ...styles.buttonPrimary,
+                  ...(loading ? styles.disabledButton : {}),
+                }}
                 disabled={loading}
                 onClick={() => void submitPost()}
               >
@@ -520,7 +627,10 @@ export default function GreenUpload() {
               </button>
               <button
                 type="button"
-                style={{ ...styles.buttonSecondary, ...(loading ? styles.disabledButton : {}) }}
+                style={{
+                  ...styles.buttonSecondary,
+                  ...(loading ? styles.disabledButton : {}),
+                }}
                 disabled={loading}
                 onClick={() => void loadMyPosts()}
               >
@@ -534,14 +644,26 @@ export default function GreenUpload() {
 
           <section style={styles.card}>
             <p style={styles.label}>Bài đăng của tôi</p>
-            {posts.length === 0 ? <p style={styles.helperText}>Chưa có bài viết nào.</p> : null}
+            {posts.length === 0 ? (
+              <p style={styles.helperText}>Chưa có bài viết nào.</p>
+            ) : null}
             {posts.map((post) => (
               <article key={post.post_id} style={styles.postItem}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                  }}
+                >
                   <h2 style={styles.postTitle}>{post.title}</h2>
                   <span style={toStatusStyle(post.status)}>{post.status}</span>
                 </div>
-                <p style={styles.postMeta}>type: {post.type} | {new Date(post.created_at).toLocaleString("vi-VN")}</p>
+                <p style={styles.postMeta}>
+                  type: {post.type} |{" "}
+                  {new Date(post.created_at).toLocaleString("vi-VN")}
+                </p>
                 <p style={styles.postContent}>{post.content}</p>
               </article>
             ))}

@@ -1,5 +1,10 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { CreateProductInput, ProductRow, ProductStatus, UpdateProductInput } from "../products/product-management.types";
+import {
+  CreateProductInput,
+  ProductRow,
+  ProductStatus,
+  UpdateProductInput,
+} from "../products/product-management.types";
 
 type ProductDbRow = {
   product_id: string;
@@ -29,20 +34,26 @@ export class ProductManagementRepository {
   async listProducts(): Promise<ProductRow[]> {
     const { data, error } = await this.supabase
       .from("products")
-      .select("product_id,category_id,name,description,unit,image_url,status,created_at,nutrition,categories(name)")
+      .select(
+        "product_id,category_id,name,description,unit,image_url,status,created_at,nutrition,categories(name)",
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as ProductDbRow[]).map((product) => this.toRow(product));
+    return ((data ?? []) as ProductDbRow[]).map((product) =>
+      this.toRow(product),
+    );
   }
 
   async findById(productId: string): Promise<ProductRow | null> {
     const { data, error } = await this.supabase
       .from("products")
-      .select("product_id,category_id,name,description,unit,image_url,status,created_at,nutrition,categories(name)")
+      .select(
+        "product_id,category_id,name,description,unit,image_url,status,created_at,nutrition,categories(name)",
+      )
       .eq("product_id", productId)
       .maybeSingle();
 
@@ -53,7 +64,9 @@ export class ProductManagementRepository {
     return data ? this.toRow(data as ProductDbRow) : null;
   }
 
-  async createProduct(input: CreateProductInput & { status: ProductStatus }): Promise<ProductRow> {
+  async createProduct(
+    input: CreateProductInput & { status: ProductStatus },
+  ): Promise<ProductRow> {
     const { data, error } = await this.supabase
       .from("products")
       .insert({
@@ -65,7 +78,9 @@ export class ProductManagementRepository {
         nutrition: input.nutrition?.trim() || null,
         status: input.status,
       })
-      .select("product_id,category_id,name,description,unit,image_url,status,created_at,nutrition,categories(name)")
+      .select(
+        "product_id,category_id,name,description,unit,image_url,status,created_at,nutrition,categories(name)",
+      )
       .single();
 
     if (error) {
@@ -78,19 +93,25 @@ export class ProductManagementRepository {
   async updateProduct(input: UpdateProductInput): Promise<ProductRow | null> {
     const payload: Record<string, string | null> = {};
 
-    if (typeof input.categoryId !== "undefined") payload.category_id = input.categoryId;
+    if (typeof input.categoryId !== "undefined")
+      payload.category_id = input.categoryId;
     if (typeof input.name !== "undefined") payload.name = input.name.trim();
-    if (typeof input.description !== "undefined") payload.description = input.description?.trim() || null;
+    if (typeof input.description !== "undefined")
+      payload.description = input.description?.trim() || null;
     if (typeof input.unit !== "undefined") payload.unit = input.unit.trim();
-    if (typeof input.imageUrl !== "undefined") payload.image_url = input.imageUrl?.trim() || null;
-    if (typeof input.nutrition !== "undefined") payload.nutrition = input.nutrition?.trim() || null;
+    if (typeof input.imageUrl !== "undefined")
+      payload.image_url = input.imageUrl?.trim() || null;
+    if (typeof input.nutrition !== "undefined")
+      payload.nutrition = input.nutrition?.trim() || null;
     if (typeof input.status !== "undefined") payload.status = input.status;
 
     const { data, error } = await this.supabase
       .from("products")
       .update(payload)
       .eq("product_id", input.productId)
-      .select("product_id,category_id,name,description,unit,image_url,status,created_at,nutrition,categories(name)")
+      .select(
+        "product_id,category_id,name,description,unit,image_url,status,created_at,nutrition,categories(name)",
+      )
       .maybeSingle();
 
     if (error) {
@@ -100,12 +121,24 @@ export class ProductManagementRepository {
     return data ? this.toRow(data as ProductDbRow) : null;
   }
 
-  async countBlockingDependencies(productId: string): Promise<ProductDependencyCounts> {
-    const [cartItemsResult, orderItemsResult, subscriptionsResult] = await Promise.all([
-      this.supabase.from("cart_items").select("product_id", { count: "exact", head: true }).eq("product_id", productId),
-      this.supabase.from("order_items").select("product_id", { count: "exact", head: true }).eq("product_id", productId),
-      this.supabase.from("subscriptions").select("product_id", { count: "exact", head: true }).eq("product_id", productId),
-    ]);
+  async countBlockingDependencies(
+    productId: string,
+  ): Promise<ProductDependencyCounts> {
+    const [cartItemsResult, orderItemsResult, subscriptionsResult] =
+      await Promise.all([
+        this.supabase
+          .from("cart_items")
+          .select("product_id", { count: "exact", head: true })
+          .eq("product_id", productId),
+        this.supabase
+          .from("order_items")
+          .select("product_id", { count: "exact", head: true })
+          .eq("product_id", productId),
+        this.supabase
+          .from("subscriptions")
+          .select("product_id", { count: "exact", head: true })
+          .eq("product_id", productId),
+      ]);
 
     if (cartItemsResult.error) {
       throw new Error(cartItemsResult.error.message);
@@ -136,7 +169,10 @@ export class ProductManagementRepository {
       const cleanupResults = await Promise.all([
         this.supabase.from("order_items").delete().eq("product_id", productId),
         this.supabase.from("cart_items").delete().eq("product_id", productId),
-        this.supabase.from("subscriptions").delete().eq("product_id", productId),
+        this.supabase
+          .from("subscriptions")
+          .delete()
+          .eq("product_id", productId),
       ]);
 
       for (const result of cleanupResults) {

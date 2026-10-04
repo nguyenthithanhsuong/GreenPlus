@@ -18,7 +18,7 @@ class Pbkdf2UserPasswordStrategy implements UserPasswordStrategy {
       salt,
       this.iterations,
       this.keylen,
-      this.digest
+      this.digest,
     ).toString("hex");
 
     return `pbkdf2$${this.iterations}$${salt}$${derivedKey}`;
@@ -41,7 +41,7 @@ class Pbkdf2UserPasswordStrategy implements UserPasswordStrategy {
       salt,
       iterations,
       this.keylen,
-      this.digest
+      this.digest,
     );
     const original = Buffer.from(originalHash, "hex");
 

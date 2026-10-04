@@ -16,9 +16,10 @@ export class OrderTrackingService {
   constructor(private readonly repository: OrderTrackingRepository) {}
 
   async listOrders(filters: OrderFilterInput): Promise<OrderListRow[]> {
-    const normalizedStatus = typeof filters.status === "string" && filters.status.trim()
-      ? this.statusStrategy.normalizeStatus(filters.status)
-      : undefined;
+    const normalizedStatus =
+      typeof filters.status === "string" && filters.status.trim()
+        ? this.statusStrategy.normalizeStatus(filters.status)
+        : undefined;
 
     const fromDate = this.normalizeDate(filters.fromDate);
     const toDate = this.normalizeDate(filters.toDate);
@@ -48,7 +49,9 @@ export class OrderTrackingService {
     return order;
   }
 
-  async updateOrderStatus(input: UpdateOrderStatusInput): Promise<OrderDetailRow> {
+  async updateOrderStatus(
+    input: UpdateOrderStatusInput,
+  ): Promise<OrderDetailRow> {
     const normalizedOrderId = input.orderId.trim();
     if (!normalizedOrderId) {
       throw new AppError("orderId is required", 400);
@@ -62,7 +65,10 @@ export class OrderTrackingService {
 
     const currentStatus: OrderStatus = existing.status;
     if (!this.statusStrategy.canTransition(currentStatus, nextStatus)) {
-      throw new AppError(`Cannot transition order from ${currentStatus} to ${nextStatus}`, 400);
+      throw new AppError(
+        `Cannot transition order from ${currentStatus} to ${nextStatus}`,
+        400,
+      );
     }
 
     const updated = await this.repository.updateOrderStatus({

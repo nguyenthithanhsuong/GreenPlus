@@ -55,7 +55,9 @@ const InventoryDrawer = ({
       <aside className="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-2xl">
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-gray-100 p-6">
-            <h2 className="text-2xl font-bold text-gray-900">{modeTitle[mode]}</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {modeTitle[mode]}
+            </h2>
             <button
               type="button"
               onClick={onClose}
@@ -73,11 +75,25 @@ const InventoryDrawer = ({
             ) : null}
 
             <div className="mb-5 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Thông tin lô</p>
-              <p><span className="font-semibold">Inventory ID:</span> {selectedItem?.inventory_id ?? "-"}</p>
-              <p><span className="font-semibold">Batch ID:</span> {selectedItem?.batch_id ?? "-"}</p>
-              <p><span className="font-semibold">Sản phẩm:</span> {selectedItem?.product_name ?? "Chưa gán sản phẩm"}</p>
-              <p><span className="font-semibold">Supplier:</span> {selectedItem?.supplier_name ?? "-"}</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Thông tin lô
+              </p>
+              <p>
+                <span className="font-semibold">Inventory ID:</span>{" "}
+                {selectedItem?.inventory_id ?? "-"}
+              </p>
+              <p>
+                <span className="font-semibold">Batch ID:</span>{" "}
+                {selectedItem?.batch_id ?? "-"}
+              </p>
+              <p>
+                <span className="font-semibold">Sản phẩm:</span>{" "}
+                {selectedItem?.product_name ?? "Chưa gán sản phẩm"}
+              </p>
+              <p>
+                <span className="font-semibold">Supplier:</span>{" "}
+                {selectedItem?.supplier_name ?? "-"}
+              </p>
             </div>
 
             <form
@@ -95,7 +111,9 @@ const InventoryDrawer = ({
                   <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <input
                     value={form.quantityAvailable}
-                    onChange={(event) => onChange({ quantityAvailable: event.target.value })}
+                    onChange={(event) =>
+                      onChange({ quantityAvailable: event.target.value })
+                    }
                     type="number"
                     min="0"
                     step="1"
@@ -112,7 +130,9 @@ const InventoryDrawer = ({
                   <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <input
                     value={form.quantityReserved}
-                    onChange={(event) => onChange({ quantityReserved: event.target.value })}
+                    onChange={(event) =>
+                      onChange({ quantityReserved: event.target.value })
+                    }
                     type="number"
                     min="0"
                     step="1"
@@ -122,14 +142,21 @@ const InventoryDrawer = ({
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-gray-800">Loại giao dịch</label>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                  Loại giao dịch
+                </label>
                 <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                  Hệ thống tự xác định <span className="font-semibold">adjust_in</span> hoặc <span className="font-semibold">adjust_out</span> theo chênh lệch tồn khả dụng giữa giá trị mới và cũ.
+                  Hệ thống tự xác định{" "}
+                  <span className="font-semibold">adjust_in</span> hoặc{" "}
+                  <span className="font-semibold">adjust_out</span> theo chênh
+                  lệch tồn khả dụng giữa giá trị mới và cũ.
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-gray-800">Ghi chú giao dịch</label>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                  Ghi chú giao dịch
+                </label>
                 <div className="relative">
                   <ClipboardList className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <textarea
@@ -156,9 +183,7 @@ const InventoryDrawer = ({
             <button
               type="button"
               onClick={onSubmit}
-              className={`rounded-md px-6 py-2.5 text-sm font-bold text-white transition-colors disabled:opacity-60 ${
-                "bg-[#1da453] hover:bg-[#168a44]"
-              }`}
+              className={`rounded-md px-6 py-2.5 text-sm font-bold text-white transition-colors disabled:opacity-60 ${"bg-[#1da453] hover:bg-[#168a44]"}`}
               disabled={saving}
             >
               {saving ? "Đang xử lý..." : "Cập nhật tồn kho"}

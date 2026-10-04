@@ -1,4 +1,7 @@
-import { ProductOriginInfo, TraceabilityService } from "../traceability.service";
+import {
+  ProductOriginInfo,
+  TraceabilityService,
+} from "../traceability.service";
 
 export class TraceabilityFacade {
   private readonly service = new TraceabilityService();

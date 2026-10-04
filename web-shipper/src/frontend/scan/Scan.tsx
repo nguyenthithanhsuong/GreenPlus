@@ -19,7 +19,9 @@ export default function ScanScreen() {
           <div className="mb-4 flex h-28 w-28 items-center justify-center rounded-2xl bg-gray-100">
             <QrCode size={48} />
           </div>
-          <p className="text-sm text-gray-600">Máy quét chưa được cấu hình. Nhấn bắt đầu để thử nghiệm.</p>
+          <p className="text-sm text-gray-600">
+            Máy quét chưa được cấu hình. Nhấn bắt đầu để thử nghiệm.
+          </p>
           <button className="mt-6 rounded-lg bg-[#15A651] px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-95">
             Bắt đầu quét
           </button>

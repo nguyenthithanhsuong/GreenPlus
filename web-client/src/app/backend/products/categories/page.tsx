@@ -27,17 +27,26 @@ export default function ProductCategoriesTestPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/categories?sort=${encodeURIComponent(sort)}`);
-      const data = (await response.json()) as CategoryResult | { error: string };
+      const response = await fetch(
+        `/api/categories?sort=${encodeURIComponent(sort)}`,
+      );
+      const data = (await response.json()) as
+        CategoryResult | { error: string };
 
       if (!response.ok) {
-        throw new Error("error" in data ? data.error : "Load categories failed");
+        throw new Error(
+          "error" in data ? data.error : "Load categories failed",
+        );
       }
 
       setResult(data as CategoryResult);
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -46,8 +55,12 @@ export default function ProductCategoriesTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Danh mục</h1>
-        <p className="text-sm text-slate-600">Kiểm tra route /api/categories.</p>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Kiểm thử backend: Danh mục
+        </h1>
+        <p className="text-sm text-slate-600">
+          Kiểm tra route /api/categories.
+        </p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -72,7 +85,11 @@ export default function ProductCategoriesTestPage() {
         </section>
 
         {error && <p className="text-sm text-rose-700">{error}</p>}
-        {result && <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">{JSON.stringify(result, null, 2)}</pre>}
+        {result && (
+          <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        )}
       </div>
     </main>
   );

@@ -76,11 +76,11 @@ const FLAG_TO_PERMISSIONS: Record<string, string[]> = {
   is_admin: PERMISSION_KEYS.slice(),
   is_manager: [
     "auth.login",
-    
+
     "users.read",
-    
+
     "stores.read",
-    
+
     "suppliers.create",
     "suppliers.read",
     "suppliers.update",
@@ -89,37 +89,37 @@ const FLAG_TO_PERMISSIONS: Record<string, string[]> = {
     "categories.create",
     "categories.read",
     "categories.update",
-    
+
     "products.create",
     "products.read",
     "products.update",
-    
+
     "batches.create",
     "batches.read",
     "batches.update",
     "batches.delete",
-    
+
     "inventory.read",
     "inventory.update",
-    
+
     "prices.create",
     "prices.read",
     "prices.update",
-    
+
     "orders.read",
     "orders.assign",
     "orders.update_status",
-    
+
     "deliveries.view_assigned",
-    
+
     "content.create",
     "content.read",
     "content.update",
     "content.delete",
-    
+
     "complaints.read",
     "complaints.update",
-    
+
     "reports.business_view",
     "reports.customer_analytics",
     "reports.finance",
@@ -145,11 +145,16 @@ const FLAG_TO_PERMISSIONS: Record<string, string[]> = {
 };
 
 export async function getRoleRow(
-  roleId: string | null
+  roleId: string | null,
 ): Promise<RoleRow | null> {
   if (!roleId) return null;
   const supabase = createServiceRoleSupabaseClient();
-  const { data, error } = await supabase.from("roles").select("*").eq("role_id", roleId).limit(1).maybeSingle();
+  const { data, error } = await supabase
+    .from("roles")
+    .select("*")
+    .eq("role_id", roleId)
+    .limit(1)
+    .maybeSingle();
   if (error) {
     throw new AppError("Failed to load role information: " + error.message);
   }
@@ -175,34 +180,46 @@ export async function getPermissionsForRole(roleRow: RoleRow | null) {
 
     if (!error && Array.isArray(data)) {
       for (const row of data ?? []) {
-    const permissions = row.permissions as { key?: string }[];
-    
-  for (const permission of permissions ?? []) {
-    if (permission?.key) {
-      collected.add(permission.key);
+        const permissions = row.permissions as { key?: string }[];
+
+        for (const permission of permissions ?? []) {
+          if (permission?.key) {
+            collected.add(permission.key);
+          }
+        }
+      }
     }
-  }
-}
-  }
- } catch {
-  }
+  } catch {}
 
   return Array.from(collected.values());
 }
 
 export async function getPermissionsForUser(userId: string) {
   const supabase = createServiceRoleSupabaseClient();
-  const { data, error } = await supabase.from("users").select("role_id").eq("user_id", userId).limit(1).maybeSingle();
+  const { data, error } = await supabase
+    .from("users")
+    .select("role_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
   if (error) throw new AppError("Failed to read user role: " + error.message);
   const roleId = data?.role_id ?? null;
   const roleRow = await getRoleRow(roleId);
   return getPermissionsForRole(roleRow);
 }
 
-export async function hasPermissionForUser(userId: string, permissionKey: string) {
+export async function hasPermissionForUser(
+  userId: string,
+  permissionKey: string,
+) {
   if (!userId) return false;
   const supabase = createServiceRoleSupabaseClient();
-  const { data, error } = await supabase.from("users").select("role_id").eq("user_id", userId).limit(1).maybeSingle();
+  const { data, error } = await supabase
+    .from("users")
+    .select("role_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
   if (error) throw new AppError("Failed to read user role: " + error.message);
   const roleId = data?.role_id ?? null;
   const roleRow = await getRoleRow(roleId);
@@ -213,7 +230,10 @@ export async function hasPermissionForUser(userId: string, permissionKey: string
   return perms.includes(permissionKey);
 }
 
-export async function requirePermissionForUser(userId: string, permissionKey: string) {
+export async function requirePermissionForUser(
+  userId: string,
+  permissionKey: string,
+) {
   const ok = await hasPermissionForUser(userId, permissionKey);
   if (!ok) throw new AppError("Forbidden", 403);
 }

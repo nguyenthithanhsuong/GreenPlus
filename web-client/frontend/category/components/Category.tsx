@@ -214,7 +214,9 @@ const Category = () => {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [brokenImageIds, setBrokenImageIds] = useState<Record<string, boolean>>({});
+  const [brokenImageIds, setBrokenImageIds] = useState<Record<string, boolean>>(
+    {},
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -224,11 +226,17 @@ const Category = () => {
       setError(null);
 
       try {
-        const response = await fetch(`/api/categories?sort=${sortValue}`, { signal: controller.signal });
-        const data = (await response.json()) as CategoriesResponse | { error?: string };
+        const response = await fetch(`/api/categories?sort=${sortValue}`, {
+          signal: controller.signal,
+        });
+        const data = (await response.json()) as
+          CategoriesResponse | { error?: string };
 
         if (!response.ok) {
-          const message = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+          const message =
+            typeof data === "object" && data && "error" in data
+              ? String(data.error ?? "")
+              : "";
           throw new Error(message || "Không thể tải danh mục.");
         }
 
@@ -239,7 +247,11 @@ const Category = () => {
         }
 
         setCategories([]);
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải danh mục.");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải danh mục.",
+        );
       } finally {
         setLoading(false);
       }
@@ -253,7 +265,9 @@ const Category = () => {
   }, [sortValue]);
 
   const handleCycleSort = () => {
-    setSortValue((current) => (current === "name_asc" ? "name_desc" : "name_asc"));
+    setSortValue((current) =>
+      current === "name_asc" ? "name_desc" : "name_asc",
+    );
   };
 
   const sortLabel = useMemo(() => {
@@ -264,7 +278,8 @@ const Category = () => {
     const allCategory: CategoryItem = {
       categoryId: "all",
       name: "Tất cả",
-      imageUrl: "https://ujgnuwlljslwokblmrwi.supabase.co/storage/v1/object/public/General/products%20(1).png",
+      imageUrl:
+        "https://ujgnuwlljslwokblmrwi.supabase.co/storage/v1/object/public/General/products%20(1).png",
     };
 
     const keyword = searchValue.trim().toLowerCase();
@@ -272,91 +287,123 @@ const Category = () => {
       return [allCategory, ...categories];
     }
 
-    return [allCategory, ...categories.filter((category) => category.name.toLowerCase().includes(keyword))];
+    return [
+      allCategory,
+      ...categories.filter((category) =>
+        category.name.toLowerCase().includes(keyword),
+      ),
+    ];
   }, [categories, searchValue]);
 
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-        <div style={styles.iconPlaceholder}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M15 18L9 12L15 6" stroke="#081B15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <h1 style={styles.headerTitle}>Danh Mục</h1>
-        <div style={{ width: "24px" }}></div>
+          <div style={styles.iconPlaceholder}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#081B15"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h1 style={styles.headerTitle}>Danh Mục</h1>
+          <div style={{ width: "24px" }}></div>
         </header>
 
         <main style={styles.mainContent}>
-        <div style={styles.sectionFrame}>
-          <div style={styles.searchSection}>
-            <div style={styles.searchInputContainer}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
-                  stroke="#AAAAAA"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+          <div style={styles.sectionFrame}>
+            <div style={styles.searchSection}>
+              <div style={styles.searchInputContainer}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
+                    stroke="#AAAAAA"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M21 21L16.65 16.65"
+                    stroke="#AAAAAA"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  value={searchValue}
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  placeholder="Tìm kiếm Danh Mục"
+                  style={styles.searchInput}
                 />
-                <path d="M21 21L16.65 16.65" stroke="#AAAAAA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Tìm kiếm Danh Mục"
-                style={styles.searchInput}
-              />
-            </div>
-            <button type="button" style={styles.filterButton} onClick={handleCycleSort} aria-label={`Đổi kiểu sắp xếp: ${sortLabel}`}>
-              <span style={styles.filterButtonLabel}>{sortLabel}</span>
-            </button>
-          </div>
-
-          <div style={styles.categorySection}>
-            <h2 style={styles.sectionTitle}>Tất cả danh mục</h2>
-
-            {loading && <p style={styles.infoText}>Đang tải danh mục...</p>}
-            {!loading && error && <p style={styles.errorText}>{error}</p>}
-            {!loading && !error && filteredCategories.length === 0 && <p style={styles.infoText}>Không có danh mục phù hợp.</p>}
-
-            {!loading && !error && filteredCategories.length > 0 && (
-              <div style={styles.gridContainer}>
-                {filteredCategories.map((category) => {
-                  const hasImage = Boolean(category.imageUrl) && !brokenImageIds[category.categoryId];
-                  const categoryHref = `/category-products/${category.categoryId}?name=${encodeURIComponent(category.name)}&backTo=${encodeURIComponent("/category")}`;
-
-                  return (
-                    <Link key={category.categoryId} href={categoryHref} style={styles.cardLink}>
-                      <div style={styles.categoryCard}>
-                        <div style={styles.imageContainer}>
-                          {hasImage ? (
-                            <img
-                              src={category.imageUrl ?? ""}
-                              alt={category.name}
-                              style={styles.categoryImage}
-                              onError={() =>
-                                setBrokenImageIds((previous) => ({
-                                  ...previous,
-                                  [category.categoryId]: true,
-                                }))
-                              }
-                            />
-                          ) : (
-                            <div style={styles.placeholderImage}></div>
-                          )}
-                        </div>
-                        <span style={styles.categoryName}>{category.name}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
               </div>
-            )}
+              <button
+                type="button"
+                style={styles.filterButton}
+                onClick={handleCycleSort}
+                aria-label={`Đổi kiểu sắp xếp: ${sortLabel}`}
+              >
+                <span style={styles.filterButtonLabel}>{sortLabel}</span>
+              </button>
+            </div>
+
+            <div style={styles.categorySection}>
+              <h2 style={styles.sectionTitle}>Tất cả danh mục</h2>
+
+              {loading && <p style={styles.infoText}>Đang tải danh mục...</p>}
+              {!loading && error && <p style={styles.errorText}>{error}</p>}
+              {!loading && !error && filteredCategories.length === 0 && (
+                <p style={styles.infoText}>Không có danh mục phù hợp.</p>
+              )}
+
+              {!loading && !error && filteredCategories.length > 0 && (
+                <div style={styles.gridContainer}>
+                  {filteredCategories.map((category) => {
+                    const hasImage =
+                      Boolean(category.imageUrl) &&
+                      !brokenImageIds[category.categoryId];
+                    const categoryHref = `/category-products/${category.categoryId}?name=${encodeURIComponent(category.name)}&backTo=${encodeURIComponent("/category")}`;
+
+                    return (
+                      <Link
+                        key={category.categoryId}
+                        href={categoryHref}
+                        style={styles.cardLink}
+                      >
+                        <div style={styles.categoryCard}>
+                          <div style={styles.imageContainer}>
+                            {hasImage ? (
+                              <img
+                                src={category.imageUrl ?? ""}
+                                alt={category.name}
+                                style={styles.categoryImage}
+                                onError={() =>
+                                  setBrokenImageIds((previous) => ({
+                                    ...previous,
+                                    [category.categoryId]: true,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              <div style={styles.placeholderImage}></div>
+                            )}
+                          </div>
+                          <span style={styles.categoryName}>
+                            {category.name}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         </main>
 
         <NavigationBar />

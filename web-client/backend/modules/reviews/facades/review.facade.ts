@@ -1,4 +1,8 @@
-import { CreateReviewInput, ReviewCreatedResult, ReviewListItem } from "../review.types";
+import {
+  CreateReviewInput,
+  ReviewCreatedResult,
+  ReviewListItem,
+} from "../review.types";
 import { ReviewService } from "../review.service";
 
 export class ReviewFacade {

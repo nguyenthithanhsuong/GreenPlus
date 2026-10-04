@@ -20,7 +20,9 @@ export class SubscriptionFacade {
     this.subject.attach(new SubscriptionAuditObserver());
   }
 
-  async subscribe(input: CreateSubscriptionInput): Promise<CreateSubscriptionResult> {
+  async subscribe(
+    input: CreateSubscriptionInput,
+  ): Promise<CreateSubscriptionResult> {
     const created = await this.service.createSubscription(input);
 
     this.subject.notify({
@@ -38,7 +40,9 @@ export class SubscriptionFacade {
     return this.service.listSubscriptionsByUserId(userId);
   }
 
-  async unsubscribe(input: CancelSubscriptionInput): Promise<CancelSubscriptionResult> {
+  async unsubscribe(
+    input: CancelSubscriptionInput,
+  ): Promise<CancelSubscriptionResult> {
     const cancelled = await this.service.cancelSubscription(input);
 
     this.subject.notify({
@@ -52,7 +56,9 @@ export class SubscriptionFacade {
     return cancelled;
   }
 
-  async updateSubscription(input: UpdateSubscriptionInput): Promise<SubscriptionSummary> {
+  async updateSubscription(
+    input: UpdateSubscriptionInput,
+  ): Promise<SubscriptionSummary> {
     const updated = await this.service.updateSubscription(input);
 
     this.subject.notify({

@@ -7,7 +7,11 @@ import { usePermissions } from "@/lib/usePermissions";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import PriceStats from "./PriceStats";
 import PriceTable from "./PriceTable";
-import PriceDrawer, { BatchOption, PriceDrawerMode, PriceFormValues } from "./PriceDrawer";
+import PriceDrawer, {
+  BatchOption,
+  PriceDrawerMode,
+  PriceFormValues,
+} from "./PriceDrawer";
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 import type { BatchRow } from "../../backend/modules/batches/batch-management.types";
 import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
@@ -41,10 +45,15 @@ const PriceManagement = () => {
   const [form, setForm] = useState<PriceFormValues>(emptyForm());
   const [drawerError, setDrawerError] = useState<string | null>(null);
   const [moderationDialogOpen, setModerationDialogOpen] = useState(false);
-  const [moderationTarget, setModerationTarget] = useState<PriceRow | null>(null);
-  const [moderationNextStatus, setModerationNextStatus] = useState<"active" | "inactive" | null>(null);
+  const [moderationTarget, setModerationTarget] = useState<PriceRow | null>(
+    null,
+  );
+  const [moderationNextStatus, setModerationNextStatus] = useState<
+    "active" | "inactive" | null
+  >(null);
 
-  const canForceManagePrice = (profile?.roleName ?? "").trim().toLowerCase() === "admin";
+  const canForceManagePrice =
+    (profile?.roleName ?? "").trim().toLowerCase() === "admin";
 
   const { hasPermission, loading: permLoading } = usePermissions();
 
@@ -54,7 +63,10 @@ const PriceManagement = () => {
 
     try {
       const response = await fetch("/api/prices", { cache: "no-store" });
-      const data = (await response.json()) as { items?: PriceRow[]; error?: string };
+      const data = (await response.json()) as {
+        items?: PriceRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải bảng giá");
@@ -62,7 +74,11 @@ const PriceManagement = () => {
 
       setItems(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải bảng giá");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải bảng giá",
+      );
       setItems([]);
     } finally {
       setLoading(false);
@@ -72,7 +88,10 @@ const PriceManagement = () => {
   const loadBatches = useCallback(async () => {
     try {
       const response = await fetch("/api/batches", { cache: "no-store" });
-      const data = (await response.json()) as { items?: BatchRow[]; error?: string };
+      const data = (await response.json()) as {
+        items?: BatchRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách batch");
@@ -99,7 +118,7 @@ const PriceManagement = () => {
 
   const filteredItems = useMemo(
     () => priceSearchStrategy.filter(items, searchQuery),
-    [items, searchQuery]
+    [items, searchQuery],
   );
 
   const stats = useMemo(() => {
@@ -159,11 +178,14 @@ const PriceManagement = () => {
     setModerationNextStatus(null);
   }, []);
 
-  const openModerationDialog = useCallback((item: PriceRow, nextStatus: "active" | "inactive") => {
-    setModerationTarget(item);
-    setModerationNextStatus(nextStatus);
-    setModerationDialogOpen(true);
-  }, []);
+  const openModerationDialog = useCallback(
+    (item: PriceRow, nextStatus: "active" | "inactive") => {
+      setModerationTarget(item);
+      setModerationNextStatus(nextStatus);
+      setModerationDialogOpen(true);
+    },
+    [],
+  );
 
   const submitModeration = useCallback(async () => {
     if (!moderationTarget || !moderationNextStatus) {
@@ -174,11 +196,14 @@ const PriceManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch(`/api/prices/${encodeURIComponent(moderationTarget.price_id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: moderationNextStatus }),
-      });
+      const response = await fetch(
+        `/api/prices/${encodeURIComponent(moderationTarget.price_id)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: moderationNextStatus }),
+        },
+      );
 
       const data = (await response.json()) as { error?: string };
 
@@ -189,12 +214,20 @@ const PriceManagement = () => {
       closeModerationDialog();
       await loadPrices();
     } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Thao tác thất bại";
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Thao tác thất bại";
       setError(message);
     } finally {
       setSaving(false);
     }
-  }, [closeModerationDialog, loadPrices, moderationNextStatus, moderationTarget]);
+  }, [
+    closeModerationDialog,
+    loadPrices,
+    moderationNextStatus,
+    moderationTarget,
+  ]);
 
   const patchForm = useCallback((patch: Partial<PriceFormValues>) => {
     setForm((current) => ({ ...current, ...patch }));
@@ -263,9 +296,12 @@ const PriceManagement = () => {
 
       if (drawerMode === "delete" && selectedPrice) {
         const force = canForceManagePrice && selectedPrice.status === "active";
-        const response = await fetch(`/api/prices/${encodeURIComponent(selectedPrice.price_id)}${force ? "?force=true" : ""}`, {
-          method: "DELETE",
-        });
+        const response = await fetch(
+          `/api/prices/${encodeURIComponent(selectedPrice.price_id)}${force ? "?force=true" : ""}`,
+          {
+            method: "DELETE",
+          },
+        );
 
         const data = (await response.json()) as { error?: string };
         if (!response.ok) {
@@ -276,13 +312,23 @@ const PriceManagement = () => {
       closeDrawer();
       await loadPrices();
     } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Thao tác thất bại";
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Thao tác thất bại";
       setDrawerError(message);
       setError(message);
     } finally {
       setSaving(false);
     }
-  }, [canForceManagePrice, closeDrawer, drawerMode, form, loadPrices, selectedPrice]);
+  }, [
+    canForceManagePrice,
+    closeDrawer,
+    drawerMode,
+    form,
+    loadPrices,
+    selectedPrice,
+  ]);
 
   return (
     <AdminShell
@@ -299,7 +345,7 @@ const PriceManagement = () => {
             <RefreshCw className="h-4 w-4" />
             Tải lại
           </button>
-          {!permLoading && hasPermission('prices.create') && (
+          {!permLoading && hasPermission("prices.create") && (
             <button
               type="button"
               onClick={openCreateDrawer}
@@ -358,7 +404,9 @@ const PriceManagement = () => {
             : "Bạn sắp thay đổi trạng thái giá. Hành động này sẽ đổi ngay lập tức."
         }
         confirmLabel={moderationNextStatus === "active" ? "Duyệt" : "Từ chối"}
-        confirmVariant={moderationNextStatus === "active" ? "warning" : "danger"}
+        confirmVariant={
+          moderationNextStatus === "active" ? "warning" : "danger"
+        }
         loading={saving}
         onCancel={closeModerationDialog}
         onConfirm={() => {

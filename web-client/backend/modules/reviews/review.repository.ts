@@ -41,7 +41,10 @@ type ReviewListRawRow = {
   rating: number;
   comment: string | null;
   created_at: string;
-  users: { name: string | null; image_url: string | null } | { name: string | null; image_url: string | null }[] | null;
+  users:
+    | { name: string | null; image_url: string | null }
+    | { name: string | null; image_url: string | null }[]
+    | null;
 };
 
 export class ReviewRepository {
@@ -56,10 +59,15 @@ export class ReviewRepository {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as DeliveredOrderRow[]).map((row) => String(row.order_id));
+    return ((data ?? []) as DeliveredOrderRow[]).map((row) =>
+      String(row.order_id),
+    );
   }
 
-  async hasDeliveredOrderItemForProduct(orderIds: string[], productId: string): Promise<boolean> {
+  async hasDeliveredOrderItemForProduct(
+    orderIds: string[],
+    productId: string,
+  ): Promise<boolean> {
     if (orderIds.length === 0) {
       return false;
     }
@@ -115,10 +123,15 @@ export class ReviewRepository {
     return ((data ?? []) as ReviewRatingRow[]).map((row) => Number(row.rating));
   }
 
-  async listReviewsByProduct(productId: string, limit = 20): Promise<ReviewListRow[]> {
+  async listReviewsByProduct(
+    productId: string,
+    limit = 20,
+  ): Promise<ReviewListRow[]> {
     const { data, error } = await supabaseServer
       .from("reviews")
-      .select("review_id,user_id,product_id,rating,comment,created_at,users(name,image_url)")
+      .select(
+        "review_id,user_id,product_id,rating,comment,created_at,users(name,image_url)",
+      )
       .eq("product_id", productId)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -136,7 +149,7 @@ export class ReviewRepository {
       rating: Number(row.rating),
       comment: row.comment,
       created_at: String(row.created_at),
-      users: Array.isArray(row.users) ? row.users[0] ?? null : row.users,
+      users: Array.isArray(row.users) ? (row.users[0] ?? null) : row.users,
     }));
   }
 }

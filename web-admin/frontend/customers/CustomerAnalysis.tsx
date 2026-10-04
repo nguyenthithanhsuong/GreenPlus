@@ -43,7 +43,11 @@ const CustomerAnalysis = () => {
       setUsers(nextUsers);
       setOrders(nextOrders);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu khách hàng");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải dữ liệu khách hàng",
+      );
       setUsers([]);
       setOrders([]);
     } finally {
@@ -56,7 +60,12 @@ const CustomerAnalysis = () => {
   }, [loadData]);
 
   const todayLabel = useMemo(
-    () => new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date()),
+    () =>
+      new Intl.DateTimeFormat("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(new Date()),
     [],
   );
 
@@ -85,7 +94,9 @@ const CustomerAnalysis = () => {
       }
     >
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
       ) : null}
 
       <CustomerStats users={users} orders={orders} loading={loading} />

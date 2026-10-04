@@ -262,7 +262,13 @@ function formatPrice(value: number | null): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
 }
 
-export default function CategoryProducts({ categoryId, categoryName, backHref, initialKeyword, initialSort }: CategoryProductsProps) {
+export default function CategoryProducts({
+  categoryId,
+  categoryName,
+  backHref,
+  initialKeyword,
+  initialSort,
+}: CategoryProductsProps) {
   const { isAuthenticated, user: authUser } = useAuthStore();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -275,7 +281,9 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
 
     return "newest";
   });
-  const [cartActionMessage, setCartActionMessage] = useState<string | null>(null);
+  const [cartActionMessage, setCartActionMessage] = useState<string | null>(
+    null,
+  );
   const [cartActionLoading, setCartActionLoading] = useState(false);
 
   useEffect(() => {
@@ -320,10 +328,14 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
         const response = await fetch(`/api/products?${query.toString()}`, {
           signal: controller.signal,
         });
-        const data = (await response.json()) as ProductsResponse | { error?: string };
+        const data = (await response.json()) as
+          ProductsResponse | { error?: string };
 
         if (!response.ok) {
-          const message = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+          const message =
+            typeof data === "object" && data && "error" in data
+              ? String(data.error ?? "")
+              : "";
           throw new Error(message || "Không thể tải sản phẩm.");
         }
 
@@ -334,7 +346,11 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
         }
 
         setProducts([]);
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải sản phẩm.");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải sản phẩm.",
+        );
       } finally {
         setLoading(false);
       }
@@ -380,7 +396,10 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
       setCartActionMessage(`Đã thêm ${productName} vào Giỏ hàng!`);
       setTimeout(() => setCartActionMessage(null), 4000);
     } catch (requestError) {
-      const errorMsg = requestError instanceof Error ? requestError.message : "Không thể thêm sản phẩm vào giỏ hàng.";
+      const errorMsg =
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể thêm sản phẩm vào giỏ hàng.";
       setCartActionMessage(errorMsg);
       setTimeout(() => setCartActionMessage(null), 4000);
     } finally {
@@ -438,9 +457,19 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href={backHref ?? "/dashboard"} style={styles.iconButton} aria-label="Quay lại Dashboard">
+          <Link
+            href={backHref ?? "/dashboard"}
+            style={styles.iconButton}
+            aria-label="Quay lại Dashboard"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.topTitle}>{resolvedCategoryName}</h1>
@@ -450,9 +479,26 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
         <main style={styles.mainContent}>
           <div style={styles.searchSection}>
             <div style={styles.searchBox}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" stroke="#AAAAAA" strokeWidth="2" />
-                <path d="m20 20-4-4" stroke="#AAAAAA" strokeWidth="2" strokeLinecap="round" />
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                  stroke="#AAAAAA"
+                  strokeWidth="2"
+                />
+                <path
+                  d="m20 20-4-4"
+                  stroke="#AAAAAA"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
               <input
                 value={searchValue}
@@ -462,46 +508,100 @@ export default function CategoryProducts({ categoryId, categoryName, backHref, i
               />
             </div>
 
-            <button type="button" style={styles.sortButton} onClick={handleCycleSort} aria-label={`Đổi kiểu sắp xếp: ${sortLabel}`}>
+            <button
+              type="button"
+              style={styles.sortButton}
+              onClick={handleCycleSort}
+              aria-label={`Đổi kiểu sắp xếp: ${sortLabel}`}
+            >
               <span style={styles.sortButtonLabel}>{sortLabel}</span>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 6h16M7 12h10M10 18h4" stroke="#51B788" strokeWidth="2" strokeLinecap="round" />
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 6h16M7 12h10M10 18h4"
+                  stroke="#51B788"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
           </div>
 
-          <p style={styles.description}>Danh sách sản phẩm thuộc danh mục đã chọn.</p>
+          <p style={styles.description}>
+            Danh sách sản phẩm thuộc danh mục đã chọn.
+          </p>
 
           {loading && <p style={styles.infoText}>Đang tải sản phẩm...</p>}
           {!loading && error && <p style={styles.errorText}>{error}</p>}
-          {!loading && !error && products.length === 0 && <p style={styles.infoText}>{categoryId === "all" ? "Chưa có sản phẩm nào." : "Danh mục này chưa có sản phẩm."}</p>}
+          {!loading && !error && products.length === 0 && (
+            <p style={styles.infoText}>
+              {categoryId === "all"
+                ? "Chưa có sản phẩm nào."
+                : "Danh mục này chưa có sản phẩm."}
+            </p>
+          )}
 
           {!loading && !error && products.length > 0 && (
             <div style={styles.productGrid}>
               {products.map((product) => (
-                <div key={product.productId} style={{ display: "flex", flexDirection: "column", position: "relative" }}>
-                  <Link href={`/product-detail/${product.productId}?backTo=${encodeURIComponent(backHref ?? "/dashboard")}`} style={styles.productLink}>
+                <div
+                  key={product.productId}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    position: "relative",
+                  }}
+                >
+                  <Link
+                    href={`/product-detail/${product.productId}?backTo=${encodeURIComponent(backHref ?? "/dashboard")}`}
+                    style={styles.productLink}
+                  >
                     <article style={styles.productCard}>
                       <div style={styles.productImageWrap}>
                         <img
-                          src={product.imageUrl ?? "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"}
+                          src={
+                            product.imageUrl ??
+                            "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"
+                          }
                           alt={product.name}
                           style={styles.productImage}
                         />
                       </div>
                       <div style={styles.productContent}>
                         <p style={styles.productName}>{product.name}</p>
-                        <p style={styles.productMeta}>{product.categoryName ?? "Sản phẩm"}</p>
-                        <p style={styles.statusText}>{product.isAvailable ? "Sẵn hàng" : "Tạm hết hàng"}</p>
+                        <p style={styles.productMeta}>
+                          {product.categoryName ?? "Sản phẩm"}
+                        </p>
+                        <p style={styles.statusText}>
+                          {product.isAvailable ? "Sẵn hàng" : "Tạm hết hàng"}
+                        </p>
                         <div style={styles.priceRow}>
-                          <p style={{ ...styles.productMeta, margin: 0, fontWeight: 700 }}>{formatPrice(product.price)}</p>
+                          <p
+                            style={{
+                              ...styles.productMeta,
+                              margin: 0,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {formatPrice(product.price)}
+                          </p>
                         </div>
                       </div>
                     </article>
                   </Link>
                   <button
                     type="button"
-                    style={{ ...styles.addButton, alignSelf: "flex-end", marginTop: "-42px", marginRight: "8px" }}
+                    style={{
+                      ...styles.addButton,
+                      alignSelf: "flex-end",
+                      marginTop: "-42px",
+                      marginRight: "8px",
+                    }}
                     aria-label={`Thêm ${product.name}`}
                     onClick={() => void handleAddToCart(product.productId)}
                   >

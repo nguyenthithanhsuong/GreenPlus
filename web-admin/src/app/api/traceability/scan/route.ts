@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { traceabilityFacade } from "../../../../../backend/modules/traceability/facades/traceability.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 type ScanBody = {
   qrCode?: string;
@@ -17,22 +17,14 @@ export const POST = withSentry(async (request: Request) => {
   });
 
   if (!qrCode) {
-    logger.warn(
-      "Scan product origin failed - missing qrCode",
-    );
+    logger.warn("Scan product origin failed - missing qrCode");
 
-    return NextResponse.json(
-      { error: "qrCode is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "qrCode is required" }, { status: 400 });
   }
 
   const start = Date.now();
 
-  const result =
-    await traceabilityFacade.scanProductOrigin(
-      qrCode,
-    );
+  const result = await traceabilityFacade.scanProductOrigin(qrCode);
 
   logger.info("Scan product origin success", {
     qrCode,

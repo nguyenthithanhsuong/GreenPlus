@@ -25,9 +25,7 @@ import { usePermissions } from "@/lib/usePermissions";
 const navGroups = [
   {
     label: "Tổng quan",
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    ],
+    items: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
     label: "Hệ thống",
@@ -68,8 +66,8 @@ export default function AdminSidebar() {
   const { permissions, loading } = usePermissions();
 
   function allowed(href: string) {
-    if (!permissions) return false; 
-    
+    if (!permissions) return false;
+
     if (href === "/dashboard" || href === "/settings") return true;
 
     const map: Record<string, string> = {
@@ -97,7 +95,11 @@ export default function AdminSidebar() {
   return (
     <aside className="w-[260px] h-screen bg-white border-r border-gray-100 flex flex-col font-sans shrink-0">
       <div className="h-20 flex items-center px-6 border-b border-gray-50">
-        <Link href="/dashboard" className="inline-flex" aria-label="GreenPlus dashboard">
+        <Link
+          href="/dashboard"
+          className="inline-flex"
+          aria-label="GreenPlus dashboard"
+        >
           <img
             src="https://ujgnuwlljslwokblmrwi.supabase.co/storage/v1/object/public/General/IconText.png"
             alt="GreenPlus Logo"
@@ -109,34 +111,37 @@ export default function AdminSidebar() {
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
         {navGroups.map((group) => (
           <div key={group.label}>
-            <h3 className="text-sm font-semibold text-gray-400 mb-3 px-3">{group.label}</h3>
+            <h3 className="text-sm font-semibold text-gray-400 mb-3 px-3">
+              {group.label}
+            </h3>
             <ul className="space-y-1">
               {group.items
                 .filter((it) => {
-                  
                   if (loading) return false;
                   return allowed(it.href);
                 })
                 .map((item) => {
-                const Icon = item.icon;
-                const active = isRouteActive(pathname, item.href);
+                  const Icon = item.icon;
+                  const active = isRouteActive(pathname, item.href);
 
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={`flex items-center px-3 py-3 rounded-xl transition-colors ${
-                        active
-                          ? "text-[#059669] bg-[#F0FDF4] font-medium"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      }`}
-                    >
-                      <Icon className={`w-[22px] h-[22px] mr-3 ${active ? "text-[#059669]" : "text-gray-800"}`} />
-                      <span className="text-[15px]">{item.label}</span>
-                    </Link>
-                  </li>
-                );
-              })}
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`flex items-center px-3 py-3 rounded-xl transition-colors ${
+                          active
+                            ? "text-[#059669] bg-[#F0FDF4] font-medium"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                      >
+                        <Icon
+                          className={`w-[22px] h-[22px] mr-3 ${active ? "text-[#059669]" : "text-gray-800"}`}
+                        />
+                        <span className="text-[15px]">{item.label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
             </ul>
           </div>
         ))}

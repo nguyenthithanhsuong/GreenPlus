@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { priceManagementFacade } from "../../../../backend/modules/prices/facades/price-management.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const GET = withSentry(async () => {
   logger.info("List prices attempt");
@@ -15,10 +15,7 @@ export const GET = withSentry(async () => {
     duration_ms: Date.now() - start,
   });
 
-  return NextResponse.json(
-    { items, total: items.length },
-    { status: 200 },
-  );
+  return NextResponse.json({ items, total: items.length }, { status: 200 });
 });
 
 export const POST = withSentry(async (request: Request) => {

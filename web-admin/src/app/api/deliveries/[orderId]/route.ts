@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
 import { deliveryTrackingFacade } from "../../../../../backend/modules/delivery-tracking/facades/delivery-tracking.facade";
 import type { DeliveryStatus } from "../../../../../backend/modules/delivery-tracking/delivery-tracking.types";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 type Context = {
   params: Promise<{
@@ -12,7 +12,12 @@ type Context = {
 };
 
 const parseDeliveryStatus = (value: string | undefined): DeliveryStatus => {
-  if (value === "assigned" || value === "picked_up" || value === "delivering" || value === "delivered") {
+  if (
+    value === "assigned" ||
+    value === "picked_up" ||
+    value === "delivering" ||
+    value === "delivered"
+  ) {
     return value;
   }
 
@@ -25,7 +30,7 @@ const getHandler = async (_: Request, context: Context) => {
 
   const start = Date.now();
   const detail = await deliveryTrackingFacade.getDeliveryDetail(orderId);
-  
+
   logger.info("Get delivery detail success", {
     orderId,
     duration_ms: Date.now() - start,
@@ -43,7 +48,10 @@ const patchHandler = async (request: Request, context: Context) => {
     note?: string;
   };
 
-  logger.info("Update delivery status attempt", { orderId, status: body.status });
+  logger.info("Update delivery status attempt", {
+    orderId,
+    status: body.status,
+  });
 
   const start = Date.now();
   const updated = await deliveryTrackingFacade.updateDeliveryStatus({
@@ -63,4 +71,6 @@ const patchHandler = async (request: Request, context: Context) => {
 };
 
 export const GET = withSentry(getHandler as Parameters<typeof withSentry>[0]);
-export const PATCH = withSentry(patchHandler as Parameters<typeof withSentry>[0]);
+export const PATCH = withSentry(
+  patchHandler as Parameters<typeof withSentry>[0],
+);

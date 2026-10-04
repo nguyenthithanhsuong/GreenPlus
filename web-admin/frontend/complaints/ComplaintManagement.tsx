@@ -8,18 +8,25 @@ import ComplaintTable from "./ComplaintTable";
 import ComplaintDrawer from "./ComplaintDrawer";
 import RejectReasonDialog from "./RejectReasonDialog";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
-import { ComplaintRow, ComplaintStatus } from "../../backend/modules/complaints/complaint-management.types";
+import {
+  ComplaintRow,
+  ComplaintStatus,
+} from "../../backend/modules/complaints/complaint-management.types";
 
 type ComplaintStatusFilter = "all" | ComplaintStatus;
 
-const normalizeText = (value: string | null | undefined) => (value ?? "").trim().toLowerCase();
+const normalizeText = (value: string | null | undefined) =>
+  (value ?? "").trim().toLowerCase();
 
 const ComplaintManagement = () => {
   const [complaints, setComplaints] = useState<ComplaintRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [savingComplaintId, setSavingComplaintId] = useState<string | null>(null);
+  const [savingComplaintId, setSavingComplaintId] = useState<string | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
-  const [activeStatus, setActiveStatus] = useState<ComplaintStatusFilter>("all");
+  const [activeStatus, setActiveStatus] =
+    useState<ComplaintStatusFilter>("all");
   const [searchValue, setSearchValue] = useState("");
 
   const loadComplaints = useCallback(async () => {
@@ -28,7 +35,10 @@ const ComplaintManagement = () => {
 
     try {
       const response = await fetch("/api/complaints", { cache: "no-store" });
-      const data = (await response.json()) as { items?: ComplaintRow[]; error?: string };
+      const data = (await response.json()) as {
+        items?: ComplaintRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách khiếu nại");
@@ -36,7 +46,11 @@ const ComplaintManagement = () => {
 
       setComplaints(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải danh sách khiếu nại");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải danh sách khiếu nại",
+      );
       setComplaints([]);
     } finally {
       setLoading(false);
@@ -48,37 +62,51 @@ const ComplaintManagement = () => {
   }, [loadComplaints]);
 
   const updateStatus = useCallback(
-    async (complaint: ComplaintRow, status: ComplaintStatus, rejectReason?: string) => {
+    async (
+      complaint: ComplaintRow,
+      status: ComplaintStatus,
+      rejectReason?: string,
+    ) => {
       setSavingComplaintId(complaint.complaint_id);
       setError(null);
 
       try {
-        const response = await fetch(`/api/complaints/${encodeURIComponent(complaint.complaint_id)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, rejectReason }),
-        });
+        const response = await fetch(
+          `/api/complaints/${encodeURIComponent(complaint.complaint_id)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status, rejectReason }),
+          },
+        );
 
         const data = (await response.json()) as { error?: string };
         if (!response.ok) {
-          throw new Error(data.error ?? "Không thể cập nhật trạng thái khiếu nại");
+          throw new Error(
+            data.error ?? "Không thể cập nhật trạng thái khiếu nại",
+          );
         }
 
         await loadComplaints();
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật trạng thái khiếu nại");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể cập nhật trạng thái khiếu nại",
+        );
       } finally {
         setSavingComplaintId(null);
       }
     },
-    [loadComplaints]
+    [loadComplaints],
   );
 
   const filteredComplaints = useMemo(() => {
     const keyword = normalizeText(searchValue);
 
     return complaints.filter((complaint) => {
-      const statusMatch = activeStatus === "all" || complaint.status === activeStatus;
+      const statusMatch =
+        activeStatus === "all" || complaint.status === activeStatus;
       if (!statusMatch) {
         return false;
       }
@@ -102,13 +130,24 @@ const ComplaintManagement = () => {
   }, [activeStatus, complaints, searchValue]);
 
   const stats = useMemo(() => {
-    const pendingCount = complaints.filter((item) => item.status === "pending").length;
-    const resolvedCount = complaints.filter((item) => item.status === "resolved").length;
-    const rejectedCount = complaints.filter((item) => item.status === "rejected").length;
+    const pendingCount = complaints.filter(
+      (item) => item.status === "pending",
+    ).length;
+    const resolvedCount = complaints.filter(
+      (item) => item.status === "resolved",
+    ).length;
+    const rejectedCount = complaints.filter(
+      (item) => item.status === "rejected",
+    ).length;
 
     const refundOrReturnCount = complaints.filter((item) => {
       const normalized = normalizeText(item.type);
-      return normalized.includes("hoàn") || normalized.includes("refund") || normalized.includes("đổi") || normalized.includes("trả");
+      return (
+        normalized.includes("hoàn") ||
+        normalized.includes("refund") ||
+        normalized.includes("đổi") ||
+        normalized.includes("trả")
+      );
     }).length;
 
     const feedbackCount = complaints.length - refundOrReturnCount;
@@ -122,8 +161,11 @@ const ComplaintManagement = () => {
     };
   }, [complaints]);
 
-  const [selectedComplaint, setSelectedComplaint] = useState<ComplaintRow | null>(null);
-  const [resolveComplaint, setResolveComplaint] = useState<ComplaintRow | null>(null);
+  const [selectedComplaint, setSelectedComplaint] =
+    useState<ComplaintRow | null>(null);
+  const [resolveComplaint, setResolveComplaint] = useState<ComplaintRow | null>(
+    null,
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
 
@@ -161,7 +203,9 @@ const ComplaintManagement = () => {
       pageActions={pageActions}
     >
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
       ) : null}
 
       <ComplaintStats {...stats} />
@@ -179,7 +223,11 @@ const ComplaintManagement = () => {
         onReject={handleReject}
       />
 
-      <ComplaintDrawer open={drawerOpen} complaint={selectedComplaint} onClose={() => setDrawerOpen(false)} />
+      <ComplaintDrawer
+        open={drawerOpen}
+        complaint={selectedComplaint}
+        onClose={() => setDrawerOpen(false)}
+      />
 
       <ConfirmActionDialog
         open={Boolean(resolveComplaint)}
@@ -216,4 +264,3 @@ const ComplaintManagement = () => {
 };
 
 export default ComplaintManagement;
- 

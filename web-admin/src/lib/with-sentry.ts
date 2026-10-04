@@ -7,7 +7,10 @@ type Handler<TRequest extends Request, TContext> = (
   context: TContext,
 ) => Promise<Response>;
 
-export function withSentry<TRequest extends Request, TContext = { params: Promise<Record<string, string>> }>(handler: Handler<TRequest, TContext>): Handler<TRequest, TContext> {
+export function withSentry<
+  TRequest extends Request,
+  TContext = { params: Promise<Record<string, string>> },
+>(handler: Handler<TRequest, TContext>): Handler<TRequest, TContext> {
   return async (request: TRequest, context: TContext): Promise<Response> => {
     try {
       return await handler(request, context);

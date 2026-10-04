@@ -55,6 +55,6 @@ export const useAuthStore = create<AuthState>()(
       onRehydrateStorage: () => (state) => {
         state?.setInitialized(true);
       },
-    }
-  )
+    },
+  ),
 );

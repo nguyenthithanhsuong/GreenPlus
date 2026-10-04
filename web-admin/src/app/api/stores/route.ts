@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { storesManagementFacade } from "../../../../backend/modules/stores/facades/stores-management.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   logger.info("List stores attempt");
@@ -20,14 +20,16 @@ export async function GET() {
   } catch (error) {
     if (error instanceof AppError) {
       logger.error("List stores failed", { message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
-    logger.error("List stores unexpected error", { error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
+    logger.error("List stores unexpected error", {
+      error: toErrorMessage(error),
+    });
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -79,13 +81,15 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof AppError) {
       logger.error("Create store failed", { message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
-    logger.error("Create store unexpected error", { error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
+    logger.error("Create store unexpected error", {
+      error: toErrorMessage(error),
+    });
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }

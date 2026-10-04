@@ -6,8 +6,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Eye, EyeOff } from "lucide-react";
-import { logger } from "@/lib/logger"; 
-
+import { logger } from "@/lib/logger";
 
 type AuthMode = "login" | "register";
 
@@ -19,7 +18,8 @@ function getAuthCopy(mode: AuthMode) {
   return mode === "login"
     ? {
         title: "Đăng nhập",
-        subtitle: "Chào mừng quay trở lại! Để tiếp tục dùng GreenPlus, vui lòng đăng nhập.",
+        subtitle:
+          "Chào mừng quay trở lại! Để tiếp tục dùng GreenPlus, vui lòng đăng nhập.",
         submitLabel: "Đăng nhập",
         toggleLabel: "Tạo tài khoản",
         toggleHref: "/register",
@@ -67,140 +67,146 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const [success, setSuccess] = useState<string | null>(null);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
-  setLoading(true);
-  setError(null);
-  setSuccess(null);
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
 
-  try {
-    const start = Date.now();
+    try {
+      const start = Date.now();
 
-    if (isLogin) {
-      logger.info("Admin login attempt", { email });
-    } else {
-      logger.info("Admin register attempt", { email, name });
-    }
-
-    const response = await fetch(
-      isLogin ? "/api/auth/sign-in" : "/api/auth/register",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          isLogin
-            ? { email, password }
-            : { name, email, password, confirmPassword }
-        ),
-      }
-    );
-
-    const data = (await response.json().catch(() => null)) as unknown;
-    const duration_ms = Date.now() - start;
-
-    if (!response.ok) {
-      const message =
-        typeof data === "object" && data !== null && "error" in data
-          ? String((data as { error: string }).error)
-          : isLogin
-          ? "Không thể đăng nhập."
-          : "Không thể đăng ký.";
-      logger.error(isLogin ? "Admin login failed" : "Admin register failed", {
-        email,
-        message,
-        status: response.status,
-        duration_ms,
-      });
-      throw new Error(message);
-    }
-
-    if (isLogin && typeof data === "object" && data !== null) {
-      const payload = data as {
-        session?: {
-          session_id: string;
-          user_id: string;
-          login_time: string;
-          role_name?: string | null;
-          access_token?: string;
-        };
-        user?: {
-          user_id: string;
-          name: string;
-          email: string;
-          phone?: string | null;
-          address?: string | null;
-          image_url?: string | null;
-          status?: string;
-          role_name?: string | null;
-        };
-        role_name?: string | null;
-      };
-
-      const session = payload.session ?? null;
-      const user = payload.user ?? null;
-      const roleName = String(payload.role_name ?? user?.role_name ?? "")
-        .trim()
-        .toLowerCase();
-
-      const allowedRoles = ["admin", "manager", "employee"];
-
-      if (!allowedRoles.includes(roleName)) {
-        logger.warn("Admin login blocked: insufficient role", {
-          email,
-          roleName,
-          duration_ms,
-        });
-        throw new Error("Chỉ quản trị viên, quản lý hoặc nhân viên mới có thể truy cập cổng này.");
+      if (isLogin) {
+        logger.info("Admin login attempt", { email });
+      } else {
+        logger.info("Admin register attempt", { email, name });
       }
 
-      if (!session || !user) {
-        logger.error("Admin login failed: missing session data", {
-          email,
-          hasSession: !!session,
-          hasUser: !!user,
-          duration_ms,
-        });
-        throw new Error("Phản hồi đăng nhập thiếu dữ liệu phiên.");
-      }
-
-      logger.info("Admin login success", { email, roleName, duration_ms });
-
-      setAuth(
-        { ...session, role_name: roleName },
+      const response = await fetch(
+        isLogin ? "/api/auth/sign-in" : "/api/auth/register",
         {
-          user_id: user.user_id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone ?? null,
-          address: user.address ?? null,
-          image_url: user.image_url ?? null,
-          status: user.status ?? "active",
-          role_name: roleName,
-        }
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            isLogin
+              ? { email, password }
+              : { name, email, password, confirmPassword },
+          ),
+        },
       );
 
-      router.replace("/dashboard");
-      return;
+      const data = (await response.json().catch(() => null)) as unknown;
+      const duration_ms = Date.now() - start;
+
+      if (!response.ok) {
+        const message =
+          typeof data === "object" && data !== null && "error" in data
+            ? String((data as { error: string }).error)
+            : isLogin
+              ? "Không thể đăng nhập."
+              : "Không thể đăng ký.";
+        logger.error(isLogin ? "Admin login failed" : "Admin register failed", {
+          email,
+          message,
+          status: response.status,
+          duration_ms,
+        });
+        throw new Error(message);
+      }
+
+      if (isLogin && typeof data === "object" && data !== null) {
+        const payload = data as {
+          session?: {
+            session_id: string;
+            user_id: string;
+            login_time: string;
+            role_name?: string | null;
+            access_token?: string;
+          };
+          user?: {
+            user_id: string;
+            name: string;
+            email: string;
+            phone?: string | null;
+            address?: string | null;
+            image_url?: string | null;
+            status?: string;
+            role_name?: string | null;
+          };
+          role_name?: string | null;
+        };
+
+        const session = payload.session ?? null;
+        const user = payload.user ?? null;
+        const roleName = String(payload.role_name ?? user?.role_name ?? "")
+          .trim()
+          .toLowerCase();
+
+        const allowedRoles = ["admin", "manager", "employee"];
+
+        if (!allowedRoles.includes(roleName)) {
+          logger.warn("Admin login blocked: insufficient role", {
+            email,
+            roleName,
+            duration_ms,
+          });
+          throw new Error(
+            "Chỉ quản trị viên, quản lý hoặc nhân viên mới có thể truy cập cổng này.",
+          );
+        }
+
+        if (!session || !user) {
+          logger.error("Admin login failed: missing session data", {
+            email,
+            hasSession: !!session,
+            hasUser: !!user,
+            duration_ms,
+          });
+          throw new Error("Phản hồi đăng nhập thiếu dữ liệu phiên.");
+        }
+
+        logger.info("Admin login success", { email, roleName, duration_ms });
+
+        setAuth(
+          { ...session, role_name: roleName },
+          {
+            user_id: user.user_id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone ?? null,
+            address: user.address ?? null,
+            image_url: user.image_url ?? null,
+            status: user.status ?? "active",
+            role_name: roleName,
+          },
+        );
+
+        router.replace("/dashboard");
+        return;
+      }
+
+      logger.info("Admin register success", { email, duration_ms });
+      setSuccess(
+        isLogin ? "Đăng nhập thành công." : "Tài khoản đã được tạo thành công.",
+      );
+    } catch (submitError) {
+      logger.error("Admin auth unexpected error", {
+        error:
+          submitError instanceof Error
+            ? submitError.message
+            : String(submitError),
+        mode,
+        email,
+      });
+      setSuccess(null);
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Đã xảy ra lỗi không mong muốn.",
+      );
+    } finally {
+      setLoading(false);
     }
-
-    logger.info("Admin register success", { email, duration_ms });
-    setSuccess(isLogin ? "Đăng nhập thành công." : "Tài khoản đã được tạo thành công.");
-
-  } catch (submitError) {
-    logger.error("Admin auth unexpected error", {
-      error: submitError instanceof Error ? submitError.message : String(submitError),
-      mode,
-      email,
-    });
-    setSuccess(null);
-    setError(
-      submitError instanceof Error
-        ? submitError.message
-        : "Đã xảy ra lỗi không mong muốn."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">
@@ -208,7 +214,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur xl:grid-cols-[1.05fr_0.95fr]">
-          
           <section className="hidden flex-col justify-between bg-[linear-gradient(160deg,_#0f172a_0%,_#115e59_55%,_#10b981_100%)] p-10 text-white xl:flex">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-200">
@@ -284,25 +289,25 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                     Mật khẩu
                   </label>
                   <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Nhập mật khẩu của bạn"
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Nhập mật khẩu của bạn"
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {!isLogin && (
@@ -311,29 +316,25 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                       Xác nhận mật khẩu
                     </label>
                     <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) =>
-                        setConfirmPassword(e.target.value)
-                      }
-                      placeholder="Xác nhận mật khẩu"
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword((prev) => !prev)
-                      }
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Xác nhận mật khẩu"
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )}
 

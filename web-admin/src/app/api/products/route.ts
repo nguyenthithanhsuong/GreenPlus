@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { ProductService } from "../../../../backend/modules/products/product.service";
 import { AuthService } from "../../../../backend/modules/auth/auth.service";
 import { requirePermissionForUser } from "../../../../backend/core/authorization";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 function readAccessToken(request: Request): string {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -13,13 +13,9 @@ function readAccessToken(request: Request): string {
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookieMatch = cookieHeader.match(
-    /(?:^|;\s*)gp_portal_session=([^;]+)/,
-  );
+  const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_portal_session=([^;]+)/);
 
-  return cookieMatch
-    ? decodeURIComponent(cookieMatch[1]).trim()
-    : "";
+  return cookieMatch ? decodeURIComponent(cookieMatch[1]).trim() : "";
 }
 
 export const GET = withSentry(async () => {
@@ -50,19 +46,13 @@ export const POST = withSentry(async (request: Request) => {
   if (!accessToken) {
     logger.warn("Create product failed - unauthorized");
 
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const authService = new AuthService();
   const verified = await authService.verifySession(accessToken);
 
-  await requirePermissionForUser(
-    verified.id,
-    "products.create",
-  );
+  await requirePermissionForUser(verified.id, "products.create");
 
   const body = (await request.json()) as {
     categoryId?: string | null;

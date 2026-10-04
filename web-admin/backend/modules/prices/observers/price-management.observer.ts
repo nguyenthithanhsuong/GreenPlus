@@ -31,18 +31,24 @@ export class PriceManagementSubject {
   }
 
   async notify(event: PriceManagementEvent): Promise<void> {
-    await Promise.all(Array.from(this.observers).map((observer) => observer.update(event)));
+    await Promise.all(
+      Array.from(this.observers).map((observer) => observer.update(event)),
+    );
   }
 }
 
 export class PriceManagementAuditObserver implements PriceManagementObserver {
   async update(event: PriceManagementEvent): Promise<void> {
     if (event.type === "price_created") {
-      console.log(`[AUDIT] Created price ${event.priceId} with status ${event.status}`);
+      console.log(
+        `[AUDIT] Created price ${event.priceId} with status ${event.status}`,
+      );
     }
 
     if (event.type === "price_updated") {
-      console.log(`[AUDIT] Updated price ${event.priceId} to status ${event.status}`);
+      console.log(
+        `[AUDIT] Updated price ${event.priceId} to status ${event.status}`,
+      );
     }
 
     if (event.type === "price_deleted") {

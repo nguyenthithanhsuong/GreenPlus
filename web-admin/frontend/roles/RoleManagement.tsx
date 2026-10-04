@@ -26,7 +26,8 @@ const RoleManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RoleSummary | null>(null);
-  const [pendingDeleteRole, setPendingDeleteRole] = useState<RoleSummary | null>(null);
+  const [pendingDeleteRole, setPendingDeleteRole] =
+    useState<RoleSummary | null>(null);
   const [form, setForm] = useState<RoleFormValues>(emptyForm());
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -37,7 +38,10 @@ const RoleManagement = () => {
 
     try {
       const response = await fetch("/api/roles", { cache: "no-store" });
-      const data = (await response.json()) as { items?: RoleSummary[]; error?: string };
+      const data = (await response.json()) as {
+        items?: RoleSummary[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to load roles");
@@ -45,7 +49,9 @@ const RoleManagement = () => {
 
       setRoles(data.items ?? []);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unexpected error");
+      setError(
+        loadError instanceof Error ? loadError.message : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -55,14 +61,17 @@ const RoleManagement = () => {
     void loadRoles();
   }, []);
 
-  const stats = useMemo(() => ({
-    total: roles.length,
-    assignedUsers: roles.reduce((sum, role) => sum + role.user_count, 0),
-  }), [roles]);
+  const stats = useMemo(
+    () => ({
+      total: roles.length,
+      assignedUsers: roles.reduce((sum, role) => sum + role.user_count, 0),
+    }),
+    [roles],
+  );
 
   const filteredRoles = useMemo(
     () => roleSearchStrategy.filter(roles, deferredSearchQuery),
-    [deferredSearchQuery, roles]
+    [deferredSearchQuery, roles],
   );
 
   const openCreateDrawer = () => {
@@ -96,19 +105,22 @@ const RoleManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch(selectedRole ? `/api/roles/${selectedRole.role_id}` : "/api/roles", {
-        method: selectedRole ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roleName: form.roleName,
-          description: form.description,
-          isCustomer: form.isCustomer,
-          isAdmin: form.isAdmin,
-          isManager: form.isManager,
-          isEmployee: form.isEmployee,
-          isShipper: form.isShipper,
-        }),
-      });
+      const response = await fetch(
+        selectedRole ? `/api/roles/${selectedRole.role_id}` : "/api/roles",
+        {
+          method: selectedRole ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            roleName: form.roleName,
+            description: form.description,
+            isCustomer: form.isCustomer,
+            isAdmin: form.isAdmin,
+            isManager: form.isManager,
+            isEmployee: form.isEmployee,
+            isShipper: form.isShipper,
+          }),
+        },
+      );
 
       const data = (await response.json()) as { error?: string };
 
@@ -119,7 +131,9 @@ const RoleManagement = () => {
       closeDrawer();
       await loadRoles();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unexpected error");
+      setError(
+        submitError instanceof Error ? submitError.message : "Unexpected error",
+      );
     } finally {
       setSaving(false);
     }
@@ -143,7 +157,9 @@ const RoleManagement = () => {
       setPendingDeleteRole(null);
       await loadRoles();
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Unexpected error");
+      setError(
+        deleteError instanceof Error ? deleteError.message : "Unexpected error",
+      );
     } finally {
       setSaving(false);
     }
@@ -200,15 +216,21 @@ const RoleManagement = () => {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Tổng role</p>
-          <h3 className="mt-2 text-2xl font-bold text-gray-900">{stats.total}</h3>
+          <h3 className="mt-2 text-2xl font-bold text-gray-900">
+            {stats.total}
+          </h3>
         </div>
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Kết quả tìm kiếm</p>
-          <h3 className="mt-2 text-2xl font-bold text-gray-900">{filteredRoles.length}</h3>
+          <h3 className="mt-2 text-2xl font-bold text-gray-900">
+            {filteredRoles.length}
+          </h3>
         </div>
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">User được gán</p>
-          <h3 className="mt-2 text-2xl font-bold text-gray-900">{stats.assignedUsers}</h3>
+          <h3 className="mt-2 text-2xl font-bold text-gray-900">
+            {stats.assignedUsers}
+          </h3>
         </div>
       </div>
 
@@ -218,13 +240,21 @@ const RoleManagement = () => {
         saving={saving}
         onEditRole={openEditDrawer}
         onDeleteRole={requestDeleteRole}
-        emptyMessage={searchQuery.trim() ? "Không tìm thấy role phù hợp." : "Chưa có role nào."}
+        emptyMessage={
+          searchQuery.trim()
+            ? "Không tìm thấy role phù hợp."
+            : "Chưa có role nào."
+        }
       />
 
       <ConfirmActionDialog
         open={Boolean(pendingDeleteRole)}
         title="Xác nhận xóa role"
-        message={pendingDeleteRole ? `Bạn có chắc muốn xóa role "${pendingDeleteRole.role_name}"?` : ""}
+        message={
+          pendingDeleteRole
+            ? `Bạn có chắc muốn xóa role "${pendingDeleteRole.role_name}"?`
+            : ""
+        }
         confirmLabel="Xóa role"
         confirmVariant="danger"
         loading={saving}

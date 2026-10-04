@@ -1,6 +1,10 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { orderFacade } from "../../../../../../backend/modules/orders/facades/order.facade";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
 
 type Context = {
@@ -15,12 +19,12 @@ type ConfirmPaymentBody = {
 };
 
 export const PUT = withSentry(async (request: Request, context: Context) => {
+  const identity = requireCustomerIdentity(request);
   const { orderId } = await context.params;
 
   const body = (await request.json()) as ConfirmPaymentBody;
 
-  const userId =
-    body.userId?.trim() ?? body.user_id?.trim() ?? "";
+  const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
   logger.info("Confirm payment attempt", { userId, orderId });
 
@@ -30,10 +34,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
       orderId,
     });
 
-    return NextResponse.json(
-      { error: "userId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
 
   const start = Date.now();

@@ -100,7 +100,11 @@ export default function BackendHealthPage() {
   const [realtimeEvents, setRealtimeEvents] = useState<RealtimeEvent[]>([]);
 
   useEffect(() => {
-    const appendEvent = (table: RealtimeEvent["table"], payload: unknown, eventType: string) => {
+    const appendEvent = (
+      table: RealtimeEvent["table"],
+      payload: unknown,
+      eventType: string,
+    ) => {
       setRealtimeEvents((prev) =>
         [
           {
@@ -111,7 +115,7 @@ export default function BackendHealthPage() {
             payload,
           },
           ...prev,
-        ].slice(0, 30)
+        ].slice(0, 30),
       );
     };
 
@@ -122,14 +126,14 @@ export default function BackendHealthPage() {
         { event: "*", schema: "public", table: "orders" },
         (payload) => {
           appendEvent("orders", payload, payload.eventType);
-        }
+        },
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "inventory" },
         (payload) => {
           appendEvent("inventory", payload, payload.eventType);
-        }
+        },
       )
       .subscribe((status) => {
         setRealtimeStatus(status);
@@ -221,7 +225,10 @@ export default function BackendHealthPage() {
             Test all API routes and show success/failure with response details.
           </p>
           <div className="mt-2">
-            <Link href="/backend/storage" className="text-sm font-medium text-blue-700 hover:underline">
+            <Link
+              href="/backend/storage"
+              className="text-sm font-medium text-blue-700 hover:underline"
+            >
               Open Storage Upload Test
             </Link>
           </div>
@@ -260,13 +267,18 @@ export default function BackendHealthPage() {
           </p>
 
           {realtimeEvents.length === 0 && (
-            <p className="mt-3 text-sm text-slate-500">No realtime events yet.</p>
+            <p className="mt-3 text-sm text-slate-500">
+              No realtime events yet.
+            </p>
           )}
 
           {realtimeEvents.length > 0 && (
             <div className="mt-4 space-y-3">
               {realtimeEvents.map((evt) => (
-                <article key={evt.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <article
+                  key={evt.id}
+                  className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+                >
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
                     {evt.table} | {evt.eventType} | {evt.timestamp}
                   </p>
@@ -302,7 +314,7 @@ export default function BackendHealthPage() {
                   {result && (
                     <span
                       className={`rounded-md border px-2.5 py-1 text-xs font-medium ${statusClass(
-                        result.ok
+                        result.ok,
                       )}`}
                     >
                       {result.ok ? "PASS" : "FAIL"}
@@ -313,8 +325,10 @@ export default function BackendHealthPage() {
                 {result && (
                   <div className="mt-4 space-y-3">
                     <p className="text-sm">
-                      <span className="font-medium">Status:</span> {result.status} |{" "}
-                      <span className="font-medium">Time:</span> {result.durationMs}ms
+                      <span className="font-medium">Status:</span>{" "}
+                      {result.status} |{" "}
+                      <span className="font-medium">Time:</span>{" "}
+                      {result.durationMs}ms
                     </p>
                     <p className="text-sm">{result.summary}</p>
                     <pre className="overflow-x-auto rounded-md bg-slate-950 p-3 text-xs text-slate-100">

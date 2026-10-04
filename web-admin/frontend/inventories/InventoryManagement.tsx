@@ -7,7 +7,10 @@ import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import InventoryStats from "./InventoryStats";
 import InventoryTable from "./InventoryTable";
 import InventoryTransactionTable from "./InventoryTransactionTable";
-import InventoryDrawer, { InventoryDrawerMode, InventoryFormValues } from "./InventoryDrawer";
+import InventoryDrawer, {
+  InventoryDrawerMode,
+  InventoryFormValues,
+} from "./InventoryDrawer";
 import type {
   InventoryRow,
   InventoryTransactionRow,
@@ -34,18 +37,16 @@ const InventoryManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<InventoryRow | null>(null);
   const [viewMode, setViewMode] = useState<"inventory" | "transactions">(
-  "inventory"
-);
+    "inventory",
+  );
 
-const [transactions, setTransactions] = useState<
-  InventoryTransactionRow[]
->([]);
+  const [transactions, setTransactions] = useState<InventoryTransactionRow[]>(
+    [],
+  );
 
-const [transactionsLoading, setTransactionsLoading] =
-  useState(false);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
 
-const [transactionSearchQuery, setTransactionSearchQuery] =
-  useState("");
+  const [transactionSearchQuery, setTransactionSearchQuery] = useState("");
 
   const loadInventory = useCallback(async () => {
     setLoading(true);
@@ -53,7 +54,10 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
 
     try {
       const response = await fetch("/api/inventory", { cache: "no-store" });
-      const data = (await response.json()) as { items?: InventoryRow[]; error?: string };
+      const data = (await response.json()) as {
+        items?: InventoryRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải tồn kho");
@@ -61,7 +65,11 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
 
       setItems(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải tồn kho");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải tồn kho",
+      );
       setItems([]);
     } finally {
       setLoading(false);
@@ -69,45 +77,35 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
   }, []);
 
   const loadTransactions = useCallback(async () => {
-  setTransactionsLoading(true);
+    setTransactionsLoading(true);
 
-  try {
-    const response = await fetch(
-      "/api/inventory/transactions",
-      {
+    try {
+      const response = await fetch("/api/inventory/transactions", {
         cache: "no-store",
+      });
+
+      const data = (await response.json()) as {
+        items?: InventoryTransactionRow[];
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Không thể tải lịch sử giao dịch");
       }
-    );
 
-    const data = (await response.json()) as {
-      items?: InventoryTransactionRow[];
-      error?: string;
-    };
-
-    if (!response.ok) {
-      throw new Error(
-        data.error ??
-          "Không thể tải lịch sử giao dịch"
+      setTransactions(Array.isArray(data.items) ? data.items : []);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải lịch sử giao dịch",
       );
+
+      setTransactions([]);
+    } finally {
+      setTransactionsLoading(false);
     }
-
-    setTransactions(
-      Array.isArray(data.items)
-        ? data.items
-        : []
-    );
-  } catch (requestError) {
-    setError(
-      requestError instanceof Error
-        ? requestError.message
-        : "Không thể tải lịch sử giao dịch"
-    );
-
-    setTransactions([]);
-  } finally {
-    setTransactionsLoading(false);
-  }
-}, []);
+  }, []);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([loadInventory(), loadTransactions()]);
@@ -120,42 +118,41 @@ const [transactionSearchQuery, setTransactionSearchQuery] =
 
   const filteredItems = useMemo(
     () => inventorySearchStrategy.filter(items, searchQuery),
-    [items, searchQuery]
+    [items, searchQuery],
   );
 
   const filteredTransactions = useMemo(() => {
-  const query = transactionSearchQuery
-    .trim()
-    .toLowerCase();
+    const query = transactionSearchQuery.trim().toLowerCase();
 
-  if (!query) {
-    return transactions;
-  }
+    if (!query) {
+      return transactions;
+    }
 
-  return transactions.filter((item) => {
-    return (
-      item.transaction_id
-        .toLowerCase()
-        .includes(query) ||
-      (item.batch_id ?? "")
-        .toLowerCase()
-        .includes(query) ||
-      (item.note ?? "")
-        .toLowerCase()
-        .includes(query) ||
-      item.type.toLowerCase().includes(query)
-    );
-  });
-}, [transactions, transactionSearchQuery]);
+    return transactions.filter((item) => {
+      return (
+        item.transaction_id.toLowerCase().includes(query) ||
+        (item.batch_id ?? "").toLowerCase().includes(query) ||
+        (item.note ?? "").toLowerCase().includes(query) ||
+        item.type.toLowerCase().includes(query)
+      );
+    });
+  }, [transactions, transactionSearchQuery]);
 
   const stats = useMemo(() => {
-    const totalAvailable = items.reduce((sum, item) => sum + item.quantity_available, 0);
-const totalReserved = items.reduce(
-  (sum, item) => sum + (item.quantity_reserved ?? 0),
-  0
-);  
-const lowStockCount = items.filter((item) => item.quantity_available > 0 && item.quantity_available < 10).length;
-    const outOfStockCount = items.filter((item) => item.quantity_available === 0).length;
+    const totalAvailable = items.reduce(
+      (sum, item) => sum + item.quantity_available,
+      0,
+    );
+    const totalReserved = items.reduce(
+      (sum, item) => sum + (item.quantity_reserved ?? 0),
+      0,
+    );
+    const lowStockCount = items.filter(
+      (item) => item.quantity_available > 0 && item.quantity_available < 10,
+    ).length;
+    const outOfStockCount = items.filter(
+      (item) => item.quantity_available === 0,
+    ).length;
 
     return {
       totalAvailable,
@@ -200,7 +197,7 @@ const lowStockCount = items.filter((item) => item.quantity_available > 0 && item
         `/api/inventory/${encodeURIComponent(deleteTarget.inventory_id)}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       const data = (await response.json()) as { error?: string };
@@ -265,15 +262,18 @@ const lowStockCount = items.filter((item) => item.quantity_available > 0 && item
 
     try {
       if (drawerMode === "edit") {
-        const response = await fetch(`/api/inventory/${encodeURIComponent(selectedItem.inventory_id)}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            quantityAvailable: Number(form.quantityAvailable),
-            quantityReserved: Number(form.quantityReserved),
-            note: form.note.trim() || "Updated from inventory management",
-          }),
-        });
+        const response = await fetch(
+          `/api/inventory/${encodeURIComponent(selectedItem.inventory_id)}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              quantityAvailable: Number(form.quantityAvailable),
+              quantityReserved: Number(form.quantityReserved),
+              note: form.note.trim() || "Updated from inventory management",
+            }),
+          },
+        );
 
         const data = (await response.json()) as { error?: string };
         if (!response.ok) {
@@ -284,7 +284,10 @@ const lowStockCount = items.filter((item) => item.quantity_available > 0 && item
       closeDrawer();
       await refreshAll();
     } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Thao tác thất bại";
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Thao tác thất bại";
       setDrawerError(message);
       setError(message);
     } finally {
@@ -316,51 +319,49 @@ const lowStockCount = items.filter((item) => item.quantity_available > 0 && item
         </div>
       )}
       <div className="flex items-center gap-2">
-  <button
-    type="button"
-    onClick={() => setViewMode("inventory")}
-    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-      viewMode === "inventory"
-        ? "bg-emerald-600 text-white"
-        : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
-    }`}
-  >
-    Tồn kho hiện tại
-  </button>
+        <button
+          type="button"
+          onClick={() => setViewMode("inventory")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            viewMode === "inventory"
+              ? "bg-emerald-600 text-white"
+              : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          Tồn kho hiện tại
+        </button>
 
-  <button
-    type="button"
-    onClick={() => setViewMode("transactions")}
-    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-      viewMode === "transactions"
-        ? "bg-emerald-600 text-white"
-        : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
-    }`}
-  >
-    Lịch sử giao dịch
-  </button>
-</div>
+        <button
+          type="button"
+          onClick={() => setViewMode("transactions")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            viewMode === "transactions"
+              ? "bg-emerald-600 text-white"
+              : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          Lịch sử giao dịch
+        </button>
+      </div>
       <InventoryStats {...stats} />
       {viewMode === "inventory" ? (
-  <InventoryTable
-    items={filteredItems}
-    loading={loading}
-    saving={saving}
-    searchQuery={searchQuery}
-    onSearchQueryChange={setSearchQuery}
-    onUpdate={openEditDrawer}
-    onDelete={openDeleteDrawer}
-  />
-) : (
-  <InventoryTransactionTable
-    items={filteredTransactions}
-    loading={transactionsLoading}
-    searchQuery={transactionSearchQuery}
-    onSearchQueryChange={
-      setTransactionSearchQuery
-    }
-  />
-)}
+        <InventoryTable
+          items={filteredItems}
+          loading={loading}
+          saving={saving}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          onUpdate={openEditDrawer}
+          onDelete={openDeleteDrawer}
+        />
+      ) : (
+        <InventoryTransactionTable
+          items={filteredTransactions}
+          loading={transactionsLoading}
+          searchQuery={transactionSearchQuery}
+          onSearchQueryChange={setTransactionSearchQuery}
+        />
+      )}
 
       <InventoryDrawer
         isOpen={drawerOpen}

@@ -1,5 +1,9 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { CategoryRow, CreateCategoryInput, UpdateCategoryInput } from "./category-management.types";
+import {
+  CategoryRow,
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from "./category-management.types";
 
 type CategoryDbRow = {
   category_id: string;
@@ -40,7 +44,10 @@ export class CategoryManagementRepository {
         continue;
       }
 
-      productCounts.set(row.category_id, (productCounts.get(row.category_id) ?? 0) + 1);
+      productCounts.set(
+        row.category_id,
+        (productCounts.get(row.category_id) ?? 0) + 1,
+      );
     }
 
     return ((categoryRows ?? []) as CategoryDbRow[]).map((category) => ({
@@ -55,13 +62,19 @@ export class CategoryManagementRepository {
 
   async findById(categoryId: string): Promise<CategoryRow | null> {
     const categories = await this.listCategories();
-    return categories.find((category) => category.category_id === categoryId) ?? null;
+    return (
+      categories.find((category) => category.category_id === categoryId) ?? null
+    );
   }
 
   async findByName(name: string): Promise<CategoryRow | null> {
     const normalized = name.trim().toLowerCase();
     const categories = await this.listCategories();
-    return categories.find((category) => category.name.trim().toLowerCase() === normalized) ?? null;
+    return (
+      categories.find(
+        (category) => category.name.trim().toLowerCase() === normalized,
+      ) ?? null
+    );
   }
 
   async createCategory(input: CreateCategoryInput): Promise<CategoryRow> {
@@ -89,12 +102,16 @@ export class CategoryManagementRepository {
     };
   }
 
-  async updateCategory(input: UpdateCategoryInput): Promise<CategoryRow | null> {
+  async updateCategory(
+    input: UpdateCategoryInput,
+  ): Promise<CategoryRow | null> {
     const payload: Record<string, string | null> = {};
 
     if (typeof input.name !== "undefined") payload.name = input.name.trim();
-    if (typeof input.description !== "undefined") payload.description = input.description?.trim() || null;
-    if (typeof input.imageUrl !== "undefined") payload.image_url = input.imageUrl?.trim() || null;
+    if (typeof input.description !== "undefined")
+      payload.description = input.description?.trim() || null;
+    if (typeof input.imageUrl !== "undefined")
+      payload.image_url = input.imageUrl?.trim() || null;
 
     const { data, error } = await this.supabase
       .from("categories")

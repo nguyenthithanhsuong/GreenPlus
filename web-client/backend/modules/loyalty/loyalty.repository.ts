@@ -1,7 +1,12 @@
 import { supabaseServer } from "../../core/supabase";
 
 export class LoyaltyRepository {
-  async findOrder(orderId: string): Promise<{ order_id: string; user_id: string; status: string; total_amount: number } | null> {
+  async findOrder(orderId: string): Promise<{
+    order_id: string;
+    user_id: string;
+    status: string;
+    total_amount: number;
+  } | null> {
     const { data, error } = await supabaseServer
       .from("orders")
       .select("order_id,user_id,status,total_amount")

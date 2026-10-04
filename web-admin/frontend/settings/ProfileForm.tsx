@@ -1,62 +1,73 @@
 "use client";
 
-import React from 'react';
-import { Camera, Eye, EyeOff, Home, Save } from 'lucide-react';
-import { useCurrentUserProfile } from '../shared/useCurrentUserProfile';
-import { useAuthStore } from '../../src/lib/stores/authStore';
+import React from "react";
+import { Camera, Eye, EyeOff, Home, Save } from "lucide-react";
+import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
+import { useAuthStore } from "../../src/lib/stores/authStore";
 
 const ProfileForm = () => {
-  const { profile, loading, initialized, refreshProfile } = useCurrentUserProfile();
-  const accessToken = useAuthStore((state) => state.session?.access_token ?? '');
+  const { profile, loading, initialized, refreshProfile } =
+    useCurrentUserProfile();
+  const accessToken = useAuthStore(
+    (state) => state.session?.access_token ?? "",
+  );
   const avatarInputRef = React.useRef<HTMLInputElement | null>(null);
   const [formValues, setFormValues] = React.useState({
-    name: '',
-    email: '',
-    phone: '',
-    role: 'Admin',
-    address: '',
+    name: "",
+    email: "",
+    phone: "",
+    role: "Admin",
+    address: "",
   });
-  const [imageUrl, setImageUrl] = React.useState('');
+  const [imageUrl, setImageUrl] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
   const [saveMessage, setSaveMessage] = React.useState<string | null>(null);
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [avatarError, setAvatarError] = React.useState<string | null>(null);
   const [passwordValues, setPasswordValues] = React.useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [showCurrentPassword, setShowCurrentPassword] = React.useState(false);
   const [showNewPassword, setShowNewPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   const [passwordSaving, setPasswordSaving] = React.useState(false);
-  const [passwordMessage, setPasswordMessage] = React.useState<string | null>(null);
+  const [passwordMessage, setPasswordMessage] = React.useState<string | null>(
+    null,
+  );
   const [passwordError, setPasswordError] = React.useState<string | null>(null);
-  const [storeName, setStoreName] = React.useState('Chưa gán cửa hàng');
+  const [storeName, setStoreName] = React.useState("Chưa gán cửa hàng");
 
   React.useEffect(() => {
     let active = true;
 
     const loadStoreName = async () => {
       if (!profile?.storeId) {
-        setStoreName('Chưa gán cửa hàng');
+        setStoreName("Chưa gán cửa hàng");
         return;
       }
 
       try {
-        const response = await fetch('/api/stores', { cache: 'no-store' });
-        const payload = (await response.json().catch(() => ({}))) as { items?: Array<{ store_id?: string; name?: string }> };
+        const response = await fetch("/api/stores", { cache: "no-store" });
+        const payload = (await response.json().catch(() => ({}))) as {
+          items?: Array<{ store_id?: string; name?: string }>;
+        };
         const matchedStore = Array.isArray(payload.items)
           ? payload.items.find((store) => store.store_id === profile.storeId)
           : null;
 
         if (active) {
-          setStoreName(matchedStore?.name?.trim() || profile.storeId || 'Chưa gán cửa hàng');
+          setStoreName(
+            matchedStore?.name?.trim() ||
+              profile.storeId ||
+              "Chưa gán cửa hàng",
+          );
         }
       } catch {
         if (active) {
-          setStoreName(profile.storeId || 'Chưa gán cửa hàng');
+          setStoreName(profile.storeId || "Chưa gán cửa hàng");
         }
       }
     };
@@ -74,42 +85,47 @@ const ProfileForm = () => {
     }
 
     setFormValues({
-      name: profile.name ?? '',
-      email: profile.email ?? '',
-      phone: profile.phone ?? '',
-      role: profile.roleName ?? 'Admin',
-      address: profile.address ?? '',
+      name: profile.name ?? "",
+      email: profile.email ?? "",
+      phone: profile.phone ?? "",
+      role: profile.roleName ?? "Admin",
+      address: profile.address ?? "",
     });
-    setImageUrl(profile.imageUrl ?? '');
+    setImageUrl(profile.imageUrl ?? "");
   }, [profile]);
 
-  const currentAvatarSrc = imageUrl || profile?.imageUrl || 'https://i.pravatar.cc/150?u=greenplus-default-user';
+  const currentAvatarSrc =
+    imageUrl ||
+    profile?.imageUrl ||
+    "https://i.pravatar.cc/150?u=greenplus-default-user";
 
   const openAvatarPicker = () => {
     avatarInputRef.current?.click();
   };
 
-  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const selectedFile = event.target.files?.[0] ?? null;
-    event.target.value = '';
+    event.target.value = "";
 
     if (!selectedFile) {
       return;
     }
 
     if (!profile?.userId) {
-      setAvatarError('Không tìm thấy tài khoản để cập nhật ảnh đại diện.');
+      setAvatarError("Không tìm thấy tài khoản để cập nhật ảnh đại diện.");
       return;
     }
 
-    if (!selectedFile.type.startsWith('image/')) {
-      setAvatarError('Chỉ hỗ trợ tệp ảnh cho ảnh đại diện.');
+    if (!selectedFile.type.startsWith("image/")) {
+      setAvatarError("Chỉ hỗ trợ tệp ảnh cho ảnh đại diện.");
       return;
     }
 
     const maxBytes = 5 * 1024 * 1024;
     if (selectedFile.size > maxBytes) {
-      setAvatarError('Ảnh đại diện phải nhỏ hơn 5MB.');
+      setAvatarError("Ảnh đại diện phải nhỏ hơn 5MB.");
       return;
     }
 
@@ -119,26 +135,35 @@ const ProfileForm = () => {
 
     try {
       const formData = new FormData();
-      formData.append('userId', profile.userId);
-      formData.append('file', selectedFile);
+      formData.append("userId", profile.userId);
+      formData.append("file", selectedFile);
 
-      const response = await fetch('/api/users/avatar', {
-        method: 'POST',
+      const response = await fetch("/api/users/avatar", {
+        method: "POST",
         body: formData,
       });
 
-      const payload = (await response.json().catch(() => ({}))) as { publicUrl?: string; error?: string };
+      const payload = (await response.json().catch(() => ({}))) as {
+        publicUrl?: string;
+        error?: string;
+      };
 
       if (!response.ok || !payload.publicUrl) {
-        throw new Error(payload.error ?? 'Không thể upload ảnh đại diện.');
+        throw new Error(payload.error ?? "Không thể upload ảnh đại diện.");
       }
 
       setImageUrl(payload.publicUrl);
-      setSaveMessage("Upload ảnh đại diện thành công. Nhấn 'Lưu thay đổi' để cập nhật hồ sơ.");
+      setSaveMessage(
+        "Upload ảnh đại diện thành công. Nhấn 'Lưu thay đổi' để cập nhật hồ sơ.",
+      );
       setSaveError(null);
       refreshProfile();
     } catch (error) {
-      setAvatarError(error instanceof Error ? error.message : 'Không thể upload ảnh đại diện.');
+      setAvatarError(
+        error instanceof Error
+          ? error.message
+          : "Không thể upload ảnh đại diện.",
+      );
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -148,7 +173,7 @@ const ProfileForm = () => {
     event.preventDefault();
 
     if (!profile?.userId) {
-      setSaveError('Không tìm thấy tài khoản hiện tại để lưu.');
+      setSaveError("Không tìm thấy tài khoản hiện tại để lưu.");
       return;
     }
 
@@ -159,22 +184,22 @@ const ProfileForm = () => {
 
     try {
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
       if (accessToken) {
         headers.Authorization = `Bearer ${accessToken}`;
       }
 
-      const response = await fetch('/api/users/me', {
-        method: 'PATCH',
+      const response = await fetch("/api/users/me", {
+        method: "PATCH",
         headers,
         body: JSON.stringify({
           name: formValues.name,
           email: formValues.email,
           phone: formValues.phone,
           address: formValues.address,
-          imageUrl: imageUrl || profile.imageUrl || '',
+          imageUrl: imageUrl || profile.imageUrl || "",
         }),
       });
 
@@ -193,25 +218,27 @@ const ProfileForm = () => {
       };
 
       if (!response.ok) {
-        throw new Error(payload.error ?? 'Không thể lưu thay đổi');
+        throw new Error(payload.error ?? "Không thể lưu thay đổi");
       }
 
       const updatedProfile = payload.item;
       if (updatedProfile) {
         setFormValues({
-          name: updatedProfile.name ?? '',
-          email: updatedProfile.email ?? '',
-          phone: updatedProfile.phone ?? '',
-          role: updatedProfile.roleName ?? 'Admin',
-          address: updatedProfile.address ?? '',
+          name: updatedProfile.name ?? "",
+          email: updatedProfile.email ?? "",
+          phone: updatedProfile.phone ?? "",
+          role: updatedProfile.roleName ?? "Admin",
+          address: updatedProfile.address ?? "",
         });
-        setImageUrl(updatedProfile.imageUrl ?? '');
+        setImageUrl(updatedProfile.imageUrl ?? "");
       }
 
       refreshProfile();
-      setSaveMessage('Đã lưu thay đổi thành công.');
+      setSaveMessage("Đã lưu thay đổi thành công.");
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Không thể lưu thay đổi');
+      setSaveError(
+        error instanceof Error ? error.message : "Không thể lưu thay đổi",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -226,26 +253,28 @@ const ProfileForm = () => {
       }));
     };
 
-  const handlePasswordSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handlePasswordSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
 
     if (!profile?.userId) {
-      setPasswordError('Không tìm thấy tài khoản hiện tại để đổi mật khẩu.');
+      setPasswordError("Không tìm thấy tài khoản hiện tại để đổi mật khẩu.");
       return;
     }
 
     if (!passwordValues.currentPassword.trim()) {
-      setPasswordError('Vui lòng nhập mật khẩu hiện tại.');
+      setPasswordError("Vui lòng nhập mật khẩu hiện tại.");
       return;
     }
 
     if (passwordValues.newPassword.length < 6) {
-      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
+      setPasswordError("Mật khẩu mới phải có ít nhất 6 ký tự.");
       return;
     }
 
     if (passwordValues.newPassword !== passwordValues.confirmPassword) {
-      setPasswordError('Mật khẩu mới và xác nhận mật khẩu không khớp.');
+      setPasswordError("Mật khẩu mới và xác nhận mật khẩu không khớp.");
       return;
     }
 
@@ -255,15 +284,15 @@ const ProfileForm = () => {
 
     try {
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
       if (accessToken) {
         headers.Authorization = `Bearer ${accessToken}`;
       }
 
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
         headers,
         body: JSON.stringify({
           currentPassword: passwordValues.currentPassword,
@@ -272,23 +301,27 @@ const ProfileForm = () => {
         }),
       });
 
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
 
       if (!response.ok) {
-        throw new Error(payload.error ?? 'Không thể đổi mật khẩu');
+        throw new Error(payload.error ?? "Không thể đổi mật khẩu");
       }
 
       setPasswordValues({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
       setShowCurrentPassword(false);
       setShowNewPassword(false);
       setShowConfirmPassword(false);
-      setPasswordMessage('Đã đổi mật khẩu thành công.');
+      setPasswordMessage("Đã đổi mật khẩu thành công.");
     } catch (error) {
-      setPasswordError(error instanceof Error ? error.message : 'Không thể đổi mật khẩu');
+      setPasswordError(
+        error instanceof Error ? error.message : "Không thể đổi mật khẩu",
+      );
     } finally {
       setPasswordSaving(false);
     }
@@ -305,161 +338,186 @@ const ProfileForm = () => {
 
   return (
     <div className="flex-1 space-y-6">
-      <form className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8" onSubmit={handleSubmit}>
-      
-      <div className="mb-8 border-b border-gray-100 pb-4">
-        <h2 className="text-lg font-bold text-gray-900">Thông tin cơ bản</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Cập nhật ảnh đại diện và chi tiết liên hệ của tài khoản quản lý.
-        </p>
-      </div>
-
-      {saveMessage ? (
-        <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          {saveMessage}
-        </div>
-      ) : null}
-
-      {saveError ? (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {saveError}
-        </div>
-      ) : null}
-
-      {avatarError ? (
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          {avatarError}
-        </div>
-      ) : null}
-
-      <div className="flex items-center gap-6 mb-8">
-        <div className="relative">
-          <img 
-            src={currentAvatarSrc}
-            alt="Avatar" 
-            className="w-20 h-20 rounded-full object-cover border border-gray-200"
-          />
-          <button
-            type="button"
-            onClick={openAvatarPicker}
-            disabled={isUploadingAvatar}
-            className="absolute bottom-0 right-0 p-1.5 bg-[#059669] text-white rounded-full border-2 border-white hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
-          >
-            <Camera className="w-3.5 h-3.5" />
-          </button>
-          <input
-            ref={avatarInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleAvatarChange}
-            disabled={isUploadingAvatar}
-          />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-gray-900">{profile?.name ?? 'Người dùng'}</h3>
-          <p className="text-sm text-gray-500 mb-2">
-            {formValues.role || 'Admin'}
-            {profile?.status ? <span className="font-semibold text-gray-700"> • {profile.status}</span> : null}
+      <form
+        className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8"
+        onSubmit={handleSubmit}
+      >
+        <div className="mb-8 border-b border-gray-100 pb-4">
+          <h2 className="text-lg font-bold text-gray-900">Thông tin cơ bản</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Cập nhật ảnh đại diện và chi tiết liên hệ của tài khoản quản lý.
           </p>
-          <div className="flex items-center gap-3">
+        </div>
+
+        {saveMessage ? (
+          <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {saveMessage}
+          </div>
+        ) : null}
+
+        {saveError ? (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {saveError}
+          </div>
+        ) : null}
+
+        {avatarError ? (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {avatarError}
+          </div>
+        ) : null}
+
+        <div className="flex items-center gap-6 mb-8">
+          <div className="relative">
+            <img
+              src={currentAvatarSrc}
+              alt="Avatar"
+              className="w-20 h-20 rounded-full object-cover border border-gray-200"
+            />
             <button
               type="button"
               onClick={openAvatarPicker}
               disabled={isUploadingAvatar}
-              className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+              className="absolute bottom-0 right-0 p-1.5 bg-[#059669] text-white rounded-full border-2 border-white hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
             >
-              {isUploadingAvatar ? 'Đang upload...' : 'Đổi ảnh'}
+              <Camera className="w-3.5 h-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setImageUrl('');
-                setAvatarError(null);
-                setSaveMessage('Đã xóa ảnh hiển thị tạm thời. Nhấn “Lưu thay đổi” để áp dụng.');
-              }}
-              className="px-3 py-1.5 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
-            >
-              Xóa
-            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+              disabled={isUploadingAvatar}
+            />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-gray-900">
+              {profile?.name ?? "Người dùng"}
+            </h3>
+            <p className="text-sm text-gray-500 mb-2">
+              {formValues.role || "Admin"}
+              {profile?.status ? (
+                <span className="font-semibold text-gray-700">
+                  {" "}
+                  • {profile.status}
+                </span>
+              ) : null}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={openAvatarPicker}
+                disabled={isUploadingAvatar}
+                className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUploadingAvatar ? "Đang upload..." : "Đổi ảnh"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setImageUrl("");
+                  setAvatarError(null);
+                  setSaveMessage(
+                    "Đã xóa ảnh hiển thị tạm thời. Nhấn “Lưu thay đổi” để áp dụng.",
+                  );
+                }}
+                className="px-3 py-1.5 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+              >
+                Xóa
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Họ và tên</label>
-          <input 
-            type="text" 
-            value={formValues.name}
-            onChange={handleChange('name')}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Họ và tên
+            </label>
+            <input
+              type="text"
+              value={formValues.name}
+              onChange={handleChange("name")}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              value={formValues.email}
+              onChange={handleChange("email")}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Số điện thoại
+            </label>
+            <input
+              type="text"
+              value={formValues.phone}
+              onChange={handleChange("phone")}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Vai trò (Role)
+            </label>
+            <input
+              type="text"
+              value={formValues.role}
+              disabled
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 cursor-not-allowed"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
-          <input 
-            type="email" 
-            value={formValues.email}
-            onChange={handleChange('email')}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Số điện thoại</label>
-          <input 
-            type="text" 
-            value={formValues.phone}
-            onChange={handleChange('phone')}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Vai trò (Role)</label>
-          <input 
-            type="text" 
-            value={formValues.role}
-            disabled
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500 cursor-not-allowed"
-          />
-        </div>
-      </div>
 
-      <div className="space-y-6 mb-8">
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Cửa hàng phụ trách</label>
-          <input 
-            type="text" 
-            value={storeName}
-            readOnly
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 cursor-not-allowed"
-          />
+        <div className="space-y-6 mb-8">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Cửa hàng phụ trách
+            </label>
+            <input
+              type="text"
+              value={storeName}
+              readOnly
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 cursor-not-allowed"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Địa chỉ
+            </label>
+            <textarea
+              rows={3}
+              value={formValues.address}
+              onChange={handleChange("address")}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors resize-none"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Địa chỉ</label>
-          <textarea 
-            rows={3}
-            value={formValues.address}
-            onChange={handleChange('address')}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors resize-none"
-          />
+
+        <div className="flex justify-end pt-4 border-t border-gray-100">
+          <button
+            type="submit"
+            disabled={isSaving || loading || !initialized || isUploadingAvatar}
+            className="flex items-center gap-2 px-6 py-2.5 bg-[#059669] hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
+          >
+            <Save className="w-4 h-4" />
+            {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+          </button>
         </div>
-      </div>
-
-      <div className="flex justify-end pt-4 border-t border-gray-100">
-        <button
-          type="submit"
-          disabled={isSaving || loading || !initialized || isUploadingAvatar}
-          className="flex items-center gap-2 px-6 py-2.5 bg-[#059669] hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
-        >
-          <Save className="w-4 h-4" />
-          {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
-        </button>
-      </div>
-
       </form>
 
-      <form className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8" onSubmit={handlePasswordSubmit}>
+      <form
+        className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8"
+        onSubmit={handlePasswordSubmit}
+      >
         <div className="mb-8 border-b border-gray-100 pb-4">
           <h2 className="text-lg font-bold text-gray-900">Đổi mật khẩu</h2>
           <p className="text-sm text-gray-500 mt-1">
@@ -481,12 +539,14 @@ const ProfileForm = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Mật khẩu hiện tại</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Mật khẩu hiện tại
+            </label>
             <div className="relative">
               <input
-                type={showCurrentPassword ? 'text' : 'password'}
+                type={showCurrentPassword ? "text" : "password"}
                 value={passwordValues.currentPassword}
-                onChange={handlePasswordChange('currentPassword')}
+                onChange={handlePasswordChange("currentPassword")}
                 className="w-full px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
                 autoComplete="current-password"
               />
@@ -494,51 +554,77 @@ const ProfileForm = () => {
                 type="button"
                 onClick={() => setShowCurrentPassword((previous) => !previous)}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
-                aria-label={showCurrentPassword ? 'Ẩn mật khẩu hiện tại' : 'Hiện mật khẩu hiện tại'}
+                aria-label={
+                  showCurrentPassword
+                    ? "Ẩn mật khẩu hiện tại"
+                    : "Hiện mật khẩu hiện tại"
+                }
               >
-                {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showCurrentPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Mật khẩu mới</label>
-              <div className="relative">
-                <input
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={passwordValues.newPassword}
-                  onChange={handlePasswordChange('newPassword')}
-                  className="w-full px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword((previous) => !previous)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
-                  aria-label={showNewPassword ? 'Ẩn mật khẩu mới' : 'Hiện mật khẩu mới'}
-                >
-                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Mật khẩu mới
+            </label>
+            <div className="relative">
+              <input
+                type={showNewPassword ? "text" : "password"}
+                value={passwordValues.newPassword}
+                onChange={handlePasswordChange("newPassword")}
+                className="w-full px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((previous) => !previous)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+                aria-label={
+                  showNewPassword ? "Ẩn mật khẩu mới" : "Hiện mật khẩu mới"
+                }
+              >
+                {showNewPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Xác nhận mật khẩu mới</label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={passwordValues.confirmPassword}
-                  onChange={handlePasswordChange('confirmPassword')}
-                  className="w-full px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((previous) => !previous)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
-                  aria-label={showConfirmPassword ? 'Ẩn xác nhận mật khẩu' : 'Hiện xác nhận mật khẩu'}
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Xác nhận mật khẩu mới
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={passwordValues.confirmPassword}
+                onChange={handlePasswordChange("confirmPassword")}
+                className="w-full px-4 py-2.5 pr-11 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-colors"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((previous) => !previous)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+                aria-label={
+                  showConfirmPassword
+                    ? "Ẩn xác nhận mật khẩu"
+                    : "Hiện xác nhận mật khẩu"
+                }
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -549,11 +635,10 @@ const ProfileForm = () => {
             className="flex items-center gap-2 px-6 py-2.5 bg-[#059669] hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
           >
             <Save className="w-4 h-4" />
-            {passwordSaving ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
+            {passwordSaving ? "Đang đổi mật khẩu..." : "Đổi mật khẩu"}
           </button>
         </div>
       </form>
-
     </div>
   );
 };

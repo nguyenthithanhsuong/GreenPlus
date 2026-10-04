@@ -17,7 +17,9 @@ export type GroupPurchaseRow = {
 };
 
 export class GroupPurchaseRepository {
-  async findActiveProductById(productId: string): Promise<{ product_id: string } | null> {
+  async findActiveProductById(
+    productId: string,
+  ): Promise<{ product_id: string } | null> {
     const { data, error } = await supabaseServer
       .from("products")
       .select("product_id")
@@ -36,7 +38,7 @@ export class GroupPurchaseRepository {
     const { data, error } = await supabaseServer
       .from("group_buys")
       .select(
-        "group_id,product_id,leader_id,target_quantity,current_quantity,min_quantity,discount_price,deadline,status,products(name)"
+        "group_id,product_id,leader_id,target_quantity,current_quantity,min_quantity,discount_price,deadline,status,products(name)",
       )
       .eq("status", "open")
       .order("deadline", { ascending: true });
@@ -52,7 +54,7 @@ export class GroupPurchaseRepository {
     const { data, error } = await supabaseServer
       .from("group_buys")
       .select(
-        "group_id,product_id,leader_id,target_quantity,current_quantity,min_quantity,discount_price,deadline,status,products(name)"
+        "group_id,product_id,leader_id,target_quantity,current_quantity,min_quantity,discount_price,deadline,status,products(name)",
       )
       .eq("group_id", groupId)
       .maybeSingle();
@@ -79,7 +81,11 @@ export class GroupPurchaseRepository {
     return (data ?? []).length > 0;
   }
 
-  async insertMember(groupId: string, userId: string, quantity: number): Promise<void> {
+  async insertMember(
+    groupId: string,
+    userId: string,
+    quantity: number,
+  ): Promise<void> {
     const { error } = await supabaseServer.from("group_buy_members").insert({
       group_id: groupId,
       user_id: userId,
@@ -91,7 +97,11 @@ export class GroupPurchaseRepository {
     }
   }
 
-  async updateGroupProgress(groupId: string, nextQuantity: number, nextStatus: GroupPurchaseStatus): Promise<void> {
+  async updateGroupProgress(
+    groupId: string,
+    nextQuantity: number,
+    nextStatus: GroupPurchaseStatus,
+  ): Promise<void> {
     const { error } = await supabaseServer
       .from("group_buys")
       .update({ current_quantity: nextQuantity, status: nextStatus })
@@ -136,7 +146,10 @@ export class GroupPurchaseRepository {
   }
 }
 
-export function readRelationValue<T = string>(rel: RelObj, field: string): T | null {
+export function readRelationValue<T = string>(
+  rel: RelObj,
+  field: string,
+): T | null {
   if (!rel) {
     return null;
   }

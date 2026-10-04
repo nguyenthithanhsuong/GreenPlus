@@ -39,21 +39,28 @@ function navClass(isActive: boolean): string {
     : "rounded-md bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-300";
 }
 
-export default function ProductBackendLayout({ children }: { children: ReactNode }) {
+export default function ProductBackendLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const pathname = usePathname();
   const [inputUserId, setInputUserId] = useState(() => {
     if (typeof window === "undefined") {
       return "";
     }
 
-    return window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    return (
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? ""
+    );
   });
   const [activeUserId, setActiveUserId] = useState<string | null>(() => {
     if (typeof window === "undefined") {
       return null;
     }
 
-    const savedUserId = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const savedUserId =
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
     return savedUserId || null;
   });
 
@@ -83,7 +90,11 @@ export default function ProductBackendLayout({ children }: { children: ReactNode
               {topNavItems.map((item) => {
                 const isActive = pathname.startsWith(item.href);
                 return (
-                  <Link key={item.href} href={item.href} className={navClass(isActive)}>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={navClass(isActive)}
+                  >
                     {item.label}
                   </Link>
                 );
@@ -91,7 +102,9 @@ export default function ProductBackendLayout({ children }: { children: ReactNode
             </div>
 
             <div className="flex items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-2 py-1">
-              <span className="text-[11px] font-semibold text-slate-700">Người dùng kiểm thử</span>
+              <span className="text-[11px] font-semibold text-slate-700">
+                Người dùng kiểm thử
+              </span>
               <input
                 type="text"
                 value={inputUserId}
@@ -112,7 +125,9 @@ export default function ProductBackendLayout({ children }: { children: ReactNode
                 Xóa
               </button>
               <span className="text-[11px] text-slate-600">
-                {activeUserId ? `Đang dùng: ${activeUserId}` : "Chưa có người dùng đang hoạt động"}
+                {activeUserId
+                  ? `Đang dùng: ${activeUserId}`
+                  : "Chưa có người dùng đang hoạt động"}
               </span>
             </div>
           </div>
@@ -121,7 +136,11 @@ export default function ProductBackendLayout({ children }: { children: ReactNode
             {productSubNavItems.map((item) => {
               const isActive = pathname === item.href;
               return (
-                <Link key={item.href} href={item.href} className={navClass(isActive)}>
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={navClass(isActive)}
+                >
                   {item.label}
                 </Link>
               );

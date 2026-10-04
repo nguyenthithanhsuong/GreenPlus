@@ -1,5 +1,10 @@
 import { AppError } from "../../core/errors";
-import { CreateSupplierInput, SupplierRow, SupplierStatus, UpdateSupplierInput } from "./supplier-management.types";
+import {
+  CreateSupplierInput,
+  SupplierRow,
+  SupplierStatus,
+  UpdateSupplierInput,
+} from "./supplier-management.types";
 import { SupplierManagementRepository } from "./supplier-management.repository";
 import { DefaultSupplierStatusStrategy } from "./strategies/supplier-status.strategy";
 
@@ -12,7 +17,10 @@ export class SupplierManagementService {
     return this.repository.listSuppliers();
   }
 
-  private ensureRequiredFields(input: { name?: string; address?: string }): asserts input is { name: string; address: string } {
+  private ensureRequiredFields(input: {
+    name?: string;
+    address?: string;
+  }): asserts input is { name: string; address: string } {
     if (!input.name || input.name.trim().length === 0) {
       throw new AppError("Supplier name is required", 400);
     }
@@ -48,9 +56,10 @@ export class SupplierManagementService {
       throw new AppError("Supplier not found", 404);
     }
 
-    const nextStatus = typeof input.status !== "undefined"
-      ? this.statusStrategy.transition(existing.status, input.status)
-      : existing.status;
+    const nextStatus =
+      typeof input.status !== "undefined"
+        ? this.statusStrategy.transition(existing.status, input.status)
+        : existing.status;
 
     const updated = await this.repository.updateSupplier({
       supplierId: input.supplierId,
@@ -68,14 +77,20 @@ export class SupplierManagementService {
     return updated;
   }
 
-  async changeStatus(supplierId: string, status: SupplierStatus): Promise<SupplierRow> {
+  async changeStatus(
+    supplierId: string,
+    status: SupplierStatus,
+  ): Promise<SupplierRow> {
     const existing = await this.repository.findById(supplierId);
     if (!existing) {
       throw new AppError("Supplier not found", 404);
     }
 
     const nextStatus = this.statusStrategy.transition(existing.status, status);
-    const updated = await this.repository.updateSupplier({ supplierId, status: nextStatus });
+    const updated = await this.repository.updateSupplier({
+      supplierId,
+      status: nextStatus,
+    });
 
     if (!updated) {
       throw new AppError("Supplier not found", 404);

@@ -24,13 +24,19 @@ const colorClasses = [
 
 const getInitials = (name: string) => {
   const tokens = name.trim().split(/\s+/).filter(Boolean);
-  const initials = tokens.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? "").join("");
+  const initials = tokens
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? "")
+    .join("");
   return initials || "CT";
 };
 
 const PAGE_SIZE = 8;
 
-const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+const buildPageItems = (
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
@@ -40,23 +46,49 @@ const buildPageItems = (currentPage: number, totalPages: number): Array<number |
   }
 
   if (currentPage >= totalPages - 2) {
-    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [
+      1,
+      "ellipsis",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
   }
 
-  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    totalPages,
+  ];
 };
 
-const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQueryChange, onEdit, onDelete }: CategoryTableProps) => {
-  const emptyMessage = searchQuery.trim() ? "Không tìm thấy danh mục phù hợp." : "Chưa có danh mục nào.";
-  const [deletingCategory, setDeletingCategory] = React.useState<CategoryRow | null>(null);
+const CategoryTable = ({
+  categories,
+  loading,
+  saving,
+  searchQuery,
+  onSearchQueryChange,
+  onEdit,
+  onDelete,
+}: CategoryTableProps) => {
+  const emptyMessage = searchQuery.trim()
+    ? "Không tìm thấy danh mục phù hợp."
+    : "Chưa có danh mục nào.";
+  const [deletingCategory, setDeletingCategory] =
+    React.useState<CategoryRow | null>(null);
 
   const closeDeleteModal = React.useCallback(() => {
     setDeletingCategory(null);
   }, []);
 
   const { hasPermission } = usePermissions();
-  const canEditGlobal = hasPermission('categories.update');
-  const canDeleteGlobal = hasPermission('categories.delete');
+  const canEditGlobal = hasPermission("categories.update");
+  const canDeleteGlobal = hasPermission("categories.delete");
 
   const handleConfirmDelete = React.useCallback(() => {
     if (!deletingCategory) {
@@ -90,8 +122,12 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
   }, [currentPage, categories]);
 
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
-  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const endItem =
+    totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(
+    () => buildPageItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -120,13 +156,19 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={4}>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={4}
+                >
                   Đang tải danh sách danh mục...
                 </td>
               </tr>
             ) : categories.length === 0 ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={4}>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={4}
+                >
                   {emptyMessage}
                 </td>
               </tr>
@@ -136,7 +178,10 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
                 const hasImage = Boolean(category.image_url?.trim());
 
                 return (
-                  <tr key={category.category_id} className="border-b border-gray-50 transition-colors hover:bg-gray-50/50">
+                  <tr
+                    key={category.category_id}
+                    className="border-b border-gray-50 transition-colors hover:bg-gray-50/50"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         {hasImage ? (
@@ -147,13 +192,21 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
                             loading="lazy"
                           />
                         ) : (
-                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${badgeClass}`}>
+                          <div
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${badgeClass}`}
+                          >
                             {getInitials(category.name)}
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="truncate font-bold text-gray-900">{category.name}</p>
-                          {!hasImage ? <p className="text-[11px] text-gray-400">Chưa có ảnh</p> : null}
+                          <p className="truncate font-bold text-gray-900">
+                            {category.name}
+                          </p>
+                          {!hasImage ? (
+                            <p className="text-[11px] text-gray-400">
+                              Chưa có ảnh
+                            </p>
+                          ) : null}
                         </div>
                       </div>
                     </td>
@@ -207,8 +260,8 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
           <span className="font-bold text-gray-900">
             {startItem} - {endItem}
           </span>{" "}
-          trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>{" "}
-          danh mục
+          trong tổng số{" "}
+          <span className="font-bold text-gray-900">{totalItems}</span> danh mục
         </span>
 
         <div className="flex items-center gap-1">
@@ -252,7 +305,9 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
           <button
             type="button"
             className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             aria-label="Trang sau"
           >
@@ -276,9 +331,15 @@ const CategoryTable = ({ categories, loading, saving, searchQuery, onSearchQuery
               <Trash2 className="h-5 w-5" />
             </div>
 
-            <h3 className="text-lg font-bold text-gray-900">Xác nhận xóa danh mục</h3>
+            <h3 className="text-lg font-bold text-gray-900">
+              Xác nhận xóa danh mục
+            </h3>
             <p className="mt-2 text-sm leading-relaxed text-gray-600">
-              Bạn có chắc muốn xóa <span className="font-semibold text-gray-900">{deletingCategory.name}</span>? Hành động này không thể hoàn tác.
+              Bạn có chắc muốn xóa{" "}
+              <span className="font-semibold text-gray-900">
+                {deletingCategory.name}
+              </span>
+              ? Hành động này không thể hoàn tác.
             </p>
 
             <div className="mt-6 flex items-center justify-end gap-2">

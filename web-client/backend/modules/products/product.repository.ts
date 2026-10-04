@@ -35,7 +35,9 @@ export class ProductRepository {
   async listActiveProducts(): Promise<ProductRow[]> {
     const { data, error } = await supabaseServer
       .from("products")
-      .select("product_id,category_id,name,description,nutrition,unit,image_url,status,created_at,categories(name)")
+      .select(
+        "product_id,category_id,name,description,nutrition,unit,image_url,status,created_at,categories(name)",
+      )
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
@@ -49,7 +51,9 @@ export class ProductRepository {
   async getProductById(productId: string): Promise<ProductRow | null> {
     const { data, error } = await supabaseServer
       .from("products")
-      .select("product_id,category_id,name,description,nutrition,unit,image_url,status,created_at,categories(name)")
+      .select(
+        "product_id,category_id,name,description,nutrition,unit,image_url,status,created_at,categories(name)",
+      )
       .eq("product_id", productId)
       .maybeSingle();
 
@@ -124,7 +128,9 @@ export class ProductRepository {
 
   async getProductSupplierMap(
     productIds: string[],
-  ): Promise<Map<string, { supplierId: string | null; certification: string | null }>> {
+  ): Promise<
+    Map<string, { supplierId: string | null; certification: string | null }>
+  > {
     if (productIds.length === 0) {
       return new Map();
     }
@@ -139,7 +145,10 @@ export class ProductRepository {
       throw new Error(error.message);
     }
 
-    const supplierMap = new Map<string, { supplierId: string | null; certification: string | null }>();
+    const supplierMap = new Map<
+      string,
+      { supplierId: string | null; certification: string | null }
+    >();
 
     (data ?? []).forEach((row) => {
       const productId = row.product_id ? String(row.product_id) : "";
@@ -153,8 +162,13 @@ export class ProductRepository {
 
       const supplierRow = row as ProductSupplierRow;
       supplierMap.set(productId, {
-        supplierId: supplierRow.supplier_id ? String(supplierRow.supplier_id) : null,
-        certification: getRelationValue<string>(supplierRow.suppliers, "certificate"),
+        supplierId: supplierRow.supplier_id
+          ? String(supplierRow.supplier_id)
+          : null,
+        certification: getRelationValue<string>(
+          supplierRow.suppliers,
+          "certificate",
+        ),
       });
     });
 
@@ -166,10 +180,14 @@ export class ProductRepository {
     return priceMap.get(productId) ?? null;
   }
 
-  async getBatchesWithInventoryByProduct(productId: string): Promise<ProductBatchRow[]> {
+  async getBatchesWithInventoryByProduct(
+    productId: string,
+  ): Promise<ProductBatchRow[]> {
     const { data, error } = await supabaseServer
       .from("batches")
-      .select("batch_id,status,expire_date,quantity,inventory(quantity_available,quantity_reserved)")
+      .select(
+        "batch_id,status,expire_date,quantity,inventory(quantity_available,quantity_reserved)",
+      )
       .eq("product_id", productId);
 
     if (error) {
@@ -180,7 +198,10 @@ export class ProductRepository {
   }
 }
 
-export function getRelationValue<T = string>(rel: RelObj, field: string): T | null {
+export function getRelationValue<T = string>(
+  rel: RelObj,
+  field: string,
+): T | null {
   if (!rel) {
     return null;
   }

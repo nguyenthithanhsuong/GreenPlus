@@ -1,8 +1,20 @@
 "use client";
 
 import React from "react";
-import { Check, ChevronLeft, ChevronRight, Eye, Loader, Phone, Search, Truck } from "lucide-react";
-import type { OrderListRow, OrderStatus } from "../../backend/modules/orders/order-tracking.types";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Loader,
+  Phone,
+  Search,
+  Truck,
+} from "lucide-react";
+import type {
+  OrderListRow,
+  OrderStatus,
+} from "../../backend/modules/orders/order-tracking.types";
 
 type StatusFilter = "all" | OrderStatus;
 
@@ -26,18 +38,36 @@ type OrderTableProps = {
   onStartDelivering?: (orderId: string) => void;
 };
 
-const statusMeta: Record<OrderStatus, { label: string; dot: string; text: string }> = {
+const statusMeta: Record<
+  OrderStatus,
+  { label: string; dot: string; text: string }
+> = {
   pending: { label: "Pending", dot: "bg-orange-500", text: "text-orange-600" },
-  confirmed: { label: "Confirmed", dot: "bg-yellow-500", text: "text-yellow-600" },
+  confirmed: {
+    label: "Confirmed",
+    dot: "bg-yellow-500",
+    text: "text-yellow-600",
+  },
   preparing: { label: "Preparing", dot: "bg-blue-500", text: "text-blue-600" },
-  delivering: { label: "Delivering", dot: "bg-purple-500", text: "text-purple-600" },
-  completed: { label: "Completed", dot: "bg-[#059669]", text: "text-[#059669]" },
+  delivering: {
+    label: "Delivering",
+    dot: "bg-purple-500",
+    text: "text-purple-600",
+  },
+  completed: {
+    label: "Completed",
+    dot: "bg-[#059669]",
+    text: "text-[#059669]",
+  },
   cancelled: { label: "Cancelled", dot: "bg-red-500", text: "text-red-500" },
 };
 
 const PAGE_SIZE = 8;
 
-const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+const buildPageItems = (
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
@@ -47,10 +77,25 @@ const buildPageItems = (currentPage: number, totalPages: number): Array<number |
   }
 
   if (currentPage >= totalPages - 2) {
-    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [
+      1,
+      "ellipsis",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
   }
 
-  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    totalPages,
+  ];
 };
 
 const formatCurrency = (value: number): string => {
@@ -73,7 +118,10 @@ const formatOrderDate = (value: string | null): string => {
   }).format(date);
 };
 
-const paymentBadge = (method: OrderListRow["payment_method"], status: OrderListRow["payment_status"]) => {
+const paymentBadge = (
+  method: OrderListRow["payment_method"],
+  status: OrderListRow["payment_status"],
+) => {
   const methodText = method ? method.toUpperCase() : "N/A";
   const statusText = status ?? "pending";
 
@@ -139,8 +187,12 @@ const OrderTable = ({
   }, [currentPage, items]);
 
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
-  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const endItem =
+    totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(
+    () => buildPageItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -239,49 +291,78 @@ const OrderTable = ({
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={6}
+                >
                   Đang tải dữ liệu đơn hàng...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={6}
+                >
                   Không có đơn hàng phù hợp điều kiện lọc.
                 </td>
               </tr>
             ) : (
               visibleItems.map((order) => {
                 const status = statusMeta[order.status];
-                const payment = paymentBadge(order.payment_method, order.payment_status);
+                const payment = paymentBadge(
+                  order.payment_method,
+                  order.payment_status,
+                );
 
                 return (
-                  <tr key={order.order_id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                  <tr
+                    key={order.order_id}
+                    className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
-                      <p className="font-bold text-[#059669] mb-0.5">{order.order_id}</p>
-                      <p className="text-[11px] text-gray-400">{formatOrderDate(order.order_date)}</p>
+                      <p className="font-bold text-[#059669] mb-0.5">
+                        {order.order_id}
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        {formatOrderDate(order.order_date)}
+                      </p>
                     </td>
 
                     <td className="px-6 py-4">
-                      <p className="font-bold text-gray-900 mb-0.5">{order.customer_name ?? "Khách chưa xác định"}</p>
+                      <p className="font-bold text-gray-900 mb-0.5">
+                        {order.customer_name ?? "Khách chưa xác định"}
+                      </p>
                       <p className="text-[11px] font-medium text-gray-500 flex items-center gap-1">
-                        <Phone className="w-3 h-3" /> {order.customer_phone ?? "-"}
+                        <Phone className="w-3 h-3" />{" "}
+                        {order.customer_phone ?? "-"}
                       </p>
                     </td>
 
                     <td className="px-6 py-4 text-center">
-                      <span className="font-bold text-gray-900">{formatCurrency(order.total_amount)}</span>
+                      <span className="font-bold text-gray-900">
+                        {formatCurrency(order.total_amount)}
+                      </span>
                     </td>
 
                     <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-3 py-1 rounded-md text-[11px] font-bold border ${payment.className}`}>
+                      <span
+                        className={`inline-block px-3 py-1 rounded-md text-[11px] font-bold border ${payment.className}`}
+                      >
                         {payment.text}
                       </span>
                     </td>
 
                     <td className="px-6 py-4 text-center">
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 border border-gray-100">
-                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                        <span className={`font-bold text-[11px] ${status.text}`}>{status.label}</span>
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${status.dot}`}
+                        />
+                        <span
+                          className={`font-bold text-[11px] ${status.text}`}
+                        >
+                          {status.label}
+                        </span>
                       </div>
                     </td>
 
@@ -309,7 +390,8 @@ const OrderTable = ({
                             <Truck className="w-4 h-4" />
                           </button>
                         )}
-                        {(order.status === "delivering" || order.status === "completed") && (
+                        {(order.status === "delivering" ||
+                          order.status === "completed") && (
                           <button
                             type="button"
                             onClick={() => onViewDelivery(order.order_id)}
@@ -355,8 +437,8 @@ const OrderTable = ({
           <span className="font-bold text-gray-900">
             {startItem} - {endItem}
           </span>{" "}
-          trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>{" "}
-          đơn hàng
+          trong tổng số{" "}
+          <span className="font-bold text-gray-900">{totalItems}</span> đơn hàng
         </span>
 
         <div className="flex items-center gap-1">
@@ -400,7 +482,9 @@ const OrderTable = ({
           <button
             type="button"
             className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             aria-label="Trang sau"
           >

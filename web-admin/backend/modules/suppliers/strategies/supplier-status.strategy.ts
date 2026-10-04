@@ -14,7 +14,11 @@ export class DefaultSupplierStatusStrategy implements SupplierStatusStrategy {
     }
 
     const normalized = input.trim().toLowerCase();
-    if (normalized === "pending" || normalized === "approved" || normalized === "rejected") {
+    if (
+      normalized === "pending" ||
+      normalized === "approved" ||
+      normalized === "rejected"
+    ) {
       return normalized;
     }
 
@@ -25,7 +29,10 @@ export class DefaultSupplierStatusStrategy implements SupplierStatusStrategy {
     const state = createSupplierStatusState(current);
 
     if (!state.canTransitionTo(next)) {
-      throw new AppError(`Cannot transition supplier status from ${current} to ${next}`, 400);
+      throw new AppError(
+        `Cannot transition supplier status from ${current} to ${next}`,
+        400,
+      );
     }
 
     return next;

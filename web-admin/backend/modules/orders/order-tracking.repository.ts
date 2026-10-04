@@ -68,7 +68,9 @@ export class OrderTrackingRepository {
   }): Promise<OrderListRow[]> {
     let query = this.supabase
       .from("orders")
-      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(quantity)")
+      .select(
+        "order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(quantity)",
+      )
       .order("order_date", { ascending: false, nullsFirst: false });
 
     if (filters.status) {
@@ -88,13 +90,17 @@ export class OrderTrackingRepository {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as OrderDbRow[]).map((row) => this.toOrderListRow(row));
+    return ((data ?? []) as OrderDbRow[]).map((row) =>
+      this.toOrderListRow(row),
+    );
   }
 
   async findOrderById(orderId: string): Promise<OrderDetailRow | null> {
     const { data, error } = await this.supabase
       .from("orders")
-      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(order_item_id,order_id,product_id,batch_id,quantity,price,products(name),note)")
+      .select(
+        "order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(order_item_id,order_id,product_id,batch_id,quantity,price,products(name),note)",
+      )
       .eq("order_id", orderId)
       .maybeSingle();
 
@@ -116,7 +122,9 @@ export class OrderTrackingRepository {
         updated_at: new Date().toISOString(),
       })
       .eq("order_id", input.orderId)
-      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(order_item_id,order_id,product_id,batch_id,quantity,price,products(name),note)")
+      .select(
+        "order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at,users(name,phone),payments(method,status),order_items(order_item_id,order_id,product_id,batch_id,quantity,price,products(name),note)",
+      )
       .maybeSingle();
 
     if (error) {
@@ -161,7 +169,11 @@ export class OrderTrackingRepository {
     }
   }
 
-  async ensureDeliveryForOrder(input: { orderId: string; note?: string; employeeId?: string }): Promise<void> {
+  async ensureDeliveryForOrder(input: {
+    orderId: string;
+    note?: string;
+    employeeId?: string;
+  }): Promise<void> {
     const { data: existing, error: existingError } = await this.supabase
       .from("deliveries")
       .select("delivery_id,pickup_time")
@@ -176,13 +188,15 @@ export class OrderTrackingRepository {
     const now = new Date().toISOString();
 
     if (!existing) {
-      const { error: insertError } = await this.supabase.from("deliveries").insert({
-        order_id: input.orderId,
-        employee_id: input.employeeId || null,
-        status: "delivering",
-        pickup_time: now,
-        note: input.note?.trim() || null,
-      });
+      const { error: insertError } = await this.supabase
+        .from("deliveries")
+        .insert({
+          order_id: input.orderId,
+          employee_id: input.employeeId || null,
+          status: "delivering",
+          pickup_time: now,
+          note: input.note?.trim() || null,
+        });
 
       if (insertError) {
         throw new Error(insertError.message);
@@ -209,7 +223,10 @@ export class OrderTrackingRepository {
 
   private toOrderListRow(row: OrderDbRow): OrderListRow {
     const payment = this.pickPayment(row.payments);
-    const itemCount = (row.order_items ?? []).reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
+    const itemCount = (row.order_items ?? []).reduce(
+      (sum, item) => sum + Number(item.quantity ?? 0),
+      0,
+    );
 
     return {
       order_id: row.order_id,
@@ -231,7 +248,9 @@ export class OrderTrackingRepository {
 
   private toOrderDetailRow(row: OrderDbRow): OrderDetailRow {
     const base = this.toOrderListRow(row);
-    const items = (row.order_items ?? []).map((item) => this.toOrderItemRow(item));
+    const items = (row.order_items ?? []).map((item) =>
+      this.toOrderItemRow(item),
+    );
 
     return {
       ...base,
@@ -239,7 +258,9 @@ export class OrderTrackingRepository {
     };
   }
 
-  private toOrderItemRow(item: NonNullable<OrderDbRow["order_items"]>[number]): OrderItemRow {
+  private toOrderItemRow(
+    item: NonNullable<OrderDbRow["order_items"]>[number],
+  ): OrderItemRow {
     const price = Number(item.price ?? 0);
     const quantity = Number(item.quantity ?? 0);
 
@@ -256,7 +277,9 @@ export class OrderTrackingRepository {
     };
   }
 
-  private pickPayment(payment: PaymentJoin | undefined): { method?: string | null; status?: string | null } | null {
+  private pickPayment(
+    payment: PaymentJoin | undefined,
+  ): { method?: string | null; status?: string | null } | null {
     if (!payment) {
       return null;
     }
@@ -284,7 +307,12 @@ export class OrderTrackingRepository {
   }
 
   private normalizePaymentMethod(value?: string | null): PaymentMethod | null {
-    if (value === "cod" || value === "momo" || value === "vnpay" || value === "bank_transfer") {
+    if (
+      value === "cod" ||
+      value === "momo" ||
+      value === "vnpay" ||
+      value === "bank_transfer"
+    ) {
       return value;
     }
 
@@ -292,7 +320,12 @@ export class OrderTrackingRepository {
   }
 
   private normalizePaymentStatus(value?: string | null): PaymentStatus | null {
-    if (value === "pending" || value === "paid" || value === "failed" || value === "cancelled") {
+    if (
+      value === "pending" ||
+      value === "paid" ||
+      value === "failed" ||
+      value === "cancelled"
+    ) {
       return value;
     }
 

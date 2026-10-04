@@ -16,11 +16,16 @@ export class GreenCreatorContentFacade {
     return this.service.listPosts();
   }
 
-  async changeStatus(postId: string, status: GreenCreatorPostStatus): Promise<GreenCreatorPostRow> {
+  async changeStatus(
+    postId: string,
+    status: GreenCreatorPostStatus,
+  ): Promise<GreenCreatorPostRow> {
     return this.service.changeStatus(postId, status);
   }
 
-  async createPost(input: CreateGreenCreatorPostInput): Promise<GreenCreatorPostRow> {
+  async createPost(
+    input: CreateGreenCreatorPostInput,
+  ): Promise<GreenCreatorPostRow> {
     return this.service.createPost(input);
   }
 
@@ -28,7 +33,9 @@ export class GreenCreatorContentFacade {
     await this.service.deletePost(postId, force);
   }
 
-  async uploadAttachment(input: UploadGreenCreatorAttachmentInput): Promise<UploadGreenCreatorAttachmentResult> {
+  async uploadAttachment(
+    input: UploadGreenCreatorAttachmentInput,
+  ): Promise<UploadGreenCreatorAttachmentResult> {
     return this.service.uploadAttachment(input);
   }
 }

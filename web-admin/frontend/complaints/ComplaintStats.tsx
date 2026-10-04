@@ -1,6 +1,11 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, MessageSquare, RefreshCcw } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  MessageSquare,
+  RefreshCcw,
+} from "lucide-react";
 
 type ComplaintStatsProps = {
   pendingCount: number;
@@ -25,7 +30,9 @@ const ComplaintStats = ({
         </div>
         <div>
           <p className="text-sm font-medium text-gray-600">Chờ xử lý</p>
-          <h3 className="text-2xl font-bold text-gray-900">{pendingCount.toLocaleString("vi-VN")}</h3>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {pendingCount.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
 
@@ -34,8 +41,12 @@ const ComplaintStats = ({
           <RefreshCcw className="h-6 w-6 text-orange-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500">Hoàn tiền / Đổi trả</p>
-          <h3 className="text-2xl font-bold text-gray-900">{refundOrReturnCount.toLocaleString("vi-VN")}</h3>
+          <p className="text-sm font-medium text-gray-500">
+            Hoàn tiền / Đổi trả
+          </p>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {refundOrReturnCount.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
 
@@ -45,7 +56,9 @@ const ComplaintStats = ({
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Phản hồi / Góp ý</p>
-          <h3 className="text-2xl font-bold text-gray-900">{feedbackCount.toLocaleString("vi-VN")}</h3>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {feedbackCount.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
 
@@ -54,7 +67,9 @@ const ComplaintStats = ({
           <CheckCircle2 className="h-6 w-6 text-emerald-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500">Đã giải quyết / Từ chối</p>
+          <p className="text-sm font-medium text-gray-500">
+            Đã giải quyết / Từ chối
+          </p>
           <h3 className="text-2xl font-bold text-gray-900">
             {(resolvedCount + rejectedCount).toLocaleString("vi-VN")}
           </h3>

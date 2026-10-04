@@ -43,13 +43,10 @@ const UserManagement = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
   const [storeOptions, setStoreOptions] = useState<StoreOption[]>([]);
-  const [confirmState, setConfirmState] = useState<
-    | {
-      type: "ban" | "unban" | "delete";
-      user: UserViewModel;
-    }
-    | null
-  >(null);
+  const [confirmState, setConfirmState] = useState<{
+    type: "ban" | "unban" | "delete";
+    user: UserViewModel;
+  } | null>(null);
 
   const { hasPermission, loading: permLoading } = usePermissions();
 
@@ -59,7 +56,10 @@ const UserManagement = () => {
 
     try {
       const response = await fetch("/api/users");
-      const data = (await response.json()) as { items?: UserViewModel[]; error?: string };
+      const data = (await response.json()) as {
+        items?: UserViewModel[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách người dùng");
@@ -67,7 +67,11 @@ const UserManagement = () => {
 
       setUsers(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải danh sách người dùng");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải danh sách người dùng",
+      );
       setUsers([]);
     } finally {
       setLoading(false);
@@ -77,7 +81,10 @@ const UserManagement = () => {
   const loadRoles = useCallback(async () => {
     try {
       const response = await fetch("/api/roles");
-      const data = (await response.json()) as { items?: Array<{ role_id?: string; role_name?: string }>; error?: string };
+      const data = (await response.json()) as {
+        items?: Array<{ role_id?: string; role_name?: string }>;
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách vai trò");
@@ -93,7 +100,7 @@ const UserManagement = () => {
               .trim()
               .toLowerCase()
               .replace(/^[a-z]/, (character) => character.toUpperCase()),
-          }))
+          })),
       );
     } catch {
       setRoleOptions([]);
@@ -103,7 +110,10 @@ const UserManagement = () => {
   const loadStores = useCallback(async () => {
     try {
       const response = await fetch("/api/stores");
-      const data = (await response.json()) as { items?: Array<{ store_id?: string; name?: string }>; error?: string };
+      const data = (await response.json()) as {
+        items?: Array<{ store_id?: string; name?: string }>;
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách cửa hàng");
@@ -116,7 +126,7 @@ const UserManagement = () => {
           .map((store) => ({
             storeId: store.store_id as string,
             storeName: (store.name ?? "").trim(),
-          }))
+          })),
       );
     } catch {
       setStoreOptions([]);
@@ -129,98 +139,128 @@ const UserManagement = () => {
     void loadStores();
   }, [loadRoles, loadStores, loadUsers]);
 
-  const withSaving = useCallback(async (work: () => Promise<void>) => {
-    setSaving(true);
-    setError(null);
+  const withSaving = useCallback(
+    async (work: () => Promise<void>) => {
+      setSaving(true);
+      setError(null);
 
-    try {
-      await work();
-      await loadUsers();
-    } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Thao tác thất bại";
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setSaving(false);
-    }
-  }, [loadUsers]);
-
-  const handleCreateUser = useCallback(async (payload: {
-    name: string;
-    email: string;
-    password: string;
-    roleId?: string | null;
-    storeId?: string | null;
-    phone?: string;
-    address?: string;
-    imageUrl?: string;
-    status?: "active" | "inactive" | "banned";
-  }) => {
-    await withSaving(async () => {
-      const response = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error ?? "Tạo user thất bại");
+      try {
+        await work();
+        await loadUsers();
+      } catch (requestError) {
+        const message =
+          requestError instanceof Error
+            ? requestError.message
+            : "Thao tác thất bại";
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setSaving(false);
       }
-    });
-  }, [withSaving]);
+    },
+    [loadUsers],
+  );
 
-  const handleUpdateUser = useCallback(async (userId: string, payload: {
-    name?: string;
-    email?: string;
-    roleId?: string | null;
-    storeId?: string | null;
-    phone?: string;
-    address?: string;
-    imageUrl?: string;
-    status?: "active" | "inactive" | "banned";
-  }) => {
-    await withSaving(async () => {
-      const response = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+  const handleCreateUser = useCallback(
+    async (payload: {
+      name: string;
+      email: string;
+      password: string;
+      roleId?: string | null;
+      storeId?: string | null;
+      phone?: string;
+      address?: string;
+      imageUrl?: string;
+      status?: "active" | "inactive" | "banned";
+    }) => {
+      await withSaving(async () => {
+        const response = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Tạo user thất bại");
+        }
       });
+    },
+    [withSaving],
+  );
 
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error ?? "Cập nhật user thất bại");
-      }
-    });
-  }, [withSaving]);
+  const handleUpdateUser = useCallback(
+    async (
+      userId: string,
+      payload: {
+        name?: string;
+        email?: string;
+        roleId?: string | null;
+        storeId?: string | null;
+        phone?: string;
+        address?: string;
+        imageUrl?: string;
+        status?: "active" | "inactive" | "banned";
+      },
+    ) => {
+      await withSaving(async () => {
+        const response = await fetch(
+          `/api/users/${encodeURIComponent(userId)}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          },
+        );
 
-  const handleToggleBanStatus = useCallback(async (userId: string, newStatus: "active" | "banned") => {
-    await withSaving(async () => {
-      const response = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Cập nhật user thất bại");
+        }
       });
+    },
+    [withSaving],
+  );
 
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error ?? "Cập nhật trạng thái user thất bại");
-      }
-    });
-  }, [withSaving]);
+  const handleToggleBanStatus = useCallback(
+    async (userId: string, newStatus: "active" | "banned") => {
+      await withSaving(async () => {
+        const response = await fetch(
+          `/api/users/${encodeURIComponent(userId)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatus }),
+          },
+        );
 
-  const handleDeleteUser = useCallback(async (userId: string) => {
-    await withSaving(async () => {
-      const response = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
-        method: "DELETE",
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Cập nhật trạng thái user thất bại");
+        }
       });
+    },
+    [withSaving],
+  );
 
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error ?? "Xóa user thất bại");
-      }
-    });
-  }, [withSaving]);
+  const handleDeleteUser = useCallback(
+    async (userId: string) => {
+      await withSaving(async () => {
+        const response = await fetch(
+          `/api/users/${encodeURIComponent(userId)}`,
+          {
+            method: "DELETE",
+          },
+        );
+
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Xóa user thất bại");
+        }
+      });
+    },
+    [withSaving],
+  );
 
   const stats = useMemo(() => {
     const activeUsers = users.filter((user) => user.status === "active").length;
@@ -232,8 +272,11 @@ const UserManagement = () => {
   }, [users]);
 
   const customerRoleId = useMemo(
-    () => roleOptions.find((role) => role.roleName.trim().toLowerCase() === "customer")?.roleId ?? null,
-    [roleOptions]
+    () =>
+      roleOptions.find(
+        (role) => role.roleName.trim().toLowerCase() === "customer",
+      )?.roleId ?? null,
+    [roleOptions],
   );
 
   const openCreateDrawer = useCallback(() => {
@@ -272,7 +315,6 @@ const UserManagement = () => {
   }, []);
 
   const requestToggleBanStatus = useCallback((user: UserViewModel) => {
-
     const type = user.status === "active" ? "ban" : "unban";
     setConfirmState({ type, user });
   }, []);
@@ -341,8 +383,7 @@ const UserManagement = () => {
 
         closeDrawer();
       }
-    } catch {
-    }
+    } catch {}
   }, [
     closeDrawer,
     drawerMode,
@@ -389,7 +430,10 @@ const UserManagement = () => {
         body,
       });
 
-      const data = (await response.json()) as { publicUrl?: string; error?: string };
+      const data = (await response.json()) as {
+        publicUrl?: string;
+        error?: string;
+      };
       if (!response.ok || !data.publicUrl) {
         throw new Error(data.error ?? "Upload ảnh thất bại");
       }
@@ -399,7 +443,11 @@ const UserManagement = () => {
         imageUrl: data.publicUrl ?? previous.imageUrl,
       }));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Upload ảnh thất bại");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Upload ảnh thất bại",
+      );
     } finally {
       setUploadingAvatar(false);
     }
@@ -424,9 +472,14 @@ const UserManagement = () => {
       }
 
       setConfirmState(null);
-    } catch {
-    }
-  }, [closeDrawer, confirmState, handleDeleteUser, handleToggleBanStatus, selectedUser]);
+    } catch {}
+  }, [
+    closeDrawer,
+    confirmState,
+    handleDeleteUser,
+    handleToggleBanStatus,
+    selectedUser,
+  ]);
 
   const reloadData = useCallback(async () => {
     await Promise.all([loadUsers(), loadRoles(), loadStores()]);
@@ -531,11 +584,7 @@ const UserManagement = () => {
               ? "Mở khóa tài khoản"
               : "Xóa tài khoản"
         }
-        confirmVariant={
-          confirmState?.type === "delete"
-            ? "danger"
-            : "warning"
-        }
+        confirmVariant={confirmState?.type === "delete" ? "danger" : "warning"}
         loading={saving}
         onCancel={closeConfirmDialog}
         onConfirm={() => {

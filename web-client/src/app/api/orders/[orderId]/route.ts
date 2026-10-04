@@ -2,6 +2,10 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { orderFacade } from "../../../../../backend/modules/orders/facades/order.facade";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
 
 type Context = {
@@ -21,16 +25,17 @@ type UpdateOrderBody = {
 };
 
 export const GET = withSentry(async (request: Request, context: Context) => {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let orderId = "";
 
   try {
     const { searchParams } = new URL(request.url);
 
-    userId =
-      searchParams.get("userId")?.trim() ??
-      searchParams.get("user_id")?.trim() ??
-      "";
+    userId = assertCustomerId(
+      searchParams.get("userId") ?? searchParams.get("user_id") ?? undefined,
+      identity.userId,
+    );
 
     const params = await context.params;
     orderId = params.orderId;
@@ -45,7 +50,7 @@ export const GET = withSentry(async (request: Request, context: Context) => {
 
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,7 +76,7 @@ export const GET = withSentry(async (request: Request, context: Context) => {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -80,19 +85,18 @@ export const GET = withSentry(async (request: Request, context: Context) => {
 });
 
 export const PUT = withSentry(async (request: Request, context: Context) => {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let orderId = "";
 
   try {
     const body = (await request.json()) as UpdateOrderBody;
 
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
     const deliveryAddress =
-      body.deliveryAddress?.trim() ??
-      body.delivery_address?.trim();
+      body.deliveryAddress?.trim() ?? body.delivery_address?.trim();
 
-    const deliveryFeeRaw =
-      body.deliveryFee ?? body.delivery_fee;
+    const deliveryFeeRaw = body.deliveryFee ?? body.delivery_fee;
 
     const note = body.note;
 
@@ -109,7 +113,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
 
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -144,7 +148,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 

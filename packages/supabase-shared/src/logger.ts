@@ -7,7 +7,10 @@ interface LogPayload {
 }
 
 export class BetterStackLogger {
-  constructor(private token: string, private url: string) {}
+  constructor(
+    private token: string,
+    private url: string,
+  ) {}
 
   async send(payload: LogPayload): Promise<void> {
     if (!this.token) {

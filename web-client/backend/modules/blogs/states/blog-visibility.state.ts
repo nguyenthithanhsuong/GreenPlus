@@ -16,7 +16,9 @@ class HiddenBlogState implements BlogVisibilityState {
   }
 }
 
-export function createBlogVisibilityState(status: BlogStatus): BlogVisibilityState {
+export function createBlogVisibilityState(
+  status: BlogStatus,
+): BlogVisibilityState {
   if (status === "approved" || status === "published") {
     return new VisibleBlogState();
   }

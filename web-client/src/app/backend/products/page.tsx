@@ -46,7 +46,13 @@ type ProductDetail = {
 
 type SortType = "newest" | "price_asc" | "price_desc";
 
-const KNOWN_IMAGE_HOSTS = ["gstatic.com", "googleusercontent.com", "imgur.com", "unsplash.com", "cloudinary.com"];
+const KNOWN_IMAGE_HOSTS = [
+  "gstatic.com",
+  "googleusercontent.com",
+  "imgur.com",
+  "unsplash.com",
+  "cloudinary.com",
+];
 
 function resolveRenderableImageUrl(value?: string | null): string | null {
   if (!value) {
@@ -64,8 +70,12 @@ function resolveRenderableImageUrl(value?: string | null): string | null {
     const hostname = parsed.hostname.toLowerCase();
     const queryQ = parsed.searchParams.get("q") ?? "";
 
-    const hasImageExtension = /\.(?:png|jpe?g|gif|webp|svg|avif|bmp)$/.test(pathname);
-    const isKnownImageHost = KNOWN_IMAGE_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+    const hasImageExtension = /\.(?:png|jpe?g|gif|webp|svg|avif|bmp)$/.test(
+      pathname,
+    );
+    const isKnownImageHost = KNOWN_IMAGE_HOSTS.some(
+      (host) => hostname === host || hostname.endsWith(`.${host}`),
+    );
     const isGoogleImageProxy = queryQ.includes("tbn:");
 
     if (hasImageExtension || isKnownImageHost || isGoogleImageProxy) {
@@ -94,7 +104,9 @@ export default function BackendProductsTestPage() {
 
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null,
+  );
   const [detail, setDetail] = useState<ProductDetail | null>(null);
 
   const currentPage = useMemo(() => Number(page) || 1, [page]);
@@ -110,7 +122,8 @@ export default function BackendProductsTestPage() {
     if (includeFilters) {
       if (keyword.trim()) params.set("keyword", keyword.trim());
       if (categoryId.trim()) params.set("categoryId", categoryId.trim());
-      if (certification.trim()) params.set("certification", certification.trim());
+      if (certification.trim())
+        params.set("certification", certification.trim());
       if (minPrice.trim()) params.set("minPrice", minPrice.trim());
       if (maxPrice.trim()) params.set("maxPrice", maxPrice.trim());
     }
@@ -125,7 +138,8 @@ export default function BackendProductsTestPage() {
     try {
       const query = buildQueryString(includeFilters);
       const response = await fetch(`/api/products?${query}`);
-      const data = (await response.json()) as BrowseResponse | { error: string };
+      const data = (await response.json()) as
+        BrowseResponse | { error: string };
 
       if (!response.ok) {
         const message = "error" in data ? data.error : "Request failed";
@@ -137,7 +151,10 @@ export default function BackendProductsTestPage() {
       setDetail(null);
       setDetailError(null);
     } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Lỗi không xác định";
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Lỗi không xác định";
       setError(message);
     } finally {
       setLoading(false);
@@ -160,7 +177,10 @@ export default function BackendProductsTestPage() {
       setSelectedProductId(productId);
       setDetail(data as ProductDetail);
     } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Lỗi không xác định";
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Lỗi không xác định";
       setDetailError(message);
       setDetail(null);
     } finally {
@@ -203,7 +223,10 @@ export default function BackendProductsTestPage() {
         <section className="rounded-xl border border-slate-300 bg-white p-5">
           <h2 className="text-lg font-semibold">Browse and Search</h2>
 
-          <form onSubmit={onSearchSubmit} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <form
+            onSubmit={onSearchSubmit}
+            className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4"
+          >
             <input
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
@@ -281,7 +304,8 @@ export default function BackendProductsTestPage() {
           {result && (
             <div className="mt-4">
               <p className="mb-2 text-sm text-slate-700">
-                total: {result.total} | page: {result.page} | limit: {result.limit}
+                total: {result.total} | page: {result.page} | limit:{" "}
+                {result.limit}
               </p>
               <div className="overflow-x-auto rounded border border-slate-300">
                 <table className="min-w-full text-left text-sm">
@@ -298,11 +322,18 @@ export default function BackendProductsTestPage() {
                   </thead>
                   <tbody>
                     {result.items.map((item) => (
-                      <tr key={item.productId} className="border-t border-slate-200">
+                      <tr
+                        key={item.productId}
+                        className="border-t border-slate-200"
+                      >
                         <td className="px-3 py-2">
                           {resolveRenderableImageUrl(item.imageUrl) ? (
                             <img
-                              src={resolveRenderableImageUrl(item.imageUrl) as string}
+                              src={
+                                resolveRenderableImageUrl(
+                                  item.imageUrl,
+                                ) as string
+                              }
                               alt={item.name}
                               className="h-12 w-12 rounded object-cover"
                             />
@@ -311,10 +342,16 @@ export default function BackendProductsTestPage() {
                           )}
                         </td>
                         <td className="px-3 py-2">{item.name}</td>
-                        <td className="px-3 py-2">{item.categoryName ?? "-"}</td>
-                        <td className="px-3 py-2">{item.certification ?? "-"}</td>
+                        <td className="px-3 py-2">
+                          {item.categoryName ?? "-"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {item.certification ?? "-"}
+                        </td>
                         <td className="px-3 py-2">{item.price ?? "-"}</td>
-                        <td className="px-3 py-2">{item.isAvailable ? "available" : "unavailable"}</td>
+                        <td className="px-3 py-2">
+                          {item.isAvailable ? "available" : "unavailable"}
+                        </td>
                         <td className="px-3 py-2">
                           <button
                             onClick={() => void fetchDetail(item.productId)}
@@ -336,18 +373,25 @@ export default function BackendProductsTestPage() {
         <section className="rounded-xl border border-slate-300 bg-white p-5">
           <h2 className="text-lg font-semibold">Product Detail</h2>
           {selectedProductId && (
-            <p className="mt-1 text-xs text-slate-500">selected product: {selectedProductId}</p>
+            <p className="mt-1 text-xs text-slate-500">
+              selected product: {selectedProductId}
+            </p>
           )}
 
-          {detailLoading && <p className="mt-3 text-sm text-slate-600">Loading detail...</p>}
-          {detailError && <p className="mt-3 text-sm text-rose-700">{detailError}</p>}
+          {detailLoading && (
+            <p className="mt-3 text-sm text-slate-600">Loading detail...</p>
+          )}
+          {detailError && (
+            <p className="mt-3 text-sm text-rose-700">{detailError}</p>
+          )}
 
           {detail && (
             <div className="mt-3 space-y-3">
               {detail.images.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {detail.images.map((imageUrl) => {
-                    const resolvedImageUrl = resolveRenderableImageUrl(imageUrl);
+                    const resolvedImageUrl =
+                      resolveRenderableImageUrl(imageUrl);
                     if (!resolvedImageUrl) {
                       return null;
                     }
@@ -371,7 +415,9 @@ export default function BackendProductsTestPage() {
           )}
 
           {!detail && !detailLoading && !detailError && (
-            <p className="mt-3 text-sm text-slate-600">Choose a product from the list to inspect backend detail response.</p>
+            <p className="mt-3 text-sm text-slate-600">
+              Choose a product from the list to inspect backend detail response.
+            </p>
           )}
         </section>
       </div>

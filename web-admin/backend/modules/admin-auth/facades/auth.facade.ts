@@ -23,7 +23,6 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
 const CUSTOM_TOKEN_PREFIX = "gpv1";
 
-
 export class AuthFacade {
   private readonly repository: AuthRepository;
   private readonly hasher: PasswordHasherStrategy;
@@ -49,7 +48,8 @@ export class AuthFacade {
   }
 
   private getSessionSecret(): string {
-    const secret = process.env.AUTH_HANDOFF_SECRET || process.env.AUTH_SESSION_SECRET;
+    const secret =
+      process.env.AUTH_HANDOFF_SECRET || process.env.AUTH_SESSION_SECRET;
 
     if (!secret) {
       throw new AppError("Session secret is not configured", 500);
@@ -66,7 +66,9 @@ export class AuthFacade {
     loginTime: string;
   }): string {
     const payload = Buffer.from(JSON.stringify(input)).toString("base64url");
-    const signature = createHmac("sha256", this.getSessionSecret()).update(payload).digest("base64url");
+    const signature = createHmac("sha256", this.getSessionSecret())
+      .update(payload)
+      .digest("base64url");
 
     return `${CUSTOM_TOKEN_PREFIX}.${payload}.${signature}`;
   }
@@ -92,7 +94,9 @@ export class AuthFacade {
       throw new AppError("Invalid email format", 400);
     }
 
-    const existing = await this.repository.findUserByEmail(input.email.trim().toLowerCase());
+    const existing = await this.repository.findUserByEmail(
+      input.email.trim().toLowerCase(),
+    );
     if (existing) {
       throw new AppError("Email already exists", 400);
     }
@@ -122,7 +126,11 @@ export class AuthFacade {
     };
   }
 
-  async signIn(input: SignInInput): Promise<{ session: SessionInfo; user: Record<string, unknown>; role_name: string | null }> {
+  async signIn(input: SignInInput): Promise<{
+    session: SessionInfo;
+    user: Record<string, unknown>;
+    role_name: string | null;
+  }> {
     const email = input.email.trim().toLowerCase();
 
     if (email.length === 0) {
@@ -139,58 +147,54 @@ export class AuthFacade {
 
     const user = await this.repository.findUserByEmail(email);
     if (!user) {
-            throw new AppError("Account not found", 404);
+      throw new AppError("Account not found", 404);
     }
     console.log("========== LOGIN DEBUG ==========");
 
-console.log("INPUT EMAIL:", email);
-console.log("INPUT PASSWORD (RAW):", input.password);
+    console.log("INPUT EMAIL:", email);
+    console.log("INPUT PASSWORD (RAW):", input.password);
 
-console.log("USER FOUND:", {
-  user_id: user?.user_id,
-  email: user?.email,
-  role_id: user?.role_id,
-  status: user?.status,
-});
+    console.log("USER FOUND:", {
+      user_id: user?.user_id,
+      email: user?.email,
+      role_id: user?.role_id,
+      status: user?.status,
+    });
 
-console.log("STORED PASSWORD:", user?.password);
+    console.log("STORED PASSWORD:", user?.password);
 
-console.log(
-  "IS PBKDF2 HASH:",
-  user?.password?.startsWith("pbkdf2$")
-);
+    console.log("IS PBKDF2 HASH:", user?.password?.startsWith("pbkdf2$"));
 
-if (user?.password?.startsWith("pbkdf2$")) {
-  const [algorithm, iterationText, salt, hashHex] =
-    user.password.split("$");
+    if (user?.password?.startsWith("pbkdf2$")) {
+      const [algorithm, iterationText, salt, hashHex] =
+        user.password.split("$");
 
-  console.log("HASH PARTS:", {
-    algorithm,
-    iterationText,
-    salt,
-    hashLength: hashHex?.length,
-  });
+      console.log("HASH PARTS:", {
+        algorithm,
+        iterationText,
+        salt,
+        hashLength: hashHex?.length,
+      });
 
-  const compareResult = await this.hasher.compare(
-    input.password,
-    user.password
-  );
+      const compareResult = await this.hasher.compare(
+        input.password,
+        user.password,
+      );
 
-  console.log("COMPARE RESULT:", compareResult);
-} else {
-  console.log(
-    "PLAINTEXT MATCH:",
-    input.password === user?.password
-  );
-}
+      console.log("COMPARE RESULT:", compareResult);
+    } else {
+      console.log("PLAINTEXT MATCH:", input.password === user?.password);
+    }
 
-console.log("=================================");
+    console.log("=================================");
     let isValidPassword = false;
 
     if (this.isPbkdf2Hash(user.password)) {
-      isValidPassword = await this.hasher.compare(input.password, user.password);
+      isValidPassword = await this.hasher.compare(
+        input.password,
+        user.password,
+      );
     } else {
-      
       isValidPassword = input.password === user.password;
       if (isValidPassword) {
         const upgradedHash = await this.hasher.hash(input.password);
@@ -345,7 +349,9 @@ console.log("=================================");
     return { updated: true };
   }
 
-  async uploadProfileImage(input: UploadProfileImageInput): Promise<UploadProfileImageResult> {
+  async uploadProfileImage(
+    input: UploadProfileImageInput,
+  ): Promise<UploadProfileImageResult> {
     const userId = input.userId.trim();
 
     if (!userId) {
@@ -371,12 +377,20 @@ console.log("=================================");
       throw new AppError("User not found", 404);
     }
 
-    const path = this.profileImageStrategy.buildObjectPath(userId, file.name || "profile-image.jpg");
+    const path = this.profileImageStrategy.buildObjectPath(
+      userId,
+      file.name || "profile-image.jpg",
+    );
 
     try {
       await this.repository.uploadProfileImage(path, file);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to upload profile image", 400);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to upload profile image",
+        400,
+      );
     }
 
     return {

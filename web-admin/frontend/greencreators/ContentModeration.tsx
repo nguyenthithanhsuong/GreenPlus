@@ -10,11 +10,15 @@ import ContentTable from "./ContentTable";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import { usePermissions } from "@/lib/usePermissions";
 import { useAuthStore } from "@/lib/stores/authStore";
-import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/greencreators/greencreator-content.types";
+import {
+  GreenCreatorPostRow,
+  GreenCreatorPostStatus,
+} from "../../backend/modules/greencreators/greencreator-content.types";
 
 type ContentStatusFilter = "all" | GreenCreatorPostStatus;
 
-const normalizeText = (value: string | null | undefined) => (value ?? "").trim().toLowerCase();
+const normalizeText = (value: string | null | undefined) =>
+  (value ?? "").trim().toLowerCase();
 
 const ContentModeration = () => {
   const [posts, setPosts] = useState<GreenCreatorPostRow[]>([]);
@@ -25,8 +29,11 @@ const ContentModeration = () => {
   const [searchValue, setSearchValue] = useState("");
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
-  const [pendingDeletePost, setPendingDeletePost] = useState<GreenCreatorPostRow | null>(null);
-  const accessToken = useAuthStore((state) => state.session?.access_token ?? "");
+  const [pendingDeletePost, setPendingDeletePost] =
+    useState<GreenCreatorPostRow | null>(null);
+  const accessToken = useAuthStore(
+    (state) => state.session?.access_token ?? "",
+  );
   const { hasPermission } = usePermissions();
   const canCreatePost = hasPermission("content.create");
   const canDeletePost = hasPermission("content.delete");
@@ -38,15 +45,24 @@ const ContentModeration = () => {
 
     try {
       const response = await fetch("/api/greencreators", { cache: "no-store" });
-      const data = (await response.json()) as { items?: GreenCreatorPostRow[]; error?: string };
+      const data = (await response.json()) as {
+        items?: GreenCreatorPostRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Không thể tải danh sách bài Green Creator");
+        throw new Error(
+          data.error ?? "Không thể tải danh sách bài Green Creator",
+        );
       }
 
       setPosts(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải danh sách bài Green Creator");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải danh sách bài Green Creator",
+      );
       setPosts([]);
     } finally {
       setLoading(false);
@@ -58,9 +74,15 @@ const ContentModeration = () => {
   }, [loadPosts]);
 
   const stats = useMemo(() => {
-    const pendingPosts = posts.filter((post) => post.status === "pending").length;
-    const approvedPosts = posts.filter((post) => post.status === "approved").length;
-    const rejectedPosts = posts.filter((post) => post.status === "rejected").length;
+    const pendingPosts = posts.filter(
+      (post) => post.status === "pending",
+    ).length;
+    const approvedPosts = posts.filter(
+      (post) => post.status === "approved",
+    ).length;
+    const rejectedPosts = posts.filter(
+      (post) => post.status === "rejected",
+    ).length;
 
     return {
       totalPosts: posts.length,
@@ -68,7 +90,10 @@ const ContentModeration = () => {
       approvedPosts,
       rejectedPosts,
       totalComments: posts.reduce((sum, post) => sum + post.comment_count, 0),
-      totalInteractions: posts.reduce((sum, post) => sum + post.interaction_count, 0),
+      totalInteractions: posts.reduce(
+        (sum, post) => sum + post.interaction_count,
+        0,
+      ),
     };
   }, [posts]);
 
@@ -76,7 +101,8 @@ const ContentModeration = () => {
     const keyword = normalizeText(searchValue);
 
     return posts.filter((post) => {
-      const statusMatch = activeStatus === "all" || post.status === activeStatus;
+      const statusMatch =
+        activeStatus === "all" || post.status === activeStatus;
       if (!statusMatch) {
         return false;
       }
@@ -90,7 +116,11 @@ const ContentModeration = () => {
         post.content,
         post.author_name,
         post.type,
-        ...post.interactions.flatMap((interaction) => [interaction.comment, interaction.user_name, interaction.type]),
+        ...post.interactions.flatMap((interaction) => [
+          interaction.comment,
+          interaction.user_name,
+          interaction.type,
+        ]),
       ]
         .map((value) => normalizeText(value))
         .join(" ");
@@ -101,7 +131,7 @@ const ContentModeration = () => {
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.post_id === selectedPostId) ?? null,
-    [posts, selectedPostId]
+    [posts, selectedPostId],
   );
 
   const updateStatus = useCallback(
@@ -110,117 +140,164 @@ const ContentModeration = () => {
       setError(null);
 
       try {
-        const response = await fetch(`/api/greencreators/${encodeURIComponent(post.post_id)}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        const response = await fetch(
+          `/api/greencreators/${encodeURIComponent(post.post_id)}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken
+                ? { Authorization: `Bearer ${accessToken}` }
+                : {}),
+            },
+            body: JSON.stringify({ status }),
           },
-          body: JSON.stringify({ status }),
-        });
+        );
 
         const data = (await response.json()) as { error?: string };
         if (!response.ok) {
-          throw new Error(data.error ?? "Không thể cập nhật trạng thái bài đăng");
+          throw new Error(
+            data.error ?? "Không thể cập nhật trạng thái bài đăng",
+          );
         }
 
         await loadPosts();
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật trạng thái bài đăng");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể cập nhật trạng thái bài đăng",
+        );
       } finally {
         setSavingPostId(null);
       }
     },
-    [accessToken, loadPosts]
+    [accessToken, loadPosts],
   );
 
-  const uploadAttachment = useCallback(async (postId: string, files: File[]) => {
-    if (!files.length) {
-      return;
-    }
+  const uploadAttachment = useCallback(
+    async (postId: string, files: File[]) => {
+      if (!files.length) {
+        return;
+      }
 
-    const formData = new FormData();
-    formData.append("postId", postId);
-    files.forEach((selectedFile) => formData.append("files", selectedFile));
+      const formData = new FormData();
+      formData.append("postId", postId);
+      files.forEach((selectedFile) => formData.append("files", selectedFile));
 
-    const response = await fetch("/api/greencreators/attachment", {
-      method: "POST",
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-      body: formData,
-    });
-
-    const data = (await response.json()) as { mediaUrls?: string[]; error?: string };
-    if (!response.ok || !Array.isArray(data.mediaUrls)) {
-      throw new Error(data.error ?? "Upload file thất bại");
-    }
-  }, [accessToken]);
-
-  const handleCreatePost = useCallback(async (input: { title: string; content: string; type: "blog" | "video" | "community"; files: File[] }) => {
-    setSavingPostId("creating");
-    setError(null);
-
-    try {
-      const createResponse = await fetch("/api/greencreators", {
+      const response = await fetch("/api/greencreators/attachment", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({
-          title: input.title,
-          content: input.content,
-          type: input.type,
-        }),
+        headers: accessToken
+          ? { Authorization: `Bearer ${accessToken}` }
+          : undefined,
+        body: formData,
       });
 
-      const createData = (await createResponse.json()) as GreenCreatorPostRow | { error?: string };
-      if (!createResponse.ok || !("post_id" in createData)) {
-        const errorMessage = "error" in createData ? createData.error : undefined;
-        throw new Error(errorMessage ?? "Tạo bài đăng thất bại");
+      const data = (await response.json()) as {
+        mediaUrls?: string[];
+        error?: string;
+      };
+      if (!response.ok || !Array.isArray(data.mediaUrls)) {
+        throw new Error(data.error ?? "Upload file thất bại");
       }
+    },
+    [accessToken],
+  );
 
-      if (input.files.length) {
-        await uploadAttachment(createData.post_id, input.files);
+  const handleCreatePost = useCallback(
+    async (input: {
+      title: string;
+      content: string;
+      type: "blog" | "video" | "community";
+      files: File[];
+    }) => {
+      setSavingPostId("creating");
+      setError(null);
+
+      try {
+        const createResponse = await fetch("/api/greencreators", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({
+            title: input.title,
+            content: input.content,
+            type: input.type,
+          }),
+        });
+
+        const createData = (await createResponse.json()) as
+          GreenCreatorPostRow | { error?: string };
+        if (!createResponse.ok || !("post_id" in createData)) {
+          const errorMessage =
+            "error" in createData ? createData.error : undefined;
+          throw new Error(errorMessage ?? "Tạo bài đăng thất bại");
+        }
+
+        if (input.files.length) {
+          await uploadAttachment(createData.post_id, input.files);
+        }
+
+        setOpenCreateModal(false);
+        await loadPosts();
+      } catch (requestError) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tạo bài đăng",
+        );
+        throw requestError;
+      } finally {
+        setSavingPostId(null);
       }
+    },
+    [accessToken, loadPosts, uploadAttachment],
+  );
 
-      setOpenCreateModal(false);
-      await loadPosts();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tạo bài đăng");
-      throw requestError;
-    } finally {
-      setSavingPostId(null);
-    }
-  }, [accessToken, loadPosts, uploadAttachment]);
+  const deletePost = useCallback(
+    async (post: GreenCreatorPostRow) => {
+      setSavingPostId(post.post_id);
+      setError(null);
 
-  const deletePost = useCallback(async (post: GreenCreatorPostRow) => {
-    setSavingPostId(post.post_id);
-    setError(null);
+      try {
+        const response = await fetch(
+          `/api/greencreators/${encodeURIComponent(post.post_id)}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken
+                ? { Authorization: `Bearer ${accessToken}` }
+                : {}),
+            },
+            body: JSON.stringify({ force: true }),
+          },
+        );
 
-    try {
-      const response = await fetch(`/api/greencreators/${encodeURIComponent(post.post_id)}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({ force: true }),
-      });
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể xóa bài đăng");
+        }
 
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể xóa bài đăng");
+        setPendingDeletePost(null);
+        setSelectedPostId((current) =>
+          current === post.post_id ? null : current,
+        );
+        await loadPosts();
+      } catch (requestError) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể xóa bài đăng",
+        );
+      } finally {
+        setSavingPostId(null);
       }
-
-      setPendingDeletePost(null);
-      setSelectedPostId((current) => (current === post.post_id ? null : current));
-      await loadPosts();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể xóa bài đăng");
-    } finally {
-      setSavingPostId(null);
-    }
-  }, [accessToken, loadPosts]);
+    },
+    [accessToken, loadPosts],
+  );
 
   const requestDeletePost = useCallback((post: GreenCreatorPostRow) => {
     setPendingDeletePost(post);
@@ -301,7 +378,11 @@ const ContentModeration = () => {
       <ConfirmActionDialog
         open={Boolean(pendingDeletePost)}
         title="Xác nhận xóa bài đăng"
-        message={pendingDeletePost ? `Bạn có chắc muốn xóa bài "${pendingDeletePost.title}"? Hành động này không thể hoàn tác.` : ""}
+        message={
+          pendingDeletePost
+            ? `Bạn có chắc muốn xóa bài "${pendingDeletePost.title}"? Hành động này không thể hoàn tác.`
+            : ""
+        }
         confirmLabel="Xóa bài đăng"
         confirmVariant="danger"
         loading={Boolean(savingPostId)}

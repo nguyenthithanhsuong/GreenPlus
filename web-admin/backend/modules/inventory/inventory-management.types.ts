@@ -1,9 +1,5 @@
 export type InventoryTransactionType =
-  | "stock_in"
-  | "stock_out"
-  | "adjust_in"
-  | "adjust_out"
-  | "adjustment";
+  "stock_in" | "stock_out" | "adjust_in" | "adjust_out" | "adjustment";
 
 export type InventoryRow = {
   inventory_id: string;

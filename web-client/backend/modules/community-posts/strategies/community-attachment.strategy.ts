@@ -5,7 +5,11 @@ export interface CommunityAttachmentStrategy {
 }
 
 class TimestampAttachmentStrategy implements CommunityAttachmentStrategy {
-  buildObjectPath(userId: string, postId: string, originalName: string): string {
+  buildObjectPath(
+    userId: string,
+    postId: string,
+    originalName: string,
+  ): string {
     const safeUserId = userId.trim();
     const safePostId = postId.trim();
 
@@ -14,7 +18,9 @@ class TimestampAttachmentStrategy implements CommunityAttachmentStrategy {
     }
 
     const normalizedName = originalName.trim() || "attachment.bin";
-    const ext = normalizedName.includes(".") ? normalizedName.split(".").pop() ?? "bin" : "bin";
+    const ext = normalizedName.includes(".")
+      ? (normalizedName.split(".").pop() ?? "bin")
+      : "bin";
     const randomPart = Math.random().toString(16).slice(2);
     const timestamp = Date.now();
 

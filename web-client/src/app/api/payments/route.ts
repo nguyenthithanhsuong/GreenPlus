@@ -2,18 +2,23 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { orderFacade } from "../../../../backend/modules/orders/facades/order.facade";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
 
 export const GET = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
 
   try {
     const { searchParams } = new URL(request.url);
 
-    userId =
-      searchParams.get("userId")?.trim() ??
-      searchParams.get("user_id")?.trim() ??
-      "";
+    userId = assertCustomerId(
+      searchParams.get("userId") ?? searchParams.get("user_id") ?? undefined,
+      identity.userId,
+    );
 
     logger.info("Track payment history attempt", { userId });
 
@@ -24,7 +29,7 @@ export const GET = withSentry(async (request: Request) => {
 
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -49,7 +54,7 @@ export const GET = withSentry(async (request: Request) => {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 

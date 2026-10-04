@@ -18,8 +18,12 @@ export class GreenCreatorContentService {
       throw new AppError("At least one file is required", 400);
     }
 
-    const imageCount = files.filter((file) => file.type.startsWith("image/")).length;
-    const videoCount = files.filter((file) => file.type.startsWith("video/")).length;
+    const imageCount = files.filter((file) =>
+      file.type.startsWith("image/"),
+    ).length;
+    const videoCount = files.filter((file) =>
+      file.type.startsWith("video/"),
+    ).length;
     const unknownCount = files.length - imageCount - videoCount;
 
     if (unknownCount > 0) {
@@ -35,7 +39,11 @@ export class GreenCreatorContentService {
     }
   }
 
-  private buildAttachmentPath(userId: string, postId: string, originalName: string): string {
+  private buildAttachmentPath(
+    userId: string,
+    postId: string,
+    originalName: string,
+  ): string {
     const safeUserId = userId.trim();
     const safePostId = postId.trim();
 
@@ -44,7 +52,9 @@ export class GreenCreatorContentService {
     }
 
     const normalizedName = originalName.trim() || "attachment.bin";
-    const ext = normalizedName.includes(".") ? normalizedName.split(".").pop() ?? "bin" : "bin";
+    const ext = normalizedName.includes(".")
+      ? (normalizedName.split(".").pop() ?? "bin")
+      : "bin";
     const randomPart = Math.random().toString(16).slice(2);
     const timestamp = Date.now();
 
@@ -55,7 +65,10 @@ export class GreenCreatorContentService {
     return this.repository.listPosts();
   }
 
-  async changeStatus(postId: string, status: GreenCreatorPostStatus): Promise<GreenCreatorPostRow> {
+  async changeStatus(
+    postId: string,
+    status: GreenCreatorPostStatus,
+  ): Promise<GreenCreatorPostRow> {
     if (!postId.trim()) {
       throw new AppError("postId is required", 400);
     }
@@ -73,7 +86,9 @@ export class GreenCreatorContentService {
     return updated;
   }
 
-  async createPost(input: CreateGreenCreatorPostInput): Promise<GreenCreatorPostRow> {
+  async createPost(
+    input: CreateGreenCreatorPostInput,
+  ): Promise<GreenCreatorPostRow> {
     const userId = input.userId.trim();
     if (!userId) {
       throw new AppError("userId is required", 400);
@@ -120,7 +135,9 @@ export class GreenCreatorContentService {
     }
   }
 
-  async uploadAttachment(input: UploadGreenCreatorAttachmentInput): Promise<UploadGreenCreatorAttachmentResult> {
+  async uploadAttachment(
+    input: UploadGreenCreatorAttachmentInput,
+  ): Promise<UploadGreenCreatorAttachmentResult> {
     const userId = input.userId.trim();
     const postId = input.postId.trim();
 
@@ -142,7 +159,11 @@ export class GreenCreatorContentService {
     const uploadedItems: Array<{ path: string; publicUrl: string }> = [];
 
     for (const file of input.files) {
-      const path = this.buildAttachmentPath(userId, postId, file.name || "attachment.bin");
+      const path = this.buildAttachmentPath(
+        userId,
+        postId,
+        file.name || "attachment.bin",
+      );
       await this.repository.uploadAttachment(path, file);
       uploadedItems.push({
         path,
@@ -151,7 +172,10 @@ export class GreenCreatorContentService {
     }
 
     if (input.replaceExisting ?? true) {
-      await this.repository.replacePostMedia(postId, uploadedItems.map((item) => item.publicUrl));
+      await this.repository.replacePostMedia(
+        postId,
+        uploadedItems.map((item) => item.publicUrl),
+      );
     }
 
     return {

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
 import { authFacade } from "../../../../../backend/modules/admin-auth/facades/auth.facade";
 import { AuthRepository as AdminAuthRepository } from "../../../../../backend/modules/admin-auth/auth.repository";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 const ALLOWED_ROLES = new Set(["admin", "manager", "employee"]);
 
@@ -24,8 +24,14 @@ export const POST = withSentry(async (request) => {
   try {
     data = await authFacade.signIn({ email, password });
   } catch (error) {
-    if (error instanceof AppError && error.message.includes("account is not active") && email) {
-      const errorResponse: { error: string; status?: string } = { error: error.message };
+    if (
+      error instanceof AppError &&
+      error.message.includes("account is not active") &&
+      email
+    ) {
+      const errorResponse: { error: string; status?: string } = {
+        error: error.message,
+      };
       try {
         const repo = new AdminAuthRepository();
         const user = await repo.findUserByEmail(email.trim().toLowerCase());
@@ -36,35 +42,42 @@ export const POST = withSentry(async (request) => {
       logger.warn("Admin sign-in failed", { email, message: error.message });
       return NextResponse.json(errorResponse, { status: error.statusCode });
     }
-    throw error; 
+    throw error;
   }
 
-  const roleName = typeof data.role_name === "string" ? data.role_name.toLowerCase() : "";
+  const roleName =
+    typeof data.role_name === "string" ? data.role_name.toLowerCase() : "";
 
   if (!roleName || !ALLOWED_ROLES.has(roleName)) {
-    logger.warn("Admin sign-in blocked - unauthorized role", { email, roleName });
-    throw new AppError("Only admin, manager, or employee can access this portal", 403);
+    logger.warn("Admin sign-in blocked - unauthorized role", {
+      email,
+      roleName,
+    });
+    throw new AppError(
+      "Only admin, manager, or employee can access this portal",
+      403,
+    );
   }
 
   logger.info("Admin sign-in success", {
-  email,
-  roleName,
-  duration_ms: Date.now() - start,
-});
+    email,
+    roleName,
+    duration_ms: Date.now() - start,
+  });
 
-const response = NextResponse.json({
-  session: data.session,
-  user: { ...data.user, role_name: roleName },
-  role_name: roleName || null,
-});
+  const response = NextResponse.json({
+    session: data.session,
+    user: { ...data.user, role_name: roleName },
+    role_name: roleName || null,
+  });
 
-response.cookies.set("gp_admin_auth", data.session.access_token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  path: "/",
-  maxAge: 60 * 60 * 24 * 7, // 7 ngày
-});
+  response.cookies.set("gp_admin_auth", data.session.access_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7, // 7 ngày
+  });
 
-return response;
+  return response;
 });

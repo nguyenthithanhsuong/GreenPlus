@@ -47,7 +47,9 @@ export class OrderRepository {
   async listOrdersByUser(userId: string): Promise<OrderRow[]> {
     const { data, error } = await supabaseServer
       .from("orders")
-      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at")
+      .select(
+        "order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at",
+      )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -69,12 +71,19 @@ export class OrderRepository {
       throw new Error(ordersError.message);
     }
 
-    const orderRows = (orders ?? []) as Array<{ order_id: string; order_date: string; status: OrderStatus }>;
+    const orderRows = (orders ?? []) as Array<{
+      order_id: string;
+      order_date: string;
+      status: OrderStatus;
+    }>;
     if (orderRows.length === 0) {
       return [];
     }
 
-    const orderMap = new Map<string, { order_date: string; order_status: OrderStatus }>();
+    const orderMap = new Map<
+      string,
+      { order_date: string; order_status: OrderStatus }
+    >();
     const orderIds: string[] = [];
     orderRows.forEach((row) => {
       const orderId = String(row.order_id);
@@ -87,7 +96,9 @@ export class OrderRepository {
 
     const { data: payments, error: paymentsError } = await supabaseServer
       .from("payments")
-      .select("payment_id,order_id,method,status,amount,transaction_id,payment_date")
+      .select(
+        "payment_id,order_id,method,status,amount,transaction_id,payment_date",
+      )
       .in("order_id", orderIds)
       .order("payment_date", { ascending: false, nullsFirst: false });
 
@@ -114,7 +125,9 @@ export class OrderRepository {
   async findOrderById(orderId: string): Promise<OrderRow | null> {
     const { data, error } = await supabaseServer
       .from("orders")
-      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at")
+      .select(
+        "order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at",
+      )
       .eq("order_id", orderId)
       .maybeSingle();
 
@@ -128,7 +141,9 @@ export class OrderRepository {
   async listOrderItems(orderId: string): Promise<OrderItemRow[]> {
     const { data, error } = await supabaseServer
       .from("order_items")
-      .select("order_item_id,order_id,product_id,batch_id,quantity,price,products(name,image_url),note")
+      .select(
+        "order_item_id,order_id,product_id,batch_id,quantity,price,products(name,image_url),note",
+      )
       .eq("order_id", orderId);
 
     if (error) {
@@ -173,7 +188,9 @@ export class OrderRepository {
     return String(data.status);
   }
 
-  async findPaymentInfo(orderId: string): Promise<{ status: string | null; method: string | null }> {
+  async findPaymentInfo(
+    orderId: string,
+  ): Promise<{ status: string | null; method: string | null }> {
     const { data, error } = await supabaseServer
       .from("payments")
       .select("status,method")
@@ -208,7 +225,9 @@ export class OrderRepository {
     return String(data.status);
   }
 
-  async findCartByUserId(userId: string): Promise<{ cart_id: string; user_id: string } | null> {
+  async findCartByUserId(
+    userId: string,
+  ): Promise<{ cart_id: string; user_id: string } | null> {
     const { data, error } = await supabaseServer
       .from("carts")
       .select("cart_id,user_id")
@@ -222,25 +241,41 @@ export class OrderRepository {
     return (data as { cart_id: string; user_id: string } | null) ?? null;
   }
 
-  async listCartItems(cartId: string): Promise<Array<{ cart_item_id: string; product_id: string; quantity: number; note: string | null }>> {
-  const { data, error } = await supabaseServer
-    .from("cart_items")
-    .select("cart_item_id,product_id,quantity,note") 
-    .eq("cart_id", cartId);
+  async listCartItems(cartId: string): Promise<
+    Array<{
+      cart_item_id: string;
+      product_id: string;
+      quantity: number;
+      note: string | null;
+    }>
+  > {
+    const { data, error } = await supabaseServer
+      .from("cart_items")
+      .select("cart_item_id,product_id,quantity,note")
+      .eq("cart_id", cartId);
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (
+      (data ?? []) as Array<{
+        cart_item_id: string;
+        product_id: string;
+        quantity: number;
+        note: string | null;
+      }>
+    ).map((row) => ({
+      cart_item_id: String(row.cart_item_id),
+      product_id: String(row.product_id),
+      quantity: Number(row.quantity),
+      note: row.note ?? null,
+    }));
   }
 
-  return ((data ?? []) as Array<{ cart_item_id: string; product_id: string; quantity: number; note: string | null }>).map((row) => ({
-    cart_item_id: String(row.cart_item_id),
-    product_id: String(row.product_id),
-    quantity: Number(row.quantity),
-    note: row.note ?? null, 
-  }));
-}
-
-  async listLatestPriceRows(productIds: string[]): Promise<Array<{ product_id: string; price: number }>> {
+  async listLatestPriceRows(
+    productIds: string[],
+  ): Promise<Array<{ product_id: string; price: number }>> {
     if (productIds.length === 0) {
       return [];
     }
@@ -298,7 +333,9 @@ export class OrderRepository {
     return Array.from(latestRows.values());
   }
 
-  async listBatchRows(productId: string): Promise<Array<{ batch_id: string; expire_date: string; status: string }>> {
+  async listBatchRows(
+    productId: string,
+  ): Promise<Array<{ batch_id: string; expire_date: string; status: string }>> {
     const { data, error } = await supabaseServer
       .from("batches")
       .select("batch_id,expire_date,status")
@@ -309,7 +346,13 @@ export class OrderRepository {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as Array<{ batch_id: string; expire_date: string; status: string }>).map((row) => ({
+    return (
+      (data ?? []) as Array<{
+        batch_id: string;
+        expire_date: string;
+        status: string;
+      }>
+    ).map((row) => ({
       batch_id: String(row.batch_id),
       expire_date: String(row.expire_date),
       status: String(row.status),
@@ -371,7 +414,7 @@ export class OrderRepository {
       batch_id: input.batchId,
       quantity: input.quantity,
       price: input.price,
-      note: input.note 
+      note: input.note,
     });
 
     if (error) {
@@ -402,7 +445,10 @@ export class OrderRepository {
   }
 
   async clearCart(cartId: string): Promise<void> {
-    const { error } = await supabaseServer.from("cart_items").delete().eq("cart_id", cartId);
+    const { error } = await supabaseServer
+      .from("cart_items")
+      .delete()
+      .eq("cart_id", cartId);
 
     if (error) {
       throw new Error(error.message);
@@ -410,7 +456,10 @@ export class OrderRepository {
   }
 
   async updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
-    const { error } = await supabaseServer.from("orders").update({ status }).eq("order_id", orderId);
+    const { error } = await supabaseServer
+      .from("orders")
+      .update({ status })
+      .eq("order_id", orderId);
 
     if (error) {
       throw new Error(error.message);
@@ -435,7 +484,10 @@ export class OrderRepository {
       payload.payment_date = input.paymentDate;
     }
 
-    const { error } = await supabaseServer.from("payments").update(payload).eq("order_id", input.orderId);
+    const { error } = await supabaseServer
+      .from("payments")
+      .update(payload)
+      .eq("order_id", input.orderId);
 
     if (error) {
       throw new Error(error.message);
@@ -462,7 +514,10 @@ export class OrderRepository {
       payload.note = input.note;
     }
 
-    const { error } = await supabaseServer.from("orders").update(payload).eq("order_id", input.orderId);
+    const { error } = await supabaseServer
+      .from("orders")
+      .update(payload)
+      .eq("order_id", input.orderId);
 
     if (error) {
       throw new Error(error.message);
@@ -470,7 +525,10 @@ export class OrderRepository {
   }
 }
 
-export function readRelationValue<T = string>(rel: RelObj, field: string): T | null {
+export function readRelationValue<T = string>(
+  rel: RelObj,
+  field: string,
+): T | null {
   if (!rel) {
     return null;
   }

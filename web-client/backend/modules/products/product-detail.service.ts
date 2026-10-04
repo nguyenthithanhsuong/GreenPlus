@@ -1,5 +1,9 @@
 import { AppError } from "../../core/errors";
-import { ProductBatchRow, ProductRepository, getRelationValue } from "./product.repository";
+import {
+  ProductBatchRow,
+  ProductRepository,
+  getRelationValue,
+} from "./product.repository";
 import { createBatchState } from "./states/batch.state";
 import { createProductState } from "./states/product.state";
 import { ProductDetail } from "./product.types";
@@ -21,7 +25,9 @@ function toInventoryRows(input: ProductBatchRow["inventory"]): InventoryRow[] {
   return [input as InventoryRow];
 }
 
-function normalizeBatchStatus(status: ProductBatchRow["status"]): "available" | "expired" | "sold_out" {
+function normalizeBatchStatus(
+  status: ProductBatchRow["status"],
+): "available" | "expired" | "sold_out" {
   if (status === "available" || status === "expired" || status === "sold_out") {
     return status;
   }
@@ -64,15 +70,24 @@ export class ProductDetailService {
     batches.forEach((batch) => {
       const inventoryRows = toInventoryRows(batch.inventory);
       const resolvedStatus = normalizeBatchStatus(batch.status);
-      const availableInBatch = inventoryRows.reduce((sum, row) => sum + Number(row.quantity_available ?? 0), 0);
-      const reservedInBatch = inventoryRows.reduce((sum, row) => sum + Number(row.quantity_reserved ?? 0), 0);
+      const availableInBatch = inventoryRows.reduce(
+        (sum, row) => sum + Number(row.quantity_available ?? 0),
+        0,
+      );
+      const reservedInBatch = inventoryRows.reduce(
+        (sum, row) => sum + Number(row.quantity_reserved ?? 0),
+        0,
+      );
       const quantityInBatch = Number(batch.quantity ?? 0);
 
       totalAvailable += availableInBatch;
       totalReserved += reservedInBatch;
       totalQuantity += quantityInBatch;
 
-      const isSellable = createBatchState(resolvedStatus).isSellable(availableInBatch, batch.expire_date);
+      const isSellable = createBatchState(resolvedStatus).isSellable(
+        availableInBatch,
+        batch.expire_date,
+      );
       if (isSellable) {
         hasSellableBatch = true;
       }
@@ -92,7 +107,11 @@ export class ProductDetailService {
       }
     });
 
-    const inventoryStatus = hasSellableBatch ? "in_stock" : hasAnyExpiredBatch ? "expired" : "out_of_stock";
+    const inventoryStatus = hasSellableBatch
+      ? "in_stock"
+      : hasAnyExpiredBatch
+        ? "expired"
+        : "out_of_stock";
 
     return {
       productId: product.product_id,
@@ -115,7 +134,8 @@ export class ProductDetailService {
       batches: batchDetails,
       supplier: {
         id: supplierMap.get(product.product_id)?.supplierId ?? null,
-        certification: supplierMap.get(product.product_id)?.certification ?? null,
+        certification:
+          supplierMap.get(product.product_id)?.certification ?? null,
       },
     };
   }

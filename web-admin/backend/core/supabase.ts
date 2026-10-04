@@ -23,13 +23,10 @@ export function createAnonSupabaseClient(accessToken?: string) {
       persistSession: false,
     },
     global: {
-      headers: accessToken
-        ? { Authorization: `Bearer ${accessToken}` }
-        : {},
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
     },
   });
 }
-
 
 export const supabaseServer = createClient(supabaseUrl, serviceRoleKey, {
   auth: {

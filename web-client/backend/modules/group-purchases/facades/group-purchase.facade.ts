@@ -3,7 +3,11 @@ import {
   GroupPurchaseSubject,
 } from "../observers/group-purchase.observer";
 import { GroupPurchaseService } from "../group-purchase.service";
-import { CreateGroupPurchaseInput, GroupPurchaseItem, JoinGroupPurchaseInput } from "../group-purchase.types";
+import {
+  CreateGroupPurchaseInput,
+  GroupPurchaseItem,
+  JoinGroupPurchaseInput,
+} from "../group-purchase.types";
 
 export class GroupPurchaseFacade {
   private readonly service = new GroupPurchaseService();
@@ -17,7 +21,12 @@ export class GroupPurchaseFacade {
     return this.service.listJoinableGroups();
   }
 
-  async joinGroup(input: JoinGroupPurchaseInput): Promise<{ group_id: string; user_id: string; joined_quantity: number; status: string }> {
+  async joinGroup(input: JoinGroupPurchaseInput): Promise<{
+    group_id: string;
+    user_id: string;
+    joined_quantity: number;
+    status: string;
+  }> {
     const result = await this.service.joinGroup(input);
 
     this.subject.notify({
@@ -29,7 +38,9 @@ export class GroupPurchaseFacade {
     return result;
   }
 
-  async createGroup(input: CreateGroupPurchaseInput): Promise<{ group_id: string; status: string }> {
+  async createGroup(
+    input: CreateGroupPurchaseInput,
+  ): Promise<{ group_id: string; status: string }> {
     const result = await this.service.createGroup(input);
 
     this.subject.notify({

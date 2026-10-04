@@ -2,7 +2,11 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
 import { cartFacade } from "../../../../../backend/modules/cart/facades/cart.facade";
-import { logger } from "@/lib/logger"; 
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../backend/core/request-auth";
+import { logger } from "@/lib/logger";
 
 type NoteBody = {
   userId?: string;
@@ -15,16 +19,14 @@ type NoteBody = {
 };
 
 export const PUT = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as NoteBody;
 
-  const userId =
-    body.userId?.trim() ?? body.user_id?.trim() ?? "";
+  const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
-  const productId =
-    body.productId?.trim() ?? body.product_id?.trim() ?? "";
+  const productId = body.productId?.trim() ?? body.product_id?.trim() ?? "";
 
-  const cartItemId =
-    body.cartItemId?.trim() ?? body.cart_item_id?.trim() ?? "";
+  const cartItemId = body.cartItemId?.trim() ?? body.cart_item_id?.trim() ?? "";
 
   const note = body.note ?? "";
 
@@ -35,19 +37,15 @@ export const PUT = withSentry(async (request: Request) => {
   });
 
   if (!userId || (!productId && !cartItemId)) {
-    logger.error(
-      "Upsert cart item note failed - missing identifiers",
-      {
-        userId,
-        productId,
-        cartItemId,
-      },
-    );
+    logger.error("Upsert cart item note failed - missing identifiers", {
+      userId,
+      productId,
+      cartItemId,
+    });
 
     return NextResponse.json(
       {
-        error:
-          "userId and either productId or cartItemId are required",
+        error: "userId and either productId or cartItemId are required",
       },
       { status: 400 },
     );
@@ -55,14 +53,10 @@ export const PUT = withSentry(async (request: Request) => {
 
   const start = Date.now();
 
-  const cart = await cartFacade.upsertItemNote(
-    userId,
-    note,
-    {
-      productId: productId || undefined,
-      cartItemId: cartItemId || undefined,
-    },
-  );
+  const cart = await cartFacade.upsertItemNote(userId, note, {
+    productId: productId || undefined,
+    cartItemId: cartItemId || undefined,
+  });
 
   logger.info("Upsert cart item note success", {
     userId,

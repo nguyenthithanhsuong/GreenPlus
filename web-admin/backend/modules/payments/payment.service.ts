@@ -43,12 +43,15 @@ function createPaymentStrategy(method: PaymentMethod): PaymentStrategy {
 }
 
 export async function handleOrderPayment(
-  input: HandleOrderPaymentInput
+  input: HandleOrderPaymentInput,
 ): Promise<HandleOrderPaymentResult> {
   const strategy = createPaymentStrategy(input.method);
   const paymentContext = new PaymentContext(strategy);
 
-  const isSuccess = await paymentContext.executePayment(input.orderId, input.amount);
+  const isSuccess = await paymentContext.executePayment(
+    input.orderId,
+    input.amount,
+  );
 
   if (!isSuccess) {
     return {

@@ -1,7 +1,11 @@
 import { AppError } from "../../core/errors";
 import { BatchManagementRepository } from "./batch-management.repository";
 import { SupplierManagementRepository } from "../suppliers/supplier-management.repository";
-import { BatchRow, CreateBatchInput, UpdateBatchInput } from "./batch-management.types";
+import {
+  BatchRow,
+  CreateBatchInput,
+  UpdateBatchInput,
+} from "./batch-management.types";
 import { DefaultBatchStatusStrategy } from "./strategies/batch-status.strategy";
 
 const parseDate = (value: string): number => {
@@ -23,8 +27,13 @@ export class BatchManagementService {
     return this.repository.listBatches();
   }
 
-  private async ensureProductAndSupplier(input: { productId: string; supplierId: string }, force = false): Promise<void> {
-    const [hasProduct] = await Promise.all([this.repository.findProductById(input.productId)]);
+  private async ensureProductAndSupplier(
+    input: { productId: string; supplierId: string },
+    force = false,
+  ): Promise<void> {
+    const [hasProduct] = await Promise.all([
+      this.repository.findProductById(input.productId),
+    ]);
 
     if (!hasProduct) {
       throw new AppError("Product not found", 404);
@@ -66,7 +75,10 @@ export class BatchManagementService {
     }
 
     if (importPrice < 0) {
-      throw new AppError("Import price must be greater than or equal to zero", 400);
+      throw new AppError(
+        "Import price must be greater than or equal to zero",
+        400,
+      );
     }
   }
 
@@ -76,15 +88,22 @@ export class BatchManagementService {
     nextStatus: BatchRow["status"];
     quantity: number;
   }): Promise<void> {
-    if (!(input.previousStatus === "pending" && input.nextStatus === "available")) {
+    if (!(
+      input.previousStatus === "pending" && input.nextStatus === "available"
+    )) {
       return;
     }
 
     if (input.quantity <= 0) {
-      throw new AppError("Batch must have quantity greater than zero before moving to available", 400);
+      throw new AppError(
+        "Batch must have quantity greater than zero before moving to available",
+        400,
+      );
     }
 
-    const hasInventory = await this.repository.hasInventoryByBatchId(input.batchId);
+    const hasInventory = await this.repository.hasInventoryByBatchId(
+      input.batchId,
+    );
     if (hasInventory) {
       return;
     }
@@ -125,7 +144,10 @@ export class BatchManagementService {
     this.ensureQuantity(input.quantity);
     this.ensureImportPrice(input.importPrice);
     this.ensureDates(harvestDate, expireDate);
-    await this.ensureProductAndSupplier({ productId, supplierId }, Boolean(input.force));
+    await this.ensureProductAndSupplier(
+      { productId, supplierId },
+      Boolean(input.force),
+    );
 
     return this.repository.createBatch({
       productId,
@@ -149,12 +171,30 @@ export class BatchManagementService {
       throw new AppError("Batch đã duyệt không thể chỉnh sửa", 400);
     }
 
-    const nextProductId = typeof input.productId !== "undefined" ? input.productId.trim() : existing.product_id;
-    const nextSupplierId = typeof input.supplierId !== "undefined" ? input.supplierId.trim() : existing.supplier_id;
-    const nextHarvestDate = typeof input.harvestDate !== "undefined" ? input.harvestDate.trim() : existing.harvest_date;
-    const nextExpireDate = typeof input.expireDate !== "undefined" ? input.expireDate.trim() : existing.expire_date;
-    const nextQuantity = typeof input.quantity !== "undefined" ? input.quantity : existing.quantity;
-    const nextImportPrice = typeof input.importPrice !== "undefined" ? input.importPrice : existing.import_price;
+    const nextProductId =
+      typeof input.productId !== "undefined"
+        ? input.productId.trim()
+        : existing.product_id;
+    const nextSupplierId =
+      typeof input.supplierId !== "undefined"
+        ? input.supplierId.trim()
+        : existing.supplier_id;
+    const nextHarvestDate =
+      typeof input.harvestDate !== "undefined"
+        ? input.harvestDate.trim()
+        : existing.harvest_date;
+    const nextExpireDate =
+      typeof input.expireDate !== "undefined"
+        ? input.expireDate.trim()
+        : existing.expire_date;
+    const nextQuantity =
+      typeof input.quantity !== "undefined"
+        ? input.quantity
+        : existing.quantity;
+    const nextImportPrice =
+      typeof input.importPrice !== "undefined"
+        ? input.importPrice
+        : existing.import_price;
 
     if (!nextProductId) {
       throw new AppError("Product is required", 400);
@@ -180,23 +220,38 @@ export class BatchManagementService {
     this.ensureImportPrice(nextImportPrice);
     this.ensureDates(nextHarvestDate, nextExpireDate);
 
-    if (typeof input.productId !== "undefined" || typeof input.supplierId !== "undefined") {
-      await this.ensureProductAndSupplier({ productId: nextProductId, supplierId: nextSupplierId }, Boolean(input.force));
+    if (
+      typeof input.productId !== "undefined" ||
+      typeof input.supplierId !== "undefined"
+    ) {
+      await this.ensureProductAndSupplier(
+        { productId: nextProductId, supplierId: nextSupplierId },
+        Boolean(input.force),
+      );
     }
 
     let nextStatus = existing.status;
     if (typeof input.status !== "undefined") {
-      nextStatus = this.statusStrategy.transition(existing.status, this.statusStrategy.normalize(input.status));
+      nextStatus = this.statusStrategy.transition(
+        existing.status,
+        this.statusStrategy.normalize(input.status),
+      );
     }
 
     const updated = await this.repository.updateBatch({
       batchId: input.batchId,
-      productId: typeof input.productId !== "undefined" ? nextProductId : undefined,
-      supplierId: typeof input.supplierId !== "undefined" ? nextSupplierId : undefined,
-      harvestDate: typeof input.harvestDate !== "undefined" ? nextHarvestDate : undefined,
-      expireDate: typeof input.expireDate !== "undefined" ? nextExpireDate : undefined,
-      quantity: typeof input.quantity !== "undefined" ? nextQuantity : undefined,
-      importPrice: typeof input.importPrice !== "undefined" ? nextImportPrice : undefined,
+      productId:
+        typeof input.productId !== "undefined" ? nextProductId : undefined,
+      supplierId:
+        typeof input.supplierId !== "undefined" ? nextSupplierId : undefined,
+      harvestDate:
+        typeof input.harvestDate !== "undefined" ? nextHarvestDate : undefined,
+      expireDate:
+        typeof input.expireDate !== "undefined" ? nextExpireDate : undefined,
+      quantity:
+        typeof input.quantity !== "undefined" ? nextQuantity : undefined,
+      importPrice:
+        typeof input.importPrice !== "undefined" ? nextImportPrice : undefined,
       qrCode: input.qrCode,
       status: nextStatus,
     });
@@ -221,8 +276,14 @@ export class BatchManagementService {
       throw new AppError("Batch not found", 404);
     }
 
-    const nextStatus = this.statusStrategy.transition(existing.status, this.statusStrategy.normalize(status));
-    const updated = await this.repository.updateBatch({ batchId, status: nextStatus });
+    const nextStatus = this.statusStrategy.transition(
+      existing.status,
+      this.statusStrategy.normalize(status),
+    );
+    const updated = await this.repository.updateBatch({
+      batchId,
+      status: nextStatus,
+    });
 
     if (!updated) {
       throw new AppError("Batch not found", 404);

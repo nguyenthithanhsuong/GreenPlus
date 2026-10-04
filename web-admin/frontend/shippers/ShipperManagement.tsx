@@ -38,13 +38,19 @@ const ShipperManagement = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [drawerError, setDrawerError] = useState<string | null>(null);
   const [shippers, setShippers] = useState<DeliveryShipperOption[]>([]);
-  const [selectedDetail, setSelectedDetail] = useState<DeliveryTrackingDetailRow | null>(null);
+  const [selectedDetail, setSelectedDetail] =
+    useState<DeliveryTrackingDetailRow | null>(null);
   const [form, setForm] = useState<ShipperFormValues>(emptyForm());
 
   const loadShippers = useCallback(async () => {
     try {
-      const response = await fetch("/api/deliveries/shippers", { cache: "no-store" });
-      const data = (await response.json()) as { items?: DeliveryShipperOption[]; error?: string };
+      const response = await fetch("/api/deliveries/shippers", {
+        cache: "no-store",
+      });
+      const data = (await response.json()) as {
+        items?: DeliveryShipperOption[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách shipper");
@@ -65,8 +71,14 @@ const ShipperManagement = () => {
       if (fromDate) params.set("fromDate", fromDate);
       if (toDate) params.set("toDate", toDate);
 
-      const response = await fetch(`/api/deliveries${params.toString() ? `?${params.toString()}` : ""}`, { cache: "no-store" });
-      const data = (await response.json()) as { items?: DeliveryTrackingRow[]; error?: string };
+      const response = await fetch(
+        `/api/deliveries${params.toString() ? `?${params.toString()}` : ""}`,
+        { cache: "no-store" },
+      );
+      const data = (await response.json()) as {
+        items?: DeliveryTrackingRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải dữ liệu giao hàng");
@@ -74,7 +86,11 @@ const ShipperManagement = () => {
 
       setItems(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu giao hàng");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải dữ liệu giao hàng",
+      );
       setItems([]);
     } finally {
       setLoading(false);
@@ -126,7 +142,8 @@ const ShipperManagement = () => {
       inProgressCount: items.filter((item) =>
         ["assigned", "picked_up", "delivering"].includes(item.status),
       ).length,
-      deliveredCount: items.filter((item) => item.status === "delivered").length,
+      deliveredCount: items.filter((item) => item.status === "delivered")
+        .length,
     }),
     [items],
   );
@@ -137,10 +154,15 @@ const ShipperManagement = () => {
     setDrawerError(null);
 
     try {
-      const response = await fetch(`/api/deliveries/${encodeURIComponent(orderId)}`, {
-        cache: "no-store",
-      });
-      const data = (await response.json()) as DeliveryTrackingDetailRow & { error?: string };
+      const response = await fetch(
+        `/api/deliveries/${encodeURIComponent(orderId)}`,
+        {
+          cache: "no-store",
+        },
+      );
+      const data = (await response.json()) as DeliveryTrackingDetailRow & {
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải chi tiết giao hàng");
@@ -201,7 +223,8 @@ const ShipperManagement = () => {
 
       const resolvedStatus = statusOverride ?? form.status;
       const resolvedNote =
-        form.note || (statusOverride === "delivered" ? "Giao hàng thành công" : "");
+        form.note ||
+        (statusOverride === "delivered" ? "Giao hàng thành công" : "");
 
       try {
         const response = await fetch(
@@ -217,10 +240,14 @@ const ShipperManagement = () => {
           },
         );
 
-        const data = (await response.json()) as DeliveryTrackingDetailRow & { error?: string };
+        const data = (await response.json()) as DeliveryTrackingDetailRow & {
+          error?: string;
+        };
 
         if (!response.ok) {
-          throw new Error(data.error ?? "Không thể cập nhật trạng thái giao hàng");
+          throw new Error(
+            data.error ?? "Không thể cập nhật trạng thái giao hàng",
+          );
         }
 
         setSelectedDetail(data);

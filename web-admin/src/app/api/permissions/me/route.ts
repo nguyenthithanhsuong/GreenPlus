@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
 import { getPermissionsForUser } from "../../../../../backend/core/authorization";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 function readAccessToken(request: Request): string {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -12,9 +12,7 @@ function readAccessToken(request: Request): string {
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookieMatch = cookieHeader.match(
-    /(?:^|;\s*)gp_portal_session=([^;]+)/,
-  );
+  const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_portal_session=([^;]+)/);
 
   return cookieMatch ? decodeURIComponent(cookieMatch[1]).trim() : "";
 }
@@ -27,10 +25,7 @@ export const GET = withSentry(async (request: Request) => {
   if (!accessToken) {
     logger.warn("Get user permissions failed - missing token");
 
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const authService = new AuthService();
@@ -38,9 +33,7 @@ export const GET = withSentry(async (request: Request) => {
 
   const start = Date.now();
 
-  const permissions = await getPermissionsForUser(
-    verifiedUser.id,
-  );
+  const permissions = await getPermissionsForUser(verifiedUser.id);
 
   logger.info("Get user permissions success", {
     userId: verifiedUser.id,
@@ -48,8 +41,5 @@ export const GET = withSentry(async (request: Request) => {
     duration_ms: Date.now() - start,
   });
 
-  return NextResponse.json(
-    { permissions },
-    { status: 200 },
-  );
+  return NextResponse.json({ permissions }, { status: 200 });
 });

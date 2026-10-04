@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
 import { userManagementFacade } from "../../../../../backend/modules/users/facades/user-management.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 function readAccessToken(request: Request): string {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -13,9 +13,7 @@ function readAccessToken(request: Request): string {
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookieMatch = cookieHeader.match(
-    /(?:^|;\s*)gp_portal_session=([^;]+)/,
-  );
+  const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_portal_session=([^;]+)/);
 
   return cookieMatch ? decodeURIComponent(cookieMatch[1]).trim() : "";
 }
@@ -28,10 +26,7 @@ export const GET = withSentry(async (request: Request) => {
   if (!accessToken) {
     logger.warn("Get current user failed - unauthorized");
 
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const authService = new AuthService();
@@ -60,10 +55,7 @@ export const GET = withSentry(async (request: Request) => {
     duration_ms: Date.now() - start,
   });
 
-  return NextResponse.json(
-    { item: user },
-    { status: 200 },
-  );
+  return NextResponse.json({ item: user }, { status: 200 });
 });
 
 export const PATCH = withSentry(async (request: Request) => {
@@ -72,10 +64,7 @@ export const PATCH = withSentry(async (request: Request) => {
   if (!accessToken) {
     logger.warn("Update current user profile failed - unauthorized");
 
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const authService = new AuthService();
@@ -109,8 +98,5 @@ export const PATCH = withSentry(async (request: Request) => {
     duration_ms: Date.now() - start,
   });
 
-  return NextResponse.json(
-    { item: updated },
-    { status: 200 },
-  );
+  return NextResponse.json({ item: updated }, { status: 200 });
 });

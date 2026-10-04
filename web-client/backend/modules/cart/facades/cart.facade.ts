@@ -8,11 +8,19 @@ export class CartFacade {
     return this.service.getCartByUser(userId);
   }
 
-  async addItem(userId: string, productId: string, quantity: number): Promise<CartView> {
+  async addItem(
+    userId: string,
+    productId: string,
+    quantity: number,
+  ): Promise<CartView> {
     return this.service.addProduct(userId, productId, quantity);
   }
 
-  async updateItemQuantity(userId: string, productId: string, quantity: number): Promise<CartView> {
+  async updateItemQuantity(
+    userId: string,
+    productId: string,
+    quantity: number,
+  ): Promise<CartView> {
     return this.service.updateQuantity(userId, productId, quantity);
   }
 
@@ -23,7 +31,7 @@ export class CartFacade {
   async upsertItemNote(
     userId: string,
     note: string,
-    target: { productId?: string; cartItemId?: string }
+    target: { productId?: string; cartItemId?: string },
   ): Promise<CartView> {
     return this.service.updateNote(userId, note, target);
   }

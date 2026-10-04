@@ -21,7 +21,9 @@ export class CategoryFacade {
     this.notifier.attach(new CategoryCacheObserver());
   }
 
-  async browseCategories(sort: CategorySort = "name_asc"): Promise<CategoryBrowseResult> {
+  async browseCategories(
+    sort: CategorySort = "name_asc",
+  ): Promise<CategoryBrowseResult> {
     const result = await this.service.getCategories(sort);
 
     result.items.forEach((item) => {

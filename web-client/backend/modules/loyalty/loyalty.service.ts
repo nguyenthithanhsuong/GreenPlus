@@ -24,14 +24,20 @@ export class LoyaltyService {
         this.repository.findDeliveryStatus(input.orderId.trim()),
       ]);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to validate order eligibility", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to validate order eligibility",
+        500,
+      );
     }
 
     if (!order) {
       throw new AppError("Order not found", 404);
     }
 
-    const isDelivered = order.status === "completed" || deliveryStatus === "delivered";
+    const isDelivered =
+      order.status === "completed" || deliveryStatus === "delivered";
     const isPaid = paymentStatus === "paid";
     const eligibility = createLoyaltyEligibilityState(isDelivered && isPaid);
 
@@ -39,7 +45,9 @@ export class LoyaltyService {
       throw new AppError("Order is not eligible for loyalty points", 400);
     }
 
-    const earnedPoints = this.pointStrategy.calculate(Number(order.total_amount));
+    const earnedPoints = this.pointStrategy.calculate(
+      Number(order.total_amount),
+    );
 
     let currentPoints = 0;
     try {
@@ -49,7 +57,7 @@ export class LoyaltyService {
         error instanceof Error
           ? `${error.message}. Ensure users.loyalty_points column exists.`
           : "Failed to load current loyalty points",
-        500
+        500,
       );
     }
 
@@ -62,7 +70,7 @@ export class LoyaltyService {
         error instanceof Error
           ? `${error.message}. Ensure users.loyalty_points column exists.`
           : "Failed to update loyalty points",
-        500
+        500,
       );
     }
 

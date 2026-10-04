@@ -43,9 +43,17 @@ type ProductsResponse = {
 type SubscriptionStatus = "active" | "paused" | "cancelled";
 type ScheduleValue = "weekly" | "biweekly" | "monthly";
 
-const SCHEDULE_OPTIONS: Array<{ value: ScheduleValue; label: string; description: string }> = [
+const SCHEDULE_OPTIONS: Array<{
+  value: ScheduleValue;
+  label: string;
+  description: string;
+}> = [
   { value: "weekly", label: "Hàng tuần", description: "Giao mỗi 7 ngày" },
-  { value: "biweekly", label: "Hai tuần một lần", description: "Giao mỗi 14 ngày" },
+  {
+    value: "biweekly",
+    label: "Hai tuần một lần",
+    description: "Giao mỗi 14 ngày",
+  },
   { value: "monthly", label: "Hàng tháng", description: "Giao mỗi 30 ngày" },
 ];
 
@@ -485,13 +493,18 @@ export default function SubscriptionsManagementPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [productId, setProductId] = useState("");
   const [frequency, setFrequency] = useState<ScheduleValue>("weekly");
-  const [filterStatus, setFilterStatus] = useState<"all" | SubscriptionStatus>("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | SubscriptionStatus>(
+    "all",
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editSchedule, setEditSchedule] = useState<ScheduleValue>("weekly");
   const [editStatus, setEditStatus] = useState<SubscriptionStatus>("active");
   const [editStartDate, setEditStartDate] = useState("");
 
-  const productMap = useMemo(() => new Map(products.map((item) => [item.productId, item])), [products]);
+  const productMap = useMemo(
+    () => new Map(products.map((item) => [item.productId, item])),
+    [products],
+  );
 
   const filteredSubscriptions = useMemo(() => {
     if (filterStatus === "all") {
@@ -501,7 +514,10 @@ export default function SubscriptionsManagementPage() {
     return subscriptions.filter((item) => item.status === filterStatus);
   }, [filterStatus, subscriptions]);
 
-  const activeSubscriptionsCount = useMemo(() => subscriptions.filter((item) => item.status !== "cancelled").length, [subscriptions]);
+  const activeSubscriptionsCount = useMemo(
+    () => subscriptions.filter((item) => item.status !== "cancelled").length,
+    [subscriptions],
+  );
 
   const loadData = async (signal?: AbortSignal) => {
     if (!user?.user_id) {
@@ -514,36 +530,60 @@ export default function SubscriptionsManagementPage() {
     try {
       const [productResponse, subscriptionResponse] = await Promise.all([
         fetch("/api/products?limit=100", { signal, cache: "no-store" }),
-        fetch(`/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`, { signal, cache: "no-store" }),
+        fetch(`/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`, {
+          signal,
+          cache: "no-store",
+        }),
       ]);
 
-      const productData = (await productResponse.json()) as ProductsResponse | { error?: string };
-      const subscriptionData = (await subscriptionResponse.json()) as SubscriptionListResponse | { error?: string };
+      const productData = (await productResponse.json()) as
+        ProductsResponse | { error?: string };
+      const subscriptionData = (await subscriptionResponse.json()) as
+        SubscriptionListResponse | { error?: string };
 
       if (!productResponse.ok) {
-        throw new Error("error" in productData ? productData.error ?? "Không thể tải danh sách sản phẩm." : "Không thể tải danh sách sản phẩm.");
+        throw new Error(
+          "error" in productData
+            ? (productData.error ?? "Không thể tải danh sách sản phẩm.")
+            : "Không thể tải danh sách sản phẩm.",
+        );
       }
 
       if (!subscriptionResponse.ok) {
-        throw new Error("error" in subscriptionData ? subscriptionData.error ?? "Không thể tải danh sách đơn định kỳ." : "Không thể tải danh sách đơn định kỳ.");
+        throw new Error(
+          "error" in subscriptionData
+            ? (subscriptionData.error ?? "Không thể tải danh sách đơn định kỳ.")
+            : "Không thể tải danh sách đơn định kỳ.",
+        );
       }
 
-      const nextProducts = ((productData as ProductsResponse).items ?? []).filter((item) => item.isAvailable);
+      const nextProducts = (
+        (productData as ProductsResponse).items ?? []
+      ).filter((item) => item.isAvailable);
       setProducts(nextProducts);
 
       if (nextProducts.length > 0) {
         setProductId((current) => current || nextProducts[0].productId);
       }
 
-      setSubscriptions((subscriptionData as SubscriptionListResponse).subscriptions ?? []);
+      setSubscriptions(
+        (subscriptionData as SubscriptionListResponse).subscriptions ?? [],
+      );
     } catch (requestError) {
-      if (requestError instanceof DOMException && requestError.name === "AbortError") {
+      if (
+        requestError instanceof DOMException &&
+        requestError.name === "AbortError"
+      ) {
         return;
       }
 
       setProducts([]);
       setSubscriptions([]);
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải dữ liệu.",
+      );
     } finally {
       setLoading(false);
     }
@@ -590,17 +630,26 @@ export default function SubscriptionsManagementPage() {
         }),
       });
 
-      const data = (await response.json()) as SubscriptionItem | { error?: string };
+      const data = (await response.json()) as
+        SubscriptionItem | { error?: string };
 
       if (!response.ok) {
-        throw new Error("error" in data ? data.error ?? "Không thể tạo đơn định kỳ." : "Không thể tạo đơn định kỳ.");
+        throw new Error(
+          "error" in data
+            ? (data.error ?? "Không thể tạo đơn định kỳ.")
+            : "Không thể tạo đơn định kỳ.",
+        );
       }
 
       setMessage("Đã tạo đơn đặt định kỳ mới.");
       setFilterStatus("active");
       await loadData();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tạo đơn định kỳ.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tạo đơn định kỳ.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -609,7 +658,13 @@ export default function SubscriptionsManagementPage() {
   const handleStartEdit = (item: SubscriptionItem) => {
     setEditingId(item.subscriptionId);
     setEditSchedule(item.schedule === "monthly" ? "monthly" : "weekly");
-    setEditStatus(item.status === "paused" ? "paused" : item.status === "cancelled" ? "cancelled" : "active");
+    setEditStatus(
+      item.status === "paused"
+        ? "paused"
+        : item.status === "cancelled"
+          ? "cancelled"
+          : "active",
+    );
     setEditStartDate(item.startDate);
   };
 
@@ -637,16 +692,25 @@ export default function SubscriptionsManagementPage() {
         }),
       });
 
-      const data = (await response.json()) as SubscriptionItem | { error?: string };
+      const data = (await response.json()) as
+        SubscriptionItem | { error?: string };
       if (!response.ok) {
-        throw new Error("error" in data ? data.error ?? "Không thể cập nhật đơn định kỳ." : "Không thể cập nhật đơn định kỳ.");
+        throw new Error(
+          "error" in data
+            ? (data.error ?? "Không thể cập nhật đơn định kỳ.")
+            : "Không thể cập nhật đơn định kỳ.",
+        );
       }
 
       setMessage("Đã cập nhật đơn đặt định kỳ.");
       setEditingId(null);
       await loadData();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật đơn định kỳ.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể cập nhật đơn định kỳ.",
+      );
     } finally {
       setUpdatingId(null);
     }
@@ -681,7 +745,11 @@ export default function SubscriptionsManagementPage() {
       setMessage("Đã hủy đơn đặt định kỳ.");
       await loadData();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể hủy đơn định kỳ.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể hủy đơn định kỳ.",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -707,9 +775,19 @@ export default function SubscriptionsManagementPage() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href="/orders" style={styles.backLink} aria-label="Quay lại đơn hàng">
+          <Link
+            href="/orders"
+            style={styles.backLink}
+            aria-label="Quay lại đơn hàng"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.title}>Quản lý đơn đặt định kỳ</h1>
@@ -721,7 +799,8 @@ export default function SubscriptionsManagementPage() {
             <div>
               <p style={styles.bannerTitle}>Đơn đặt định kỳ của bạn</p>
               <p style={styles.bannerText}>
-                Theo dõi, chỉnh lịch giao, tạm dừng hoặc hủy bất kỳ đơn định kỳ nào trong một màn hình.
+                Theo dõi, chỉnh lịch giao, tạm dừng hoặc hủy bất kỳ đơn định kỳ
+                nào trong một màn hình.
               </p>
             </div>
             <Link href="/orders" style={styles.bannerButton}>
@@ -732,7 +811,9 @@ export default function SubscriptionsManagementPage() {
           <section style={styles.card}>
             <div>
               <h2 style={styles.sectionTitle}>Tạo đơn định kỳ mới</h2>
-              <p style={styles.hint}>Chọn sản phẩm và tần suất giao hàng cho đơn đặt định kỳ.</p>
+              <p style={styles.hint}>
+                Chọn sản phẩm và tần suất giao hàng cho đơn đặt định kỳ.
+              </p>
             </div>
 
             <div style={styles.formGrid}>
@@ -763,7 +844,9 @@ export default function SubscriptionsManagementPage() {
                 <select
                   id="subscription-frequency"
                   value={frequency}
-                  onChange={(event) => setFrequency(event.target.value as ScheduleValue)}
+                  onChange={(event) =>
+                    setFrequency(event.target.value as ScheduleValue)
+                  }
                   style={styles.select}
                   disabled={submitting}
                 >
@@ -779,7 +862,10 @@ export default function SubscriptionsManagementPage() {
             <div style={styles.buttonRow}>
               <button
                 type="button"
-                style={{ ...styles.primaryButton, opacity: submitting || !productId ? 0.6 : 1 }}
+                style={{
+                  ...styles.primaryButton,
+                  opacity: submitting || !productId ? 0.6 : 1,
+                }}
                 onClick={() => void handleCreate()}
                 disabled={submitting || !productId}
               >
@@ -792,10 +878,17 @@ export default function SubscriptionsManagementPage() {
             <div style={styles.footerRow}>
               <div>
                 <h2 style={styles.sectionTitle}>Danh sách đơn định kỳ</h2>
-                <p style={styles.hint}>{activeSubscriptionsCount} đơn đang hoạt động hoặc tạm dừng.</p>
+                <p style={styles.hint}>
+                  {activeSubscriptionsCount} đơn đang hoạt động hoặc tạm dừng.
+                </p>
               </div>
               <div style={styles.buttonRow}>
-                <button type="button" style={styles.secondaryButton} onClick={() => void loadData()} disabled={loading}>
+                <button
+                  type="button"
+                  style={styles.secondaryButton}
+                  onClick={() => void loadData()}
+                  disabled={loading}
+                >
                   {loading ? "Đang tải..." : "Làm mới"}
                 </button>
               </div>
@@ -813,9 +906,13 @@ export default function SubscriptionsManagementPage() {
                   type="button"
                   style={{
                     ...styles.filterButton,
-                    ...(filterStatus === item.value ? styles.filterButtonActive : {}),
+                    ...(filterStatus === item.value
+                      ? styles.filterButtonActive
+                      : {}),
                   }}
-                  onClick={() => setFilterStatus(item.value as typeof filterStatus)}
+                  onClick={() =>
+                    setFilterStatus(item.value as typeof filterStatus)
+                  }
                 >
                   {item.label}
                 </button>
@@ -835,48 +932,81 @@ export default function SubscriptionsManagementPage() {
                 {filteredSubscriptions.map((item) => {
                   const product = productMap.get(item.productId);
                   const isEditing = editingId === item.subscriptionId;
-                  const isBusy = updatingId === item.subscriptionId || deletingId === item.subscriptionId;
+                  const isBusy =
+                    updatingId === item.subscriptionId ||
+                    deletingId === item.subscriptionId;
 
                   return (
                     <article key={item.subscriptionId} style={styles.itemCard}>
                       <div style={styles.itemTop}>
                         <div style={styles.productRow}>
                           {product?.imageUrl ? (
-                            <img src={product.imageUrl} alt={product.name} style={styles.thumbnail} />
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              style={styles.thumbnail}
+                            />
                           ) : (
                             <div style={styles.thumbnail}>GP</div>
                           )}
                           <div style={{ flex: 1 }}>
-                            <p style={styles.productTitle}>{product?.name ?? "Sản phẩm không còn trong danh mục"}</p>
-                            <p style={styles.productMeta}>#{item.subscriptionId.slice(0, 8).toUpperCase()}</p>
+                            <p style={styles.productTitle}>
+                              {product?.name ??
+                                "Sản phẩm không còn trong danh mục"}
+                            </p>
                             <p style={styles.productMeta}>
-                              <Link href={`/product-detail/${item.productId}`} style={{ color: "#2563EB", textDecoration: "none" }}>
+                              #{item.subscriptionId.slice(0, 8).toUpperCase()}
+                            </p>
+                            <p style={styles.productMeta}>
+                              <Link
+                                href={`/product-detail/${item.productId}`}
+                                style={{
+                                  color: "#2563EB",
+                                  textDecoration: "none",
+                                }}
+                              >
                                 Xem sản phẩm
                               </Link>
                             </p>
                           </div>
                         </div>
 
-                        <span style={{ ...styles.statusBadge, ...statusBadgeStyle(item.status) }}>{formatStatus(item.status)}</span>
+                        <span
+                          style={{
+                            ...styles.statusBadge,
+                            ...statusBadgeStyle(item.status),
+                          }}
+                        >
+                          {formatStatus(item.status)}
+                        </span>
                       </div>
 
                       <div style={styles.detailGrid}>
                         <p style={styles.detailRow}>
-                          <span style={styles.detailLabel}>Tần suất:</span> {formatSchedule(item.schedule)}
+                          <span style={styles.detailLabel}>Tần suất:</span>{" "}
+                          {formatSchedule(item.schedule)}
                         </p>
                         <p style={styles.detailRow}>
-                          <span style={styles.detailLabel}>Bắt đầu:</span> {formatDate(item.startDate)}
+                          <span style={styles.detailLabel}>Bắt đầu:</span>{" "}
+                          {formatDate(item.startDate)}
                         </p>
                         <p style={styles.detailRow}>
-                          <span style={styles.detailLabel}>Lần giao tiếp theo:</span> {item.nextDeliveryPreview}
+                          <span style={styles.detailLabel}>
+                            Lần giao tiếp theo:
+                          </span>{" "}
+                          {item.nextDeliveryPreview}
                         </p>
                         {item.schedule === "weekly" ? (
                           <p style={styles.detailRow}>
-                            <span style={styles.detailLabel}>Ngày giao hàng tuần:</span> {getWeekdayLabelFromDate(item.startDate)}
+                            <span style={styles.detailLabel}>
+                              Ngày giao hàng tuần:
+                            </span>{" "}
+                            {getWeekdayLabelFromDate(item.startDate)}
                           </p>
                         ) : null}
                         <p style={styles.detailRow}>
-                          <span style={styles.detailLabel}>Sản phẩm:</span> {item.productId.slice(0, 8).toUpperCase()}
+                          <span style={styles.detailLabel}>Sản phẩm:</span>{" "}
+                          {item.productId.slice(0, 8).toUpperCase()}
                         </p>
                       </div>
 
@@ -887,12 +1017,19 @@ export default function SubscriptionsManagementPage() {
                               <label style={styles.label}>Tần suất</label>
                               <select
                                 value={editSchedule}
-                                onChange={(event) => setEditSchedule(event.target.value as ScheduleValue)}
+                                onChange={(event) =>
+                                  setEditSchedule(
+                                    event.target.value as ScheduleValue,
+                                  )
+                                }
                                 style={styles.select}
                                 disabled={isBusy}
                               >
                                 {SCHEDULE_OPTIONS.map((option) => (
-                                  <option key={option.value} value={option.value}>
+                                  <option
+                                    key={option.value}
+                                    value={option.value}
+                                  >
                                     {option.label}
                                   </option>
                                 ))}
@@ -904,12 +1041,17 @@ export default function SubscriptionsManagementPage() {
                               <input
                                 type="date"
                                 value={editStartDate}
-                                onChange={(event) => setEditStartDate(event.target.value)}
+                                onChange={(event) =>
+                                  setEditStartDate(event.target.value)
+                                }
                                 style={styles.input}
                                 disabled={isBusy}
                               />
                               {editSchedule === "weekly" ? (
-                                <p style={styles.smallNote}>Lịch tuần hiện tại: {getWeekdayLabelFromDate(editStartDate)}</p>
+                                <p style={styles.smallNote}>
+                                  Lịch tuần hiện tại:{" "}
+                                  {getWeekdayLabelFromDate(editStartDate)}
+                                </p>
                               ) : null}
                             </div>
 
@@ -917,12 +1059,19 @@ export default function SubscriptionsManagementPage() {
                               <label style={styles.label}>Trạng thái</label>
                               <select
                                 value={editStatus}
-                                onChange={(event) => setEditStatus(event.target.value as SubscriptionStatus)}
+                                onChange={(event) =>
+                                  setEditStatus(
+                                    event.target.value as SubscriptionStatus,
+                                  )
+                                }
                                 style={styles.select}
                                 disabled={isBusy}
                               >
                                 {STATUS_OPTIONS.map((option) => (
-                                  <option key={option.value} value={option.value}>
+                                  <option
+                                    key={option.value}
+                                    value={option.value}
+                                  >
                                     {option.label}
                                   </option>
                                 ))}
@@ -933,11 +1082,16 @@ export default function SubscriptionsManagementPage() {
                           <div style={styles.buttonRow}>
                             <button
                               type="button"
-                              style={{ ...styles.primaryButton, opacity: isBusy ? 0.6 : 1 }}
+                              style={{
+                                ...styles.primaryButton,
+                                opacity: isBusy ? 0.6 : 1,
+                              }}
                               onClick={() => void handleSaveEdit(item)}
                               disabled={isBusy}
                             >
-                              {updatingId === item.subscriptionId ? "Đang lưu..." : "Lưu thay đổi"}
+                              {updatingId === item.subscriptionId
+                                ? "Đang lưu..."
+                                : "Lưu thay đổi"}
                             </button>
                             <button
                               type="button"
@@ -965,7 +1119,9 @@ export default function SubscriptionsManagementPage() {
                             onClick={() => void handleDelete(item)}
                             disabled={isBusy}
                           >
-                            {deletingId === item.subscriptionId ? "Đang hủy..." : "Hủy đơn"}
+                            {deletingId === item.subscriptionId
+                              ? "Đang hủy..."
+                              : "Hủy đơn"}
                           </button>
                         </div>
                       )}

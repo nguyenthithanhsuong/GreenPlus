@@ -8,7 +8,10 @@
     "SENTRY_DSN_CLIENT",
     "NEXT_PUBLIC_SENTRY_DSN_CLIENT",
     "SENTRY_DSN_ADMIN",
-    "NEXT_PUBLIC_SENTRY_DSN_ADMIN"
+    "NEXT_PUBLIC_SENTRY_DSN_ADMIN",
+    "AUTH_HANDOFF_SECRET",
+    "AUTH_SESSION_SECRET",
+    "ENABLE_API_DOCS"
   ],
   "tasks": {
     "dev": {
@@ -23,7 +26,7 @@
       "outputs": [],
       "cache": true
     },
-     "start": {
+    "start": {
       "cache": false,
       "persistent": true
     }

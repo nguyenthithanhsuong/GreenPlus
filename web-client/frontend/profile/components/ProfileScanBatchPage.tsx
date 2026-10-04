@@ -269,14 +269,19 @@ export default function ProfileScanBatchPage() {
   }, []);
 
   useEffect(() => {
-    setCameraSupported(typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia);
+    setCameraSupported(
+      typeof navigator !== "undefined" &&
+        !!navigator.mediaDevices?.getUserMedia,
+    );
     if (!canUseBarcodeDetector || typeof window === "undefined") {
       return;
     }
 
-    const BarcodeDetectorCtor = (window as unknown as Window & {
-      BarcodeDetector: new (config: { formats: string[] }) => QrDetector;
-    }).BarcodeDetector;
+    const BarcodeDetectorCtor = (
+      window as unknown as Window & {
+        BarcodeDetector: new (config: { formats: string[] }) => QrDetector;
+      }
+    ).BarcodeDetector;
     detectorRef.current = new BarcodeDetectorCtor({ formats: ["qr_code"] });
   }, [canUseBarcodeDetector]);
 
@@ -300,11 +305,17 @@ export default function ProfileScanBatchPage() {
     setScanResult(null);
 
     try {
-      const response = await fetch(`/api/traceability/batch/${encodeURIComponent(normalized)}`);
-      const data = (await response.json()) as BatchOriginResult | { error?: string };
+      const response = await fetch(
+        `/api/traceability/batch/${encodeURIComponent(normalized)}`,
+      );
+      const data = (await response.json()) as
+        BatchOriginResult | { error?: string };
 
       if (!response.ok) {
-        const message = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+        const message =
+          typeof data === "object" && data && "error" in data
+            ? String(data.error ?? "")
+            : "";
         throw new Error(message || "Không thể lấy thông tin batch.");
       }
 
@@ -312,7 +323,11 @@ export default function ProfileScanBatchPage() {
       setScanStatus("Đã tìm thấy thông tin batch.");
     } catch (requestError) {
       setScanStatus(null);
-      setScanError(requestError instanceof Error ? requestError.message : "Không thể lấy thông tin batch.");
+      setScanError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể lấy thông tin batch.",
+      );
     }
   };
 
@@ -335,7 +350,8 @@ export default function ProfileScanBatchPage() {
         },
         body: JSON.stringify({ qrCode: trimmed }),
       });
-      const data = (await response.json()) as BatchOriginResult | { error?: string };
+      const data = (await response.json()) as
+        BatchOriginResult | { error?: string };
 
       if (response.ok) {
         setScanResult(data as BatchOriginResult);
@@ -347,13 +363,19 @@ export default function ProfileScanBatchPage() {
       await fetchBatchInfo(trimmed);
     } catch (requestError) {
       setScanStatus(null);
-      setScanError(requestError instanceof Error ? requestError.message : "Không thể quét QR.");
+      setScanError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể quét QR.",
+      );
     }
   };
 
   const startCamera = async () => {
     if (!cameraSupported) {
-      setScanError("Trình duyệt không hỗ trợ camera hoặc cần HTTPS/localhost để sử dụng camera.");
+      setScanError(
+        "Trình duyệt không hỗ trợ camera hoặc cần HTTPS/localhost để sử dụng camera.",
+      );
       return;
     }
 
@@ -380,7 +402,9 @@ export default function ProfileScanBatchPage() {
       setScanStatus(null);
       if (requestError instanceof DOMException) {
         if (requestError.name === "NotAllowedError") {
-          setScanError("Bạn chưa cấp quyền camera. Hãy cho phép camera trong trình duyệt.");
+          setScanError(
+            "Bạn chưa cấp quyền camera. Hãy cho phép camera trong trình duyệt.",
+          );
           return;
         }
 
@@ -390,12 +414,18 @@ export default function ProfileScanBatchPage() {
         }
 
         if (requestError.name === "NotReadableError") {
-          setScanError("Camera đang được sử dụng bởi ứng dụng khác. Hãy đóng ứng dụng đó và thử lại.");
+          setScanError(
+            "Camera đang được sử dụng bởi ứng dụng khác. Hãy đóng ứng dụng đó và thử lại.",
+          );
           return;
         }
       }
 
-      setScanError(requestError instanceof Error ? requestError.message : "Không thể truy cập camera.");
+      setScanError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể truy cập camera.",
+      );
     }
   };
 
@@ -441,7 +471,12 @@ export default function ProfileScanBatchPage() {
         }
 
         context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
         qrText = decodeWithJsQr(imageData);
       }
 
@@ -452,7 +487,11 @@ export default function ProfileScanBatchPage() {
 
       await resolveQrText(qrText);
     } catch (requestError) {
-      setScanError(requestError instanceof Error ? requestError.message : "Không thể quét từ camera.");
+      setScanError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể quét từ camera.",
+      );
     } finally {
       setCameraBusy(false);
     }
@@ -491,7 +530,12 @@ export default function ProfileScanBatchPage() {
         }
 
         context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
         qrText = decodeWithJsQr(imageData);
       }
 
@@ -506,7 +550,11 @@ export default function ProfileScanBatchPage() {
       await resolveQrText(qrText);
     } catch (requestError) {
       setScanStatus(null);
-      setScanError(requestError instanceof Error ? requestError.message : "Không thể đọc QR từ ảnh.");
+      setScanError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể đọc QR từ ảnh.",
+      );
     } finally {
       setImageScanBusy(false);
     }
@@ -516,9 +564,19 @@ export default function ProfileScanBatchPage() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href="/profile" style={styles.backLink} aria-label="Quay lại profile">
+          <Link
+            href="/profile"
+            style={styles.backLink}
+            aria-label="Quay lại profile"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.title}>Quét QR Batch</h1>
@@ -528,7 +586,10 @@ export default function ProfileScanBatchPage() {
         <main style={styles.mainContent}>
           <section style={styles.scannerSection}>
             <h2 style={styles.sectionTitle}>Tra cứu theo batch</h2>
-            <p style={styles.sectionHint}>Quét bằng camera, tải ảnh QR, hoặc nhập trực tiếp batch ID để xem thông tin lô hàng.</p>
+            <p style={styles.sectionHint}>
+              Quét bằng camera, tải ảnh QR, hoặc nhập trực tiếp batch ID để xem
+              thông tin lô hàng.
+            </p>
 
             <div style={styles.inlineInputRow}>
               <input
@@ -538,22 +599,39 @@ export default function ProfileScanBatchPage() {
                 placeholder="Nhập batch ID"
                 style={styles.textInput}
               />
-              <button type="button" style={styles.scanButton} onClick={() => void fetchBatchInfo(batchIdInput)}>
+              <button
+                type="button"
+                style={styles.scanButton}
+                onClick={() => void fetchBatchInfo(batchIdInput)}
+              >
                 Tra cứu
               </button>
             </div>
 
             <div style={styles.scanControls}>
               {!cameraActive ? (
-                <button type="button" style={styles.scanButton} onClick={() => void startCamera()}>
+                <button
+                  type="button"
+                  style={styles.scanButton}
+                  onClick={() => void startCamera()}
+                >
                   Mở camera
                 </button>
               ) : (
                 <>
-                  <button type="button" style={styles.scanButton} onClick={() => void scanFromCamera()} disabled={cameraBusy}>
+                  <button
+                    type="button"
+                    style={styles.scanButton}
+                    onClick={() => void scanFromCamera()}
+                    disabled={cameraBusy}
+                  >
                     {cameraBusy ? "Đang quét..." : "Quét từ camera"}
                   </button>
-                  <button type="button" style={styles.scanButtonAlt} onClick={stopCamera}>
+                  <button
+                    type="button"
+                    style={styles.scanButtonAlt}
+                    onClick={stopCamera}
+                  >
                     Tắt camera
                   </button>
                 </>
@@ -561,51 +639,88 @@ export default function ProfileScanBatchPage() {
 
               <label style={styles.scanButtonAlt}>
                 {imageScanBusy ? "Đang xử lý ảnh..." : "Tải ảnh QR"}
-                <input type="file" accept="image/*" onChange={(event) => void scanFromImage(event)} style={{ display: "none" }} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => void scanFromImage(event)}
+                  style={{ display: "none" }}
+                />
               </label>
             </div>
 
-            <video ref={videoRef} muted playsInline style={cameraActive ? styles.videoPreview : styles.hiddenVideoPreview} />
-            {!canUseBarcodeDetector && <p style={styles.scanStatusText}>BarcodeDetector không có sẵn, đang dùng chế độ quét dự phòng.</p>}
+            <video
+              ref={videoRef}
+              muted
+              playsInline
+              style={
+                cameraActive ? styles.videoPreview : styles.hiddenVideoPreview
+              }
+            />
+            {!canUseBarcodeDetector && (
+              <p style={styles.scanStatusText}>
+                BarcodeDetector không có sẵn, đang dùng chế độ quét dự phòng.
+              </p>
+            )}
             {scanStatus && <p style={styles.scanStatusText}>{scanStatus}</p>}
             {scanError && <p style={styles.scanErrorText}>{scanError}</p>}
 
             {scanResult && (
               <div style={styles.resultCard}>
                 {scanResult.image_url ? (
-                  <img src={scanResult.image_url} alt={scanResult.product_name} style={styles.resultImage} />
+                  <img
+                    src={scanResult.image_url}
+                    alt={scanResult.product_name}
+                    style={styles.resultImage}
+                  />
                 ) : (
                   <div style={styles.resultPlaceholderImage}>Không có ảnh</div>
                 )}
-                <h3 style={styles.resultProductName}>{scanResult.product_name}</h3>
+                <h3 style={styles.resultProductName}>
+                  {scanResult.product_name}
+                </h3>
                 <div style={styles.resultInfoGrid}>
                   <div style={styles.resultInfoItem}>
                     <span style={styles.resultInfoLabel}>Batch</span>
-                    <span style={styles.resultInfoValue}>{scanResult.batch_number}</span>
+                    <span style={styles.resultInfoValue}>
+                      {scanResult.batch_number}
+                    </span>
                   </div>
                   <div style={styles.resultInfoItem}>
                     <span style={styles.resultInfoLabel}>Nhà cung cấp</span>
-                    <span style={styles.resultInfoValue}>{scanResult.supplier_name ?? "Đang cập nhật"}</span>
+                    <span style={styles.resultInfoValue}>
+                      {scanResult.supplier_name ?? "Đang cập nhật"}
+                    </span>
                   </div>
                   <div style={styles.resultInfoItem}>
                     <span style={styles.resultInfoLabel}>Nơi sản xuất</span>
-                    <span style={styles.resultInfoValue}>{scanResult.production_location ?? "Đang cập nhật"}</span>
+                    <span style={styles.resultInfoValue}>
+                      {scanResult.production_location ?? "Đang cập nhật"}
+                    </span>
                   </div>
                   <div style={styles.resultInfoItem}>
                     <span style={styles.resultInfoLabel}>Thu hoạch</span>
-                    <span style={styles.resultInfoValue}>{scanResult.harvest_date}</span>
+                    <span style={styles.resultInfoValue}>
+                      {scanResult.harvest_date}
+                    </span>
                   </div>
                   <div style={styles.resultInfoItem}>
                     <span style={styles.resultInfoLabel}>Hạn sử dụng</span>
-                    <span style={styles.resultInfoValue}>{scanResult.expire_date}</span>
+                    <span style={styles.resultInfoValue}>
+                      {scanResult.expire_date}
+                    </span>
                   </div>
                   <div style={styles.resultInfoItem}>
                     <span style={styles.resultInfoLabel}>Chứng nhận</span>
-                    <span style={styles.resultInfoValue}>{scanResult.certification ?? "Không có"}</span>
+                    <span style={styles.resultInfoValue}>
+                      {scanResult.certification ?? "Không có"}
+                    </span>
                   </div>
                 </div>
                 <div style={styles.resultButtonGroup}>
-                  <Link href={`/product-detail/${scanResult.product_id}`} style={styles.resultButton}>
+                  <Link
+                    href={`/product-detail/${scanResult.product_id}`}
+                    style={styles.resultButton}
+                  >
                     Xem sản phẩm
                   </Link>
                 </div>

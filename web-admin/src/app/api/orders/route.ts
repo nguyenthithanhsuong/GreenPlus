@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { orderTrackingFacade } from "../../../../backend/modules/orders/facades/order-tracking.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const GET = withSentry(async (request: Request) => {
   const { searchParams } = new URL(request.url);

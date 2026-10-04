@@ -1,8 +1,22 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft, ChevronRight, CreditCard, Eye, MessageSquare, Package, RefreshCcw, Search, XCircle, CircleCheck } from "lucide-react";
-import { ComplaintRow, ComplaintStatus } from "../../backend/modules/complaints/complaint-management.types";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Eye,
+  MessageSquare,
+  Package,
+  RefreshCcw,
+  Search,
+  XCircle,
+  CircleCheck,
+} from "lucide-react";
+import {
+  ComplaintRow,
+  ComplaintStatus,
+} from "../../backend/modules/complaints/complaint-management.types";
 
 type ComplaintStatusFilter = "all" | ComplaintStatus;
 
@@ -28,7 +42,10 @@ const statusTabs: Array<{ value: ComplaintStatusFilter; label: string }> = [
 
 const PAGE_SIZE = 8;
 
-const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+const buildPageItems = (
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
@@ -38,10 +55,25 @@ const buildPageItems = (currentPage: number, totalPages: number): Array<number |
   }
 
   if (currentPage >= totalPages - 2) {
-    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [
+      1,
+      "ellipsis",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
   }
 
-  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    totalPages,
+  ];
 };
 
 const normalizeType = (type: string) => type.trim().toLowerCase();
@@ -56,7 +88,11 @@ const renderTypeBadge = (type: string) => {
     );
   }
 
-  if (normalized.includes("đổi") || normalized.includes("trả") || normalized.includes("return")) {
+  if (
+    normalized.includes("đổi") ||
+    normalized.includes("trả") ||
+    normalized.includes("return")
+  ) {
     return (
       <span className="flex w-fit items-center gap-1.5 rounded-md border border-orange-100 bg-orange-50 px-2.5 py-1.5 text-xs font-semibold text-orange-600">
         <RefreshCcw className="h-3.5 w-3.5" /> Đổi trả
@@ -73,14 +109,26 @@ const renderTypeBadge = (type: string) => {
 
 const statusUi = (status: ComplaintStatus) => {
   if (status === "resolved") {
-    return { label: "Resolved", textClassName: "text-emerald-600", dotClassName: "bg-emerald-500" };
+    return {
+      label: "Resolved",
+      textClassName: "text-emerald-600",
+      dotClassName: "bg-emerald-500",
+    };
   }
 
   if (status === "rejected") {
-    return { label: "Rejected", textClassName: "text-gray-500", dotClassName: "bg-gray-400" };
+    return {
+      label: "Rejected",
+      textClassName: "text-gray-500",
+      dotClassName: "bg-gray-400",
+    };
   }
 
-  return { label: "Pending", textClassName: "text-red-500", dotClassName: "bg-red-500" };
+  return {
+    label: "Pending",
+    textClassName: "text-red-500",
+    dotClassName: "bg-red-500",
+  };
 };
 
 const ComplaintTable = ({
@@ -118,8 +166,12 @@ const ComplaintTable = ({
   }, [currentPage, complaints]);
 
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
-  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const endItem =
+    totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(
+    () => buildPageItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -133,7 +185,9 @@ const ComplaintTable = ({
                 type="button"
                 onClick={() => onStatusChange(tab.value)}
                 className={`whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium ${
-                  active ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  active
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 {tab.label}
@@ -170,13 +224,19 @@ const ComplaintTable = ({
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-6 py-12 text-center text-sm text-gray-500" colSpan={6}>
+                <td
+                  className="px-6 py-12 text-center text-sm text-gray-500"
+                  colSpan={6}
+                >
                   Đang tải danh sách khiếu nại...
                 </td>
               </tr>
             ) : complaints.length === 0 ? (
               <tr>
-                <td className="px-6 py-12 text-center text-sm text-gray-500" colSpan={6}>
+                <td
+                  className="px-6 py-12 text-center text-sm text-gray-500"
+                  colSpan={6}
+                >
                   Không có khiếu nại phù hợp với bộ lọc hiện tại.
                 </td>
               </tr>
@@ -186,28 +246,44 @@ const ComplaintTable = ({
                 const saving = savingComplaintId === item.complaint_id;
 
                 return (
-                  <tr key={item.complaint_id} className="border-b border-gray-50 transition-colors hover:bg-gray-50/50">
+                  <tr
+                    key={item.complaint_id}
+                    className="border-b border-gray-50 transition-colors hover:bg-gray-50/50"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={item.user_image_url ?? "https://i.pravatar.cc/150?img=36"}
+                          src={
+                            item.user_image_url ??
+                            "https://i.pravatar.cc/150?img=36"
+                          }
                           alt={item.user_name ?? "Customer"}
                           className="h-10 w-10 shrink-0 rounded-full object-cover"
                         />
                         <div>
-                          <p className="mb-0.5 font-bold text-gray-900">{item.user_name ?? "Khách hàng ẩn danh"}</p>
-                          <p className={`flex items-center gap-1 text-[11px] font-medium ${item.order_id ? "text-[#059669]" : "text-gray-500"}`}>
-                            {item.order_id ? <Package className="h-3 w-3" /> : null}
+                          <p className="mb-0.5 font-bold text-gray-900">
+                            {item.user_name ?? "Khách hàng ẩn danh"}
+                          </p>
+                          <p
+                            className={`flex items-center gap-1 text-[11px] font-medium ${item.order_id ? "text-[#059669]" : "text-gray-500"}`}
+                          >
+                            {item.order_id ? (
+                              <Package className="h-3 w-3" />
+                            ) : null}
                             {item.order_id ?? "Không gắn đơn hàng"}
                           </p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-6 py-4 align-top pt-5">{renderTypeBadge(item.type)}</td>
+                    <td className="px-6 py-4 align-top pt-5">
+                      {renderTypeBadge(item.type)}
+                    </td>
 
                     <td className="px-6 py-4 align-top">
-                      <p className="line-clamp-2 text-sm font-medium leading-relaxed text-gray-700">{item.description}</p>
+                      <p className="line-clamp-2 text-sm font-medium leading-relaxed text-gray-700">
+                        {item.description}
+                      </p>
                       {item.reject_reason ? (
                         <p className="mt-2 flex items-start gap-1 text-[11px] font-medium text-red-500">
                           <XCircle className="mt-0.5 h-3.5 w-3.5" />
@@ -218,14 +294,22 @@ const ComplaintTable = ({
 
                     <td className="px-6 py-4 align-top pt-5">
                       <p className="text-xs text-gray-500">
-                        {item.created_at ? new Date(item.created_at).toLocaleString("vi-VN") : "Không có thời gian"}
+                        {item.created_at
+                          ? new Date(item.created_at).toLocaleString("vi-VN")
+                          : "Không có thời gian"}
                       </p>
                     </td>
 
                     <td className="px-6 py-4 align-top pt-5">
                       <div className="flex items-center gap-1.5">
-                        <span className={`h-1.5 w-1.5 rounded-full ${status.dotClassName}`} />
-                        <span className={`text-[13px] font-semibold ${status.textClassName}`}>{status.label}</span>
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${status.dotClassName}`}
+                        />
+                        <span
+                          className={`text-[13px] font-semibold ${status.textClassName}`}
+                        >
+                          {status.label}
+                        </span>
                       </div>
                     </td>
 
@@ -282,8 +366,9 @@ const ComplaintTable = ({
           <span className="font-bold text-gray-900">
             {startItem} - {endItem}
           </span>{" "}
-          trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>{" "}
-          khiếu nại
+          trong tổng số{" "}
+          <span className="font-bold text-gray-900">{totalItems}</span> khiếu
+          nại
         </span>
 
         <div className="flex items-center gap-1">
@@ -327,7 +412,9 @@ const ComplaintTable = ({
           <button
             type="button"
             className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             aria-label="Trang sau"
           >

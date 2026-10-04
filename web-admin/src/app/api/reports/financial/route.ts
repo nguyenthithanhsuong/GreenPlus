@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { supabaseServer } from "../../../../../backend/core/supabase";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 type BatchReportRow = {
   batch_id: string;
@@ -105,9 +105,7 @@ export const GET = withSentry(async () => {
       ...batch,
       quantity: Number(batch.quantity ?? 0),
       import_price:
-        batch.import_price === null
-          ? null
-          : Number(batch.import_price),
+        batch.import_price === null ? null : Number(batch.import_price),
     }),
   );
 
@@ -127,21 +125,15 @@ export const GET = withSentry(async () => {
 
   for (const batch of batches) {
     const importCost =
-      Number(batch.import_price ?? 0) *
-      Number(batch.quantity ?? 0);
+      Number(batch.import_price ?? 0) * Number(batch.quantity ?? 0);
 
     totalImportCost += importCost;
 
-    const occurredAt =
-      batch.created_at ?? new Date().toISOString();
+    const occurredAt = batch.created_at ?? new Date().toISOString();
 
     const month = new Date(occurredAt).getMonth();
 
-    if (
-      Number.isInteger(month) &&
-      month >= 0 &&
-      month < 12
-    ) {
+    if (Number.isInteger(month) && month >= 0 && month < 12) {
       monthlyTrend[month].importCost += importCost;
     }
 
@@ -153,9 +145,7 @@ export const GET = withSentry(async () => {
         : "Nhập lô hàng",
       description: batch.suppliers?.name
         ? `Nhà cung cấp: ${batch.suppliers.name}`
-        : `Số lượng: ${Number(
-            batch.quantity ?? 0,
-          ).toLocaleString("vi-VN")}`,
+        : `Số lượng: ${Number(batch.quantity ?? 0).toLocaleString("vi-VN")}`,
       amount: importCost,
       occurredAt,
       status: "completed",
@@ -165,27 +155,20 @@ export const GET = withSentry(async () => {
   }
 
   for (const payment of payments) {
-    const paymentStatus =
-      payment.status?.toLowerCase() ?? "pending";
+    const paymentStatus = payment.status?.toLowerCase() ?? "pending";
 
     const occurredAt =
       payment.payment_date ??
       payment.orders?.order_date ??
       new Date().toISOString();
 
-    const month = new Date(
-      payment.payment_date ?? occurredAt,
-    ).getMonth();
+    const month = new Date(payment.payment_date ?? occurredAt).getMonth();
 
     if (paymentStatus === "paid") {
       totalRevenue += payment.amount;
       paidPayments += 1;
 
-      if (
-        Number.isInteger(month) &&
-        month >= 0 &&
-        month < 12
-      ) {
+      if (Number.isInteger(month) && month >= 0 && month < 12) {
         monthlyTrend[month].revenue += payment.amount;
       }
     }
@@ -215,12 +198,8 @@ export const GET = withSentry(async () => {
     totalRevenue,
     totalImportCost,
     totalProfit,
-    totalTransactions:
-      batches.length + payments.length,
-    profitMargin:
-      totalRevenue > 0
-        ? (totalProfit / totalRevenue) * 100
-        : 0,
+    totalTransactions: batches.length + payments.length,
+    profitMargin: totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0,
     paidPayments,
     batchImports: batches.length,
   };

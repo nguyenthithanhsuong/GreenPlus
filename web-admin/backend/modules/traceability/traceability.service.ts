@@ -29,7 +29,10 @@ export class TraceabilityService {
     try {
       productData = await this.repository.findProductById(batchData.product_id);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load product", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load product",
+        500,
+      );
     }
 
     if (!productData) {
@@ -48,9 +51,14 @@ export class TraceabilityService {
     } | null = null;
 
     try {
-      supplierData = await this.repository.findSupplierById(batchData.supplier_id);
+      supplierData = await this.repository.findSupplierById(
+        batchData.supplier_id,
+      );
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load supplier", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load supplier",
+        500,
+      );
     }
 
     if (!supplierData) {
@@ -84,7 +92,10 @@ export class TraceabilityService {
     try {
       batchData = await this.repository.findBatchById(qrPayload.batchId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load batch", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load batch",
+        500,
+      );
     }
 
     if (!batchData) {
@@ -115,7 +126,10 @@ export class TraceabilityService {
     try {
       batchData = await this.repository.findBatchById(batchId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load batch", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load batch",
+        500,
+      );
     }
 
     if (!batchData) {

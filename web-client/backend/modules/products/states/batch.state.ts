@@ -31,6 +31,6 @@ export function createBatchState(status: BatchStatus): BatchState {
     case "sold_out":
       return new SoldOutBatchState();
     default:
-      return new SoldOutBatchState(); 
+      return new SoldOutBatchState();
   }
 }

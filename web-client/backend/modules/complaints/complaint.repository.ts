@@ -14,7 +14,10 @@ type ComplaintInsertRow = {
 };
 
 export class ComplaintRepository {
-  async findOrderByIdAndUser(orderId: string, userId: string): Promise<{ order_id: string } | null> {
+  async findOrderByIdAndUser(
+    orderId: string,
+    userId: string,
+  ): Promise<{ order_id: string } | null> {
     const { data, error } = await supabaseServer
       .from("orders")
       .select("order_id")
@@ -43,7 +46,9 @@ export class ComplaintRepository {
         type: input.type,
         description: input.description,
       })
-      .select("complaint_id,user_id,order_id,type,description,status,created_at,resolved_at,reject_reason")
+      .select(
+        "complaint_id,user_id,order_id,type,description,status,created_at,resolved_at,reject_reason",
+      )
       .single();
 
     if (error) {
@@ -56,7 +61,9 @@ export class ComplaintRepository {
   async listComplaintsByUser(userId: string): Promise<ComplaintInsertRow[]> {
     const { data, error } = await supabaseServer
       .from("complaints")
-      .select("complaint_id,user_id,order_id,type,description,status,created_at,resolved_at,reject_reason")
+      .select(
+        "complaint_id,user_id,order_id,type,description,status,created_at,resolved_at,reject_reason",
+      )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 

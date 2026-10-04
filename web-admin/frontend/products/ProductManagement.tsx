@@ -7,7 +7,11 @@ import AdminShell from "../shared/AdminShell";
 import ProductDrawer, { ProductFormValues } from "./ProductDrawer";
 import ProductStats from "./ProductStats";
 import ProductTable from "./ProductTable";
-import type { CategoryRow, ProductRow, ProductStatus } from "../../backend/modules/products/product-management.types";
+import type {
+  CategoryRow,
+  ProductRow,
+  ProductStatus,
+} from "../../backend/modules/products/product-management.types";
 
 const emptyForm = (): ProductFormValues => ({
   categoryId: "",
@@ -28,11 +32,15 @@ const ProductManagement = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(
+    null,
+  );
   const [form, setForm] = useState<ProductFormValues>(emptyForm());
   const [deleteTarget, setDeleteTarget] = useState<ProductRow | null>(null);
   const [deleteAcknowledged, setDeleteAcknowledged] = useState(false);
-  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(
+    null,
+  );
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -40,7 +48,10 @@ const ProductManagement = () => {
 
     try {
       const response = await fetch("/api/products", { cache: "no-store" });
-      const data = (await response.json()) as { items?: ProductRow[]; error?: string };
+      const data = (await response.json()) as {
+        items?: ProductRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách sản phẩm");
@@ -48,7 +59,11 @@ const ProductManagement = () => {
 
       setProducts(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải danh sách sản phẩm");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải danh sách sản phẩm",
+      );
       setProducts([]);
     } finally {
       setLoading(false);
@@ -58,7 +73,10 @@ const ProductManagement = () => {
   const loadCategories = useCallback(async () => {
     try {
       const response = await fetch("/api/categories", { cache: "no-store" });
-      const data = (await response.json()) as { items?: CategoryRow[]; error?: string };
+      const data = (await response.json()) as {
+        items?: CategoryRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh mục");
@@ -76,7 +94,9 @@ const ProductManagement = () => {
   }, [loadCategories, loadProducts]);
 
   const stats = useMemo(() => {
-    const activeProducts = products.filter((product) => product.status === "active").length;
+    const activeProducts = products.filter(
+      (product) => product.status === "active",
+    ).length;
     return {
       totalProducts: products.length,
       activeProducts,
@@ -133,19 +153,24 @@ const ProductManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch(selectedProduct ? `/api/products/${encodeURIComponent(selectedProduct.product_id)}` : "/api/products", {
-        method: selectedProduct ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          categoryId: form.categoryId || null,
-          name: form.name,
-          description: form.description,
-          unit: form.unit,
-          imageUrl: form.imageUrl,
-          nutrition: form.nutrition,
-          status: form.status,
-        }),
-      });
+      const response = await fetch(
+        selectedProduct
+          ? `/api/products/${encodeURIComponent(selectedProduct.product_id)}`
+          : "/api/products",
+        {
+          method: selectedProduct ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categoryId: form.categoryId || null,
+            name: form.name,
+            description: form.description,
+            unit: form.unit,
+            imageUrl: form.imageUrl,
+            nutrition: form.nutrition,
+            status: form.status,
+          }),
+        },
+      );
 
       const data = (await response.json()) as { error?: string };
 
@@ -156,11 +181,22 @@ const ProductManagement = () => {
       closeDrawer();
       await reloadData();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể lưu sản phẩm");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể lưu sản phẩm",
+      );
     } finally {
       setSaving(false);
     }
-  }, [closeDrawer, form, loadCategories, loadProducts, reloadData, selectedProduct]);
+  }, [
+    closeDrawer,
+    form,
+    loadCategories,
+    loadProducts,
+    reloadData,
+    selectedProduct,
+  ]);
 
   const handleUploadImage = useCallback(async (file: File) => {
     setUploadingImage(true);
@@ -175,7 +211,10 @@ const ProductManagement = () => {
         body,
       });
 
-      const data = (await response.json()) as { publicUrl?: string; error?: string };
+      const data = (await response.json()) as {
+        publicUrl?: string;
+        error?: string;
+      };
       if (!response.ok || !data.publicUrl) {
         throw new Error(data.error ?? "Upload ảnh sản phẩm thất bại");
       }
@@ -185,7 +224,11 @@ const ProductManagement = () => {
         imageUrl: data.publicUrl ?? previous.imageUrl,
       }));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Upload ảnh sản phẩm thất bại");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Upload ảnh sản phẩm thất bại",
+      );
     } finally {
       setUploadingImage(false);
     }
@@ -214,13 +257,16 @@ const ProductManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch(`/api/products/${encodeURIComponent(deleteTarget.product_id)}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/products/${encodeURIComponent(deleteTarget.product_id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ force: true }),
         },
-        body: JSON.stringify({ force: true }),
-      });
+      );
 
       const data = (await response.json()) as { error?: string };
 
@@ -232,40 +278,56 @@ const ProductManagement = () => {
       setDeleteAcknowledged(false);
       await reloadData();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể xóa sản phẩm");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể xóa sản phẩm",
+      );
     } finally {
       setDeletingProductId(null);
     }
   }, [deleteTarget, reloadData]);
 
-  const toggleStatus = useCallback(async (product: ProductRow, nextStatus: ProductStatus) => {
-    if (saving) {
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/products/${encodeURIComponent(product.product_id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể cập nhật trạng thái sản phẩm");
+  const toggleStatus = useCallback(
+    async (product: ProductRow, nextStatus: ProductStatus) => {
+      if (saving) {
+        return;
       }
 
-      await reloadData();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể cập nhật trạng thái sản phẩm");
-    } finally {
-      setSaving(false);
-    }
-  }, [reloadData, saving]);
+      setSaving(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `/api/products/${encodeURIComponent(product.product_id)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: nextStatus }),
+          },
+        );
+
+        const data = (await response.json()) as { error?: string };
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ?? "Không thể cập nhật trạng thái sản phẩm",
+          );
+        }
+
+        await reloadData();
+      } catch (requestError) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể cập nhật trạng thái sản phẩm",
+        );
+      } finally {
+        setSaving(false);
+      }
+    },
+    [reloadData, saving],
+  );
 
   return (
     <AdminShell
@@ -284,16 +346,16 @@ const ProductManagement = () => {
             Tải lại
           </button>
           {!permLoading && hasPermission("products.create") && (
-  <button
-    type="button"
-    onClick={openCreateDrawer}
-    className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
-    disabled={loading || saving}
-  >
-    <Plus className="h-4 w-4" />
-    Thêm sản phẩm
-  </button>
-)}
+            <button
+              type="button"
+              onClick={openCreateDrawer}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
+              disabled={loading || saving}
+            >
+              <Plus className="h-4 w-4" />
+              Thêm sản phẩm
+            </button>
+          )}
         </div>
       }
     >
@@ -323,11 +385,15 @@ const ProductManagement = () => {
                   <AlertTriangle className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">Xóa vĩnh viễn sản phẩm</h3>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Xóa vĩnh viễn sản phẩm
+                  </h3>
                   <p className="mt-1 text-sm leading-6 text-gray-600">
-                    {deleteTarget.name} sẽ bị xóa cùng toàn bộ dữ liệu liên quan. Hành động này ảnh hưởng đến các row trong
-                    batches, inventory, inventory_transactions, prices, cart_items, order_items, subscriptions,
-                    group_buys, group_buy_members và reviews theo ràng buộc cascade/restrict của DB.
+                    {deleteTarget.name} sẽ bị xóa cùng toàn bộ dữ liệu liên
+                    quan. Hành động này ảnh hưởng đến các row trong batches,
+                    inventory, inventory_transactions, prices, cart_items,
+                    order_items, subscriptions, group_buys, group_buy_members và
+                    reviews theo ràng buộc cascade/restrict của DB.
                   </p>
                 </div>
               </div>
@@ -346,12 +412,15 @@ const ProductManagement = () => {
                 <input
                   type="checkbox"
                   checked={deleteAcknowledged}
-                  onChange={(event) => setDeleteAcknowledged(event.target.checked)}
+                  onChange={(event) =>
+                    setDeleteAcknowledged(event.target.checked)
+                  }
                   className="mt-1 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
                   disabled={deletingProductId !== null}
                 />
                 <span className="text-sm leading-6 text-red-700">
-                  Tôi hiểu đây là thao tác không thể hoàn tác và sẽ xóa các dữ liệu liên quan.
+                  Tôi hiểu đây là thao tác không thể hoàn tác và sẽ xóa các dữ
+                  liệu liên quan.
                 </span>
               </label>
 

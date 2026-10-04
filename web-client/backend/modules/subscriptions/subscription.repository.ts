@@ -29,7 +29,9 @@ type SubscriptionRow = {
 };
 
 export class SubscriptionRepository {
-  async findActiveProductById(productId: string): Promise<ProductActiveRow | null> {
+  async findActiveProductById(
+    productId: string,
+  ): Promise<ProductActiveRow | null> {
     const { data, error } = await supabaseServer
       .from("products")
       .select("product_id,status")
@@ -44,7 +46,10 @@ export class SubscriptionRepository {
     return (data as ProductActiveRow | null) ?? null;
   }
 
-  async findActiveSubscription(userId: string, productId: string): Promise<ActiveSubscriptionRow | null> {
+  async findActiveSubscription(
+    userId: string,
+    productId: string,
+  ): Promise<ActiveSubscriptionRow | null> {
     const { data, error } = await supabaseServer
       .from("subscriptions")
       .select("subscription_id,status")
@@ -85,7 +90,10 @@ export class SubscriptionRepository {
     return data as SubscriptionInsertRow;
   }
 
-  async listSubscriptionsByUserId(userId: string, limit = 100): Promise<SubscriptionRow[]> {
+  async listSubscriptionsByUserId(
+    userId: string,
+    limit = 100,
+  ): Promise<SubscriptionRow[]> {
     const { data, error } = await supabaseServer
       .from("subscriptions")
       .select("subscription_id,user_id,product_id,schedule,status,start_date")
@@ -100,7 +108,10 @@ export class SubscriptionRepository {
     return (data ?? []) as SubscriptionRow[];
   }
 
-  async cancelSubscription(userId: string, subscriptionId: string): Promise<SubscriptionRow | null> {
+  async cancelSubscription(
+    userId: string,
+    subscriptionId: string,
+  ): Promise<SubscriptionRow | null> {
     const { data, error } = await supabaseServer
       .from("subscriptions")
       .update({ status: "cancelled" })

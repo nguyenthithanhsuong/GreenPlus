@@ -12,7 +12,13 @@ export class Pbkdf2HasherStrategy implements PasswordHasherStrategy {
 
   async hash(password: string): Promise<string> {
     const salt = randomBytes(16).toString("hex");
-    const hashed = pbkdf2Sync(password, salt, this.iterations, this.keyLength, this.digest).toString("hex");
+    const hashed = pbkdf2Sync(
+      password,
+      salt,
+      this.iterations,
+      this.keyLength,
+      this.digest,
+    ).toString("hex");
     return `pbkdf2$${this.iterations}$${salt}$${hashed}`;
   }
 
@@ -27,7 +33,13 @@ export class Pbkdf2HasherStrategy implements PasswordHasherStrategy {
       return false;
     }
 
-    const computed = pbkdf2Sync(password, salt, iterations, this.keyLength, this.digest);
+    const computed = pbkdf2Sync(
+      password,
+      salt,
+      iterations,
+      this.keyLength,
+      this.digest,
+    );
     const original = Buffer.from(hashHex, "hex");
 
     if (computed.length !== original.length) {

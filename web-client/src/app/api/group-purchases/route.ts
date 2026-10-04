@@ -1,7 +1,11 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { groupPurchaseFacade } from "../../../../backend/modules/group-purchases/facades/group-purchase.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../backend/core/request-auth";
 
 type JoinBody = {
   action?: "join" | "create";
@@ -37,12 +41,12 @@ export const GET = withSentry(async () => {
 });
 
 export const POST = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as JoinBody;
 
   const action = body.action ?? "join";
 
-  const userId =
-    body.userId?.trim() ?? body.user_id?.trim() ?? "";
+  const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
   logger.info("Group purchase action attempt", {
     userId,
@@ -50,19 +54,15 @@ export const POST = withSentry(async (request: Request) => {
   });
 
   if (action === "create") {
-    const productId =
-      body.productId?.trim() ?? body.product_id?.trim() ?? "";
+    const productId = body.productId?.trim() ?? body.product_id?.trim() ?? "";
 
     const targetQuantity = Number(
-      body.targetQuantity ?? body.target_quantity ?? 0
+      body.targetQuantity ?? body.target_quantity ?? 0,
     );
 
-    const minQuantity = Number(
-      body.minQuantity ?? body.min_quantity ?? 0
-    );
+    const minQuantity = Number(body.minQuantity ?? body.min_quantity ?? 0);
 
-    const discountPriceRaw =
-      body.discountPrice ?? body.discount_price;
+    const discountPriceRaw = body.discountPrice ?? body.discount_price;
 
     const deadline = body.deadline?.trim() ?? "";
 
@@ -102,8 +102,7 @@ export const POST = withSentry(async (request: Request) => {
     return NextResponse.json(result, { status: 201 });
   }
 
-  const groupId =
-    body.groupId?.trim() ?? body.group_id?.trim() ?? "";
+  const groupId = body.groupId?.trim() ?? body.group_id?.trim() ?? "";
 
   const quantity = Number(body.quantity ?? 1);
 

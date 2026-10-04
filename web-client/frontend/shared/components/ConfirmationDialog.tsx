@@ -98,20 +98,32 @@ export default function ConfirmationDialog({
   }
 
   return (
-    <div style={styles.backdrop} role="dialog" aria-modal="true" aria-label={title}>
+    <div
+      style={styles.backdrop}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div style={styles.panel}>
         <h3 style={styles.title}>{title}</h3>
         <p style={styles.message}>{message}</p>
 
         <div style={styles.actions}>
-          <button type="button" style={styles.buttonBase} onClick={onCancel} disabled={busy}>
+          <button
+            type="button"
+            style={styles.buttonBase}
+            onClick={onCancel}
+            disabled={busy}
+          >
             {cancelLabel}
           </button>
           <button
             type="button"
             style={{
               ...styles.buttonBase,
-              ...(confirmTone === "danger" ? styles.confirmDanger : styles.confirmPrimary),
+              ...(confirmTone === "danger"
+                ? styles.confirmDanger
+                : styles.confirmPrimary),
             }}
             onClick={onConfirm}
             disabled={busy}

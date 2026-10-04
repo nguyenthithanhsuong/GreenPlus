@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AuthController } from "../../../../backend/modules/auth/auth.controller";
 import { AuthService } from "../../../../backend/modules/auth/auth.service";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 function readAccessToken(request: Request, fallbackToken?: string): string {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -21,7 +21,7 @@ export const GET = withSentry(async () => {
       methods: ["POST"],
       requirement: "Provide Bearer access token or accessToken in body",
     },
-    { status: 200 }
+    { status: 200 },
   );
 });
 
@@ -36,7 +36,10 @@ export const POST = withSentry(async (request) => {
 
   if (!accessToken) {
     logger.error("Auth session verification failed - missing accessToken");
-    return NextResponse.json({ error: "accessToken is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "accessToken is required" },
+      { status: 400 },
+    );
   }
 
   const controller = new AuthController(new AuthService());

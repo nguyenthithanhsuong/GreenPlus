@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { AppError } from "../../../../backend/core/errors";
 import { AuthService } from "../../../../backend/modules/auth/auth.service";
 import { greenCreatorContentFacade } from "../../../../backend/modules/greencreators/facade/greencreator-content.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 type CreateGreenCreatorPostBody = {
   title?: string;
@@ -64,10 +64,7 @@ export const POST = withSentry(async (request: Request) => {
   if (!accessToken) {
     logger.warn("Create GreenCreator post failed - unauthorized");
 
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const authService = new AuthService();

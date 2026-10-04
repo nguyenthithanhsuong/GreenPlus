@@ -43,7 +43,9 @@ type ShipperDbRow = {
 export class DeliveryTrackingRepository {
   private readonly supabase = createServiceRoleSupabaseClient();
 
-  async listDeliveries(filters: DeliveryTrackingFilterInput = {}): Promise<DeliveryTrackingRow[]> {
+  async listDeliveries(
+    filters: DeliveryTrackingFilterInput = {},
+  ): Promise<DeliveryTrackingRow[]> {
     const { data, error } = await this.supabase
       .from("deliveries")
       .select(
@@ -54,16 +56,27 @@ export class DeliveryTrackingRepository {
       throw new Error(error.message);
     }
 
-    const rows = ((data ?? []) as DeliveryDbRow[]).map((row) => this.toDeliveryTrackingRow(row));
+    const rows = ((data ?? []) as DeliveryDbRow[]).map((row) =>
+      this.toDeliveryTrackingRow(row),
+    );
 
     return rows
       .filter((row) => (filters.status ? row.status === filters.status : true))
-      .filter((row) => (filters.employeeId ? row.employee_id === filters.employeeId : true))
-      .filter((row) => this.matchesDateRange(row, filters.fromDate, filters.toDate))
-      .sort((left, right) => this.toSortTimestamp(right) - this.toSortTimestamp(left));
+      .filter((row) =>
+        filters.employeeId ? row.employee_id === filters.employeeId : true,
+      )
+      .filter((row) =>
+        this.matchesDateRange(row, filters.fromDate, filters.toDate),
+      )
+      .sort(
+        (left, right) =>
+          this.toSortTimestamp(right) - this.toSortTimestamp(left),
+      );
   }
 
-  async getDeliveryByOrderId(orderId: string): Promise<DeliveryTrackingRow | null> {
+  async getDeliveryByOrderId(
+    orderId: string,
+  ): Promise<DeliveryTrackingRow | null> {
     const { data, error } = await this.supabase
       .from("deliveries")
       .select(
@@ -169,7 +182,9 @@ export class DeliveryTrackingRepository {
     }));
   }
 
-  async findShipperById(employeeId: string): Promise<DeliveryShipperOption | null> {
+  async findShipperById(
+    employeeId: string,
+  ): Promise<DeliveryShipperOption | null> {
     const { data, error } = await this.supabase
       .from("users")
       .select("user_id,name,phone,status,roles!inner(role_name,is_shipper)")
@@ -232,7 +247,11 @@ export class DeliveryTrackingRepository {
     };
   }
 
-  private matchesDateRange(row: DeliveryTrackingRow, fromDate?: string, toDate?: string): boolean {
+  private matchesDateRange(
+    row: DeliveryTrackingRow,
+    fromDate?: string,
+    toDate?: string,
+  ): boolean {
     const source = row.order_date ?? row.pickup_time ?? row.delivery_time;
     if (!source) {
       return !fromDate && !toDate;

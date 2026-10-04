@@ -1,6 +1,10 @@
 import React from "react";
 import { X } from "lucide-react";
-import type { CategoryRow, ProductRow, ProductStatus } from "../../backend/modules/products/product-management.types";
+import type {
+  CategoryRow,
+  ProductRow,
+  ProductStatus,
+} from "../../backend/modules/products/product-management.types";
 
 export type ProductFormValues = {
   categoryId: string;
@@ -30,7 +34,18 @@ const statusLabel: Record<ProductStatus, string> = {
   inactive: "Ngừng bán",
 };
 
-const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories, onChange, onUploadImage, onClose, onSubmit }: ProductDrawerProps) => {
+const ProductDrawer = ({
+  open,
+  saving,
+  uploadingImage,
+  product,
+  form,
+  categories,
+  onChange,
+  onUploadImage,
+  onClose,
+  onSubmit,
+}: ProductDrawerProps) => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   if (!open) {
@@ -53,7 +68,9 @@ const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories
       >
         <div className="flex h-full flex-col font-sans">
           <div className="flex items-center justify-between border-b border-gray-100 p-6">
-            <h2 className="text-2xl font-bold text-gray-900">{product ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {product ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
+            </h2>
             <button
               type="button"
               onClick={onClose}
@@ -74,12 +91,18 @@ const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories
               <div className="mb-4 flex flex-col items-center">
                 <div className="mb-3 flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
                   {form.imageUrl ? (
-                    <img src={form.imageUrl} alt="product" className="h-24 w-24 rounded-full object-cover" />
+                    <img
+                      src={form.imageUrl}
+                      alt="product"
+                      className="h-24 w-24 rounded-full object-cover"
+                    />
                   ) : (
                     <span className="text-xs text-gray-400">Image</span>
                   )}
                 </div>
-                <span className="text-sm font-medium text-[#1da453]">Tải ảnh sản phẩm lên</span>
+                <span className="text-sm font-medium text-[#1da453]">
+                  Tải ảnh sản phẩm lên
+                </span>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -106,7 +129,9 @@ const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-gray-800">Tên sản phẩm <span className="text-red-500">*</span></label>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                  Tên sản phẩm <span className="text-red-500">*</span>
+                </label>
                 <input
                   value={form.name}
                   onChange={(event) => onChange({ name: event.target.value })}
@@ -118,15 +143,22 @@ const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">Danh mục</label>
+                  <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                    Danh mục
+                  </label>
                   <select
                     value={form.categoryId}
-                    onChange={(event) => onChange({ categoryId: event.target.value })}
+                    onChange={(event) =>
+                      onChange({ categoryId: event.target.value })
+                    }
                     className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                   >
                     <option value="">Chưa phân loại</option>
                     {categories.map((category) => (
-                      <option key={category.category_id} value={category.category_id}>
+                      <option
+                        key={category.category_id}
+                        value={category.category_id}
+                      >
                         {category.name}
                       </option>
                     ))}
@@ -134,10 +166,14 @@ const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">Trạng thái</label>
+                  <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                    Trạng thái
+                  </label>
                   <select
                     value={form.status}
-                    onChange={(event) => onChange({ status: event.target.value as ProductStatus })}
+                    onChange={(event) =>
+                      onChange({ status: event.target.value as ProductStatus })
+                    }
                     className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                   >
                     <option value="active">{statusLabel.active}</option>
@@ -148,7 +184,9 @@ const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">Đơn vị tính <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                    Đơn vị tính <span className="text-red-500">*</span>
+                  </label>
                   <input
                     value={form.unit}
                     onChange={(event) => onChange({ unit: event.target.value })}
@@ -160,10 +198,14 @@ const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-gray-800">Mô tả</label>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                  Mô tả
+                </label>
                 <textarea
                   value={form.description}
-                  onChange={(event) => onChange({ description: event.target.value })}
+                  onChange={(event) =>
+                    onChange({ description: event.target.value })
+                  }
                   placeholder="Mô tả ngắn về sản phẩm"
                   rows={4}
                   className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -171,10 +213,14 @@ const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-gray-800">Nutrition</label>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                  Nutrition
+                </label>
                 <textarea
                   value={form.nutrition}
-                  onChange={(event) => onChange({ nutrition: event.target.value })}
+                  onChange={(event) =>
+                    onChange({ nutrition: event.target.value })
+                  }
                   placeholder="Thành phần, dinh dưỡng, lưu ý..."
                   rows={3}
                   className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -195,7 +241,11 @@ const ProductDrawer = ({ open, saving, uploadingImage, product, form, categories
                   disabled={saving}
                   className="rounded-md bg-[#1da453] px-4 py-2 text-sm font-semibold text-white hover:bg-[#178546] disabled:opacity-60"
                 >
-                  {saving ? "Đang lưu..." : product ? "Cập nhật" : "Tạo sản phẩm"}
+                  {saving
+                    ? "Đang lưu..."
+                    : product
+                      ? "Cập nhật"
+                      : "Tạo sản phẩm"}
                 </button>
               </div>
             </form>

@@ -1,5 +1,9 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { CreateStoreInput, StoreRow, UpdateStoreInput } from "./stores-management.types";
+import {
+  CreateStoreInput,
+  StoreRow,
+  UpdateStoreInput,
+} from "./stores-management.types";
 
 export class StoresManagementRepository {
   private readonly supabase = createServiceRoleSupabaseClient();
@@ -35,7 +39,9 @@ export class StoresManagementRepository {
     return (data as StoreRow | null) ?? null;
   }
 
-  async createStore(input: CreateStoreInput & { status: StoreRow["status"] }): Promise<StoreRow> {
+  async createStore(
+    input: CreateStoreInput & { status: StoreRow["status"] },
+  ): Promise<StoreRow> {
     const { data, error } = await this.supabase
       .from("stores")
       .insert({
@@ -70,19 +76,26 @@ export class StoresManagementRepository {
     const payload: Record<string, string | number | null> = {};
 
     if (typeof input.name !== "undefined") payload.name = input.name;
-    if (typeof input.description !== "undefined") payload.description = input.description;
+    if (typeof input.description !== "undefined")
+      payload.description = input.description;
     if (typeof input.address !== "undefined") payload.address = input.address;
     if (typeof input.ward !== "undefined") payload.ward = input.ward;
-    if (typeof input.district !== "undefined") payload.district = input.district;
+    if (typeof input.district !== "undefined")
+      payload.district = input.district;
     if (typeof input.city !== "undefined") payload.city = input.city;
     if (typeof input.phone !== "undefined") payload.phone = input.phone;
     if (typeof input.email !== "undefined") payload.email = input.email;
-    if (typeof input.managerId !== "undefined") payload.manager_id = input.managerId;
+    if (typeof input.managerId !== "undefined")
+      payload.manager_id = input.managerId;
     if (typeof input.status !== "undefined") payload.status = input.status;
-    if (typeof input.latitude !== "undefined") payload.latitude = input.latitude as number | null;
-    if (typeof input.longitude !== "undefined") payload.longitude = input.longitude as number | null;
-    if (typeof input.openingTime !== "undefined") payload.opening_time = input.openingTime;
-    if (typeof input.closingTime !== "undefined") payload.closing_time = input.closingTime;
+    if (typeof input.latitude !== "undefined")
+      payload.latitude = input.latitude as number | null;
+    if (typeof input.longitude !== "undefined")
+      payload.longitude = input.longitude as number | null;
+    if (typeof input.openingTime !== "undefined")
+      payload.opening_time = input.openingTime;
+    if (typeof input.closingTime !== "undefined")
+      payload.closing_time = input.closingTime;
 
     const { data, error } = await this.supabase
       .from("stores")

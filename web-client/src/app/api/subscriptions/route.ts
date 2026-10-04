@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { subscriptionFacade } from "../../../../backend/modules/subscriptions/facades/subscription.facade";
 import { logger } from "@/lib/logger";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../backend/core/request-auth";
 
 type SubscriptionBody = {
   userId?: string;
@@ -19,19 +23,28 @@ type SubscriptionBody = {
 };
 
 export const GET = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const start = Date.now();
   let userId = "";
 
   try {
     const url = new URL(request.url);
-    userId = (url.searchParams.get("userId") ?? url.searchParams.get("user_id") ?? "").trim();
+    userId = assertCustomerId(
+      url.searchParams.get("userId") ??
+        url.searchParams.get("user_id") ??
+        undefined,
+      identity.userId,
+    );
 
     logger.info("List subscriptions attempt", { userId });
 
     if (!userId) {
       logger.error("List subscriptions failed - missing userId", { userId });
 
-      return NextResponse.json({ error: "userId is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "userId is required" },
+        { status: 400 },
+      );
     }
 
     const result = await subscriptionFacade.listByUserId(userId);
@@ -52,7 +65,10 @@ export const GET = withSentry(async (request: Request) => {
         duration_ms: Date.now() - start,
       });
 
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;
@@ -60,12 +76,16 @@ export const GET = withSentry(async (request: Request) => {
 });
 
 export const POST = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const start = Date.now();
 
   try {
     const body = (await request.json()) as SubscriptionBody;
 
-    const userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    const userId = assertCustomerId(
+      body.userId ?? body.user_id,
+      identity.userId,
+    );
     const productId = body.productId?.trim() ?? body.product_id?.trim() ?? "";
     const frequency = body.frequency?.trim() ?? "";
 
@@ -80,7 +100,7 @@ export const POST = withSentry(async (request: Request) => {
 
       return NextResponse.json(
         { error: "userId, productId and frequency are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -105,7 +125,10 @@ export const POST = withSentry(async (request: Request) => {
         duration_ms: Date.now() - start,
       });
 
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;
@@ -113,13 +136,18 @@ export const POST = withSentry(async (request: Request) => {
 });
 
 export const DELETE = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const start = Date.now();
 
   try {
     const body = (await request.json()) as SubscriptionBody;
 
-    const userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
-    const subscriptionId = body.subscriptionId?.trim() ?? body.subscription_id?.trim() ?? "";
+    const userId = assertCustomerId(
+      body.userId ?? body.user_id,
+      identity.userId,
+    );
+    const subscriptionId =
+      body.subscriptionId?.trim() ?? body.subscription_id?.trim() ?? "";
 
     logger.info("Unsubscribe attempt", { userId, subscriptionId });
 
@@ -131,7 +159,7 @@ export const DELETE = withSentry(async (request: Request) => {
 
       return NextResponse.json(
         { error: "userId and subscriptionId are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -155,7 +183,10 @@ export const DELETE = withSentry(async (request: Request) => {
         duration_ms: Date.now() - start,
       });
 
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;
@@ -163,13 +194,18 @@ export const DELETE = withSentry(async (request: Request) => {
 });
 
 export const PATCH = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const start = Date.now();
 
   try {
     const body = (await request.json()) as SubscriptionBody;
 
-    const userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
-    const subscriptionId = body.subscriptionId?.trim() ?? body.subscription_id?.trim() ?? "";
+    const userId = assertCustomerId(
+      body.userId ?? body.user_id,
+      identity.userId,
+    );
+    const subscriptionId =
+      body.subscriptionId?.trim() ?? body.subscription_id?.trim() ?? "";
     const frequency = body.frequency?.trim() ?? body.schedule?.trim() ?? "";
     const status = body.status?.trim() ?? "";
     const startDate = body.startDate?.trim() ?? body.start_date?.trim() ?? "";
@@ -190,7 +226,7 @@ export const PATCH = withSentry(async (request: Request) => {
 
       return NextResponse.json(
         { error: "userId and subscriptionId are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -217,7 +253,10 @@ export const PATCH = withSentry(async (request: Request) => {
         duration_ms: Date.now() - start,
       });
 
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;

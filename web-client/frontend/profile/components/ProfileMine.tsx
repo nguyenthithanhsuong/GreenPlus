@@ -78,7 +78,8 @@ const styles: Record<string, React.CSSProperties> = {
   profileHero: {
     width: "100%",
     borderRadius: "24px",
-    background: "linear-gradient(160deg, #0f172a 0%, #115e59 60%, #10b981 100%)",
+    background:
+      "linear-gradient(160deg, #0f172a 0%, #115e59 60%, #10b981 100%)",
     color: "#FFFFFF",
     padding: "20px",
     display: "flex",
@@ -140,7 +141,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   infoRow: {
     display: "flex",
-    justifyContent: "flex-end", 
+    justifyContent: "flex-end",
     gap: "12px",
     alignItems: "center",
     flexWrap: "wrap",
@@ -325,13 +326,20 @@ export default function ProfileMine() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/account/profile?userId=${encodeURIComponent(userId)}`, {
-          signal: controller.signal,
-        });
-        const data = (await response.json()) as ProfileResult | { error?: string };
+        const response = await fetch(
+          `/api/account/profile?userId=${encodeURIComponent(userId)}`,
+          {
+            signal: controller.signal,
+          },
+        );
+        const data = (await response.json()) as
+          ProfileResult | { error?: string };
 
         if (!response.ok) {
-          const message = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+          const message =
+            typeof data === "object" && data && "error" in data
+              ? String(data.error ?? "")
+              : "";
           throw new Error(message || "Không thể tải hồ sơ.");
         }
 
@@ -357,7 +365,11 @@ export default function ProfileMine() {
         }
 
         setProfile(null);
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải hồ sơ.");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải hồ sơ.",
+        );
         hasLoadedProfileRef.current = true;
       } finally {
         setLoading(false);
@@ -376,7 +388,8 @@ export default function ProfileMine() {
   const displayPhone = profile?.phone ?? "Chưa cập nhật";
   const displayAddress = profile?.address ?? "Chưa cập nhật";
   const displayStatus = profile?.status ?? user?.status ?? "unknown";
-  const displayAvatar = imageUrlInput || profile?.image_url || user?.image_url || "";
+  const displayAvatar =
+    imageUrlInput || profile?.image_url || user?.image_url || "";
 
   const profileFields = useMemo(
     () => [
@@ -402,7 +415,9 @@ export default function ProfileMine() {
       await supabase.auth.signOut();
     } finally {
       clearAuth();
-      await fetch("/api/auth/sync", { method: "DELETE" }).catch(() => undefined);
+      await fetch("/api/auth/sync", { method: "DELETE" }).catch(
+        () => undefined,
+      );
       setIsLoggingOut(false);
       router.replace("/login");
     }
@@ -439,13 +454,18 @@ export default function ProfileMine() {
           email: emailInput,
           phone: phoneInput,
           address: addressInput,
-          imageUrl: imageUrlInput || profile?.image_url || user?.image_url || "",
+          imageUrl:
+            imageUrlInput || profile?.image_url || user?.image_url || "",
         }),
       });
 
-      const data = (await response.json()) as ProfileResult | { error?: string };
+      const data = (await response.json()) as
+        ProfileResult | { error?: string };
       if (!response.ok) {
-        const message = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+        const message =
+          typeof data === "object" && data && "error" in data
+            ? String(data.error ?? "")
+            : "";
         throw new Error(message || "Không thể cập nhật hồ sơ.");
       }
 
@@ -464,15 +484,23 @@ export default function ProfileMine() {
         image_url: nextProfile.image_url,
         status: nextProfile.status,
       });
-      setSaveMessage("Đã cập nhật avatar, tên, email, số điện thoại và địa chỉ.");
+      setSaveMessage(
+        "Đã cập nhật avatar, tên, email, số điện thoại và địa chỉ.",
+      );
     } catch (requestError) {
-      setSaveMessage(requestError instanceof Error ? requestError.message : "Không thể cập nhật hồ sơ.");
+      setSaveMessage(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể cập nhật hồ sơ.",
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     console.log("handleAvatarChange fired", event.target.files);
     const selectedFile = event.target.files?.[0] ?? null;
     event.target.value = "";
@@ -510,17 +538,30 @@ export default function ProfileMine() {
         body: formData,
       });
 
-      const uploadData = (await uploadResponse.json()) as { publicUrl?: string; error?: string };
+      const uploadData = (await uploadResponse.json()) as {
+        publicUrl?: string;
+        error?: string;
+      };
       if (!uploadResponse.ok || !uploadData.publicUrl) {
         throw new Error(uploadData.error ?? "Không thể upload ảnh đại diện.");
       }
 
       setImageUrlInput(uploadData.publicUrl);
-      setProfile((current) => (current ? { ...current, image_url: uploadData.publicUrl ?? null } : current));
+      setProfile((current) =>
+        current
+          ? { ...current, image_url: uploadData.publicUrl ?? null }
+          : current,
+      );
       updateUser({ image_url: uploadData.publicUrl });
-      setSaveMessage("Upload ảnh đại diện thành công. Nhấn 'Lưu thay đổi' để cập nhật hồ sơ.");
+      setSaveMessage(
+        "Upload ảnh đại diện thành công. Nhấn 'Lưu thay đổi' để cập nhật hồ sơ.",
+      );
     } catch (uploadError) {
-      setSaveMessage(uploadError instanceof Error ? uploadError.message : "Không thể upload ảnh đại diện.");
+      setSaveMessage(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Không thể upload ảnh đại diện.",
+      );
     } finally {
       setUploadingAvatar(false);
     }
@@ -530,9 +571,19 @@ export default function ProfileMine() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href="/profile" style={styles.backLink} aria-label="Quay lại profile">
+          <Link
+            href="/profile"
+            style={styles.backLink}
+            aria-label="Quay lại profile"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.headerTitle}>Profile của tôi</h1>
@@ -549,9 +600,20 @@ export default function ProfileMine() {
                 <div style={styles.avatarSection}>
                   <div style={styles.avatar}>
                     {displayAvatar ? (
-                      <img src={displayAvatar} alt={displayName} style={styles.avatarImage} />
+                      <img
+                        src={displayAvatar}
+                        alt={displayName}
+                        style={styles.avatarImage}
+                      />
                     ) : (
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" strokeWidth="1.5">
+                      <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#AAAAAA"
+                        strokeWidth="1.5"
+                      >
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                       </svg>
@@ -559,8 +621,13 @@ export default function ProfileMine() {
                   </div>
                 </div>
                 <div style={styles.avatarUploadSection}>
-                  <label style={styles.avatarUploadLabel} htmlFor="profile-avatar-upload">
-                    {uploadingAvatar ? "Đang upload ảnh..." : "Đổi ảnh đại diện"}
+                  <label
+                    style={styles.avatarUploadLabel}
+                    htmlFor="profile-avatar-upload"
+                  >
+                    {uploadingAvatar
+                      ? "Đang upload ảnh..."
+                      : "Đổi ảnh đại diện"}
                   </label>
                   <input
                     id="profile-avatar-upload"
@@ -575,14 +642,29 @@ export default function ProfileMine() {
                 </div>
                 <div>
                   <p style={styles.infoLabel}>Hồ sơ của</p>
-                  <h2 style={{ margin: 0, fontSize: "24px", lineHeight: "30px", fontWeight: 800 }}>{displayName}</h2>
-                  <p style={{ margin: 0, fontSize: "14px", color: "rgba(236, 253, 245, 0.9)" }}>{displayEmail}</p>
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: "24px",
+                      lineHeight: "30px",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {displayName}
+                  </h2>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "14px",
+                      color: "rgba(236, 253, 245, 0.9)",
+                    }}
+                  >
+                    {displayEmail}
+                  </p>
                 </div>
               </section>
 
               <section style={styles.infoCard}>
-                
-
                 <div style={styles.statGrid}>
                   {profileFields.map((field) => (
                     <div key={field.label} style={styles.statCard}>
@@ -633,10 +715,17 @@ export default function ProfileMine() {
                     />
                   </div>
                   <div style={styles.formActions}>
-                    <button type="button" style={styles.submitButton} onClick={() => void handleSaveProfile()} disabled={saving}>
+                    <button
+                      type="button"
+                      style={styles.submitButton}
+                      onClick={() => void handleSaveProfile()}
+                      disabled={saving}
+                    >
                       {saving ? "Đang lưu..." : "Lưu thay đổi"}
                     </button>
-                    {saveMessage ? <p style={styles.infoText}>{saveMessage}</p> : null}
+                    {saveMessage ? (
+                      <p style={styles.infoText}>{saveMessage}</p>
+                    ) : null}
                   </div>
                 </div>
               </section>

@@ -81,6 +81,32 @@ jobs:
       - name: Build web-admin
         run: npm run build -w web-admin
 
+  shipper-ci:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint web-shipper
+        run: npm run lint -w web-shipper
+
+      - name: Type check web-shipper
+        run: npm run typecheck -w web-shipper
+
+      - name: Build web-shipper
+        run: npm run build -w web-shipper
+
   docker-build:
     environment: environment
     needs:

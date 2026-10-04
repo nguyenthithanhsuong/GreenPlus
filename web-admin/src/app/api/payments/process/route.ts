@@ -4,7 +4,7 @@ import {
   HandleOrderPaymentInput,
   handleOrderPayment,
 } from "../../../../../backend/modules/payments/payment.service";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const POST = withSentry(async (request: Request) => {
   const body = (await request.json()) as Partial<HandleOrderPaymentInput>;
@@ -20,25 +20,15 @@ export const POST = withSentry(async (request: Request) => {
   if (!orderId || typeof orderId !== "string") {
     logger.error("Handle order payment failed - invalid orderId");
 
-    return NextResponse.json(
-      { error: "Invalid orderId" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid orderId" }, { status: 400 });
   }
 
-  if (
-    typeof amount !== "number" ||
-    Number.isNaN(amount) ||
-    amount <= 0
-  ) {
+  if (typeof amount !== "number" || Number.isNaN(amount) || amount <= 0) {
     logger.error("Handle order payment failed - invalid amount", {
       orderId,
     });
 
-    return NextResponse.json(
-      { error: "Invalid amount" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
   }
 
   if (!method || !["momo", "vnpay", "cod"].includes(method)) {

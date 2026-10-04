@@ -147,7 +147,8 @@ const styles: Record<string, React.CSSProperties> = {
   heroImage: {
     width: "100%",
     aspectRatio: "401 / 301",
-    background: "linear-gradient(140deg, #d1fae5 0%, #a7f3d0 55%, #6ee7b7 100%)",
+    background:
+      "linear-gradient(140deg, #d1fae5 0%, #a7f3d0 55%, #6ee7b7 100%)",
   },
   slider: {
     display: "flex",
@@ -386,7 +387,8 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "92px",
     borderRadius: "12px",
-    background: "linear-gradient(140deg, #ecfdf5 0%, #d1fae5 70%, #a7f3d0 100%)",
+    background:
+      "linear-gradient(140deg, #ecfdf5 0%, #d1fae5 70%, #a7f3d0 100%)",
   },
   similarName: {
     margin: "8px 0 2px",
@@ -522,7 +524,9 @@ function buildStars(rating: number): string {
   return `${"★".repeat(rating)}${"☆".repeat(Math.max(0, 5 - rating))}`;
 }
 
-function formatBatchStatus(status: "available" | "expired" | "sold_out"): string {
+function formatBatchStatus(
+  status: "available" | "expired" | "sold_out",
+): string {
   if (status === "available") {
     return "Sẵn bán";
   }
@@ -558,22 +562,37 @@ function todayMidnightTimestamp(): number {
   return today.getTime();
 }
 
-export default function ProductDetail({ productId, backHref }: ProductDetailProps) {
+export default function ProductDetail({
+  productId,
+  backHref,
+}: ProductDetailProps) {
   const [quantity, setQuantity] = useState(1);
   const routerUser = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [product, setProduct] = useState<ProductDetailData | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<ProductBrowseItem[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<ProductBrowseItem[]>(
+    [],
+  );
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(Boolean(productId));
   const [error, setError] = useState<string | null>(null);
   const [cartActionLoading, setCartActionLoading] = useState(false);
-  const [cartActionMessage, setCartActionMessage] = useState<string | null>(null);
-  const [purchaseMode, setPurchaseMode] = useState<"cart" | "subscription" | "group">("cart");
+  const [cartActionMessage, setCartActionMessage] = useState<string | null>(
+    null,
+  );
+  const [purchaseMode, setPurchaseMode] = useState<
+    "cart" | "subscription" | "group"
+  >("cart");
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showGroupPurchaseModal, setShowGroupPurchaseModal] = useState(false);
   const [debugSteps, setDebugSteps] = useState<DebugStep[]>([
-    { label: "route params", status: productId ? "ok" : "error", detail: productId ? `productId=${productId}` : "Missing productId route param" },
+    {
+      label: "route params",
+      status: productId ? "ok" : "error",
+      detail: productId
+        ? `productId=${productId}`
+        : "Missing productId route param",
+    },
     { label: "product detail fetch", status: "idle" },
     { label: "related products fetch", status: "idle" },
     { label: "reviews fetch", status: "idle" },
@@ -623,7 +642,9 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
 
     const updateStep = (label: string, nextStep: Partial<DebugStep>) => {
       setDebugSteps((previous) =>
-        previous.map((step) => (step.label === label ? { ...step, ...nextStep } : step)),
+        previous.map((step) =>
+          step.label === label ? { ...step, ...nextStep } : step,
+        ),
       );
     };
 
@@ -643,17 +664,33 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
     const loadProduct = async () => {
       setLoading(true);
       setError(null);
-      updateStep("product detail fetch", { status: "loading", detail: `GET /api/products/${productId}` });
-      updateStep("related products fetch", { status: "idle", detail: undefined });
+      updateStep("product detail fetch", {
+        status: "loading",
+        detail: `GET /api/products/${productId}`,
+      });
+      updateStep("related products fetch", {
+        status: "idle",
+        detail: undefined,
+      });
       updateStep("reviews fetch", { status: "idle", detail: undefined });
 
       try {
-        const detailResponse = await fetch(`/api/products/${encodeURIComponent(productId)}`, { signal: controller.signal });
+        const detailResponse = await fetch(
+          `/api/products/${encodeURIComponent(productId)}`,
+          { signal: controller.signal },
+        );
         const detailBodyText = await readResponseText(detailResponse);
-        const detailData = parseJsonResponse<ProductDetailData | { error?: string }>(detailBodyText);
+        const detailData = parseJsonResponse<
+          ProductDetailData | { error?: string }
+        >(detailBodyText);
 
         if (!detailResponse.ok) {
-          const message = typeof detailData === "object" && detailData && "error" in detailData ? String(detailData.error ?? "") : "";
+          const message =
+            typeof detailData === "object" &&
+            detailData &&
+            "error" in detailData
+              ? String(detailData.error ?? "")
+              : "";
           updateStep("product detail fetch", {
             status: "error",
             detail: `${detailResponse.status} ${message || detailBodyText || "Unknown detail fetch error"}`,
@@ -678,10 +715,17 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
             { signal: controller.signal },
           );
           const relatedBodyText = await readResponseText(relatedResponse);
-          const relatedData = parseJsonResponse<ProductsResponse | { error?: string }>(relatedBodyText);
+          const relatedData = parseJsonResponse<
+            ProductsResponse | { error?: string }
+          >(relatedBodyText);
 
           if (!relatedResponse.ok) {
-            const message = typeof relatedData === "object" && relatedData && "error" in relatedData ? String(relatedData.error ?? "") : "";
+            const message =
+              typeof relatedData === "object" &&
+              relatedData &&
+              "error" in relatedData
+                ? String(relatedData.error ?? "")
+                : "";
             updateStep("related products fetch", {
               status: "error",
               detail: `${relatedResponse.status} ${message || relatedBodyText || "Unknown related-products error"}`,
@@ -689,28 +733,45 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
             throw new Error(message || "Không thể tải sản phẩm tương tự.");
           }
 
-          setRelatedProducts((relatedData as ProductsResponse).items.filter((item) => item.productId !== resolvedDetail.productId));
+          setRelatedProducts(
+            (relatedData as ProductsResponse).items.filter(
+              (item) => item.productId !== resolvedDetail.productId,
+            ),
+          );
           updateStep("related products fetch", {
             status: "ok",
             detail: `loaded ${(relatedData as ProductsResponse).items.length} products`,
           });
         } else {
           setRelatedProducts([]);
-          updateStep("related products fetch", { status: "error", detail: "Missing category.id from product detail backend response" });
+          updateStep("related products fetch", {
+            status: "error",
+            detail: "Missing category.id from product detail backend response",
+          });
         }
 
         updateStep("reviews fetch", {
           status: "loading",
           detail: `GET /api/reviews?productId=${resolvedDetail.productId}&limit=10`,
         });
-        const reviewsResponse = await fetch(`/api/reviews?productId=${encodeURIComponent(resolvedDetail.productId)}&limit=10`, {
-          signal: controller.signal,
-        });
+        const reviewsResponse = await fetch(
+          `/api/reviews?productId=${encodeURIComponent(resolvedDetail.productId)}&limit=10`,
+          {
+            signal: controller.signal,
+          },
+        );
         const reviewsBodyText = await readResponseText(reviewsResponse);
-        const reviewsData = parseJsonResponse<ReviewsResponse | { error?: string }>(reviewsBodyText);
+        const reviewsData = parseJsonResponse<
+          ReviewsResponse | { error?: string }
+        >(reviewsBodyText);
 
         if (!reviewsResponse.ok) {
-          const message = typeof reviewsData === "object" && reviewsData && "error" in reviewsData ? String(reviewsData.error ?? "") : "";
+          const message =
+            typeof reviewsData === "object" &&
+            reviewsData &&
+            "error" in reviewsData
+              ? String(reviewsData.error ?? "")
+              : "";
           updateStep("reviews fetch", {
             status: "error",
             detail: `${reviewsResponse.status} ${message || reviewsBodyText || "Unknown reviews error"}`,
@@ -733,7 +794,11 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
           error: requestError,
           debugSteps,
         });
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải chi tiết sản phẩm.");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải chi tiết sản phẩm.",
+        );
       } finally {
         setLoading(false);
       }
@@ -755,7 +820,10 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
       return null;
     }
 
-    const sum = reviews.reduce((total, review) => total + Number(review.rating ?? 0), 0);
+    const sum = reviews.reduce(
+      (total, review) => total + Number(review.rating ?? 0),
+      0,
+    );
     return sum / reviews.length;
   }, [reviews]);
 
@@ -788,7 +856,8 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
           toMidnightTimestamp(batch.expireDate) < today,
       );
 
-    const isExpired = product.inventory.status === "expired" || allBatchesExpired;
+    const isExpired =
+      product.inventory.status === "expired" || allBatchesExpired;
     const canPurchase = !isExpired && hasSellableUnexpiredBatch;
 
     let warning: string | null = null;
@@ -847,7 +916,11 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
       await postCartItem(quantity);
       setCartActionMessage("Đã thêm sản phẩm vào giỏ hàng.");
     } catch (requestError) {
-      setCartActionMessage(requestError instanceof Error ? requestError.message : "Không thể thêm sản phẩm vào giỏ hàng.");
+      setCartActionMessage(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể thêm sản phẩm vào giỏ hàng.",
+      );
     } finally {
       setCartActionLoading(false);
     }
@@ -880,7 +953,9 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
 
       try {
         await postCartItem(quantity);
-        setCartActionMessage("✓ Đã đặt lịch mua định kì thành công và tự thêm sản phẩm vào giỏ hàng!");
+        setCartActionMessage(
+          "✓ Đã đặt lịch mua định kì thành công và tự thêm sản phẩm vào giỏ hàng!",
+        );
       } catch (cartError) {
         setCartActionMessage(
           cartError instanceof Error
@@ -894,7 +969,11 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
         setPurchaseMode("cart");
       }, 3000);
     } catch (requestError) {
-      setCartActionMessage(requestError instanceof Error ? requestError.message : "Không thể đặt lịch mua định kì.");
+      setCartActionMessage(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể đặt lịch mua định kì.",
+      );
     } finally {
       setCartActionLoading(false);
     }
@@ -931,7 +1010,11 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
         setPurchaseMode("cart");
       }, 3000);
     } catch (requestError) {
-      setCartActionMessage(requestError instanceof Error ? requestError.message : "Không thể tham gia mua chung.");
+      setCartActionMessage(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tham gia mua chung.",
+      );
     } finally {
       setCartActionLoading(false);
     }
@@ -939,7 +1022,9 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
 
   const handlePurchaseAction = () => {
     if (!effectiveAvailability.canPurchase) {
-      setCartActionMessage(effectiveAvailability.warning ?? "Sản phẩm hiện không thể mua.");
+      setCartActionMessage(
+        effectiveAvailability.warning ?? "Sản phẩm hiện không thể mua.",
+      );
       return;
     }
 
@@ -952,44 +1037,78 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
     }
   };
 
-    const handleCreateGroup = () => {
-      setShowGroupPurchaseModal(false);
-      setCartActionMessage("Đang chuyển sang trang tạo nhóm mua chung...");
-      setTimeout(() => {
-        window.location.href = "/group-purchase/create";
-      }, 500);
-    };
+  const handleCreateGroup = () => {
+    setShowGroupPurchaseModal(false);
+    setCartActionMessage("Đang chuyển sang trang tạo nhóm mua chung...");
+    setTimeout(() => {
+      window.location.href = "/group-purchase/create";
+    }, 500);
+  };
   if (!productId) {
     return (
       <div style={styles.page}>
         <div style={styles.container}>
           <header style={styles.topNav}>
-            <Link href="/dashboard" style={styles.iconButton} aria-label="Quay lại">
+            <Link
+              href="/dashboard"
+              style={styles.iconButton}
+              aria-label="Quay lại"
+            >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path
+                  d="M15 18L9 12L15 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </Link>
             <h1 style={styles.topTitle}>Chi tiết sản phẩm</h1>
             <div style={{ width: "24px" }} />
           </header>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "40px 20px",
+            }}
+          >
             <div style={{ textAlign: "center" }}>
-              <p style={{ fontSize: "18px", fontWeight: 600, color: "#1E1E1E", marginBottom: "16px" }}>
+              <p
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 600,
+                  color: "#1E1E1E",
+                  marginBottom: "16px",
+                }}
+              >
                 Không tìm thấy sản phẩm
               </p>
-              <p style={{ fontSize: "14px", color: "#717171", marginBottom: "24px" }}>
+              <p
+                style={{
+                  fontSize: "14px",
+                  color: "#717171",
+                  marginBottom: "24px",
+                }}
+              >
                 Vui lòng quay lại và chọn một sản phẩm khác
               </p>
-              <Link href="/dashboard" style={{
-                display: "inline-block",
-                padding: "12px 24px",
-                background: "#51B788",
-                color: "white",
-                borderRadius: "8px",
-                textDecoration: "none",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}>
+              <Link
+                href="/dashboard"
+                style={{
+                  display: "inline-block",
+                  padding: "12px 24px",
+                  background: "#51B788",
+                  color: "white",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                }}
+              >
                 Quay lại Trang chủ
               </Link>
             </div>
@@ -1003,16 +1122,39 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href={backHref ?? (product?.category.id ? `/category-products/${product.category.id}?name=${encodeURIComponent(product.category.name ?? "Danh mục")}` : "/dashboard")} style={styles.iconButton} aria-label="Quay lại">
+          <Link
+            href={
+              backHref ??
+              (product?.category.id
+                ? `/category-products/${product.category.id}?name=${encodeURIComponent(product.category.name ?? "Danh mục")}`
+                : "/dashboard")
+            }
+            style={styles.iconButton}
+            aria-label="Quay lại"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.topTitle}>Chi Tiết Sản Phẩm</h1>
           <div style={{ width: "24px", height: "24px" }} />
         </header>
 
-        {heroImage ? <img src={heroImage} alt={resolvedName ?? "Ảnh sản phẩm"} style={styles.heroImage} /> : <div style={styles.heroImage} />}
+        {heroImage ? (
+          <img
+            src={heroImage}
+            alt={resolvedName ?? "Ảnh sản phẩm"}
+            style={styles.heroImage}
+          />
+        ) : (
+          <div style={styles.heroImage} />
+        )}
 
         <div style={styles.slider}>
           <div style={styles.sliderActive} />
@@ -1021,8 +1163,16 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
         </div>
 
         <main style={styles.mainContent}>
-          {loading && <p style={{ ...styles.detailText, margin: 0 }}>Đang tải chi tiết sản phẩm...</p>}
-          {!loading && error && <p style={{ ...styles.detailText, margin: 0, color: "#B91C1C" }}>{error}</p>}
+          {loading && (
+            <p style={{ ...styles.detailText, margin: 0 }}>
+              Đang tải chi tiết sản phẩm...
+            </p>
+          )}
+          {!loading && error && (
+            <p style={{ ...styles.detailText, margin: 0, color: "#B91C1C" }}>
+              {error}
+            </p>
+          )}
 
           {/* {debugVisible && (
             <section style={styles.debugPanel}>
@@ -1038,40 +1188,73 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
 
           <section style={styles.detailCard}>
             <div style={styles.detailHeader}>
-              <h2 style={styles.detailName}>{resolvedName ?? (loading ? "Đang tải..." : "Sản phẩm chưa cập nhật")}</h2>
-              <p style={styles.rating}>{loading ? "Đang tải" : `★ ${ratingText}`}</p>
+              <h2 style={styles.detailName}>
+                {resolvedName ??
+                  (loading ? "Đang tải..." : "Sản phẩm chưa cập nhật")}
+              </h2>
+              <p style={styles.rating}>
+                {loading ? "Đang tải" : `★ ${ratingText}`}
+              </p>
             </div>
-            <p style={styles.detailText}>{resolvedDescription ?? (loading ? "Đang tải mô tả sản phẩm..." : "Mô tả sản phẩm đang được cập nhật.")}</p>
+            <p style={styles.detailText}>
+              {resolvedDescription ??
+                (loading
+                  ? "Đang tải mô tả sản phẩm..."
+                  : "Mô tả sản phẩm đang được cập nhật.")}
+            </p>
 
             <div style={styles.quantityRow}>
               <div style={styles.quantityControl}>
-                <button style={styles.quantityButton} onClick={() => setQuantity((value) => Math.max(1, value - 1))} aria-label="Giảm số lượng">
+                <button
+                  style={styles.quantityButton}
+                  onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                  aria-label="Giảm số lượng"
+                >
                   −
                 </button>
                 <div style={styles.quantityValue}>{quantity}</div>
-                <button style={styles.quantityButton} onClick={() => setQuantity((value) => value + 1)} aria-label="Tăng số lượng">
+                <button
+                  style={styles.quantityButton}
+                  onClick={() => setQuantity((value) => value + 1)}
+                  aria-label="Tăng số lượng"
+                >
                   +
                 </button>
               </div>
 
-              <p style={styles.priceText}>{resolvedPrice ?? (loading ? "Đang tải..." : "Liên hệ")}</p>
+              <p style={styles.priceText}>
+                {resolvedPrice ?? (loading ? "Đang tải..." : "Liên hệ")}
+              </p>
             </div>
 
-            <PurchaseModeSelector currentMode={purchaseMode} onModeChange={setPurchaseMode} />
+            <PurchaseModeSelector
+              currentMode={purchaseMode}
+              onModeChange={setPurchaseMode}
+            />
 
             {effectiveAvailability.warning ? (
               <div style={styles.warningBox}>
-                <p style={styles.warningText}>{effectiveAvailability.warning}</p>
+                <p style={styles.warningText}>
+                  {effectiveAvailability.warning}
+                </p>
               </div>
             ) : null}
 
             <div style={styles.ctaRow}>
-              <button 
-                style={styles.addButton} 
-                onClick={() => void handlePurchaseAction()} 
-                disabled={cartActionLoading || !effectiveAvailability.canPurchase}
+              <button
+                style={styles.addButton}
+                onClick={() => void handlePurchaseAction()}
+                disabled={
+                  cartActionLoading || !effectiveAvailability.canPurchase
+                }
               >
-                {cartActionLoading ? "Đang xử lý..." : purchaseMode === "subscription" ? "Đặt lịch" : purchaseMode === "group" ? "Tham gia" : "Thêm vào giỏ hàng"}
+                {cartActionLoading
+                  ? "Đang xử lý..."
+                  : purchaseMode === "subscription"
+                    ? "Đặt lịch"
+                    : purchaseMode === "group"
+                      ? "Tham gia"
+                      : "Thêm vào giỏ hàng"}
               </button>
               <button style={styles.favoriteButton} aria-label="Yêu thích">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -1085,27 +1268,52 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
                 </svg>
               </button>
             </div>
-            {cartActionMessage && <p style={{ ...styles.detailText, margin: 0, fontSize: "13px" }}>{cartActionMessage}</p>}
+            {cartActionMessage && (
+              <p style={{ ...styles.detailText, margin: 0, fontSize: "13px" }}>
+                {cartActionMessage}
+              </p>
+            )}
           </section>
 
           <section style={styles.accordionList}>
-            <button style={styles.accordionHeader} onClick={() => setExpanded((prev) => ({ ...prev, detail: !prev.detail }))}>
+            <button
+              style={styles.accordionHeader}
+              onClick={() =>
+                setExpanded((prev) => ({ ...prev, detail: !prev.detail }))
+              }
+            >
               <span>Chi tiết sản phẩm</span>
               <span>{expanded.detail ? "▲" : "▼"}</span>
             </button>
             {expanded.detail && (
               <p style={styles.accordionBody}>
-                {resolvedDescription ?? "Thông tin chi tiết sản phẩm đang được cập nhật từ backend."}
+                {resolvedDescription ??
+                  "Thông tin chi tiết sản phẩm đang được cập nhật từ backend."}
               </p>
             )}
 
-            <button style={styles.accordionHeader} onClick={() => setExpanded((prev) => ({ ...prev, nutrition: !prev.nutrition }))}>
+            <button
+              style={styles.accordionHeader}
+              onClick={() =>
+                setExpanded((prev) => ({ ...prev, nutrition: !prev.nutrition }))
+              }
+            >
               <span>Dinh dưỡng</span>
               <span>{expanded.nutrition ? "▲" : "▼"}</span>
             </button>
-            {expanded.nutrition && <p style={styles.accordionBody}>{resolvedNutrition ?? "Thông tin dinh dưỡng chưa có trong backend."}</p>}
+            {expanded.nutrition && (
+              <p style={styles.accordionBody}>
+                {resolvedNutrition ??
+                  "Thông tin dinh dưỡng chưa có trong backend."}
+              </p>
+            )}
 
-            <button style={styles.accordionHeader} onClick={() => setExpanded((prev) => ({ ...prev, origin: !prev.origin }))}>
+            <button
+              style={styles.accordionHeader}
+              onClick={() =>
+                setExpanded((prev) => ({ ...prev, origin: !prev.origin }))
+              }
+            >
               <span>Nguồn gốc</span>
               <span>{expanded.origin ? "▲" : "▼"}</span>
             </button>
@@ -1121,15 +1329,25 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
                 <div style={styles.batchList}>
                   {(product?.batches ?? []).map((batch) => (
                     <article key={batch.batchId} style={styles.batchItem}>
-                      <p style={styles.batchItemTitle}>{`Batch ${batch.batchId.slice(0, 8)}...`}</p>
-                      <p style={styles.batchItemMeta}>{`Trạng thái: ${formatBatchStatus(batch.status)} | Có thể bán: ${batch.isSellable ? "Có" : "Không"}`}</p>
-                      <p style={styles.batchItemMeta}>{`Số lượng: ${batch.quantity} | Khả dụng: ${batch.available} | Giữ chỗ: ${batch.reserved}`}</p>
-                      <p style={styles.batchItemMeta}>{`Hạn dùng: ${new Date(batch.expireDate).toLocaleDateString("vi-VN")}`}</p>
+                      <p
+                        style={styles.batchItemTitle}
+                      >{`Batch ${batch.batchId.slice(0, 8)}...`}</p>
+                      <p
+                        style={styles.batchItemMeta}
+                      >{`Trạng thái: ${formatBatchStatus(batch.status)} | Có thể bán: ${batch.isSellable ? "Có" : "Không"}`}</p>
+                      <p
+                        style={styles.batchItemMeta}
+                      >{`Số lượng: ${batch.quantity} | Khả dụng: ${batch.available} | Giữ chỗ: ${batch.reserved}`}</p>
+                      <p
+                        style={styles.batchItemMeta}
+                      >{`Hạn dùng: ${new Date(batch.expireDate).toLocaleDateString("vi-VN")}`}</p>
                     </article>
                   ))}
 
                   {(product?.batches?.length ?? 0) === 0 && (
-                    <p style={styles.batchItemMeta}>Chưa có lô hàng nào cho sản phẩm này.</p>
+                    <p style={styles.batchItemMeta}>
+                      Chưa có lô hàng nào cho sản phẩm này.
+                    </p>
                   )}
                 </div>
               </div>
@@ -1138,18 +1356,36 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
 
           <section>
             <h3 style={styles.sectionTitle}>Sản phẩm tương tự</h3>
-            {!loading && relatedProducts.length === 0 && <p style={styles.reviewComment}>Chưa có sản phẩm tương tự.</p>}
+            {!loading && relatedProducts.length === 0 && (
+              <p style={styles.reviewComment}>Chưa có sản phẩm tương tự.</p>
+            )}
             <div style={styles.similarList}>
               {relatedProducts.slice(0, 3).map((item) => (
-                <Link key={item.productId} href={`/product-detail/${item.productId}`} style={styles.similarLink}>
+                <Link
+                  key={item.productId}
+                  href={`/product-detail/${item.productId}`}
+                  style={styles.similarLink}
+                >
                   <article style={styles.similarCard}>
-                    {item.imageUrl ? <img src={item.imageUrl} alt={item.name} style={styles.similarImage} /> : <div style={styles.similarImage} />}
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        style={styles.similarImage}
+                      />
+                    ) : (
+                      <div style={styles.similarImage} />
+                    )}
                     <div>
                       <p style={styles.similarName}>{item.name}</p>
-                      <p style={styles.similarMeta}>{item.categoryName ?? "Sản phẩm"}</p>
+                      <p style={styles.similarMeta}>
+                        {item.categoryName ?? "Sản phẩm"}
+                      </p>
                     </div>
                     <div style={styles.similarFooter}>
-                      <p style={{ ...styles.similarMeta, fontWeight: 700 }}>{formatPrice(item.price)}</p>
+                      <p style={{ ...styles.similarMeta, fontWeight: 700 }}>
+                        {formatPrice(item.price)}
+                      </p>
                       <button style={styles.smallAddBtn}>+</button>
                     </div>
                   </article>
@@ -1160,25 +1396,45 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
 
           <section>
             <h3 style={styles.sectionTitle}>Đánh giá</h3>
-            {reviews.length === 0 && !loading && <p style={styles.reviewComment}>Chưa có đánh giá cho sản phẩm này.</p>}
+            {reviews.length === 0 && !loading && (
+              <p style={styles.reviewComment}>
+                Chưa có đánh giá cho sản phẩm này.
+              </p>
+            )}
             <div style={styles.reviewList}>
               {reviews.map((review) => (
                 <article key={review.reviewId} style={styles.reviewCard}>
                   <div style={styles.reviewTop}>
                     <div style={styles.reviewerBlock}>
                       {review.userImageUrl ? (
-                        <img src={review.userImageUrl} alt={review.userName} style={styles.avatar} />
+                        <img
+                          src={review.userImageUrl}
+                          alt={review.userName}
+                          style={styles.avatar}
+                        />
                       ) : (
-                        <div style={styles.reviewAvatarFallback}>{review.userName.slice(0, 1).toUpperCase()}</div>
+                        <div style={styles.reviewAvatarFallback}>
+                          {review.userName.slice(0, 1).toUpperCase()}
+                        </div>
                       )}
                       <div>
                         <p style={styles.reviewerName}>{review.userName}</p>
-                        <p style={styles.reviewDate}>{new Date(review.createdAt).toLocaleDateString("vi-VN")}</p>
+                        <p style={styles.reviewDate}>
+                          {new Date(review.createdAt).toLocaleDateString(
+                            "vi-VN",
+                          )}
+                        </p>
                       </div>
                     </div>
-                    <div style={styles.rating}>{buildStars(Math.max(0, Math.min(5, Math.round(review.rating))))}</div>
+                    <div style={styles.rating}>
+                      {buildStars(
+                        Math.max(0, Math.min(5, Math.round(review.rating))),
+                      )}
+                    </div>
                   </div>
-                  <p style={styles.reviewComment}>{review.comment ?? "Không có nội dung đánh giá."}</p>
+                  <p style={styles.reviewComment}>
+                    {review.comment ?? "Không có nội dung đánh giá."}
+                  </p>
                 </article>
               ))}
             </div>
@@ -1202,7 +1458,7 @@ export default function ProductDetail({ productId, backHref }: ProductDetailProp
           regularPrice={product?.availablePrice ?? null}
           onClose={() => setShowGroupPurchaseModal(false)}
           onSubmit={handleGroupPurchase}
-                  onCreateGroup={handleCreateGroup}
+          onCreateGroup={handleCreateGroup}
         />
 
         <NavigationBar />

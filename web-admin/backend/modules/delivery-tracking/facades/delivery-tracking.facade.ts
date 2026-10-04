@@ -23,7 +23,9 @@ export class DeliveryTrackingFacade {
     this.subject.attach(new DeliveryTrackingAuditObserver());
   }
 
-  async listDeliveries(filters: DeliveryTrackingFilterInput): Promise<DeliveryTrackingRow[]> {
+  async listDeliveries(
+    filters: DeliveryTrackingFilterInput,
+  ): Promise<DeliveryTrackingRow[]> {
     return this.service.listDeliveries(filters);
   }
 
@@ -42,7 +44,9 @@ export class DeliveryTrackingFacade {
     return detail;
   }
 
-  async assignShipper(input: AssignShipperInput): Promise<DeliveryTrackingDetailRow> {
+  async assignShipper(
+    input: AssignShipperInput,
+  ): Promise<DeliveryTrackingDetailRow> {
     const detail = await this.service.assignShipper(input);
     if (detail.employee_id) {
       await this.subject.notify({
@@ -56,29 +60,33 @@ export class DeliveryTrackingFacade {
     return detail;
   }
 
-  async updateDeliveryStatus(input: UpdateDeliveryStatusInput): Promise<DeliveryTrackingDetailRow> {
-  const previous = await this.service.getDeliveryDetail(input.orderId).catch(() => null);
-  const updated = await this.service.updateDeliveryStatus(input);
+  async updateDeliveryStatus(
+    input: UpdateDeliveryStatusInput,
+  ): Promise<DeliveryTrackingDetailRow> {
+    const previous = await this.service
+      .getDeliveryDetail(input.orderId)
+      .catch(() => null);
+    const updated = await this.service.updateDeliveryStatus(input);
 
-  await this.subject.notify({
-    type: "delivery_status_updated",
-    orderId: updated.order_id,
-    actor: "manager",
-    from: previous?.status ?? "assigned",
-    to: updated.status,
-  });
-
-  // Khi delivery chuyển sang "delivered" → đồng bộ order sang "completed"
-  if (updated.status === "delivered" && previous?.status !== "delivered") {
-    await orderTrackingFacade.updateOrderStatus({
+    await this.subject.notify({
+      type: "delivery_status_updated",
       orderId: updated.order_id,
-      status: "completed",
-      note: input.note ?? "Giao hàng thành công, tự động hoàn tất đơn",
+      actor: "manager",
+      from: previous?.status ?? "assigned",
+      to: updated.status,
     });
-  }
 
-  return updated;
-}
+    // Khi delivery chuyển sang "delivered" → đồng bộ order sang "completed"
+    if (updated.status === "delivered" && previous?.status !== "delivered") {
+      await orderTrackingFacade.updateOrderStatus({
+        orderId: updated.order_id,
+        status: "completed",
+        note: input.note ?? "Giao hàng thành công, tự động hoàn tất đơn",
+      });
+    }
+
+    return updated;
+  }
 }
 
 export const deliveryTrackingFacade = new DeliveryTrackingFacade();

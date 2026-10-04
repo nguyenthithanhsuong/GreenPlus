@@ -35,7 +35,7 @@ export class InventoryManagementRepository {
     const { data, error } = await this.supabase
       .from("inventory")
       .select(
-        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,products(name),suppliers(name),status)"
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,products(name),suppliers(name),status)",
       )
       .order("last_updated", {
         ascending: false,
@@ -47,17 +47,15 @@ export class InventoryManagementRepository {
     }
 
     return ((data ?? []) as InventoryDbRow[]).map((row) =>
-      this.toInventoryRow(row)
+      this.toInventoryRow(row),
     );
   }
 
-  async findInventoryById(
-    inventoryId: string
-  ): Promise<InventoryRow | null> {
+  async findInventoryById(inventoryId: string): Promise<InventoryRow | null> {
     const { data, error } = await this.supabase
       .from("inventory")
       .select(
-        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,products(name),suppliers(name),status)"
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,products(name),suppliers(name),status)",
       )
       .eq("inventory_id", inventoryId)
       .maybeSingle();
@@ -69,13 +67,11 @@ export class InventoryManagementRepository {
     return data ? this.toInventoryRow(data as InventoryDbRow) : null;
   }
 
-  async findInventoryByBatchId(
-    batchId: string
-  ): Promise<InventoryRow | null> {
+  async findInventoryByBatchId(batchId: string): Promise<InventoryRow | null> {
     const { data, error } = await this.supabase
       .from("inventory")
       .select(
-        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated"
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated",
       )
       .eq("batch_id", batchId)
       .maybeSingle();
@@ -102,7 +98,7 @@ export class InventoryManagementRepository {
       })
       .eq("inventory_id", input.inventoryId)
       .select(
-        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,products(name),suppliers(name),status)"
+        "inventory_id,batch_id,quantity_available,quantity_reserved,last_updated,batches(batch_id,products(name),suppliers(name),status)",
       )
       .maybeSingle();
 
@@ -125,9 +121,7 @@ export class InventoryManagementRepository {
       throw new Error(error.message);
     }
 
-    return Boolean(
-      (data as { inventory_id?: string } | null)?.inventory_id
-    );
+    return Boolean((data as { inventory_id?: string } | null)?.inventory_id);
   }
 
   async deleteTransactionsByBatchId(batchId: string): Promise<number> {
@@ -145,23 +139,21 @@ export class InventoryManagementRepository {
   }
 
   async listTransactions(): Promise<InventoryTransactionRow[]> {
-  const { data, error } = await this.supabase
-    .from("inventory_transactions")
-    .select(
-      "transaction_id,batch_id,type,quantity,note,created_at"
-    )
-    .order("created_at", {
-      ascending: false,
-    });
+    const { data, error } = await this.supabase
+      .from("inventory_transactions")
+      .select("transaction_id,batch_id,type,quantity,note,created_at")
+      .order("created_at", {
+        ascending: false,
+      });
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return ((data ?? []) as InventoryTransactionDbRow[]).map((row) =>
+      this.toTransactionRow(row),
+    );
   }
-
-  return ((data ?? []) as InventoryTransactionDbRow[]).map(
-    (row) => this.toTransactionRow(row)
-  );
-}
 
   async createTransaction(input: {
     batchId: string;
@@ -177,9 +169,7 @@ export class InventoryManagementRepository {
         quantity: input.quantity,
         note: input.note?.trim() || null,
       })
-      .select(
-        "transaction_id,batch_id,type,quantity,note,created_at"
-      )
+      .select("transaction_id,batch_id,type,quantity,note,created_at")
       .single();
 
     if (error) {
@@ -190,13 +180,11 @@ export class InventoryManagementRepository {
   }
 
   async listTransactionsByBatchId(
-    batchId: string
+    batchId: string,
   ): Promise<InventoryTransactionRow[]> {
     const { data, error } = await this.supabase
       .from("inventory_transactions")
-      .select(
-        "transaction_id,batch_id,type,quantity,note,created_at"
-      )
+      .select("transaction_id,batch_id,type,quantity,note,created_at")
       .eq("batch_id", batchId)
       .order("created_at", { ascending: false });
 
@@ -205,7 +193,7 @@ export class InventoryManagementRepository {
     }
 
     return ((data ?? []) as InventoryTransactionDbRow[]).map((row) =>
-      this.toTransactionRow(row)
+      this.toTransactionRow(row),
     );
   }
 
@@ -223,7 +211,7 @@ export class InventoryManagementRepository {
   }
 
   private toTransactionRow(
-    row: InventoryTransactionDbRow
+    row: InventoryTransactionDbRow,
   ): InventoryTransactionRow {
     const normalizedType: InventoryTransactionType =
       row.type === "stock_in" ||

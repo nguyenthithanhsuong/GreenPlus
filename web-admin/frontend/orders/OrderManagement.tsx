@@ -38,11 +38,12 @@ const OrderManagement = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<OrderDetailRow | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetailRow | null>(
+    null,
+  );
 
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
   const [deliveryDialogOrderId, setDeliveryDialogOrderId] = useState("");
-
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -58,8 +59,13 @@ const OrderManagement = () => {
       }
 
       const query = params.toString();
-      const response = await fetch(`/api/orders${query ? `?${query}` : ""}`, { cache: "no-store" });
-      const data = (await response.json()) as { items?: OrderListRow[]; error?: string };
+      const response = await fetch(`/api/orders${query ? `?${query}` : ""}`, {
+        cache: "no-store",
+      });
+      const data = (await response.json()) as {
+        items?: OrderListRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách đơn hàng");
@@ -67,7 +73,11 @@ const OrderManagement = () => {
 
       setOrders(Array.isArray(data.items) ? data.items : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải danh sách đơn hàng");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải danh sách đơn hàng",
+      );
       setOrders([]);
     } finally {
       setLoading(false);
@@ -111,7 +121,9 @@ const OrderManagement = () => {
   const stats = useMemo(() => {
     const today = toIsoDate(new Date());
     return {
-      totalToday: orders.filter((order) => (order.order_date ?? "").slice(0, 10) === today).length,
+      totalToday: orders.filter(
+        (order) => (order.order_date ?? "").slice(0, 10) === today,
+      ).length,
       pendingCount: counts.pending,
       confirmedCount: counts.confirmed,
       preparingCount: counts.preparing,
@@ -126,8 +138,13 @@ const OrderManagement = () => {
     setDetailError(null);
 
     try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, { cache: "no-store" });
-      const data = (await response.json()) as OrderDetailRow & { error?: string };
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(orderId)}`,
+        { cache: "no-store" },
+      );
+      const data = (await response.json()) as OrderDetailRow & {
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể tải chi tiết đơn hàng");
@@ -135,7 +152,11 @@ const OrderManagement = () => {
 
       setSelectedOrder(data);
     } catch (requestError) {
-      setDetailError(requestError instanceof Error ? requestError.message : "Không thể tải chi tiết đơn hàng");
+      setDetailError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải chi tiết đơn hàng",
+      );
       setSelectedOrder(null);
     } finally {
       setDetailLoading(false);
@@ -148,68 +169,103 @@ const OrderManagement = () => {
     setSelectedOrder(null);
   }, []);
 
-  const updateStatus = useCallback(async (orderId: string, status: OrderStatus, note?: string) => {
-    setSaving(true);
-    setError(null);
-    setDetailError(null);
-
-    try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, note }),
-      });
-
-      const data = (await response.json()) as OrderDetailRow & { error?: string };
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể cập nhật trạng thái đơn hàng");
-      }
-
-      setSelectedOrder(data);
-      await loadOrders();
-    } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : "Không thể cập nhật trạng thái đơn hàng";
-      setError(message);
-      setDetailError(message);
-    } finally {
-      setSaving(false);
-    }
-  }, [loadOrders]);
-
-  const updateStatusWithEmployeeId = useCallback(
-    async (orderId: string, status: OrderStatus, employeeId: string, note?: string) => {
+  const updateStatus = useCallback(
+    async (orderId: string, status: OrderStatus, note?: string) => {
       setSaving(true);
       setError(null);
       setDetailError(null);
 
       try {
-        const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, note, employeeId }),
-        });
+        const response = await fetch(
+          `/api/orders/${encodeURIComponent(orderId)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status, note }),
+          },
+        );
 
-        const data = (await response.json()) as OrderDetailRow & { error?: string };
+        const data = (await response.json()) as OrderDetailRow & {
+          error?: string;
+        };
         if (!response.ok) {
-          throw new Error(data.error ?? "Không thể cập nhật trạng thái đơn hàng");
+          throw new Error(
+            data.error ?? "Không thể cập nhật trạng thái đơn hàng",
+          );
         }
 
         setSelectedOrder(data);
         await loadOrders();
       } catch (requestError) {
-        const message = requestError instanceof Error ? requestError.message : "Không thể cập nhật trạng thái đơn hàng";
+        const message =
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể cập nhật trạng thái đơn hàng";
         setError(message);
         setDetailError(message);
       } finally {
         setSaving(false);
       }
     },
-    [loadOrders]
+    [loadOrders],
   );
 
-  const onStartPreparing = useCallback((orderId: string) => {
-    void updateStatus(orderId, "preparing", "Bắt đầu chuẩn bị đơn hàng từ bảng");
-  }, [updateStatus]);
+  const updateStatusWithEmployeeId = useCallback(
+    async (
+      orderId: string,
+      status: OrderStatus,
+      employeeId: string,
+      note?: string,
+    ) => {
+      setSaving(true);
+      setError(null);
+      setDetailError(null);
+
+      try {
+        const response = await fetch(
+          `/api/orders/${encodeURIComponent(orderId)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status, note, employeeId }),
+          },
+        );
+
+        const data = (await response.json()) as OrderDetailRow & {
+          error?: string;
+        };
+        if (!response.ok) {
+          throw new Error(
+            data.error ?? "Không thể cập nhật trạng thái đơn hàng",
+          );
+        }
+
+        setSelectedOrder(data);
+        await loadOrders();
+      } catch (requestError) {
+        const message =
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể cập nhật trạng thái đơn hàng";
+        setError(message);
+        setDetailError(message);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [loadOrders],
+  );
+
+  const onStartPreparing = useCallback(
+    (orderId: string) => {
+      void updateStatus(
+        orderId,
+        "preparing",
+        "Bắt đầu chuẩn bị đơn hàng từ bảng",
+      );
+    },
+    [updateStatus],
+  );
 
   const onStartDelivering = useCallback((orderId: string) => {
     setDeliveryDialogOrderId(orderId);
@@ -222,17 +278,20 @@ const OrderManagement = () => {
         deliveryDialogOrderId,
         "delivering",
         employeeId,
-        note || "Bắt đầu giao hàng"
+        note || "Bắt đầu giao hàng",
       );
       setDeliveryDialogOpen(false);
       setDeliveryDialogOrderId("");
     },
-    [deliveryDialogOrderId, updateStatusWithEmployeeId]
+    [deliveryDialogOrderId, updateStatusWithEmployeeId],
   );
 
-  const viewDelivery = useCallback((orderId: string) => {
-    router.push(`/shippers?orderId=${encodeURIComponent(orderId)}`);
-  }, [router]);
+  const viewDelivery = useCallback(
+    (orderId: string) => {
+      router.push(`/shippers?orderId=${encodeURIComponent(orderId)}`);
+    },
+    [router],
+  );
 
   return (
     <AdminShell
@@ -274,7 +333,11 @@ const OrderManagement = () => {
           void openDetail(orderId);
         }}
         onQuickConfirm={(orderId) => {
-          void updateStatus(orderId, "confirmed", "Xác nhận nhanh từ bảng đơn hàng");
+          void updateStatus(
+            orderId,
+            "confirmed",
+            "Xác nhận nhanh từ bảng đơn hàng",
+          );
         }}
         onViewDelivery={viewDelivery}
         onStartPreparing={onStartPreparing}

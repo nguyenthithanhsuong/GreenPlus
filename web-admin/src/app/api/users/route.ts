@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { userManagementFacade } from "../../../../backend/modules/users/facades/user-management.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const GET = withSentry(async () => {
   logger.info("List users attempt");
@@ -59,8 +59,5 @@ export const POST = withSentry(async (request: Request) => {
     duration_ms: Date.now() - start,
   });
 
-  return NextResponse.json(
-    created,
-    { status: 201 },
-  );
+  return NextResponse.json(created, { status: 201 });
 });

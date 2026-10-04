@@ -21,12 +21,15 @@ function resolveRoleName(profile: {
   roles?: Array<{ role_name?: unknown }> | null;
 }): string {
   const firstRole = Array.isArray(profile.roles) ? profile.roles[0] : undefined;
-  return typeof firstRole?.role_name === "string" ? firstRole.role_name.toLowerCase() : "";
+  return typeof firstRole?.role_name === "string"
+    ? firstRole.role_name.toLowerCase()
+    : "";
 }
 
 export class AuthService {
   private getSessionSecret(): string {
-    const secret = process.env.AUTH_HANDOFF_SECRET || process.env.AUTH_SESSION_SECRET;
+    const secret =
+      process.env.AUTH_HANDOFF_SECRET || process.env.AUTH_SESSION_SECRET;
 
     if (!secret) {
       throw new Error("Missing session secret");
@@ -43,17 +46,23 @@ export class AuthService {
     }
 
     const [, payload, signature] = parts;
-    const expectedSignature = createHmac("sha256", this.getSessionSecret()).update(payload).digest("base64url");
+    const expectedSignature = createHmac("sha256", this.getSessionSecret())
+      .update(payload)
+      .digest("base64url");
 
     if (signature.length !== expectedSignature.length) {
       throw new Error("Invalid session token");
     }
 
-    if (!timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+    if (
+      !timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
+    ) {
       throw new Error("Invalid session token");
     }
 
-    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Partial<CustomSessionTokenPayload>;
+    const parsed = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8"),
+    ) as Partial<CustomSessionTokenPayload>;
 
     if (!parsed.userId || typeof parsed.userId !== "string") {
       throw new Error("Invalid session token");

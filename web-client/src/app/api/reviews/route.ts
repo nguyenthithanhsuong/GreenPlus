@@ -2,6 +2,10 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { reviewFacade } from "../../../../backend/modules/reviews/facades/review.facade";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
 
 type ReviewBody = {
@@ -22,24 +26,39 @@ export const GET = withSentry(async (request: Request) => {
 
   if (!productId) {
     logger.error("List reviews failed - missing productId");
-    return NextResponse.json({ error: "productId is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "productId is required" },
+      { status: 400 },
+    );
   }
 
   try {
     const start = Date.now();
-    const data = await reviewFacade.listReviews(productId, Number.isFinite(limit) ? limit : 20);
-    
-    logger.info("List reviews success", { 
-      productId, 
-      count: data.length, 
-      duration_ms: Date.now() - start 
+    const data = await reviewFacade.listReviews(
+      productId,
+      Number.isFinite(limit) ? limit : 20,
+    );
+
+    logger.info("List reviews success", {
+      productId,
+      count: data.length,
+      duration_ms: Date.now() - start,
     });
 
-    return NextResponse.json({ total: data.length, items: data }, { status: 200 });
+    return NextResponse.json(
+      { total: data.length, items: data },
+      { status: 200 },
+    );
   } catch (error) {
     if (error instanceof AppError) {
-      logger.error("List reviews failed", { productId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      logger.error("List reviews failed", {
+        productId,
+        message: error.message,
+      });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;
@@ -47,12 +66,13 @@ export const GET = withSentry(async (request: Request) => {
 });
 
 export const POST = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let productId = "";
 
   try {
     const body = (await request.json()) as ReviewBody;
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
     productId = body.productId?.trim() ?? body.product_id?.trim() ?? "";
     const rating = Number(body.rating);
     const comment = body.comment ?? "";
@@ -60,8 +80,14 @@ export const POST = withSentry(async (request: Request) => {
     logger.info("Submit review attempt", { userId, productId });
 
     if (!userId || !productId || Number.isNaN(rating)) {
-      logger.error("Submit review failed - missing required fields", { userId, productId });
-      return NextResponse.json({ error: "userId, productId and rating are required" }, { status: 400 });
+      logger.error("Submit review failed - missing required fields", {
+        userId,
+        productId,
+      });
+      return NextResponse.json(
+        { error: "userId, productId and rating are required" },
+        { status: 400 },
+      );
     }
 
     const start = Date.now();
@@ -72,17 +98,24 @@ export const POST = withSentry(async (request: Request) => {
       comment,
     });
 
-    logger.info("Submit review success", { 
-      userId, 
-      productId, 
-      duration_ms: Date.now() - start 
+    logger.info("Submit review success", {
+      userId,
+      productId,
+      duration_ms: Date.now() - start,
     });
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
-      logger.error("Submit review failed", { userId, productId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      logger.error("Submit review failed", {
+        userId,
+        productId,
+        message: error.message,
+      });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;

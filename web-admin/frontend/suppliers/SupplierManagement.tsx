@@ -6,7 +6,10 @@ import AdminShell from "../shared/AdminShell";
 import SupplierStats from "./SupplierStats";
 import SupplierTable from "./SupplierTable";
 import { usePermissions } from "@/lib/usePermissions";
-import type { SupplierRow, SupplierStatus } from "../../backend/modules/suppliers/supplier-management.types";
+import type {
+  SupplierRow,
+  SupplierStatus,
+} from "../../backend/modules/suppliers/supplier-management.types";
 
 type SupplierFormState = {
   name: string;
@@ -31,7 +34,9 @@ const SupplierManagement = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<SupplierRow | null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<SupplierRow | null>(
+    null,
+  );
   const [form, setForm] = useState<SupplierFormState>(emptyForm());
 
   const loadSuppliers = async () => {
@@ -40,7 +45,10 @@ const SupplierManagement = () => {
 
     try {
       const response = await fetch("/api/suppliers", { cache: "no-store" });
-      const data = (await response.json()) as { items?: SupplierRow[]; error?: string };
+      const data = (await response.json()) as {
+        items?: SupplierRow[];
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to load suppliers");
@@ -48,7 +56,9 @@ const SupplierManagement = () => {
 
       setSuppliers(data.items ?? []);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unexpected error");
+      setError(
+        loadError instanceof Error ? loadError.message : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -58,12 +68,18 @@ const SupplierManagement = () => {
     void loadSuppliers();
   }, []);
 
-  const stats = useMemo(() => ({
-    total: suppliers.length,
-    approved: suppliers.filter((supplier) => supplier.status === "approved").length,
-    pending: suppliers.filter((supplier) => supplier.status === "pending").length,
-    rejected: suppliers.filter((supplier) => supplier.status === "rejected").length,
-  }), [suppliers]);
+  const stats = useMemo(
+    () => ({
+      total: suppliers.length,
+      approved: suppliers.filter((supplier) => supplier.status === "approved")
+        .length,
+      pending: suppliers.filter((supplier) => supplier.status === "pending")
+        .length,
+      rejected: suppliers.filter((supplier) => supplier.status === "rejected")
+        .length,
+    }),
+    [suppliers],
+  );
 
   const openCreateForm = () => {
     setEditingSupplier(null);
@@ -95,17 +111,22 @@ const SupplierManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch(editingSupplier ? `/api/suppliers/${editingSupplier.supplier_id}` : "/api/suppliers", {
-        method: editingSupplier ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          address: form.address,
-          certificate: form.certificate,
-          description: form.description,
-          status: form.status,
-        }),
-      });
+      const response = await fetch(
+        editingSupplier
+          ? `/api/suppliers/${editingSupplier.supplier_id}`
+          : "/api/suppliers",
+        {
+          method: editingSupplier ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            address: form.address,
+            certificate: form.certificate,
+            description: form.description,
+            status: form.status,
+          }),
+        },
+      );
 
       const data = (await response.json()) as { error?: string };
 
@@ -116,13 +137,18 @@ const SupplierManagement = () => {
       closeForm();
       await loadSuppliers();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unexpected error");
+      setError(
+        submitError instanceof Error ? submitError.message : "Unexpected error",
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const changeStatus = async (supplier: SupplierRow, action: "approve" | "reject") => {
+  const changeStatus = async (
+    supplier: SupplierRow,
+    action: "approve" | "reject",
+  ) => {
     if (saving) {
       return;
     }
@@ -145,7 +171,9 @@ const SupplierManagement = () => {
 
       await loadSuppliers();
     } catch (statusError) {
-      setError(statusError instanceof Error ? statusError.message : "Unexpected error");
+      setError(
+        statusError instanceof Error ? statusError.message : "Unexpected error",
+      );
     } finally {
       setSaving(false);
     }
@@ -168,7 +196,9 @@ const SupplierManagement = () => {
 
       await loadSuppliers();
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Unexpected error");
+      setError(
+        deleteError instanceof Error ? deleteError.message : "Unexpected error",
+      );
     } finally {
       setSaving(false);
     }
@@ -180,29 +210,29 @@ const SupplierManagement = () => {
       description="Danh sách đối tác, nông trại phân phối thực phẩm sạch trên hệ thống."
       searchPlaceholder="Tìm kiếm nhà cung cấp bằng tên, mô tả..."
       pageActions={
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadSuppliers()}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+            disabled={loading || saving}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Tải lại
+          </button>
+
+          {!permLoading && hasPermission("suppliers.create") && (
             <button
               type="button"
-              onClick={() => void loadSuppliers()}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+              onClick={openCreateForm}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
               disabled={loading || saving}
             >
-              <RefreshCw className="h-4 w-4" />
-              Tải lại
+              <Plus className="h-4 w-4" />
+              Thêm supplier
             </button>
-
-            {!permLoading && hasPermission('suppliers.create') && (
-              <button
-                type="button"
-                onClick={openCreateForm}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#047857] disabled:opacity-60"
-                disabled={loading || saving}
-              >
-                <Plus className="h-4 w-4" />
-                Thêm supplier
-              </button>
-            )}
-          </div>
+          )}
+        </div>
       }
     >
       {error && (
@@ -228,7 +258,9 @@ const SupplierManagement = () => {
       />
 
       {formOpen && (
-        <div className={`fixed inset-0 z-50 ${formOpen ? "" : "pointer-events-none"}`}>
+        <div
+          className={`fixed inset-0 z-50 ${formOpen ? "" : "pointer-events-none"}`}
+        >
           <button
             type="button"
             className={`absolute inset-0 bg-black/35 transition-opacity ${formOpen ? "opacity-100" : "opacity-0"}`}
@@ -275,7 +307,12 @@ const SupplierManagement = () => {
                     </label>
                     <input
                       value={form.name}
-                      onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          name: event.target.value,
+                        }))
+                      }
                       type="text"
                       placeholder="Ví dụ: Green Farm Củ Chi"
                       className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -288,7 +325,12 @@ const SupplierManagement = () => {
                     </label>
                     <input
                       value={form.address}
-                      onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          address: event.target.value,
+                        }))
+                      }
                       type="text"
                       placeholder="Nhập địa chỉ supplier"
                       className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -297,10 +339,17 @@ const SupplierManagement = () => {
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1.5 block text-sm font-bold text-gray-800">Trạng thái</label>
+                      <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                        Trạng thái
+                      </label>
                       <select
                         value={form.status}
-                        onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as SupplierStatus }))}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            status: event.target.value as SupplierStatus,
+                          }))
+                        }
                         className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                       >
                         <option value="pending">Pending</option>
@@ -310,10 +359,17 @@ const SupplierManagement = () => {
                     </div>
 
                     <div>
-                      <label className="mb-1.5 block text-sm font-bold text-gray-800">Certificate</label>
+                      <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                        Certificate
+                      </label>
                       <input
                         value={form.certificate}
-                        onChange={(event) => setForm((current) => ({ ...current, certificate: event.target.value }))}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            certificate: event.target.value,
+                          }))
+                        }
                         type="text"
                         placeholder="URL hoặc mã chứng nhận"
                         className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -322,10 +378,17 @@ const SupplierManagement = () => {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-bold text-gray-800">Mô tả</label>
+                    <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                      Mô tả
+                    </label>
                     <textarea
                       value={form.description}
-                      onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
                       placeholder="Mô tả ngắn về supplier"
                       rows={4}
                       className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -346,7 +409,11 @@ const SupplierManagement = () => {
                       disabled={saving}
                       className="rounded-md bg-[#1da453] px-4 py-2 text-sm font-semibold text-white hover:bg-[#178546] disabled:opacity-60"
                     >
-                      {saving ? "Đang lưu..." : editingSupplier ? "Cập nhật" : "Tạo supplier"}
+                      {saving
+                        ? "Đang lưu..."
+                        : editingSupplier
+                          ? "Cập nhật"
+                          : "Tạo supplier"}
                     </button>
                   </div>
                 </form>

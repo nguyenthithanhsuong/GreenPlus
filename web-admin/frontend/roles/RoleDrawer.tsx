@@ -40,7 +40,9 @@ const RoleDrawer = ({
   }
 
   return (
-    <div className={`fixed inset-0 z-50 ${isOpen ? "" : "pointer-events-none"}`}>
+    <div
+      className={`fixed inset-0 z-50 ${isOpen ? "" : "pointer-events-none"}`}
+    >
       <button
         type="button"
         className={`absolute inset-0 bg-black/35 transition-opacity ${isOpen ? "opacity-100" : "opacity-0"}`}
@@ -87,7 +89,9 @@ const RoleDrawer = ({
                 </label>
                 <input
                   value={form.roleName}
-                  onChange={(event) => onChange({ roleName: event.target.value })}
+                  onChange={(event) =>
+                    onChange({ roleName: event.target.value })
+                  }
                   type="text"
                   placeholder="Ví dụ: reviewer"
                   className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -95,10 +99,14 @@ const RoleDrawer = ({
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-gray-800">Description</label>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                  Description
+                </label>
                 <textarea
                   value={form.description}
-                  onChange={(event) => onChange({ description: event.target.value })}
+                  onChange={(event) =>
+                    onChange({ description: event.target.value })
+                  }
                   placeholder="Mô tả ngắn về role"
                   rows={5}
                   className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -106,13 +114,17 @@ const RoleDrawer = ({
               </div>
 
               <div>
-                <p className="mb-2 text-sm font-bold text-gray-800">Quyền và phạm vi</p>
+                <p className="mb-2 text-sm font-bold text-gray-800">
+                  Quyền và phạm vi
+                </p>
                 <div className="grid grid-cols-1 gap-2 rounded-md border border-gray-200 bg-gray-50 p-3 md:grid-cols-2">
                   <label className="inline-flex items-center gap-2 text-sm text-gray-700">
                     <input
                       type="checkbox"
                       checked={form.isCustomer}
-                      onChange={(event) => onChange({ isCustomer: event.target.checked })}
+                      onChange={(event) =>
+                        onChange({ isCustomer: event.target.checked })
+                      }
                       className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
                     />
                     is_customer
@@ -121,7 +133,9 @@ const RoleDrawer = ({
                     <input
                       type="checkbox"
                       checked={form.isAdmin}
-                      onChange={(event) => onChange({ isAdmin: event.target.checked })}
+                      onChange={(event) =>
+                        onChange({ isAdmin: event.target.checked })
+                      }
                       className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
                     />
                     is_admin
@@ -130,7 +144,9 @@ const RoleDrawer = ({
                     <input
                       type="checkbox"
                       checked={form.isManager}
-                      onChange={(event) => onChange({ isManager: event.target.checked })}
+                      onChange={(event) =>
+                        onChange({ isManager: event.target.checked })
+                      }
                       className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
                     />
                     is_manager
@@ -139,7 +155,9 @@ const RoleDrawer = ({
                     <input
                       type="checkbox"
                       checked={form.isEmployee}
-                      onChange={(event) => onChange({ isEmployee: event.target.checked })}
+                      onChange={(event) =>
+                        onChange({ isEmployee: event.target.checked })
+                      }
                       className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
                     />
                     is_employee
@@ -148,7 +166,9 @@ const RoleDrawer = ({
                     <input
                       type="checkbox"
                       checked={form.isShipper}
-                      onChange={(event) => onChange({ isShipper: event.target.checked })}
+                      onChange={(event) =>
+                        onChange({ isShipper: event.target.checked })
+                      }
                       className="h-4 w-4 rounded border-gray-300 text-[#1da453] focus:ring-[#1da453]"
                     />
                     is_shipper

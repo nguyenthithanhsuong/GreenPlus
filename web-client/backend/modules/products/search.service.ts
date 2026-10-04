@@ -38,7 +38,12 @@ export class SearchService {
 
     const keywordProvided = criteria.keyword !== undefined;
     const keyword = criteria.keyword?.trim() ?? "";
-    const hasAnyFilter = Boolean(criteria.categoryId || criteria.certification || criteria.minPrice !== undefined || criteria.maxPrice !== undefined);
+    const hasAnyFilter = Boolean(
+      criteria.categoryId ||
+      criteria.certification ||
+      criteria.minPrice !== undefined ||
+      criteria.maxPrice !== undefined,
+    );
 
     if (keywordProvided && keyword.length === 0 && !hasAnyFilter) {
       throw new AppError("Keyword must contain at least one character", 400);

@@ -15,12 +15,17 @@ type MonthBucket = {
   activeBuyers: number;
 };
 
-const monthKey = (value: Date) => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}`;
+const monthKey = (value: Date) =>
+  `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}`;
 
 const CustomerCharts = ({ users, orders, loading }: CustomerChartsProps) => {
   const now = new Date();
   const buckets: MonthBucket[] = Array.from({ length: 12 }, (_, index) => {
-    const dateValue = new Date(now.getFullYear(), now.getMonth() - (11 - index), 1);
+    const dateValue = new Date(
+      now.getFullYear(),
+      now.getMonth() - (11 - index),
+      1,
+    );
     return {
       key: monthKey(dateValue),
       label: `T${dateValue.getMonth() + 1}`,
@@ -75,12 +80,23 @@ const CustomerCharts = ({ users, orders, loading }: CustomerChartsProps) => {
       continue;
     }
 
-    customerSpend.set(order.user_id, (customerSpend.get(order.user_id) ?? 0) + Number(order.total_amount ?? 0));
-    customerOrders.set(order.user_id, (customerOrders.get(order.user_id) ?? 0) + 1);
+    customerSpend.set(
+      order.user_id,
+      (customerSpend.get(order.user_id) ?? 0) + Number(order.total_amount ?? 0),
+    );
+    customerOrders.set(
+      order.user_id,
+      (customerOrders.get(order.user_id) ?? 0) + 1,
+    );
   }
 
-  const spendValues = Array.from(customerSpend.values()).sort((left, right) => left - right);
-  const vipThreshold = spendValues.length > 0 ? spendValues[Math.floor(spendValues.length * 0.9)] : Number.POSITIVE_INFINITY;
+  const spendValues = Array.from(customerSpend.values()).sort(
+    (left, right) => left - right,
+  );
+  const vipThreshold =
+    spendValues.length > 0
+      ? spendValues[Math.floor(spendValues.length * 0.9)]
+      : Number.POSITIVE_INFINITY;
 
   let frequentCount = 0;
   let vipCount = 0;
@@ -113,19 +129,34 @@ const CustomerCharts = ({ users, orders, loading }: CustomerChartsProps) => {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
         <div className="mb-6 flex items-center justify-between">
-          <h3 className="font-bold text-gray-900">Tăng trưởng khách hàng (12 tháng)</h3>
-          <button type="button" className="text-gray-400 hover:text-gray-600" aria-label="chart options">
+          <h3 className="font-bold text-gray-900">
+            Tăng trưởng khách hàng (12 tháng)
+          </h3>
+          <button
+            type="button"
+            className="text-gray-400 hover:text-gray-600"
+            aria-label="chart options"
+          >
             <MoreHorizontal className="h-5 w-5" />
           </button>
         </div>
 
         <div className="grid min-h-[250px] flex-1 grid-cols-12 items-end gap-2">
           {buckets.map((bucket) => {
-            const newUserHeight = Math.max(6, (bucket.newUsers / maxValue) * 100);
-            const activeBuyerHeight = Math.max(6, (bucket.activeBuyers / maxValue) * 100);
+            const newUserHeight = Math.max(
+              6,
+              (bucket.newUsers / maxValue) * 100,
+            );
+            const activeBuyerHeight = Math.max(
+              6,
+              (bucket.activeBuyers / maxValue) * 100,
+            );
 
             return (
-              <div key={bucket.key} className="flex flex-col items-center gap-2">
+              <div
+                key={bucket.key}
+                className="flex flex-col items-center gap-2"
+              >
                 <div className="flex h-52 w-full items-end justify-center gap-1">
                   <div
                     className="w-2 rounded-t bg-emerald-500"
@@ -138,7 +169,9 @@ const CustomerCharts = ({ users, orders, loading }: CustomerChartsProps) => {
                     title={`Khách phát sinh đơn: ${bucket.activeBuyers}`}
                   />
                 </div>
-                <span className="text-[10px] text-gray-500">{bucket.label}</span>
+                <span className="text-[10px] text-gray-500">
+                  {bucket.label}
+                </span>
               </div>
             );
           })}
@@ -160,15 +193,24 @@ const CustomerCharts = ({ users, orders, loading }: CustomerChartsProps) => {
       <div className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between">
           <h3 className="font-bold text-gray-900">Phân khúc khách hàng</h3>
-          <button type="button" className="text-gray-400 hover:text-gray-600" aria-label="segment options">
+          <button
+            type="button"
+            className="text-gray-400 hover:text-gray-600"
+            aria-label="segment options"
+          >
             <MoreHorizontal className="h-5 w-5" />
           </button>
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center">
-          <div className="relative mb-8 h-44 w-44 rounded-full" style={donutStyle}>
+          <div
+            className="relative mb-8 h-44 w-44 rounded-full"
+            style={donutStyle}
+          >
             <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-white">
-              <span className="text-2xl font-bold text-gray-900">{totalSegment.toLocaleString("vi-VN")}</span>
+              <span className="text-2xl font-bold text-gray-900">
+                {totalSegment.toLocaleString("vi-VN")}
+              </span>
               <span className="text-xs text-gray-500">khách có đơn</span>
             </div>
           </div>
@@ -179,12 +221,16 @@ const CustomerCharts = ({ users, orders, loading }: CustomerChartsProps) => {
                 <span className="mr-2 h-2.5 w-2.5 rounded-full bg-emerald-500" />
                 <span className="text-gray-600">Khách thường xuyên</span>
               </div>
-              <span className="font-bold text-gray-900">{frequentPercent}%</span>
+              <span className="font-bold text-gray-900">
+                {frequentPercent}%
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
                 <span className="mr-2 h-2.5 w-2.5 rounded-full bg-orange-500" />
-                <span className="text-gray-600">Khách VIP (top 10% chi tiêu)</span>
+                <span className="text-gray-600">
+                  Khách VIP (top 10% chi tiêu)
+                </span>
               </div>
               <span className="font-bold text-gray-900">{vipPercent}%</span>
             </div>

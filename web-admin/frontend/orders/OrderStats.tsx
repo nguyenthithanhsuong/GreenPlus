@@ -9,11 +9,20 @@ type OrderStatsProps = {
   completedCount: number;
 };
 
-const OrderStats = ({ totalToday, pendingCount, confirmedCount, preparingCount, deliveringCount, completedCount }: OrderStatsProps) => {
+const OrderStats = ({
+  totalToday,
+  pendingCount,
+  confirmedCount,
+  preparingCount,
+  deliveringCount,
+  completedCount,
+}: OrderStatsProps) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
-        <p className="text-sm font-medium text-gray-500 mb-1">Tổng Đơn Hôm Nay</p>
+        <p className="text-sm font-medium text-gray-500 mb-1">
+          Tổng Đơn Hôm Nay
+        </p>
         <h3 className="text-2xl font-bold text-gray-900">{totalToday}</h3>
       </div>
 

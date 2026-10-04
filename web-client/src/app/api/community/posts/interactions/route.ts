@@ -1,8 +1,15 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../../backend/core/errors";
+import {
+  AppError,
+  toErrorMessage,
+} from "../../../../../../backend/core/errors";
 import { communityPostInteractionFacade } from "../../../../../../backend/modules/community-posts/facades/community-post-interaction.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../../backend/core/request-auth";
 
 type CreateInteractionBody = {
   postId?: string;
@@ -36,16 +43,22 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    postId = (searchParams.get("postId") ?? searchParams.get("post_id") ?? "").trim();
+    postId = (
+      searchParams.get("postId") ??
+      searchParams.get("post_id") ??
+      ""
+    ).trim();
 
     logger.info("List post interactions attempt", { postId });
 
     if (!postId) {
-      logger.error("List post interactions failed - missing postId", { postId });
+      logger.error("List post interactions failed - missing postId", {
+        postId,
+      });
 
       return NextResponse.json(
         { error: "postId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,7 +83,7 @@ export async function GET(request: Request) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -79,14 +92,12 @@ export async function GET(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
+  const identity = requireCustomerIdentity(request);
   let postId = "";
   let userId = "";
   let type = "";
@@ -95,12 +106,16 @@ export async function POST(request: Request) {
     const body = (await request.json()) as CreateInteractionBody;
 
     postId = body.postId?.trim() ?? body.post_id?.trim() ?? "";
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
     type = (body.type ?? "").trim().toLowerCase();
 
     logger.info("Create interaction attempt", { postId, userId, type });
 
-    if (!postId || !userId || (type !== "like" && type !== "comment" && type !== "bookmark")) {
+    if (
+      !postId ||
+      !userId ||
+      (type !== "like" && type !== "comment" && type !== "bookmark")
+    ) {
       logger.error("Create interaction failed - invalid input", {
         postId,
         userId,
@@ -109,7 +124,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         { error: "postId, userId and type are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -142,7 +157,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -153,14 +168,12 @@ export async function POST(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
 export async function PATCH(request: Request) {
+  const identity = requireCustomerIdentity(request);
   let interactionId = "";
   let userId = "";
 
@@ -169,7 +182,7 @@ export async function PATCH(request: Request) {
 
     interactionId =
       body.interactionId?.trim() ?? body.interaction_id?.trim() ?? "";
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
     logger.info("Edit interaction comment attempt", {
       interactionId,
@@ -184,7 +197,7 @@ export async function PATCH(request: Request) {
 
       return NextResponse.json(
         { error: "interactionId, userId and comment are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -214,7 +227,7 @@ export async function PATCH(request: Request) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -224,14 +237,12 @@ export async function PATCH(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request) {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let interactionId = "";
   let postId = "";
@@ -240,7 +251,7 @@ export async function DELETE(request: Request) {
   try {
     const body = (await request.json()) as DeleteInteractionBody;
 
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
     interactionId =
       body.interactionId?.trim() ?? body.interaction_id?.trim() ?? "";
     postId = body.postId?.trim() ?? body.post_id?.trim() ?? "";
@@ -260,7 +271,7 @@ export async function DELETE(request: Request) {
 
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -275,7 +286,7 @@ export async function DELETE(request: Request) {
 
         return NextResponse.json(
           { error: "postId is required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -304,7 +315,7 @@ export async function DELETE(request: Request) {
 
       return NextResponse.json(
         { error: "interactionId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -335,7 +346,7 @@ export async function DELETE(request: Request) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -347,9 +358,6 @@ export async function DELETE(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }

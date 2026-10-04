@@ -50,10 +50,14 @@ export class CartRepository {
     return data as CartRow;
   }
 
-  async listCartItemsWithProduct(cartId: string): Promise<CartItemWithProductRow[]> {
+  async listCartItemsWithProduct(
+    cartId: string,
+  ): Promise<CartItemWithProductRow[]> {
     const { data, error } = await supabaseServer
       .from("cart_items")
-      .select("cart_item_id,cart_id,product_id,quantity,note,products(name,image_url)")
+      .select(
+        "cart_item_id,cart_id,product_id,quantity,note,products(name,image_url)",
+      )
       .eq("cart_id", cartId);
 
     if (error) {
@@ -63,7 +67,9 @@ export class CartRepository {
     return (data ?? []) as CartItemWithProductRow[];
   }
 
-  async listLatestPriceRows(productIds: string[]): Promise<Array<{ product_id: string; price: number }>> {
+  async listLatestPriceRows(
+    productIds: string[],
+  ): Promise<Array<{ product_id: string; price: number }>> {
     if (productIds.length === 0) {
       return [];
     }
@@ -122,7 +128,10 @@ export class CartRepository {
   }
 
   async listBatchIdsByProduct(productId: string): Promise<string[]> {
-    const { data, error } = await supabaseServer.from("batches").select("batch_id").eq("product_id", productId);
+    const { data, error } = await supabaseServer
+      .from("batches")
+      .select("batch_id")
+      .eq("product_id", productId);
 
     if (error) {
       throw new Error(error.message);
@@ -148,7 +157,9 @@ export class CartRepository {
     return (data ?? []).map((row) => Number(row.quantity_available ?? 0));
   }
 
-  async findProductById(productId: string): Promise<{ product_id: string } | null> {
+  async findProductById(
+    productId: string,
+  ): Promise<{ product_id: string } | null> {
     const { data, error } = await supabaseServer
       .from("products")
       .select("product_id")
@@ -162,7 +173,10 @@ export class CartRepository {
     return (data as { product_id: string } | null) ?? null;
   }
 
-  async findCartItemByProduct(cartId: string, productId: string): Promise<CartItemRow | null> {
+  async findCartItemByProduct(
+    cartId: string,
+    productId: string,
+  ): Promise<CartItemRow | null> {
     const { data, error } = await supabaseServer
       .from("cart_items")
       .select("cart_item_id,quantity")
@@ -177,7 +191,10 @@ export class CartRepository {
     return (data as CartItemRow | null) ?? null;
   }
 
-  async findCartItemById(cartId: string, cartItemId: string): Promise<{ cart_item_id: string } | null> {
+  async findCartItemById(
+    cartId: string,
+    cartItemId: string,
+  ): Promise<{ cart_item_id: string } | null> {
     const { data, error } = await supabaseServer
       .from("cart_items")
       .select("cart_item_id")
@@ -192,7 +209,11 @@ export class CartRepository {
     return (data as { cart_item_id: string } | null) ?? null;
   }
 
-  async insertCartItem(input: { cartId: string; productId: string; quantity: number }): Promise<void> {
+  async insertCartItem(input: {
+    cartId: string;
+    productId: string;
+    quantity: number;
+  }): Promise<void> {
     const { error } = await supabaseServer.from("cart_items").insert({
       cart_id: input.cartId,
       product_id: input.productId,
@@ -204,7 +225,10 @@ export class CartRepository {
     }
   }
 
-  async updateCartItemQuantity(cartItemId: string, quantity: number): Promise<void> {
+  async updateCartItemQuantity(
+    cartItemId: string,
+    quantity: number,
+  ): Promise<void> {
     const { error } = await supabaseServer
       .from("cart_items")
       .update({ quantity })
@@ -215,7 +239,10 @@ export class CartRepository {
     }
   }
 
-  async deleteCartItemByProduct(cartId: string, productId: string): Promise<void> {
+  async deleteCartItemByProduct(
+    cartId: string,
+    productId: string,
+  ): Promise<void> {
     const { error } = await supabaseServer
       .from("cart_items")
       .delete()
@@ -227,8 +254,14 @@ export class CartRepository {
     }
   }
 
-  async updateCartItemNote(cartItemId: string, note: string | null): Promise<void> {
-    const { error } = await supabaseServer.from("cart_items").update({ note }).eq("cart_item_id", cartItemId);
+  async updateCartItemNote(
+    cartItemId: string,
+    note: string | null,
+  ): Promise<void> {
+    const { error } = await supabaseServer
+      .from("cart_items")
+      .update({ note })
+      .eq("cart_item_id", cartItemId);
 
     if (error) {
       throw new Error(error.message);

@@ -6,7 +6,5 @@ Sentry.init({
   debug: true,
   enabled: true,
   serverName: "web-admin",
-  integrations: [
-    Sentry.captureConsoleIntegration({ levels: ["error"] }),
-  ],
+  integrations: [Sentry.captureConsoleIntegration({ levels: ["error"] })],
 });

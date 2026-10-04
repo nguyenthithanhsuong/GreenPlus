@@ -2,7 +2,11 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { communityPostFacade } from "../../../../../backend/modules/community-posts/facades/community-post.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../backend/core/request-auth";
 
 type CreateCommunityPostBody = {
   userId?: string;
@@ -45,12 +49,13 @@ type DeleteCommunityPostBody = {
    CREATE POST
 ========================= */
 export async function POST(request: Request) {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
 
   try {
     const body = (await request.json()) as CreateCommunityPostBody;
 
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
     const content = body.content ?? "";
     const type = body.type?.trim() ?? "";
     const mediaType = body.mediaType?.trim() ?? body.media_type?.trim() ?? "";
@@ -70,10 +75,9 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         {
-          error:
-            "userId, content and either type or mediaType are required",
+          error: "userId, content and either type or mediaType are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -83,12 +87,7 @@ export async function POST(request: Request) {
       userId,
       title: body.title,
       content,
-      type:
-        (type || undefined) as
-          | "blog"
-          | "video"
-          | "community"
-          | undefined,
+      type: (type || undefined) as "blog" | "video" | "community" | undefined,
       mediaType: mediaType || undefined,
       mediaUrl: body.mediaUrl ?? body.media_url,
       mediaUrls: body.mediaUrls ?? body.media_urls,
@@ -112,7 +111,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -121,10 +120,7 @@ export async function POST(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -137,14 +133,13 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
 
-    const scope = (searchParams.get("scope") ?? "")
-      .trim()
-      .toLowerCase();
+    const scope = (searchParams.get("scope") ?? "").trim().toLowerCase();
 
-    userId =
-      (searchParams.get("userId") ??
-        searchParams.get("user_id") ??
-        "").trim();
+    userId = (
+      searchParams.get("userId") ??
+      searchParams.get("user_id") ??
+      ""
+    ).trim();
 
     logger.info("List community posts attempt", {
       scope,
@@ -163,6 +158,8 @@ export async function GET(request: Request) {
       return NextResponse.json(result, { status: 200 });
     }
 
+    userId = assertCustomerId(userId, requireCustomerIdentity(request).userId);
+
     if (!userId) {
       logger.error("List community posts failed - missing userId", {
         scope,
@@ -170,12 +167,11 @@ export async function GET(request: Request) {
 
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const result =
-      await communityPostFacade.listPostsByUser(userId);
+    const result = await communityPostFacade.listPostsByUser(userId);
 
     logger.info("List user community posts success", {
       userId,
@@ -193,7 +189,7 @@ export async function GET(request: Request) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -202,10 +198,7 @@ export async function GET(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -213,13 +206,14 @@ export async function GET(request: Request) {
    UPDATE POST
 ========================= */
 export async function PUT(request: Request) {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let postId = "";
 
   try {
     const body = (await request.json()) as UpdateCommunityPostBody;
 
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
     postId = body.postId?.trim() ?? body.post_id?.trim() ?? "";
 
     const content = body.content ?? "";
@@ -244,7 +238,7 @@ export async function PUT(request: Request) {
           error:
             "userId, postId, content and either type or mediaType are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -255,12 +249,7 @@ export async function PUT(request: Request) {
       postId,
       title: body.title,
       content,
-      type:
-        (type || undefined) as
-          | "blog"
-          | "video"
-          | "community"
-          | undefined,
+      type: (type || undefined) as "blog" | "video" | "community" | undefined,
       mediaType: mediaType || undefined,
       mediaUrl: body.mediaUrl ?? body.media_url,
       mediaUrls: body.mediaUrls ?? body.media_urls,
@@ -284,7 +273,7 @@ export async function PUT(request: Request) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -294,10 +283,7 @@ export async function PUT(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -305,13 +291,14 @@ export async function PUT(request: Request) {
    DELETE POST
 ========================= */
 export async function DELETE(request: Request) {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let postId = "";
 
   try {
     const body = (await request.json()) as DeleteCommunityPostBody;
 
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
     postId = body.postId?.trim() ?? body.post_id?.trim() ?? "";
 
     logger.info("Delete community post attempt", {
@@ -327,7 +314,7 @@ export async function DELETE(request: Request) {
 
       return NextResponse.json(
         { error: "userId and postId are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -353,7 +340,7 @@ export async function DELETE(request: Request) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -363,9 +350,6 @@ export async function DELETE(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }

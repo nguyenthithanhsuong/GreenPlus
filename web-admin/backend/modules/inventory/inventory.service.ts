@@ -1,1 +1,4 @@
-export { InventoryManagementFacade as InventoryService, inventoryManagementFacade } from "./facades/inventory-management.facade";
+export {
+  InventoryManagementFacade as InventoryService,
+  inventoryManagementFacade,
+} from "./facades/inventory-management.facade";

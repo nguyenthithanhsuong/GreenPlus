@@ -1,6 +1,10 @@
 import { AppError } from "../../core/errors";
 import { CategoryManagementRepository } from "./category-management.repository";
-import { CategoryRow, CreateCategoryInput, UpdateCategoryInput } from "./category-management.types";
+import {
+  CategoryRow,
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from "./category-management.types";
 import { createCategoryState } from "./states/category-state";
 import { DefaultCategoryNameStrategy } from "./strategies/category-name.strategy";
 
@@ -78,7 +82,10 @@ export class CategoryManagementService {
 
     const state = createCategoryState(current.product_count);
     if (!state.canDelete()) {
-      throw new AppError(`category is in use by ${current.product_count} product(s)`, 400);
+      throw new AppError(
+        `category is in use by ${current.product_count} product(s)`,
+        400,
+      );
     }
 
     const deleted = await this.repository.deleteCategory(normalizedCategoryId);

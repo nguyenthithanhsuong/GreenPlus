@@ -17,8 +17,19 @@ import {
   UpdateOrderInput,
 } from "./order.types";
 
-const VALID_PAYMENT_STATUS = new Set<PaymentStatus>(["pending", "paid", "failed", "cancelled", "unknown"]);
-const VALID_PAYMENT_METHOD = new Set<PaymentMethod>(["cod", "momo", "vnpay", "bank_transfer"]);
+const VALID_PAYMENT_STATUS = new Set<PaymentStatus>([
+  "pending",
+  "paid",
+  "failed",
+  "cancelled",
+  "unknown",
+]);
+const VALID_PAYMENT_METHOD = new Set<PaymentMethod>([
+  "cod",
+  "momo",
+  "vnpay",
+  "bank_transfer",
+]);
 const VALID_SHIPPING_STATUS = new Set<ShippingStatus>([
   "assigned",
   "picked_up",
@@ -48,21 +59,29 @@ export class OrderService {
     return VALID_SHIPPING_STATUS.has(lower) ? lower : "unknown";
   }
 
-  private normalizePaymentMethod(value: string | null): PaymentMethod | "unknown" {
-    const lower = (value ?? "unknown").toLowerCase() as PaymentMethod | "unknown";
-    return VALID_PAYMENT_METHOD.has(lower as PaymentMethod) ? (lower as PaymentMethod) : "unknown";
+  private normalizePaymentMethod(
+    value: string | null,
+  ): PaymentMethod | "unknown" {
+    const lower = (value ?? "unknown").toLowerCase() as
+      PaymentMethod | "unknown";
+    return VALID_PAYMENT_METHOD.has(lower as PaymentMethod)
+      ? (lower as PaymentMethod)
+      : "unknown";
   }
 
-  private mapOrderSummary(statusStrategy: ReturnType<typeof createOrderStatusStrategy>, row: {
-    order_id: string;
-    order_date: string;
-    status: OrderStatus;
-    total_amount: number;
-    delivery_address: string;
-    delivery_fee: number;
-    note: string | null;
-    created_at: string;
-  }): Omit<OrderSummary, "preview_images"> {
+  private mapOrderSummary(
+    statusStrategy: ReturnType<typeof createOrderStatusStrategy>,
+    row: {
+      order_id: string;
+      order_date: string;
+      status: OrderStatus;
+      total_amount: number;
+      delivery_address: string;
+      delivery_fee: number;
+      note: string | null;
+      created_at: string;
+    },
+  ): Omit<OrderSummary, "preview_images"> {
     return {
       order_id: row.order_id,
       order_date: row.order_date,
@@ -87,15 +106,22 @@ export class OrderService {
     try {
       rows = await this.repository.listOrdersByUser(userId.trim());
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load orders", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load orders",
+        500,
+      );
     }
 
     const orderIds = rows.map((row) => row.order_id);
-    let imageRows: Awaited<ReturnType<OrderRepository["listOrderItemImages"]>> = [];
+    let imageRows: Awaited<ReturnType<OrderRepository["listOrderItemImages"]>> =
+      [];
     try {
       imageRows = await this.repository.listOrderItemImages(orderIds);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load order images", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load order images",
+        500,
+      );
     }
 
     const imageMap = new Map<string, string[]>();
@@ -125,11 +151,17 @@ export class OrderService {
       throw new AppError("userId is required", 400);
     }
 
-    let rows: Awaited<ReturnType<OrderRepository["listPaymentHistoryByUser"]>> = [];
+    let rows: Awaited<ReturnType<OrderRepository["listPaymentHistoryByUser"]>> =
+      [];
     try {
       rows = await this.repository.listPaymentHistoryByUser(userId.trim());
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load payment history", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load payment history",
+        500,
+      );
     }
 
     return rows.map((row) => ({
@@ -160,7 +192,10 @@ export class OrderService {
     try {
       order = await this.repository.findOrderById(orderId.trim());
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load order", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load order",
+        500,
+      );
     }
 
     if (!order) {
@@ -186,7 +221,10 @@ export class OrderService {
       paymentStatus = paymentInfo.status;
       paymentMethod = paymentInfo.method;
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load order detail", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load order detail",
+        500,
+      );
     }
 
     const items: OrderItemDetail[] = itemRows.map((row) => ({
@@ -202,7 +240,9 @@ export class OrderService {
 
     const normalizedPaymentStatus = this.normalizePaymentStatus(paymentStatus);
     const effectivePaymentStatus: PaymentStatus =
-      order.status === "cancelled" && (normalizedPaymentStatus === "failed" || normalizedPaymentStatus === "pending")
+      order.status === "cancelled" &&
+      (normalizedPaymentStatus === "failed" ||
+        normalizedPaymentStatus === "pending")
         ? "cancelled"
         : normalizedPaymentStatus;
 
@@ -224,13 +264,23 @@ export class OrderService {
   }
 
   private async resolveOrderItemsFromCart(userId: string): Promise<
-    Array<{ productId: string; batchId: string; quantity: number; price: number; subtotal: number , note?: string | null | undefined}>
+    Array<{
+      productId: string;
+      batchId: string;
+      quantity: number;
+      price: number;
+      subtotal: number;
+      note?: string | null | undefined;
+    }>
   > {
     let cart: Awaited<ReturnType<OrderRepository["findCartByUserId"]>> = null;
     try {
       cart = await this.repository.findCartByUserId(userId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load cart", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load cart",
+        500,
+      );
     }
 
     if (!cart) {
@@ -241,7 +291,10 @@ export class OrderService {
     try {
       cartItems = await this.repository.listCartItems(cart.cart_id);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load cart items", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load cart items",
+        500,
+      );
     }
 
     if (cartItems.length === 0) {
@@ -250,11 +303,15 @@ export class OrderService {
 
     const productIds = cartItems.map((item) => item.product_id);
 
-    let priceRows: Awaited<ReturnType<OrderRepository["listLatestPriceRows"]>> = [];
+    let priceRows: Awaited<ReturnType<OrderRepository["listLatestPriceRows"]>> =
+      [];
     try {
       priceRows = await this.repository.listLatestPriceRows(productIds);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load latest prices", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load latest prices",
+        500,
+      );
     }
 
     const priceMap = new Map<string, number>();
@@ -264,7 +321,14 @@ export class OrderService {
       }
     });
 
-    const resolved: Array<{ productId: string; batchId: string; quantity: number; price: number; subtotal: number; note?: string | null | undefined }> = [];
+    const resolved: Array<{
+      productId: string;
+      batchId: string;
+      quantity: number;
+      price: number;
+      subtotal: number;
+      note?: string | null | undefined;
+    }> = [];
 
     for (const item of cartItems) {
       const price = priceMap.get(item.product_id);
@@ -276,12 +340,23 @@ export class OrderService {
       try {
         batchRows = await this.repository.listBatchRows(item.product_id);
       } catch (error) {
-        throw new AppError(error instanceof Error ? error.message : "Failed to load product batches", 500);
+        throw new AppError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load product batches",
+          500,
+        );
       }
 
-      const sellableBatch = await this.pickSellableBatch(batchRows, item.quantity);
+      const sellableBatch = await this.pickSellableBatch(
+        batchRows,
+        item.quantity,
+      );
       if (!sellableBatch) {
-        throw new AppError(`Insufficient stock for product ${item.product_id}`, 400);
+        throw new AppError(
+          `Insufficient stock for product ${item.product_id}`,
+          400,
+        );
       }
 
       resolved.push({
@@ -299,7 +374,7 @@ export class OrderService {
 
   private async pickSellableBatch(
     batchRows: Array<{ batch_id: string; expire_date: string; status: string }>,
-    requiredQuantity: number
+    requiredQuantity: number,
   ): Promise<string | null> {
     const now = Date.now();
 
@@ -314,9 +389,14 @@ export class OrderService {
 
       let quantityAvailable = 0;
       try {
-        quantityAvailable = await this.repository.getInventoryByBatchId(batch.batch_id);
+        quantityAvailable = await this.repository.getInventoryByBatchId(
+          batch.batch_id,
+        );
       } catch (error) {
-        throw new AppError(error instanceof Error ? error.message : "Failed to load inventory", 500);
+        throw new AppError(
+          error instanceof Error ? error.message : "Failed to load inventory",
+          500,
+        );
       }
 
       if (quantityAvailable >= requiredQuantity) {
@@ -327,7 +407,9 @@ export class OrderService {
     return null;
   }
 
-  async createOrder(input: CreateOrderInput): Promise<{ order_id: string; status: "pending"; total_amount: number }> {
+  async createOrder(
+    input: CreateOrderInput,
+  ): Promise<{ order_id: string; status: "pending"; total_amount: number }> {
     if (!input.userId.trim()) {
       throw new AppError("userId is required", 400);
     }
@@ -341,13 +423,20 @@ export class OrderService {
       throw new AppError("deliveryFee must be >= 0", 400);
     }
 
-    const paymentMethod = (input.paymentMethod ?? "cod").toLowerCase() as PaymentMethod;
+    const paymentMethod = (
+      input.paymentMethod ?? "cod"
+    ).toLowerCase() as PaymentMethod;
     if (!VALID_PAYMENT_METHOD.has(paymentMethod)) {
       throw new AppError("paymentMethod is invalid", 400);
     }
 
-    const resolvedItems = await this.resolveOrderItemsFromCart(input.userId.trim());
-    const itemTotal = resolvedItems.reduce((sum, item) => sum + item.subtotal, 0);
+    const resolvedItems = await this.resolveOrderItemsFromCart(
+      input.userId.trim(),
+    );
+    const itemTotal = resolvedItems.reduce(
+      (sum, item) => sum + item.subtotal,
+      0,
+    );
     const totalAmount = itemTotal + deliveryFee;
 
     let created: { order_id: string };
@@ -385,7 +474,10 @@ export class OrderService {
         await this.repository.clearCart(cart.cart_id);
       }
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to create order", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to create order",
+        500,
+      );
     }
 
     return {
@@ -395,7 +487,12 @@ export class OrderService {
     };
   }
 
-  async cancelOrder(input: CancelOrderInput): Promise<{ order_id: string; status: "cancelled"; payment_status: "cancelled"; message: string }> {
+  async cancelOrder(input: CancelOrderInput): Promise<{
+    order_id: string;
+    status: "cancelled";
+    payment_status: "cancelled";
+    message: string;
+  }> {
     if (!input.userId.trim()) {
       throw new AppError("userId is required", 400);
     }
@@ -408,7 +505,10 @@ export class OrderService {
     try {
       order = await this.repository.findOrderById(input.orderId.trim());
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load order", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load order",
+        500,
+      );
     }
 
     if (!order) {
@@ -421,7 +521,10 @@ export class OrderService {
 
     const state = createOrderState(order.status);
     if (!state.canCancel()) {
-      throw new AppError("Cancellation failed: only pending or confirmed orders can be cancelled", 400);
+      throw new AppError(
+        "Cancellation failed: only pending or confirmed orders can be cancelled",
+        400,
+      );
     }
 
     try {
@@ -447,7 +550,10 @@ export class OrderService {
         });
       }
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to cancel order", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to cancel order",
+        500,
+      );
     }
 
     return {
@@ -458,7 +564,12 @@ export class OrderService {
     };
   }
 
-  async confirmPayment(input: ConfirmPaymentInput): Promise<{ order_id: string; status: OrderStatus; payment_status: "paid"; message: string }> {
+  async confirmPayment(input: ConfirmPaymentInput): Promise<{
+    order_id: string;
+    status: OrderStatus;
+    payment_status: "paid";
+    message: string;
+  }> {
     if (!input.userId.trim()) {
       throw new AppError("userId is required", 400);
     }
@@ -471,7 +582,10 @@ export class OrderService {
     try {
       order = await this.repository.findOrderById(input.orderId.trim());
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load order", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load order",
+        500,
+      );
     }
 
     if (!order) {
@@ -483,14 +597,22 @@ export class OrderService {
     }
 
     if (order.status === "cancelled") {
-      throw new AppError("Payment cannot be confirmed for a cancelled order", 400);
+      throw new AppError(
+        "Payment cannot be confirmed for a cancelled order",
+        400,
+      );
     }
 
-    let paymentInfo: Awaited<ReturnType<OrderRepository["findPaymentInfo"]>> | null = null;
+    let paymentInfo: Awaited<
+      ReturnType<OrderRepository["findPaymentInfo"]>
+    > | null = null;
     try {
       paymentInfo = await this.repository.findPaymentInfo(order.order_id);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load payment info", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load payment info",
+        500,
+      );
     }
 
     const paymentStatus = this.normalizePaymentStatus(paymentInfo.status);
@@ -507,11 +629,15 @@ export class OrderService {
       throw new AppError("Payment was cancelled for this order", 400);
     }
 
-    const nextOrderStatus: OrderStatus = order.status === "pending" ? "confirmed" : order.status;
+    const nextOrderStatus: OrderStatus =
+      order.status === "pending" ? "confirmed" : order.status;
 
     try {
       if (order.status === "pending") {
-        await this.repository.updateOrderStatus(order.order_id, nextOrderStatus);
+        await this.repository.updateOrderStatus(
+          order.order_id,
+          nextOrderStatus,
+        );
       }
 
       await this.repository.updatePaymentStatus({
@@ -521,7 +647,10 @@ export class OrderService {
         paymentDate: new Date().toISOString(),
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to confirm payment", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to confirm payment",
+        500,
+      );
     }
 
     return {
@@ -532,7 +661,9 @@ export class OrderService {
     };
   }
 
-  async updateOrder(input: UpdateOrderInput): Promise<{ order_id: string; message: string }> {
+  async updateOrder(
+    input: UpdateOrderInput,
+  ): Promise<{ order_id: string; message: string }> {
     if (!input.userId.trim()) {
       throw new AppError("userId is required", 400);
     }
@@ -545,7 +676,10 @@ export class OrderService {
     try {
       order = await this.repository.findOrderById(input.orderId.trim());
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load order", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load order",
+        500,
+      );
     }
 
     if (!order) {
@@ -558,10 +692,15 @@ export class OrderService {
 
     const state = createOrderState(order.status);
     if (!state.canCancel()) {
-      throw new AppError("Update failed: only pending or confirmed orders can be updated", 400);
+      throw new AppError(
+        "Update failed: only pending or confirmed orders can be updated",
+        400,
+      );
     }
 
-    const hasDeliveryAddress = typeof input.deliveryAddress === "string" && input.deliveryAddress.trim().length > 0;
+    const hasDeliveryAddress =
+      typeof input.deliveryAddress === "string" &&
+      input.deliveryAddress.trim().length > 0;
     const hasDeliveryFee = typeof input.deliveryFee === "number";
     const hasNote = typeof input.note !== "undefined";
 
@@ -569,20 +708,30 @@ export class OrderService {
       throw new AppError("At least one field to update is required", 400);
     }
 
-    const normalizedDeliveryFee = hasDeliveryFee ? Number(input.deliveryFee) : undefined;
-    if (typeof normalizedDeliveryFee === "number" && (!Number.isFinite(normalizedDeliveryFee) || normalizedDeliveryFee < 0)) {
+    const normalizedDeliveryFee = hasDeliveryFee
+      ? Number(input.deliveryFee)
+      : undefined;
+    if (
+      typeof normalizedDeliveryFee === "number" &&
+      (!Number.isFinite(normalizedDeliveryFee) || normalizedDeliveryFee < 0)
+    ) {
       throw new AppError("deliveryFee must be >= 0", 400);
     }
 
     try {
       await this.repository.updateOrderFields({
         orderId: order.order_id,
-        deliveryAddress: hasDeliveryAddress ? input.deliveryAddress?.trim() : undefined,
+        deliveryAddress: hasDeliveryAddress
+          ? input.deliveryAddress?.trim()
+          : undefined,
         deliveryFee: normalizedDeliveryFee,
         note: hasNote ? (input.note ?? "").trim() || null : undefined,
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to update order", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to update order",
+        500,
+      );
     }
 
     return {

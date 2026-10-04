@@ -1,8 +1,6 @@
 import React from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
-import type {
-  InventoryTransactionRow,
-} from "../../backend/modules/inventory/inventory-management.types";
+import type { InventoryTransactionRow } from "../../backend/modules/inventory/inventory-management.types";
 
 type InventoryTransactionTableProps = {
   items: InventoryTransactionRow[];
@@ -13,7 +11,10 @@ type InventoryTransactionTableProps = {
 
 const PAGE_SIZE = 8;
 
-const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+const buildPageItems = (
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
@@ -23,10 +24,25 @@ const buildPageItems = (currentPage: number, totalPages: number): Array<number |
   }
 
   if (currentPage >= totalPages - 2) {
-    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [
+      1,
+      "ellipsis",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
   }
 
-  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    totalPages,
+  ];
 };
 
 const formatDate = (value: string | null) => {
@@ -71,11 +87,16 @@ const getQuantityDisplay = (type: string, quantity: number) => {
 
 const getTypeLabel = (type: string) => {
   switch (type) {
-    case "stock_in":    return "Nhập kho";
-    case "stock_out":   return "Xuất kho";
-    case "adjust_in":   return "Điều chỉnh tăng";
-    case "adjust_out":  return "Điều chỉnh giảm";
-    default:            return "Điều chỉnh";
+    case "stock_in":
+      return "Nhập kho";
+    case "stock_out":
+      return "Xuất kho";
+    case "adjust_in":
+      return "Điều chỉnh tăng";
+    case "adjust_out":
+      return "Điều chỉnh giảm";
+    default:
+      return "Điều chỉnh";
   }
 };
 
@@ -108,8 +129,12 @@ const InventoryTransactionTable = ({
   }, [currentPage, items]);
 
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
-  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const endItem =
+    totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(
+    () => buildPageItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -155,13 +180,19 @@ const InventoryTransactionTable = ({
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={6}
+                >
                   Đang tải lịch sử giao dịch...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={6}
+                >
                   {searchQuery.trim()
                     ? "Không tìm thấy giao dịch phù hợp."
                     : "Chưa có lịch sử giao dịch."}
@@ -200,9 +231,10 @@ const InventoryTransactionTable = ({
                       className={`font-bold ${
                         item.type === "stock_out" || item.type === "adjust_out"
                           ? "text-red-600"
-                          : item.type === "stock_in" || item.type === "adjust_in"
-                          ? "text-emerald-600"
-                          : "text-amber-600"
+                          : item.type === "stock_in" ||
+                              item.type === "adjust_in"
+                            ? "text-emerald-600"
+                            : "text-amber-600"
                       }`}
                     >
                       {getQuantityDisplay(item.type, item.quantity)}
@@ -222,10 +254,12 @@ const InventoryTransactionTable = ({
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span className="text-sm text-gray-500">
           Hiển thị{" "}
-          <span className="font-bold text-gray-900">{startItem} - {endItem}</span>{" "}
+          <span className="font-bold text-gray-900">
+            {startItem} - {endItem}
+          </span>{" "}
           trong tổng số{" "}
-          <span className="font-bold text-gray-900">{totalItems}</span>{" "}
-          giao dịch
+          <span className="font-bold text-gray-900">{totalItems}</span> giao
+          dịch
         </span>
 
         <div className="flex items-center gap-1">
@@ -269,7 +303,9 @@ const InventoryTransactionTable = ({
           <button
             type="button"
             className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             aria-label="Trang sau"
           >

@@ -1,11 +1,27 @@
 import { OrderStatus } from "../order.types";
 
 export interface OrderStatusStrategy {
-  toLabel(status: OrderStatus): "Pending" | "Confirmed" | "Processing" | "Shipping" | "Delivered" | "Cancelled";
+  toLabel(
+    status: OrderStatus,
+  ):
+    | "Pending"
+    | "Confirmed"
+    | "Processing"
+    | "Shipping"
+    | "Delivered"
+    | "Cancelled";
 }
 
 class DefaultOrderStatusStrategy implements OrderStatusStrategy {
-  toLabel(status: OrderStatus): "Pending" | "Confirmed" | "Processing" | "Shipping" | "Delivered" | "Cancelled" {
+  toLabel(
+    status: OrderStatus,
+  ):
+    | "Pending"
+    | "Confirmed"
+    | "Processing"
+    | "Shipping"
+    | "Delivered"
+    | "Cancelled" {
     switch (status) {
       case "pending":
         return "Pending";

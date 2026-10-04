@@ -30,7 +30,9 @@ export class AuthSubject {
   }
 
   async notify(event: AuthDomainEvent): Promise<void> {
-    await Promise.all(Array.from(this.observers).map((observer) => observer.update(event)));
+    await Promise.all(
+      Array.from(this.observers).map((observer) => observer.update(event)),
+    );
   }
 }
 
@@ -38,7 +40,7 @@ export class AuthAuditObserver implements AuthObserver {
   async update(event: AuthDomainEvent): Promise<void> {
     const eventType = event.type;
     const userId = event.userId;
-    
+
     void eventType;
     void userId;
 

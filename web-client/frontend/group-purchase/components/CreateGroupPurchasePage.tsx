@@ -177,7 +177,10 @@ export default function CreateGroupPurchasePage() {
   const [deadline, setDeadline] = useState("");
   const authUser = useAuthStore((state) => state.user);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -190,7 +193,10 @@ export default function CreateGroupPurchasePage() {
           setProductId(productList[0].product_id);
         }
       } catch {
-        setMessage({ type: "error", text: "Không thể tải danh sách sản phẩm." });
+        setMessage({
+          type: "error",
+          text: "Không thể tải danh sách sản phẩm.",
+        });
       } finally {
         setLoadingProducts(false);
       }
@@ -212,12 +218,18 @@ export default function CreateGroupPurchasePage() {
     e.preventDefault();
 
     if (!authUser?.user_id) {
-      setMessage({ type: "error", text: "Vui lòng đăng nhập để tạo nhóm mua chung." });
+      setMessage({
+        type: "error",
+        text: "Vui lòng đăng nhập để tạo nhóm mua chung.",
+      });
       return;
     }
 
     if (!productId || !targetQuantity || !minQuantity || !deadline) {
-      setMessage({ type: "error", text: "Vui lòng điền đầy đủ thông tin bắt buộc." });
+      setMessage({
+        type: "error",
+        text: "Vui lòng điền đầy đủ thông tin bắt buộc.",
+      });
       return;
     }
 
@@ -236,12 +248,17 @@ export default function CreateGroupPurchasePage() {
           productId,
           targetQuantity: Number(targetQuantity),
           minQuantity: Number(minQuantity),
-          discountPrice: discountPrice.trim() ? Number(discountPrice) : undefined,
+          discountPrice: discountPrice.trim()
+            ? Number(discountPrice)
+            : undefined,
           deadline: new Date(deadline).toISOString(),
         }),
       });
 
-      const data = (await response.json()) as { group_id?: string; error?: string };
+      const data = (await response.json()) as {
+        group_id?: string;
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error || "Không thể tạo nhóm mua chung.");
@@ -256,7 +273,8 @@ export default function CreateGroupPurchasePage() {
     } catch (err) {
       setMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Không thể tạo nhóm mua chung.",
+        text:
+          err instanceof Error ? err.message : "Không thể tạo nhóm mua chung.",
       });
     } finally {
       setSubmitting(false);
@@ -278,7 +296,13 @@ export default function CreateGroupPurchasePage() {
             aria-label="Quay lại"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
           <h1 style={styles.title}>Tạo nhóm mua chung</h1>
@@ -288,19 +312,26 @@ export default function CreateGroupPurchasePage() {
         <main style={styles.mainContent}>
           {!authUser?.user_id ? (
             <div style={styles.section}>
-              <div style={{
-                padding: "16px",
-                borderRadius: "12px",
-                background: "#FEE2E2",
-                color: "#B91C1C",
-                textAlign: "center" as const,
-              }}>
-                <p style={{ margin: 0, marginBottom: "8px" }}>Bạn cần đăng nhập để tạo nhóm mua chung</p>
-                <Link href="/login" style={{
+              <div
+                style={{
+                  padding: "16px",
+                  borderRadius: "12px",
+                  background: "#FEE2E2",
                   color: "#B91C1C",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                }}>
+                  textAlign: "center" as const,
+                }}
+              >
+                <p style={{ margin: 0, marginBottom: "8px" }}>
+                  Bạn cần đăng nhập để tạo nhóm mua chung
+                </p>
+                <Link
+                  href="/login"
+                  style={{
+                    color: "#B91C1C",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
+                >
                   → Đi đến đăng nhập
                 </Link>
               </div>
@@ -308,126 +339,142 @@ export default function CreateGroupPurchasePage() {
           ) : (
             <div style={styles.section}>
               <h2 style={styles.sectionTitle}>Thông tin nhóm mua chung</h2>
-              <p style={styles.hint}>Nhập thông tin để tạo một nhóm mua chung mới.</p>
+              <p style={styles.hint}>
+                Nhập thông tin để tạo một nhóm mua chung mới.
+              </p>
 
               <form onSubmit={(e) => void handleSubmit(e)}>
-              <div style={styles.formGroup}>
-                <label style={styles.label} htmlFor="product">
-                  Sản phẩm *
-                </label>
-                {loadingProducts ? (
-                  <p style={styles.loading}>Đang tải sản phẩm...</p>
-                ) : (
-                  <select
-                    id="product"
-                    value={productId}
-                    onChange={(e) => setProductId(e.target.value)}
-                    style={styles.select}
+                <div style={styles.formGroup}>
+                  <label style={styles.label} htmlFor="product">
+                    Sản phẩm *
+                  </label>
+                  {loadingProducts ? (
+                    <p style={styles.loading}>Đang tải sản phẩm...</p>
+                  ) : (
+                    <select
+                      id="product"
+                      value={productId}
+                      onChange={(e) => setProductId(e.target.value)}
+                      style={styles.select}
+                      disabled={submitting}
+                    >
+                      <option value="">-- Chọn sản phẩm --</option>
+                      {products.map((product) => (
+                        <option
+                          key={product.product_id}
+                          value={product.product_id}
+                        >
+                          {product.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label} htmlFor="targetQuantity">
+                    Số lượng mục tiêu *
+                  </label>
+                  <input
+                    id="targetQuantity"
+                    type="number"
+                    min="1"
+                    value={targetQuantity}
+                    onChange={(e) => setTargetQuantity(e.target.value)}
+                    style={styles.input}
+                    disabled={submitting}
+                    placeholder="Ví dụ: 10"
+                  />
+                  <p style={styles.hint}>
+                    Số lượng cần đạt để hoàn thành đơn hàng
+                  </p>
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label} htmlFor="minQuantity">
+                    Số lượng tối thiểu *
+                  </label>
+                  <input
+                    id="minQuantity"
+                    type="number"
+                    min="1"
+                    value={minQuantity}
+                    onChange={(e) => setMinQuantity(e.target.value)}
+                    style={styles.input}
+                    disabled={submitting}
+                    placeholder="Ví dụ: 5"
+                  />
+                  <p style={styles.hint}>Số lượng tối thiểu để giao hàng</p>
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label} htmlFor="discountPrice">
+                    Giá ưu đãi (VNĐ)
+                  </label>
+                  <input
+                    id="discountPrice"
+                    type="number"
+                    min="0"
+                    value={discountPrice}
+                    onChange={(e) => setDiscountPrice(e.target.value)}
+                    style={styles.input}
+                    disabled={submitting}
+                    placeholder="Ví dụ: 50000"
+                  />
+                  <p style={styles.hint}>
+                    Giá ưu đãi nếu đạt số lượng mục tiêu (không bắt buộc)
+                  </p>
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label} htmlFor="deadline">
+                    Hạn chót *
+                  </label>
+                  <input
+                    id="deadline"
+                    type="datetime-local"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    style={styles.input}
+                    disabled={submitting}
+                  />
+                  <p style={styles.hint}>Thời gian kết thúc nhóm mua chung</p>
+                </div>
+
+                {message && (
+                  <div
+                    style={
+                      message.type === "success"
+                        ? styles.messageSuccess
+                        : styles.messageError
+                    }
+                  >
+                    {message.text}
+                  </div>
+                )}
+
+                <div style={styles.buttonGroup}>
+                  <button
+                    type="button"
+                    style={styles.buttonSecondary}
+                    onClick={handleCancel}
                     disabled={submitting}
                   >
-                    <option value="">-- Chọn sản phẩm --</option>
-                    {products.map((product) => (
-                      <option key={product.product_id} value={product.product_id}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label} htmlFor="targetQuantity">
-                  Số lượng mục tiêu *
-                </label>
-                <input
-                  id="targetQuantity"
-                  type="number"
-                  min="1"
-                  value={targetQuantity}
-                  onChange={(e) => setTargetQuantity(e.target.value)}
-                  style={styles.input}
-                  disabled={submitting}
-                  placeholder="Ví dụ: 10"
-                />
-                <p style={styles.hint}>Số lượng cần đạt để hoàn thành đơn hàng</p>
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label} htmlFor="minQuantity">
-                  Số lượng tối thiểu *
-                </label>
-                <input
-                  id="minQuantity"
-                  type="number"
-                  min="1"
-                  value={minQuantity}
-                  onChange={(e) => setMinQuantity(e.target.value)}
-                  style={styles.input}
-                  disabled={submitting}
-                  placeholder="Ví dụ: 5"
-                />
-                <p style={styles.hint}>Số lượng tối thiểu để giao hàng</p>
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label} htmlFor="discountPrice">
-                  Giá ưu đãi (VNĐ)
-                </label>
-                <input
-                  id="discountPrice"
-                  type="number"
-                  min="0"
-                  value={discountPrice}
-                  onChange={(e) => setDiscountPrice(e.target.value)}
-                  style={styles.input}
-                  disabled={submitting}
-                  placeholder="Ví dụ: 50000"
-                />
-                <p style={styles.hint}>Giá ưu đãi nếu đạt số lượng mục tiêu (không bắt buộc)</p>
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label} htmlFor="deadline">
-                  Hạn chót *
-                </label>
-                <input
-                  id="deadline"
-                  type="datetime-local"
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                  style={styles.input}
-                  disabled={submitting}
-                />
-                <p style={styles.hint}>Thời gian kết thúc nhóm mua chung</p>
-              </div>
-
-              {message && (
-                <div style={message.type === "success" ? styles.messageSuccess : styles.messageError}>
-                  {message.text}
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      ...styles.button,
+                      opacity: submitting || !productId ? 0.6 : 1,
+                      cursor:
+                        submitting || !productId ? "not-allowed" : "pointer",
+                    }}
+                    disabled={submitting || !productId}
+                  >
+                    {submitting ? "Đang tạo..." : "Tạo nhóm"}
+                  </button>
                 </div>
-              )}
-
-              <div style={styles.buttonGroup}>
-                <button
-                  type="button"
-                  style={styles.buttonSecondary}
-                  onClick={handleCancel}
-                  disabled={submitting}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    ...styles.button,
-                    opacity: submitting || !productId ? 0.6 : 1,
-                    cursor: submitting || !productId ? "not-allowed" : "pointer",
-                  }}
-                  disabled={submitting || !productId}
-                >
-                  {submitting ? "Đang tạo..." : "Tạo nhóm"}
-                </button>
-              </div>
               </form>
             </div>
           )}

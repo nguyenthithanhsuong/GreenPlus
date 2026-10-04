@@ -125,7 +125,7 @@ export const GET = withSentry(async (request: Request) => {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 

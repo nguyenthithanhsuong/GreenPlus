@@ -10,8 +10,12 @@ type ActionTablesProps = {
 };
 
 const ActionTables = ({ suppliers, posts, loading }: ActionTablesProps) => {
-  const pendingSuppliers = suppliers.filter((supplier) => supplier.status === "pending").slice(0, 5);
-  const pendingPosts = posts.filter((post) => post.status === "pending").slice(0, 5);
+  const pendingSuppliers = suppliers
+    .filter((supplier) => supplier.status === "pending")
+    .slice(0, 5);
+  const pendingPosts = posts
+    .filter((post) => post.status === "pending")
+    .slice(0, 5);
 
   const getPostTypeLabel = (type: string) => {
     if (type === "video") {
@@ -33,7 +37,12 @@ const ActionTables = ({ suppliers, posts, loading }: ActionTablesProps) => {
             <Store className="h-4 w-4 text-gray-500" />
             Đối tác chờ duyệt
           </h3>
-          <Link href="/suppliers" className="text-sm font-medium text-emerald-600 hover:underline">Xem tất cả</Link>
+          <Link
+            href="/suppliers"
+            className="text-sm font-medium text-emerald-600 hover:underline"
+          >
+            Xem tất cả
+          </Link>
         </div>
 
         <div className="overflow-x-auto">
@@ -48,19 +57,39 @@ const ActionTables = ({ suppliers, posts, loading }: ActionTablesProps) => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">Đang tải đối tác...</td>
+                  <td
+                    colSpan={3}
+                    className="px-5 py-8 text-center text-sm text-gray-500"
+                  >
+                    Đang tải đối tác...
+                  </td>
                 </tr>
               ) : pendingSuppliers.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">Không có đối tác chờ duyệt.</td>
+                  <td
+                    colSpan={3}
+                    className="px-5 py-8 text-center text-sm text-gray-500"
+                  >
+                    Không có đối tác chờ duyệt.
+                  </td>
                 </tr>
               ) : (
                 pendingSuppliers.map((supplier) => (
-                  <tr key={supplier.supplier_id} className="border-b border-gray-50 last:border-b-0">
+                  <tr
+                    key={supplier.supplier_id}
+                    className="border-b border-gray-50 last:border-b-0"
+                  >
                     <td className="px-5 py-3">
-                      <p className="font-semibold text-gray-900">{supplier.name}</p>
+                      <p className="font-semibold text-gray-900">
+                        {supplier.name}
+                      </p>
                       <p className="text-xs text-gray-400">
-                        Đăng ký: {supplier.created_at ? new Date(supplier.created_at).toLocaleString("vi-VN") : "N/A"}
+                        Đăng ký:{" "}
+                        {supplier.created_at
+                          ? new Date(supplier.created_at).toLocaleString(
+                              "vi-VN",
+                            )
+                          : "N/A"}
                       </p>
                     </td>
                     <td className="px-5 py-3">
@@ -69,7 +98,10 @@ const ActionTables = ({ suppliers, posts, loading }: ActionTablesProps) => {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <Link href="/suppliers" className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600">
+                      <Link
+                        href="/suppliers"
+                        className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600"
+                      >
                         Kiểm duyệt
                       </Link>
                     </td>
@@ -87,7 +119,12 @@ const ActionTables = ({ suppliers, posts, loading }: ActionTablesProps) => {
             <ImageIcon className="h-4 w-4 text-gray-500" />
             Nội dung chờ duyệt
           </h3>
-          <Link href="/greencreators" className="text-sm font-medium text-emerald-600 hover:underline">Xem tất cả</Link>
+          <Link
+            href="/greencreators"
+            className="text-sm font-medium text-emerald-600 hover:underline"
+          >
+            Xem tất cả
+          </Link>
         </div>
 
         <div className="overflow-x-auto">
@@ -102,25 +139,49 @@ const ActionTables = ({ suppliers, posts, loading }: ActionTablesProps) => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">Đang tải nội dung...</td>
+                  <td
+                    colSpan={3}
+                    className="px-5 py-8 text-center text-sm text-gray-500"
+                  >
+                    Đang tải nội dung...
+                  </td>
                 </tr>
               ) : pendingPosts.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">Không có nội dung chờ duyệt.</td>
+                  <td
+                    colSpan={3}
+                    className="px-5 py-8 text-center text-sm text-gray-500"
+                  >
+                    Không có nội dung chờ duyệt.
+                  </td>
                 </tr>
               ) : (
                 pendingPosts.map((post) => (
-                  <tr key={post.post_id} className="border-b border-gray-50 last:border-b-0">
+                  <tr
+                    key={post.post_id}
+                    className="border-b border-gray-50 last:border-b-0"
+                  >
                     <td className="px-5 py-3">
-                      <p className="font-semibold text-gray-900">{post.author_name ?? "Người dùng ẩn danh"}</p>
+                      <p className="font-semibold text-gray-900">
+                        {post.author_name ?? "Người dùng ẩn danh"}
+                      </p>
                       <p className="flex items-center gap-1 text-xs text-blue-600">
-                        {post.type === "video" ? <PlaySquare className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
+                        {post.type === "video" ? (
+                          <PlaySquare className="h-3 w-3" />
+                        ) : (
+                          <ImageIcon className="h-3 w-3" />
+                        )}
                         {getPostTypeLabel(post.type)}
                       </p>
                     </td>
-                    <td className="max-w-[220px] truncate px-5 py-3 text-gray-600">{post.title}</td>
+                    <td className="max-w-[220px] truncate px-5 py-3 text-gray-600">
+                      {post.title}
+                    </td>
                     <td className="px-5 py-3 text-right">
-                      <Link href="/greencreators" className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100">
+                      <Link
+                        href="/greencreators"
+                        className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100"
+                      >
                         Xử lý
                       </Link>
                     </td>

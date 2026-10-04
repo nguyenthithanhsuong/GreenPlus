@@ -7,8 +7,8 @@ type RouteParams = {
 export default async function GreenCreatorDetailsPage({
   params,
 }: {
-  params: RouteParams | Promise<RouteParams>;
+  params: Promise<RouteParams>;
 }) {
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   return <GreenCreatorDetails postId={resolvedParams.postId ?? ""} />;
 }

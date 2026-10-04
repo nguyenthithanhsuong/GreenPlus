@@ -27,7 +27,11 @@ class DefaultCommunityMediaStrategy implements CommunityMediaStrategy {
 
   normalizePostType(type: string): CommunityPostType {
     const normalized = type.trim().toLowerCase();
-    if (normalized !== "blog" && normalized !== "video" && normalized !== "community") {
+    if (
+      normalized !== "blog" &&
+      normalized !== "video" &&
+      normalized !== "community"
+    ) {
       throw new AppError("type must be one of: blog, video, community", 400);
     }
 

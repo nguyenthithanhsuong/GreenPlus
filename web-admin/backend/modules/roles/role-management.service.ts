@@ -1,5 +1,9 @@
 import { AppError } from "../../core/errors";
-import { CreateRoleInput, RoleRow, UpdateRoleInput } from "./role-management.types";
+import {
+  CreateRoleInput,
+  RoleRow,
+  UpdateRoleInput,
+} from "./role-management.types";
 import { RoleManagementRepository } from "./role-management.repository";
 import { createRoleState } from "./states/role-state";
 import { DefaultRoleNameStrategy } from "./strategies/role-name.strategy";
@@ -60,7 +64,8 @@ export class RoleManagementService {
 
     const updated = await this.repository.updateRole({
       roleId: input.roleId,
-      roleName: typeof input.roleName !== "undefined" ? normalizedRoleName : undefined,
+      roleName:
+        typeof input.roleName !== "undefined" ? normalizedRoleName : undefined,
       description: input.description,
       isCustomer: input.isCustomer,
       isAdmin: input.isAdmin,
@@ -92,7 +97,10 @@ export class RoleManagementService {
     }
 
     if (current.user_count > 0) {
-      throw new AppError(`role is in use by ${current.user_count} user(s)`, 400);
+      throw new AppError(
+        `role is in use by ${current.user_count} user(s)`,
+        400,
+      );
     }
 
     const deleted = await this.repository.deleteRole(roleId);

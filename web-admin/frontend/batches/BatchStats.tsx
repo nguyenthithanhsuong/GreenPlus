@@ -8,7 +8,12 @@ type BatchStatsProps = {
   problemBatches: number;
 };
 
-const BatchStats = ({ totalBatches, availableBatches, expiringSoonBatches, problemBatches }: BatchStatsProps) => {
+const BatchStats = ({
+  totalBatches,
+  availableBatches,
+  expiringSoonBatches,
+  problemBatches,
+}: BatchStatsProps) => {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -17,7 +22,9 @@ const BatchStats = ({ totalBatches, availableBatches, expiringSoonBatches, probl
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Tổng số batch</p>
-          <h3 className="text-2xl font-bold text-gray-900">{totalBatches.toLocaleString("vi-VN")}</h3>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {totalBatches.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
 
@@ -27,7 +34,9 @@ const BatchStats = ({ totalBatches, availableBatches, expiringSoonBatches, probl
         </div>
         <div>
           <p className="text-sm font-bold text-emerald-700">Đang khả dụng</p>
-          <h3 className="text-2xl font-bold text-gray-900">{availableBatches.toLocaleString("vi-VN")}</h3>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {availableBatches.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
 
@@ -36,8 +45,12 @@ const BatchStats = ({ totalBatches, availableBatches, expiringSoonBatches, probl
           <Clock className="h-5 w-5 text-orange-600" />
         </div>
         <div>
-          <p className="text-sm font-bold text-orange-700">Cận date (≤ 3 ngày)</p>
-          <h3 className="text-2xl font-bold text-gray-900">{expiringSoonBatches.toLocaleString("vi-VN")}</h3>
+          <p className="text-sm font-bold text-orange-700">
+            Cận date (≤ 3 ngày)
+          </p>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {expiringSoonBatches.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
 
@@ -47,7 +60,9 @@ const BatchStats = ({ totalBatches, availableBatches, expiringSoonBatches, probl
         </div>
         <div>
           <p className="text-sm font-bold text-red-700">Hết hạn / hết hàng</p>
-          <h3 className="text-2xl font-bold text-gray-900">{problemBatches.toLocaleString("vi-VN")}</h3>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {problemBatches.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
     </div>

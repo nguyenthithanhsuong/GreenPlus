@@ -1,6 +1,11 @@
 import { AppError } from "../../core/errors";
 import { StoresManagementRepository } from "./stores-management.repository";
-import { CreateStoreInput, StoreRow, StoreStatus, UpdateStoreInput } from "./stores-management.types";
+import {
+  CreateStoreInput,
+  StoreRow,
+  StoreStatus,
+  UpdateStoreInput,
+} from "./stores-management.types";
 
 function trimToNull(value: string | null | undefined): string | null {
   if (typeof value === "undefined" || value === null) {
@@ -20,7 +25,9 @@ function trimToUndefined(value: string | null | undefined): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function normalizeOptionalNumber(value: number | string | null | undefined): number | null | undefined {
+function normalizeOptionalNumber(
+  value: number | string | null | undefined,
+): number | null | undefined {
   if (typeof value === "undefined") {
     return undefined;
   }
@@ -37,7 +44,10 @@ function normalizeOptionalNumber(value: number | string | null | undefined): num
   return parsed;
 }
 
-function normalizeOptionalTime(value: string | null | undefined, fieldName: string): string | null | undefined {
+function normalizeOptionalTime(
+  value: string | null | undefined,
+  fieldName: string,
+): string | null | undefined {
   if (typeof value === "undefined") {
     return undefined;
   }
@@ -69,7 +79,11 @@ export class StoresManagementService {
     return this.repository.listStores();
   }
 
-  private ensureRequiredFields(input: { name?: string; address?: string; managerId?: string }): asserts input is {
+  private ensureRequiredFields(input: {
+    name?: string;
+    address?: string;
+    managerId?: string;
+  }): asserts input is {
     name: string;
     address: string;
     managerId: string;
@@ -138,11 +152,17 @@ export class StoresManagementService {
       throw new AppError("Store name cannot be empty", 400);
     }
 
-    if (typeof input.address !== "undefined" && input.address.trim().length === 0) {
+    if (
+      typeof input.address !== "undefined" &&
+      input.address.trim().length === 0
+    ) {
       throw new AppError("Store address cannot be empty", 400);
     }
 
-    if (typeof input.managerId !== "undefined" && input.managerId.trim().length === 0) {
+    if (
+      typeof input.managerId !== "undefined" &&
+      input.managerId.trim().length === 0
+    ) {
       throw new AppError("Manager cannot be empty", 400);
     }
 

@@ -25,14 +25,19 @@ export class ProductService {
         imageUrl: product.image_url,
         categoryId: product.category_id,
         categoryName: getRelationValue<string>(product.categories, "name"),
-        certification: supplierMap.get(product.product_id)?.certification ?? null,
+        certification:
+          supplierMap.get(product.product_id)?.certification ?? null,
         price: latestPriceMap.get(product.product_id) ?? null,
         isAvailable: true,
         createdAt: product.created_at,
       }));
   }
 
-  async browseProducts(page: number, limit: number = DEFAULT_LIMIT, sort: ProductSort = "newest"): Promise<BrowseResult> {
+  async browseProducts(
+    page: number,
+    limit: number = DEFAULT_LIMIT,
+    sort: ProductSort = "newest",
+  ): Promise<BrowseResult> {
     if (page < 1) {
       throw new AppError("page must be at least 1");
     }

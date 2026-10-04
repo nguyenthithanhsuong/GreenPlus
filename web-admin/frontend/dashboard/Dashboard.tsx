@@ -32,7 +32,9 @@ const Dashboard = () => {
   const [orders, setOrders] = useState<OrderListRow[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
   const [complaints, setComplaints] = useState<ComplaintRow[]>([]);
-  const [greenCreatorPosts, setGreenCreatorPosts] = useState<GreenCreatorPostRow[]>([]);
+  const [greenCreatorPosts, setGreenCreatorPosts] = useState<
+    GreenCreatorPostRow[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,13 +43,14 @@ const Dashboard = () => {
     setError(null);
 
     try {
-      const [nextUsers, nextOrders, nextSuppliers, nextComplaints, nextPosts] = await Promise.all([
-        fetchItems<UserSummary>("/api/users"),
-        fetchItems<OrderListRow>("/api/orders"),
-        fetchItems<SupplierRow>("/api/suppliers"),
-        fetchItems<ComplaintRow>("/api/complaints"),
-        fetchItems<GreenCreatorPostRow>("/api/greencreators"),
-      ]);
+      const [nextUsers, nextOrders, nextSuppliers, nextComplaints, nextPosts] =
+        await Promise.all([
+          fetchItems<UserSummary>("/api/users"),
+          fetchItems<OrderListRow>("/api/orders"),
+          fetchItems<SupplierRow>("/api/suppliers"),
+          fetchItems<ComplaintRow>("/api/complaints"),
+          fetchItems<GreenCreatorPostRow>("/api/greencreators"),
+        ]);
 
       setUsers(nextUsers);
       setOrders(nextOrders);
@@ -55,7 +58,11 @@ const Dashboard = () => {
       setComplaints(nextComplaints);
       setGreenCreatorPosts(nextPosts);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể tải dữ liệu dashboard");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể tải dữ liệu dashboard",
+      );
       setUsers([]);
       setOrders([]);
       setSuppliers([]);
@@ -71,8 +78,13 @@ const Dashboard = () => {
   }, [loadDashboardData]);
 
   const todayLabel = useMemo(
-    () => new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date()),
-    []
+    () =>
+      new Intl.DateTimeFormat("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(new Date()),
+    [],
   );
 
   return (
@@ -100,12 +112,24 @@ const Dashboard = () => {
       searchPlaceholder="Tìm kiếm user, nhà cung cấp..."
     >
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
       ) : null}
 
-      <StatCards users={users} orders={orders} suppliers={suppliers} complaints={complaints} loading={loading} />
+      <StatCards
+        users={users}
+        orders={orders}
+        suppliers={suppliers}
+        complaints={complaints}
+        loading={loading}
+      />
       <Charts orders={orders} loading={loading} />
-      <ActionTables suppliers={suppliers} posts={greenCreatorPosts} loading={loading} />
+      <ActionTables
+        suppliers={suppliers}
+        posts={greenCreatorPosts}
+        loading={loading}
+      />
     </AdminShell>
   );
 };

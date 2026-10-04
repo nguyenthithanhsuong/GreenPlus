@@ -253,7 +253,12 @@ const styles: Record<string, React.CSSProperties> = {
 
 function formatDeadline(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString("vi-VN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleDateString("vi-VN", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatPrice(value: number | null): string {
@@ -261,7 +266,15 @@ function formatPrice(value: number | null): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
 }
 
-export default function GroupPurchaseModal({ isOpen, productId, productName, regularPrice, onClose, onSubmit, onCreateGroup }: GroupPurchaseModalProps) {
+export default function GroupPurchaseModal({
+  isOpen,
+  productId,
+  productName,
+  regularPrice,
+  onClose,
+  onSubmit,
+  onCreateGroup,
+}: GroupPurchaseModalProps) {
   const [groups, setGroups] = useState<GroupBuy[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -278,20 +291,29 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
 
       try {
         const response = await fetch("/api/group-purchases");
-        const data = (await response.json()) as { groups?: GroupBuy[]; error?: string };
+        const data = (await response.json()) as {
+          groups?: GroupBuy[];
+          error?: string;
+        };
 
         if (!response.ok) {
           throw new Error(data.error || "Không thể tải danh sách mua chung");
         }
 
-        const filteredGroups = (data.groups ?? []).filter((g) => g.product_id === productId && g.status === "open");
+        const filteredGroups = (data.groups ?? []).filter(
+          (g) => g.product_id === productId && g.status === "open",
+        );
         setGroups(filteredGroups);
 
         if (filteredGroups.length > 0) {
           setSelectedGroupId(filteredGroups[0].group_id);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Không thể tải danh sách mua chung");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Không thể tải danh sách mua chung",
+        );
         setGroups([]);
       } finally {
         setLoading(false);
@@ -311,7 +333,9 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
       await onSubmit(selectedGroupId, selectedQuantity);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tham gia mua chung");
+      setError(
+        err instanceof Error ? err.message : "Không thể tham gia mua chung",
+      );
     } finally {
       setJoining(false);
     }
@@ -342,7 +366,14 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
         ) : error ? (
           <p style={{ ...styles.emptyText, color: "#B91C1C" }}>⚠️ {error}</p>
         ) : groups.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              alignItems: "center",
+            }}
+          >
             <p style={styles.emptyText}>Chưa có nhóm mua chung nào</p>
             <button
               type="button"
@@ -371,9 +402,16 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
               <p style={styles.sectionLabel}>Các nhóm mua chung sẵn có</p>
               <div style={styles.groupList}>
                 {groups.map((group) => {
-                  const progressPercent = (group.current_quantity / group.target_quantity) * 100;
+                  const progressPercent =
+                    (group.current_quantity / group.target_quantity) * 100;
                   const discountPercent =
-                    regularPrice && group.discount_price ? Math.round(((regularPrice - group.discount_price) / regularPrice) * 100) : 0;
+                    regularPrice && group.discount_price
+                      ? Math.round(
+                          ((regularPrice - group.discount_price) /
+                            regularPrice) *
+                            100,
+                        )
+                      : 0;
                   const isSelected = selectedGroupId === group.group_id;
 
                   return (
@@ -386,13 +424,24 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
                       onClick={() => setSelectedGroupId(group.group_id)}
                     >
                       <div style={styles.groupHeader}>
-                        <h3 style={styles.groupName}>Nhóm #{group.group_id.slice(0, 8)}</h3>
-                        {discountPercent > 0 && <div style={styles.discountBadge}>-{discountPercent}%</div>}
+                        <h3 style={styles.groupName}>
+                          Nhóm #{group.group_id.slice(0, 8)}
+                        </h3>
+                        {discountPercent > 0 && (
+                          <div style={styles.discountBadge}>
+                            -{discountPercent}%
+                          </div>
+                        )}
                       </div>
 
                       <div style={styles.progressContainer}>
                         <div style={styles.progressBar}>
-                          <div style={{ ...styles.progressFill, width: `${Math.min(progressPercent, 100)}%` }} />
+                          <div
+                            style={{
+                              ...styles.progressFill,
+                              width: `${Math.min(progressPercent, 100)}%`,
+                            }}
+                          />
                         </div>
                         <p style={styles.progressText}>
                           {group.current_quantity}/{group.target_quantity}
@@ -401,16 +450,20 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
 
                       <div style={styles.groupDetails}>
                         <p style={styles.detailRow}>
-                          <span style={styles.detailLabel}>Giá:</span> {formatPrice(group.discount_price)}
+                          <span style={styles.detailLabel}>Giá:</span>{" "}
+                          {formatPrice(group.discount_price)}
                         </p>
                         <p style={styles.detailRow}>
-                          <span style={styles.detailLabel}>Còn lại:</span> {group.remaining_quantity}
+                          <span style={styles.detailLabel}>Còn lại:</span>{" "}
+                          {group.remaining_quantity}
                         </p>
                         <p style={styles.detailRow}>
-                          <span style={styles.detailLabel}>Tối thiểu:</span> {group.min_quantity}
+                          <span style={styles.detailLabel}>Tối thiểu:</span>{" "}
+                          {group.min_quantity}
                         </p>
                         <p style={styles.detailRow}>
-                          <span style={styles.detailLabel}>Hạn:</span> {formatDeadline(group.deadline)}
+                          <span style={styles.detailLabel}>Hạn:</span>{" "}
+                          {formatDeadline(group.deadline)}
                         </p>
                       </div>
 
@@ -422,7 +475,17 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
                             min="1"
                             max={group.remaining_quantity}
                             value={selectedQuantity}
-                            onChange={(e) => setSelectedQuantity(Math.max(1, Math.min(group.remaining_quantity, Number(e.target.value))))}
+                            onChange={(e) =>
+                              setSelectedQuantity(
+                                Math.max(
+                                  1,
+                                  Math.min(
+                                    group.remaining_quantity,
+                                    Number(e.target.value),
+                                  ),
+                                ),
+                              )
+                            }
                             style={styles.quantityInput}
                           />
                         </div>
@@ -434,15 +497,28 @@ export default function GroupPurchaseModal({ isOpen, productId, productName, reg
             </div>
 
             {selectedGroup && (
-              <div style={{ padding: "12px", background: "#ECFDF5", borderRadius: "12px" }}>
+              <div
+                style={{
+                  padding: "12px",
+                  background: "#ECFDF5",
+                  borderRadius: "12px",
+                }}
+              >
                 <p style={{ margin: 0, fontSize: "13px", color: "#065F46" }}>
-                  ✓ Bạn sẽ được giao khi nhóm đạt {selectedGroup.target_quantity} sản phẩm hoặc đến hạn {formatDeadline(selectedGroup.deadline)}
+                  ✓ Bạn sẽ được giao khi nhóm đạt{" "}
+                  {selectedGroup.target_quantity} sản phẩm hoặc đến hạn{" "}
+                  {formatDeadline(selectedGroup.deadline)}
                 </p>
               </div>
             )}
 
             <div style={styles.buttonGroup}>
-              <button type="button" style={styles.cancelButton} onClick={onClose} disabled={joining}>
+              <button
+                type="button"
+                style={styles.cancelButton}
+                onClick={onClose}
+                disabled={joining}
+              >
                 Hủy
               </button>
               <button

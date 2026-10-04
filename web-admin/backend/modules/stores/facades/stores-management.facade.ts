@@ -1,6 +1,11 @@
 import { StoresManagementRepository } from "../stores-management.repository";
 import { StoresManagementService } from "../stores-management.service";
-import { CreateStoreInput, StoreRow, StoreStatus, UpdateStoreInput } from "../stores-management.types";
+import {
+  CreateStoreInput,
+  StoreRow,
+  StoreStatus,
+  UpdateStoreInput,
+} from "../stores-management.types";
 
 export class StoresManagementFacade {
   private readonly repository = new StoresManagementRepository();

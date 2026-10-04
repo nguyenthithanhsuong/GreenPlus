@@ -1,5 +1,10 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { BatchRow, BatchStatus, CreateBatchInput, UpdateBatchInput } from "./batch-management.types";
+import {
+  BatchRow,
+  BatchStatus,
+  CreateBatchInput,
+  UpdateBatchInput,
+} from "./batch-management.types";
 
 type BatchDbRow = {
   batch_id: string;
@@ -36,7 +41,9 @@ export class BatchManagementRepository {
   async listBatches(): Promise<BatchRow[]> {
     const { data, error } = await this.supabase
       .from("batches")
-      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
+      .select(
+        "batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)",
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -49,7 +56,9 @@ export class BatchManagementRepository {
   async findById(batchId: string): Promise<BatchRow | null> {
     const { data, error } = await this.supabase
       .from("batches")
-      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
+      .select(
+        "batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)",
+      )
       .eq("batch_id", batchId)
       .maybeSingle();
 
@@ -61,7 +70,11 @@ export class BatchManagementRepository {
   }
 
   async findProductById(productId: string): Promise<boolean> {
-    const { data, error } = await this.supabase.from("products").select("product_id").eq("product_id", productId).maybeSingle();
+    const { data, error } = await this.supabase
+      .from("products")
+      .select("product_id")
+      .eq("product_id", productId)
+      .maybeSingle();
 
     if (error) {
       throw new Error(error.message);
@@ -71,7 +84,11 @@ export class BatchManagementRepository {
   }
 
   async findSupplierById(supplierId: string): Promise<boolean> {
-    const { data, error } = await this.supabase.from("suppliers").select("supplier_id").eq("supplier_id", supplierId).maybeSingle();
+    const { data, error } = await this.supabase
+      .from("suppliers")
+      .select("supplier_id")
+      .eq("supplier_id", supplierId)
+      .maybeSingle();
 
     if (error) {
       throw new Error(error.message);
@@ -80,7 +97,9 @@ export class BatchManagementRepository {
     return Boolean((data as IdRow | null)?.supplier_id);
   }
 
-  async createBatch(input: CreateBatchInput & { status: BatchStatus }): Promise<BatchRow> {
+  async createBatch(
+    input: CreateBatchInput & { status: BatchStatus },
+  ): Promise<BatchRow> {
     const { data, error } = await this.supabase
       .from("batches")
       .insert({
@@ -93,7 +112,9 @@ export class BatchManagementRepository {
         qr_code: input.qrCode?.trim() || null,
         status: input.status,
       })
-      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
+      .select(
+        "batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)",
+      )
       .single();
 
     if (error) {
@@ -106,20 +127,29 @@ export class BatchManagementRepository {
   async updateBatch(input: UpdateBatchInput): Promise<BatchRow | null> {
     const payload: Record<string, string | number | null> = {};
 
-    if (typeof input.productId !== "undefined") payload.product_id = input.productId;
-    if (typeof input.supplierId !== "undefined") payload.supplier_id = input.supplierId;
-    if (typeof input.harvestDate !== "undefined") payload.harvest_date = input.harvestDate;
-    if (typeof input.expireDate !== "undefined") payload.expire_date = input.expireDate;
-    if (typeof input.quantity !== "undefined") payload.quantity = input.quantity;
-    if (typeof input.importPrice !== "undefined") payload.import_price = input.importPrice;
-    if (typeof input.qrCode !== "undefined") payload.qr_code = input.qrCode?.trim() || null;
+    if (typeof input.productId !== "undefined")
+      payload.product_id = input.productId;
+    if (typeof input.supplierId !== "undefined")
+      payload.supplier_id = input.supplierId;
+    if (typeof input.harvestDate !== "undefined")
+      payload.harvest_date = input.harvestDate;
+    if (typeof input.expireDate !== "undefined")
+      payload.expire_date = input.expireDate;
+    if (typeof input.quantity !== "undefined")
+      payload.quantity = input.quantity;
+    if (typeof input.importPrice !== "undefined")
+      payload.import_price = input.importPrice;
+    if (typeof input.qrCode !== "undefined")
+      payload.qr_code = input.qrCode?.trim() || null;
     if (typeof input.status !== "undefined") payload.status = input.status;
 
     const { data, error } = await this.supabase
       .from("batches")
       .update(payload)
       .eq("batch_id", input.batchId)
-      .select("batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)")
+      .select(
+        "batch_id,product_id,supplier_id,harvest_date,expire_date,quantity,import_price,qr_code,status,created_at,updated_at,products(name),suppliers(name)",
+      )
       .maybeSingle();
 
     if (error) {
@@ -158,15 +188,16 @@ export class BatchManagementRepository {
     return Boolean((data as InventoryIdRow | null)?.inventory_id);
   }
 
-  async createInventoryForBatch(input: { batchId: string; quantityAvailable: number }): Promise<void> {
-    const { error } = await this.supabase
-      .from("inventory")
-      .insert({
-        batch_id: input.batchId,
-        quantity_available: input.quantityAvailable,
-        quantity_reserved: 0,
-        last_updated: new Date().toISOString(),
-      });
+  async createInventoryForBatch(input: {
+    batchId: string;
+    quantityAvailable: number;
+  }): Promise<void> {
+    const { error } = await this.supabase.from("inventory").insert({
+      batch_id: input.batchId,
+      quantity_available: input.quantityAvailable,
+      quantity_reserved: 0,
+      last_updated: new Date().toISOString(),
+    });
 
     if (error) {
       throw new Error(error.message);
@@ -194,7 +225,11 @@ export class BatchManagementRepository {
 
   private toRow(batch: BatchDbRow): BatchRow {
     const normalizedStatus: BatchStatus =
-      batch.status === "pending" || batch.status === "available" || batch.status === "rejected" || batch.status === "expired" || batch.status === "sold_out"
+      batch.status === "pending" ||
+      batch.status === "available" ||
+      batch.status === "rejected" ||
+      batch.status === "expired" ||
+      batch.status === "sold_out"
         ? batch.status
         : "available";
 
@@ -207,7 +242,8 @@ export class BatchManagementRepository {
       harvest_date: batch.harvest_date,
       expire_date: batch.expire_date,
       quantity: batch.quantity,
-      import_price: batch.import_price === null ? null : Number(batch.import_price),
+      import_price:
+        batch.import_price === null ? null : Number(batch.import_price),
       qr_code: batch.qr_code,
       status: normalizedStatus,
       created_at: batch.created_at,

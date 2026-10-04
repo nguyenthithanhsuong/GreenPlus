@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { AppError } from "../../../../backend/core/errors";
 import { deliveryTrackingFacade } from "../../../../backend/modules/delivery-tracking/facades/delivery-tracking.facade";
 import type { DeliveryStatus } from "../../../../backend/modules/delivery-tracking/delivery-tracking.types";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 const parseDeliveryStatus = (
   value: string | null,
@@ -48,10 +48,7 @@ export const GET = withSentry(async (request: Request) => {
     duration_ms: Date.now() - start,
   });
 
-  return NextResponse.json(
-    { items, total: items.length },
-    { status: 200 },
-  );
+  return NextResponse.json({ items, total: items.length }, { status: 200 });
 });
 
 export const POST = withSentry(async (request: Request) => {
@@ -75,9 +72,7 @@ export const POST = withSentry(async (request: Request) => {
     note: body.note,
   });
 
-  const nextStatus = body.status
-    ? parseDeliveryStatus(body.status)
-    : undefined;
+  const nextStatus = body.status ? parseDeliveryStatus(body.status) : undefined;
 
   if (nextStatus) {
     const updated = await deliveryTrackingFacade.updateDeliveryStatus({

@@ -32,8 +32,12 @@ const DeliveryAssignDialog = ({
     const loadShippers = async () => {
       setLoadingShippers(true);
       try {
-        const response = await fetch("/api/deliveries/shippers", { cache: "no-store" });
-        const data = (await response.json()) as { items?: DeliveryShipperOption[] };
+        const response = await fetch("/api/deliveries/shippers", {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as {
+          items?: DeliveryShipperOption[];
+        };
 
         if (response.ok) {
           setShippers(Array.isArray(data.items) ? data.items : []);
@@ -71,13 +75,18 @@ const DeliveryAssignDialog = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/35 z-40 transition-opacity" onClick={handleClose} />
+      <div
+        className="fixed inset-0 bg-black/35 z-40 transition-opacity"
+        onClick={handleClose}
+      />
 
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between border-b border-gray-100 p-6 sticky top-0 bg-white">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Phân công giao hàng</h2>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Phân công giao hàng
+              </h2>
               <p className="mt-1 text-sm text-gray-500">Đơn hàng: {orderId}</p>
             </div>
             <button
@@ -123,7 +132,9 @@ const DeliveryAssignDialog = ({
                         className="h-4 w-4 border-gray-300 text-[#059669] focus:ring-[#059669]"
                       />
                       <div className="flex-1">
-                        <p className="font-bold text-gray-900">{shipper.name}</p>
+                        <p className="font-bold text-gray-900">
+                          {shipper.name}
+                        </p>
                         {shipper.phone && (
                           <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                             <Phone className="h-3 w-3" />
@@ -131,7 +142,9 @@ const DeliveryAssignDialog = ({
                           </p>
                         )}
                         {shipper.role_name && (
-                          <p className="text-xs text-gray-400 mt-1">{shipper.role_name}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {shipper.role_name}
+                          </p>
                         )}
                       </div>
                       {shipper.status && (
@@ -146,7 +159,9 @@ const DeliveryAssignDialog = ({
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-gray-800">Ghi chú giao hàng</label>
+              <label className="mb-2 block text-sm font-bold text-gray-800">
+                Ghi chú giao hàng
+              </label>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}

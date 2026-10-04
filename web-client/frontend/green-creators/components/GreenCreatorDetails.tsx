@@ -409,7 +409,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-function toStatusStyle(status: CommunityPostItem["status"]): React.CSSProperties {
+function toStatusStyle(
+  status: CommunityPostItem["status"],
+): React.CSSProperties {
   if (status === "approved") {
     return { ...styles.statusChip, color: "#065F46", background: "#D1FAE5" };
   }
@@ -431,7 +433,9 @@ function formatDate(value: string): string {
 }
 
 function getMediaItems(post: CommunityPostItem): string[] {
-  const items = (post.media_urls ?? []).map((url) => url.trim()).filter(Boolean);
+  const items = (post.media_urls ?? [])
+    .map((url) => url.trim())
+    .filter(Boolean);
   const fallback = post.media_url?.trim() ?? "";
 
   if (!items.length && fallback) {
@@ -441,9 +445,16 @@ function getMediaItems(post: CommunityPostItem): string[] {
   return items;
 }
 
-function isVideoUrl(url: string, mediaType: CommunityPostItem["media_type"]): boolean {
+function isVideoUrl(
+  url: string,
+  mediaType: CommunityPostItem["media_type"],
+): boolean {
   const normalized = url.toLowerCase();
-  return mediaType === "MP4" || normalized.endsWith(".mp4") || normalized.includes(".mp4?");
+  return (
+    mediaType === "MP4" ||
+    normalized.endsWith(".mp4") ||
+    normalized.includes(".mp4?")
+  );
 }
 
 function getInitials(name: string): string {
@@ -459,10 +470,16 @@ function getInitials(name: string): string {
     .join("");
 }
 
-export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps) {
+export default function GreenCreatorDetails({
+  postId,
+}: GreenCreatorDetailsProps) {
   const [allPosts, setAllPosts] = useState<CommunityPostItem[]>([]);
-  const [profileByUserId, setProfileByUserId] = useState<Record<string, ProfileResult>>({});
-  const [interactions, setInteractions] = useState<CommunityPostInteractionItem[]>([]);
+  const [profileByUserId, setProfileByUserId] = useState<
+    Record<string, ProfileResult>
+  >({});
+  const [interactions, setInteractions] = useState<
+    CommunityPostInteractionItem[]
+  >([]);
   const [error, setError] = useState<string | null>(null);
   const [interactionError, setInteractionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -474,9 +491,14 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
 
   const currentUserId = useAuthStore((state) => state.user?.user_id ?? "");
 
-  const post = useMemo(() => allPosts.find((item) => item.post_id === postId) ?? null, [allPosts, postId]);
+  const post = useMemo(
+    () => allPosts.find((item) => item.post_id === postId) ?? null,
+    [allPosts, postId],
+  );
   const authorProfile = post ? profileByUserId[post.user_id] : null;
-  const authorName = authorProfile?.name ?? (post?.user_id ? `Creator ${post.user_id.slice(0, 6)}` : "Green Creator");
+  const authorName =
+    authorProfile?.name ??
+    (post?.user_id ? `Creator ${post.user_id.slice(0, 6)}` : "Green Creator");
   const authorAvatar = authorProfile?.image_url ?? "";
   const mediaItems = useMemo(() => (post ? getMediaItems(post) : []), [post]);
   const visibleComments = useMemo(
@@ -484,17 +506,35 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
       interactions
         .filter((item) => item.type === "comment" && item.status !== "deleted")
         .sort((left, right) => left.created_at.localeCompare(right.created_at)),
-    [interactions]
+    [interactions],
   );
-  const likeCount = useMemo(() => interactions.filter((item) => item.type === "like").length, [interactions]);
-  const bookmarkCount = useMemo(() => interactions.filter((item) => item.type === "bookmark").length, [interactions]);
+  const likeCount = useMemo(
+    () => interactions.filter((item) => item.type === "like").length,
+    [interactions],
+  );
+  const bookmarkCount = useMemo(
+    () => interactions.filter((item) => item.type === "bookmark").length,
+    [interactions],
+  );
   const liked = useMemo(
-    () => Boolean(currentUserId && interactions.some((item) => item.type === "like" && item.user_id === currentUserId)),
-    [currentUserId, interactions]
+    () =>
+      Boolean(
+        currentUserId &&
+        interactions.some(
+          (item) => item.type === "like" && item.user_id === currentUserId,
+        ),
+      ),
+    [currentUserId, interactions],
   );
   const bookmarked = useMemo(
-    () => Boolean(currentUserId && interactions.some((item) => item.type === "bookmark" && item.user_id === currentUserId)),
-    [currentUserId, interactions]
+    () =>
+      Boolean(
+        currentUserId &&
+        interactions.some(
+          (item) => item.type === "bookmark" && item.user_id === currentUserId,
+        ),
+      ),
+    [currentUserId, interactions],
   );
 
   const fetchInteractions = async (signal?: AbortSignal) => {
@@ -502,10 +542,16 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
       return;
     }
 
-    const response = await fetch(`/api/community/posts/interactions?postId=${encodeURIComponent(postId)}`, {
-      signal,
-    });
-    const data = (await response.json()) as { items?: CommunityPostInteractionItem[]; error?: string };
+    const response = await fetch(
+      `/api/community/posts/interactions?postId=${encodeURIComponent(postId)}`,
+      {
+        signal,
+      },
+    );
+    const data = (await response.json()) as {
+      items?: CommunityPostInteractionItem[];
+      error?: string;
+    };
 
     if (!response.ok) {
       throw new Error(data.error || "Failed to load interactions");
@@ -530,10 +576,15 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
         const response = await fetch("/api/community/posts?scope=all", {
           signal: controller.signal,
         });
-        const data = (await response.json()) as CommunityPostItem[] | { error: string };
+        const data = (await response.json()) as
+          CommunityPostItem[] | { error: string };
 
         if (!response.ok || !Array.isArray(data)) {
-          throw new Error(!Array.isArray(data) && "error" in data ? data.error : "Failed to load posts");
+          throw new Error(
+            !Array.isArray(data) && "error" in data
+              ? data.error
+              : "Failed to load posts",
+          );
         }
 
         setAllPosts(data);
@@ -542,7 +593,11 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
           return;
         }
 
-        setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Unexpected error",
+        );
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -581,7 +636,11 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
           return;
         }
 
-        setInteractionError(requestError instanceof Error ? requestError.message : "Unexpected error");
+        setInteractionError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Unexpected error",
+        );
         setInteractions([]);
       }
     };
@@ -594,7 +653,9 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
   }, [postId]);
 
   useEffect(() => {
-    const uniqueUserIds = Array.from(new Set(allPosts.map((item) => item.user_id).filter(Boolean)));
+    const uniqueUserIds = Array.from(
+      new Set(allPosts.map((item) => item.user_id).filter(Boolean)),
+    );
     if (!uniqueUserIds.length) {
       setProfileByUserId({});
       return;
@@ -606,21 +667,30 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
       try {
         const profiles = await Promise.all(
           uniqueUserIds.map(async (userIdToLoad) => {
-            const response = await fetch(`/api/account/profile?userId=${encodeURIComponent(userIdToLoad)}`, {
-              signal: controller.signal,
-            });
+            const response = await fetch(
+              `/api/account/profile?userId=${encodeURIComponent(userIdToLoad)}`,
+              {
+                signal: controller.signal,
+              },
+            );
 
             if (!response.ok) {
               return null;
             }
 
-            const data = (await response.json()) as ProfileResult | { error?: string };
-            if (!data || typeof data !== "object" || !("user_id" in data) || !("name" in data)) {
+            const data = (await response.json()) as
+              ProfileResult | { error?: string };
+            if (
+              !data ||
+              typeof data !== "object" ||
+              !("user_id" in data) ||
+              !("name" in data)
+            ) {
               return null;
             }
 
             return data as ProfileResult;
-          })
+          }),
         );
 
         if (controller.signal.aborted) {
@@ -659,12 +729,15 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: post.title, text: shareText, url: shareUrl });
+        await navigator.share({
+          title: post.title,
+          text: shareText,
+          url: shareUrl,
+        });
       } else {
         await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
       }
-    } catch {
-    }
+    } catch {}
   };
 
   const refreshInteractions = async () => {
@@ -718,7 +791,11 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
 
       await refreshInteractions();
     } catch (requestError) {
-      setInteractionError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setInteractionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setInteractionBusy(false);
     }
@@ -755,7 +832,11 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
       setNewComment("");
       await refreshInteractions();
     } catch (requestError) {
-      setInteractionError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setInteractionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setInteractionBusy(false);
     }
@@ -808,7 +889,11 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
 
       await refreshInteractions();
     } catch (requestError) {
-      setInteractionError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setInteractionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setInteractionBusy(false);
     }
@@ -819,7 +904,9 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
     setEditingCommentValue(comment.comment ?? "");
   };
 
-  const handleSaveCommentEdit = async (comment: CommunityPostInteractionItem) => {
+  const handleSaveCommentEdit = async (
+    comment: CommunityPostInteractionItem,
+  ) => {
     const trimmed = editingCommentValue.trim();
     if (!currentUserId || !trimmed || interactionBusy) {
       return;
@@ -850,7 +937,11 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
       setEditingCommentValue("");
       await refreshInteractions();
     } catch (requestError) {
-      setInteractionError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setInteractionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setInteractionBusy(false);
     }
@@ -888,17 +979,28 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
 
       await refreshInteractions();
     } catch (requestError) {
-      setInteractionError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setInteractionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setInteractionBusy(false);
     }
   };
 
-  const currentUserProfile = currentUserId ? profileByUserId[currentUserId] : null;
+  const currentUserProfile = currentUserId
+    ? profileByUserId[currentUserId]
+    : null;
 
   const getProfileName = (userIdValue: string): string => {
     const profile = profileByUserId[userIdValue];
-    return profile?.name ?? (userIdValue === currentUserId ? currentUserProfile?.name ?? "Bạn" : `Creator ${userIdValue.slice(0, 6)}`);
+    return (
+      profile?.name ??
+      (userIdValue === currentUserId
+        ? (currentUserProfile?.name ?? "Bạn")
+        : `Creator ${userIdValue.slice(0, 6)}`)
+    );
   };
 
   const getProfileAvatar = (userIdValue: string): string => {
@@ -931,7 +1033,9 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
       return;
     }
 
-    setActiveMediaIndex((current) => (current === 0 ? mediaItems.length - 1 : current - 1));
+    setActiveMediaIndex((current) =>
+      current === 0 ? mediaItems.length - 1 : current - 1,
+    );
   };
 
   const goToNextMedia = () => {
@@ -939,16 +1043,28 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
       return;
     }
 
-    setActiveMediaIndex((current) => (current + 1 >= mediaItems.length ? 0 : current + 1));
+    setActiveMediaIndex((current) =>
+      current + 1 >= mediaItems.length ? 0 : current + 1,
+    );
   };
 
   return (
     <main style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href="/green-creators" style={styles.iconButton} aria-label="Quay lại danh sách bài đăng">
+          <Link
+            href="/green-creators"
+            style={styles.iconButton}
+            aria-label="Quay lại danh sách bài đăng"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.title}>Chi tiết bài đăng</h1>
@@ -956,8 +1072,20 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
         </header>
 
         <main style={styles.mainContent}>
-          {loading ? <p style={styles.helperText}>Đang tải bài đăng...</p> : null}
-          {error ? <p style={{ ...styles.helperText, color: "#B91C1C", fontWeight: 700 }}>{error}</p> : null}
+          {loading ? (
+            <p style={styles.helperText}>Đang tải bài đăng...</p>
+          ) : null}
+          {error ? (
+            <p
+              style={{
+                ...styles.helperText,
+                color: "#B91C1C",
+                fontWeight: 700,
+              }}
+            >
+              {error}
+            </p>
+          ) : null}
 
           {post ? (
             <article style={styles.card}>
@@ -965,9 +1093,26 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                 <div style={styles.authorInfo}>
                   <div style={styles.avatarPlaceholder}>
                     {authorAvatar ? (
-                      <img src={authorAvatar} alt={authorName} style={{ width: "100%", height: "100%", borderRadius: "999px", objectFit: "cover" }} />
+                      <img
+                        src={authorAvatar}
+                        alt={authorName}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          borderRadius: "999px",
+                          objectFit: "cover",
+                        }}
+                      />
                     ) : (
-                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#6B7280" }}>{getInitials(authorName)}</span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: "#6B7280",
+                        }}
+                      >
+                        {getInitials(authorName)}
+                      </span>
                     )}
                   </div>
                   <span style={styles.authorName}>{authorName}</span>
@@ -1000,9 +1145,19 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                                 }}
                               >
                                 {video ? (
-                                  <video src={mediaUrl} controls playsInline preload="metadata" style={styles.mediaVideo} />
+                                  <video
+                                    src={mediaUrl}
+                                    controls
+                                    playsInline
+                                    preload="metadata"
+                                    style={styles.mediaVideo}
+                                  />
                                 ) : (
-                                  <img src={mediaUrl} alt={`${post.title} ${index + 1}`} style={styles.mediaImage} />
+                                  <img
+                                    src={mediaUrl}
+                                    alt={`${post.title} ${index + 1}`}
+                                    style={styles.mediaImage}
+                                  />
                                 )}
                               </div>
                             );
@@ -1015,7 +1170,14 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                               minWidth: "100%",
                             }}
                           >
-                            <div style={{ ...styles.helperText, textAlign: "center" }}>Không có media</div>
+                            <div
+                              style={{
+                                ...styles.helperText,
+                                textAlign: "center",
+                              }}
+                            >
+                              Không có media
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1023,14 +1185,52 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
 
                     {mediaItems.length > 1 ? (
                       <>
-                        <button type="button" style={{ ...styles.mediaArrowButton, ...styles.mediaArrowLeft }} onClick={goToPreviousMedia} aria-label="Xem media trước">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <button
+                          type="button"
+                          style={{
+                            ...styles.mediaArrowButton,
+                            ...styles.mediaArrowLeft,
+                          }}
+                          onClick={goToPreviousMedia}
+                          aria-label="Xem media trước"
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d="M15 18L9 12L15 6"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
                           </svg>
                         </button>
-                        <button type="button" style={{ ...styles.mediaArrowButton, ...styles.mediaArrowRight }} onClick={goToNextMedia} aria-label="Xem media tiếp theo">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <button
+                          type="button"
+                          style={{
+                            ...styles.mediaArrowButton,
+                            ...styles.mediaArrowRight,
+                          }}
+                          onClick={goToNextMedia}
+                          aria-label="Xem media tiếp theo"
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d="M9 6L15 12L9 18"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
                           </svg>
                         </button>
                       </>
@@ -1044,7 +1244,9 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                           key={`indicator-${index}`}
                           style={{
                             ...styles.mediaDot,
-                            ...(index === activeMediaIndex ? styles.mediaDotActive : {}),
+                            ...(index === activeMediaIndex
+                              ? styles.mediaDotActive
+                              : {}),
                           }}
                           onClick={() => setActiveMediaIndex(index)}
                           aria-label={`Xem media ${index + 1}`}
@@ -1056,8 +1258,12 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                 </div>
               ) : (
                 <div style={styles.textPostBlock}>
-                  <p style={styles.textPostTitle}>{post.title || "Bài viết cộng đồng"}</p>
-                  <p style={styles.textPostContent}>{post.content || "Không có nội dung"}</p>
+                  <p style={styles.textPostTitle}>
+                    {post.title || "Bài viết cộng đồng"}
+                  </p>
+                  <p style={styles.textPostContent}>
+                    {post.content || "Không có nội dung"}
+                  </p>
                 </div>
               )}
 
@@ -1065,28 +1271,66 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                 <div style={styles.caption}>
                   <span style={styles.boldText}>{post.title}</span>
                 </div>
-                <div style={styles.caption}>{post.content || "Không có nội dung"}</div>
+                <div style={styles.caption}>
+                  {post.content || "Không có nội dung"}
+                </div>
                 <div style={styles.dateText}>{formatDate(post.created_at)}</div>
               </div>
 
               <div style={styles.actionRow}>
                 <div style={styles.actionGroupLeft}>
-                  <button type="button" style={styles.actionButton} onClick={() => void handleToggleLike()} aria-label="Thích bài đăng">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2">
+                  <button
+                    type="button"
+                    style={styles.actionButton}
+                    onClick={() => void handleToggleLike()}
+                    aria-label="Thích bài đăng"
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#000000"
+                      strokeWidth="2"
+                    >
                       <path
                         d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
                         style={liked ? styles.likedIcon : undefined}
                       />
                     </svg>
                   </button>
-                  <button type="button" style={styles.actionButton} onClick={handleShare} aria-label="Chia sẻ bài đăng">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2">
+                  <button
+                    type="button"
+                    style={styles.actionButton}
+                    onClick={handleShare}
+                    aria-label="Chia sẻ bài đăng"
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#000000"
+                      strokeWidth="2"
+                    >
                       <line x1="22" y1="2" x2="11" y2="13"></line>
                       <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
                   </button>
-                  <button type="button" style={styles.actionButton} onClick={() => void handleToggleBookmark()} aria-label="Lưu bài đăng">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill={bookmarked ? "#11A94D" : "none"} stroke="#000000" strokeWidth="2">
+                  <button
+                    type="button"
+                    style={styles.actionButton}
+                    onClick={() => void handleToggleBookmark()}
+                    aria-label="Lưu bài đăng"
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={bookmarked ? "#11A94D" : "none"}
+                      stroke="#000000"
+                      strokeWidth="2"
+                    >
                       <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                     </svg>
                   </button>
@@ -1097,7 +1341,17 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
               </div>
 
               <div style={styles.commentsSection}>
-                {interactionError ? <p style={{ ...styles.helperText, color: "#B91C1C", fontWeight: 700 }}>{interactionError}</p> : null}
+                {interactionError ? (
+                  <p
+                    style={{
+                      ...styles.helperText,
+                      color: "#B91C1C",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {interactionError}
+                  </p>
+                ) : null}
 
                 {visibleComments.map((comment) => {
                   const isOwnComment = comment.user_id === currentUserId;
@@ -1106,31 +1360,65 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                   const profileAvatar = getProfileAvatar(comment.user_id);
 
                   return (
-                    <div key={comment.interaction_id} style={styles.commentCard}>
+                    <div
+                      key={comment.interaction_id}
+                      style={styles.commentCard}
+                    >
                       <div style={styles.commentHeader}>
                         <div style={styles.commentAuthorWrap}>
                           <div style={styles.commentAvatar}>
                             {profileAvatar ? (
-                              <img src={profileAvatar} alt={profileName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              <img
+                                src={profileAvatar}
+                                alt={profileName}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
                             ) : (
-                              <span style={{ fontSize: "10px", fontWeight: 700, color: "#6B7280" }}>{getInitials(profileName)}</span>
+                              <span
+                                style={{
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                  color: "#6B7280",
+                                }}
+                              >
+                                {getInitials(profileName)}
+                              </span>
                             )}
                           </div>
                           <div style={styles.commentMeta}>
-                            <span style={styles.commentAuthorName}>{profileName}</span>
-                            <span style={styles.commentTime}>{getCommentDate(comment.created_at)}</span>
-                            {comment.status === "edited" ? <span style={styles.commentTextEdited}>(đã chỉnh sửa)</span> : null}
+                            <span style={styles.commentAuthorName}>
+                              {profileName}
+                            </span>
+                            <span style={styles.commentTime}>
+                              {getCommentDate(comment.created_at)}
+                            </span>
+                            {comment.status === "edited" ? (
+                              <span style={styles.commentTextEdited}>
+                                (đã chỉnh sửa)
+                              </span>
+                            ) : null}
                           </div>
                         </div>
 
                         {isOwnComment ? (
                           <div style={styles.commentActions}>
-                            <button type="button" style={styles.commentActionButton} onClick={() => handleStartEditComment(comment)}>
+                            <button
+                              type="button"
+                              style={styles.commentActionButton}
+                              onClick={() => handleStartEditComment(comment)}
+                            >
                               Sửa
                             </button>
                             <button
                               type="button"
-                              style={{ ...styles.commentActionButton, ...styles.commentActionDanger }}
+                              style={{
+                                ...styles.commentActionButton,
+                                ...styles.commentActionDanger,
+                              }}
                               onClick={() => void handleDeleteComment(comment)}
                             >
                               Xóa
@@ -1143,17 +1431,29 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                         <div style={styles.commentEditor}>
                           <textarea
                             value={editingCommentValue}
-                            onChange={(event) => setEditingCommentValue(event.target.value)}
+                            onChange={(event) =>
+                              setEditingCommentValue(event.target.value)
+                            }
                             rows={3}
                             style={styles.commentInput}
                           />
                           <div style={styles.commentInputRow}>
-                            <button type="button" style={styles.sendBtn} onClick={() => void handleSaveCommentEdit(comment)}>
+                            <button
+                              type="button"
+                              style={styles.sendBtn}
+                              onClick={() =>
+                                void handleSaveCommentEdit(comment)
+                              }
+                            >
                               Lưu
                             </button>
                             <button
                               type="button"
-                              style={{ ...styles.sendBtn, background: "#E5E7EB", color: "#111827" }}
+                              style={{
+                                ...styles.sendBtn,
+                                background: "#E5E7EB",
+                                color: "#111827",
+                              }}
                               onClick={() => {
                                 setEditingCommentId(null);
                                 setEditingCommentValue("");
@@ -1164,7 +1464,9 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                           </div>
                         </div>
                       ) : (
-                        <p style={styles.commentTextBody}>{comment.comment ?? ""}</p>
+                        <p style={styles.commentTextBody}>
+                          {comment.comment ?? ""}
+                        </p>
                       )}
                     </div>
                   );
@@ -1174,11 +1476,20 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
                   <input
                     value={newComment}
                     onChange={(event) => setNewComment(event.target.value)}
-                    placeholder={currentUserId ? "Viết bình luận..." : "Đăng nhập để bình luận"}
+                    placeholder={
+                      currentUserId
+                        ? "Viết bình luận..."
+                        : "Đăng nhập để bình luận"
+                    }
                     style={styles.commentInput}
                     disabled={!currentUserId || interactionBusy}
                   />
-                  <button type="button" style={styles.sendBtn} onClick={() => void handleAddComment()} disabled={!currentUserId || interactionBusy}>
+                  <button
+                    type="button"
+                    style={styles.sendBtn}
+                    onClick={() => void handleAddComment()}
+                    disabled={!currentUserId || interactionBusy}
+                  >
                     Gửi
                   </button>
                 </div>
@@ -1186,7 +1497,9 @@ export default function GreenCreatorDetails({ postId }: GreenCreatorDetailsProps
             </article>
           ) : null}
 
-          {!loading && !error && !post ? <p style={styles.helperText}>Không tìm thấy bài đăng.</p> : null}
+          {!loading && !error && !post ? (
+            <p style={styles.helperText}>Không tìm thấy bài đăng.</p>
+          ) : null}
         </main>
 
         <NavigationBar />

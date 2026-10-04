@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { roleManagementFacade } from "../../../../backend/modules/roles/facades/role-management.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const GET = withSentry(async () => {
   logger.info("List roles attempt");

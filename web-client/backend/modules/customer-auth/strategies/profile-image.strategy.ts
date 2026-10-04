@@ -13,7 +13,9 @@ class TimestampProfileImageStorageStrategy implements ProfileImageStorageStrateg
     }
 
     const normalizedName = originalName.trim() || "profile-image.jpg";
-    const ext = normalizedName.includes(".") ? normalizedName.split(".").pop() ?? "jpg" : "jpg";
+    const ext = normalizedName.includes(".")
+      ? (normalizedName.split(".").pop() ?? "jpg")
+      : "jpg";
     const randomPart = Math.random().toString(16).slice(2);
     const timestamp = Date.now();
 

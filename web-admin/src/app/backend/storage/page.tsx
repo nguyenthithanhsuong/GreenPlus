@@ -57,15 +57,23 @@ export default function BackendStoragePage() {
         }),
       });
 
-      const signedData = (await signedResponse.json()) as SignedUploadResponse | { error: string };
+      const signedData = (await signedResponse.json()) as
+        SignedUploadResponse | { error: string };
       if (!signedResponse.ok) {
-        const message = "error" in signedData ? signedData.error : "Cannot create signed upload URL";
+        const message =
+          "error" in signedData
+            ? signedData.error
+            : "Cannot create signed upload URL";
         throw new Error(message);
       }
 
       const { data, error: uploadError } = await supabase.storage
         .from(bucket.trim())
-        .uploadToSignedUrl(generatedPath, (signedData as SignedUploadResponse).token, file);
+        .uploadToSignedUrl(
+          generatedPath,
+          (signedData as SignedUploadResponse).token,
+          file,
+        );
 
       if (uploadError) {
         throw new Error(uploadError.message);
@@ -78,7 +86,9 @@ export default function BackendStoragePage() {
         storageResponse: data,
       });
     } catch (uploadErr) {
-      setError(uploadErr instanceof Error ? uploadErr.message : "Upload failed");
+      setError(
+        uploadErr instanceof Error ? uploadErr.message : "Upload failed",
+      );
     } finally {
       setUploading(false);
     }
@@ -90,7 +100,8 @@ export default function BackendStoragePage() {
         <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <h1 className="text-2xl font-semibold">Storage Signed Upload Test</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Requests a signed upload token from server API and uploads file with browser client.
+            Requests a signed upload token from server API and uploads file with
+            browser client.
           </p>
         </section>
 
@@ -128,7 +139,8 @@ export default function BackendStoragePage() {
 
           {generatedPath && (
             <p className="text-xs text-slate-600">
-              Đường dẫn tải lên: <span className="font-mono">{generatedPath}</span>
+              Đường dẫn tải lên:{" "}
+              <span className="font-mono">{generatedPath}</span>
             </p>
           )}
 
@@ -143,7 +155,11 @@ export default function BackendStoragePage() {
           </button>
 
           {error && <p className="text-sm text-rose-700">{error}</p>}
-          {result && <pre className="overflow-x-auto rounded bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify(result, null, 2)}</pre>}
+          {result && (
+            <pre className="overflow-x-auto rounded bg-slate-950 p-3 text-xs text-slate-100">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          )}
         </section>
       </div>
     </main>

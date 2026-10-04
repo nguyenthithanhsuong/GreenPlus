@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { List, ScanLine, UserCircle } from "lucide-react";
-import { SCREEN_MAX_WIDTH_PX, SCREEN_SIDE_PADDING_PX } from "../shared/screen.styles";
+import {
+  SCREEN_MAX_WIDTH_PX,
+  SCREEN_SIDE_PADDING_PX,
+} from "../shared/screen.styles";
 
 const activeColor = "#15A651";
 
@@ -44,7 +47,10 @@ export default function NavigationBar() {
       <div className="flex w-full items-end justify-between pt-2">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const isActive =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(item.href);
 
           if (item.href === "/scan") {
             return (
@@ -58,7 +64,9 @@ export default function NavigationBar() {
                 <div className="w-14 h-14 bg-[#2A303C] rounded-full flex items-center justify-center text-white border-4 border-[#F8F9FA] shadow-lg group-active:scale-95 transition-transform">
                   <Icon className="w-6 h-6" />
                 </div>
-                <span className="text-[11px] font-semibold text-gray-500 mt-1">{item.label}</span>
+                <span className="text-[11px] font-semibold text-gray-500 mt-1">
+                  {item.label}
+                </span>
               </button>
             );
           }

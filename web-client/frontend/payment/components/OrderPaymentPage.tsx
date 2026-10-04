@@ -12,7 +12,13 @@ import {
   SCREEN_SIDE_PADDING_PX,
 } from "../../shared/screen.styles";
 
-type OrderStatus = "pending" | "confirmed" | "preparing" | "delivering" | "completed" | "cancelled";
+type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "delivering"
+  | "completed"
+  | "cancelled";
 type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "unknown";
 type PaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer" | "unknown";
 
@@ -160,7 +166,8 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: "24px",
     fontWeight: 700,
     cursor: "pointer",
-    boxShadow: "0px 10px 15px -3px rgba(16, 185, 129, 0.3), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)",
+    boxShadow:
+      "0px 10px 15px -3px rgba(16, 185, 129, 0.3), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)",
   },
 };
 
@@ -221,13 +228,20 @@ export default function OrderPaymentPage() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}?userId=${encodeURIComponent(user.user_id)}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `/api/orders/${encodeURIComponent(orderId)}?userId=${encodeURIComponent(user.user_id)}`,
+          {
+            signal: controller.signal,
+          },
+        );
 
-        const data = (await response.json()) as OrderDetailResponse | { error?: string };
+        const data = (await response.json()) as
+          OrderDetailResponse | { error?: string };
         if (!response.ok) {
-          const msg = typeof data === "object" && data && "error" in data ? String(data.error ?? "") : "";
+          const msg =
+            typeof data === "object" && data && "error" in data
+              ? String(data.error ?? "")
+              : "";
           throw new Error(msg || "Không thể tải thông tin thanh toán.");
         }
 
@@ -238,7 +252,11 @@ export default function OrderPaymentPage() {
         }
 
         setDetail(null);
-        setError(requestError instanceof Error ? requestError.message : "Không thể tải thông tin thanh toán.");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải thông tin thanh toán.",
+        );
       } finally {
         setLoading(false);
       }
@@ -256,7 +274,11 @@ export default function OrderPaymentPage() {
       return false;
     }
 
-    return detail.order_status !== "cancelled" && detail.payment_status !== "paid" && detail.payment_status !== "cancelled";
+    return (
+      detail.order_status !== "cancelled" &&
+      detail.payment_status !== "paid" &&
+      detail.payment_status !== "cancelled"
+    );
   }, [detail]);
 
   const paymentStatusLabel = useMemo(() => {
@@ -288,15 +310,18 @@ export default function OrderPaymentPage() {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(detail.order_id)}/confirm-payment`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(detail.order_id)}/confirm-payment`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.user_id,
+          }),
         },
-        body: JSON.stringify({
-          userId: user.user_id,
-        }),
-      });
+      );
 
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -306,7 +331,11 @@ export default function OrderPaymentPage() {
       setMessage("Thanh toán thành công. Đang quay lại chi tiết đơn hàng...");
       router.replace(`/orders/${encodeURIComponent(detail.order_id)}`);
     } catch (requestError) {
-      setMessage(requestError instanceof Error ? requestError.message : "Không thể thanh toán đơn hàng.");
+      setMessage(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể thanh toán đơn hàng.",
+      );
     } finally {
       setPaying(false);
     }
@@ -316,28 +345,52 @@ export default function OrderPaymentPage() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.header}>
-          <Link href={detail ? `/orders/${encodeURIComponent(detail.order_id)}` : "/orders"} style={styles.backLink} aria-label="Quay lại chi tiết đơn hàng">
+          <Link
+            href={
+              detail
+                ? `/orders/${encodeURIComponent(detail.order_id)}`
+                : "/orders"
+            }
+            style={styles.backLink}
+            aria-label="Quay lại chi tiết đơn hàng"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1F2937" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1F2937"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.headerTitle}>Thanh toán đơn hàng</h1>
         </header>
 
         <main style={styles.body}>
-          {loading && <p style={styles.infoText}>Đang tải thông tin đơn hàng...</p>}
+          {loading && (
+            <p style={styles.infoText}>Đang tải thông tin đơn hàng...</p>
+          )}
           {!loading && error && <p style={styles.errorText}>{error}</p>}
 
           {!loading && !error && detail && (
             <section style={styles.card}>
-              <p style={styles.title}>Đơn #{detail.order_id.slice(0, 8).toUpperCase()}</p>
+              <p style={styles.title}>
+                Đơn #{detail.order_id.slice(0, 8).toUpperCase()}
+              </p>
               <p style={styles.row}>
                 <span>Phương thức</span>
                 <span>{getMethodLabel(detail.payment_method)}</span>
               </p>
               <p style={styles.row}>
                 <span>Trạng thái</span>
-                <span style={detail?.payment_status === "paid" ? styles.statusPaid : styles.statusPending}>
+                <span
+                  style={
+                    detail?.payment_status === "paid"
+                      ? styles.statusPaid
+                      : styles.statusPending
+                  }
+                >
                   {paymentStatusLabel}
                 </span>
               </p>
@@ -353,8 +406,19 @@ export default function OrderPaymentPage() {
 
         {!loading && detail && (
           <div style={styles.bottomBar}>
-            <button type="button" style={styles.actionBtn} onClick={() => void handlePay()} disabled={!canPay || paying}>
-              {paying ? "Đang xử lý..." : canPay ? "Thanh toán ngay" : detail.payment_status === "paid" ? "Đã thanh toán" : "Không thể thanh toán"}
+            <button
+              type="button"
+              style={styles.actionBtn}
+              onClick={() => void handlePay()}
+              disabled={!canPay || paying}
+            >
+              {paying
+                ? "Đang xử lý..."
+                : canPay
+                  ? "Thanh toán ngay"
+                  : detail.payment_status === "paid"
+                    ? "Đã thanh toán"
+                    : "Không thể thanh toán"}
             </button>
           </div>
         )}

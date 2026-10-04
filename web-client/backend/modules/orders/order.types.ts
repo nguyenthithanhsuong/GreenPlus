@@ -6,17 +6,25 @@ export type OrderStatus =
   | "completed"
   | "cancelled";
 
-export type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "unknown";
+export type PaymentStatus =
+  "pending" | "paid" | "failed" | "cancelled" | "unknown";
 
 export type PaymentMethod = "cod" | "momo" | "vnpay" | "bank_transfer";
 
-export type ShippingStatus = "assigned" | "picked_up" | "delivering" | "delivered" | "unknown";
+export type ShippingStatus =
+  "assigned" | "picked_up" | "delivering" | "delivered" | "unknown";
 
 export type OrderSummary = {
   order_id: string;
   order_date: string;
   status: OrderStatus;
-  status_label: "Pending" | "Confirmed" | "Processing" | "Shipping" | "Delivered" | "Cancelled";
+  status_label:
+    | "Pending"
+    | "Confirmed"
+    | "Processing"
+    | "Shipping"
+    | "Delivered"
+    | "Cancelled";
   total_amount: number;
   delivery_address: string;
   delivery_fee: number;
@@ -37,7 +45,6 @@ export type PaymentHistoryItem = {
   payment_date: string | null;
 };
 
-
 export type OrderItemDetail = {
   order_item_id: string;
   product_id: string;
@@ -54,7 +61,13 @@ export type OrderDetail = {
   user_id: string;
   order_date: string;
   order_status: OrderStatus;
-  order_status_label: "Pending" | "Confirmed" | "Processing" | "Shipping" | "Delivered" | "Cancelled";
+  order_status_label:
+    | "Pending"
+    | "Confirmed"
+    | "Processing"
+    | "Shipping"
+    | "Delivered"
+    | "Cancelled";
   shipping_status: ShippingStatus;
   payment_status: PaymentStatus;
   payment_method: PaymentMethod | "unknown";

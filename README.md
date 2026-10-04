@@ -1,6 +1,6 @@
 # GreenPlus
 
-A Full-Stack Smart E-Grocery Platform for Organic Produce, with two web applications: Web Admin and Web Client. Frontend built with Next.js, Tailwind CSS, Zustand, and TanStack Query. Backend powered by Supabase (PostgreSQL · Auth · Realtime · Storage). DevOps via Docker, Nginx, and GitHub Actions · Monitoring via Sentry + BetterStack.
+A Full-Stack Smart E-Grocery Platform for Organic Produce, with three web applications: Web Admin, Web Client, and Web Shipper. Frontend built with Next.js, Tailwind CSS, Zustand, and TanStack Query. Backend powered by Supabase (PostgreSQL · Auth · Realtime · Storage). DevOps via Docker, Nginx, and GitHub Actions · Monitoring via Sentry + BetterStack.
 
 [![CI](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/ci.yml/badge.svg)](https://github.com/nguyenthithanhsuong/GreenPlus/actions/workflows/ci.yml)
 
@@ -10,29 +10,30 @@ A Full-Stack Smart E-Grocery Platform for Organic Produce, with two web applicat
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | Next.js 15, React 19, TypeScript |
-| **Styling** | Tailwind CSS |
-| **State** | Zustand, TanStack Query v5 |
-| **API** | Next.js App Router, REST |
-| **Authentication** | Supabase Auth (JWT) |
-| **Database** | Supabase PostgreSQL + RLS |
-| **Realtime** | Supabase Realtime (postgres_changes) |
-| **Storage** | Supabase Storage (signed uploads) |
-| **Gateway** | Nginx with path-based routing |
-| **Containerization** | Docker, Docker Compose |
-| **Monorepo** | Turborepo |
-| **CI/CD** | GitHub Actions |
-| **Error Tracking** | Sentry |
-| **Observability** | Sentry, Better Stack, GitHub Actions |
+| Layer                | Technology                           |
+| -------------------- | ------------------------------------ |
+| **Framework**        | Next.js 16, React 19, TypeScript     |
+| **Styling**          | Tailwind CSS                         |
+| **State**            | Zustand, TanStack Query v5           |
+| **API**              | Next.js App Router, REST             |
+| **Authentication**   | Supabase Auth (JWT)                  |
+| **Database**         | Supabase PostgreSQL + RLS            |
+| **Realtime**         | Supabase Realtime (postgres_changes) |
+| **Storage**          | Supabase Storage (signed uploads)    |
+| **Gateway**          | Nginx with path-based routing        |
+| **Containerization** | Docker, Docker Compose               |
+| **Monorepo**         | Turborepo                            |
+| **CI/CD**            | GitHub Actions                       |
+| **Error Tracking**   | Sentry                               |
+| **Observability**    | Sentry, Better Stack, GitHub Actions |
 
-### 
-npx supabase migration new <ten_thay_doi>   # tạo file SQL rỗng, bạn viết SQL vào
-npx supabase db reset                       # test lại trên local
-npx supabase db push --dry-run              # xem sẽ áp dụng gì lên cloud
-npx supabase db push                        # áp dụng thật
-npx supabase migration list                 # đối chiếu local và remote
+###
+
+npx supabase migration new <ten_thay_doi> # tạo file SQL rỗng, bạn viết SQL vào
+npx supabase db reset # test lại trên local
+npx supabase db push --dry-run # xem sẽ áp dụng gì lên cloud
+npx supabase db push # áp dụng thật
+npx supabase migration list # đối chiếu local và remote
 
 ### Local Development
 
@@ -46,18 +47,21 @@ npm run dev
 # Or start individual apps
 npm run dev:client   # Port 3000
 npm run dev:admin    # Port 3001
+npm run dev:shipper  # Port 3002
 
 # Check code quality
 npm run lint        # ESLint
 npm run typecheck   # TypeScript
 npm run build       # Full production build
 ```
+
 ## Project Structure
 
 ```
 GreenPlus/
 ├── web-client/          # Customer-facing app (Port 3000)
 ├── web-admin/           # Admin dashboard (Port 3001)
+├── web-shipper/         # Shipper app (Port 3002)
 ├── packages/supabase-shared/ # Shared utilities
 ├── nginx/               # Gateway reverse proxy
 ├── .github/workflows/   # CI/CD pipelines
@@ -90,6 +94,7 @@ SUPABASE_PASS=                   # DB direct connection / migrations
 AUTH_HANDOFF_SECRET=             # Cross-app auth between web-client and web-admin
 NEXT_PUBLIC_WEB_CLIENT_URL=http://localhost:3000
 NEXT_PUBLIC_WEB_ADMIN_URL=http://localhost:3001
+NEXT_PUBLIC_WEB_SHIPPER_URL=http://localhost:3002
 
 # Optional
 SENTRY_DSN_ADMIN=
@@ -123,11 +128,11 @@ GET  /*                      → web-client frontend (default)
 
 Three GitHub Actions workflows:
 
-| Workflow | Trigger | What It Does |
-|----------|---------|------------|
-| `ci.yml` | Push to main/develop, PRs | Lint → TypeCheck → Build → Docker → Sentry |
-| `deploy-staging.yml` | Push to develop | Build images → Deploy to staging |
-| `deploy-prod.yml` | Manual or main push | Build images → Deploy to production |
+| Workflow             | Trigger                   | What It Does                               |
+| -------------------- | ------------------------- | ------------------------------------------ |
+| `ci.yml`             | Push to main/develop, PRs | Lint → TypeCheck → Build → Docker → Sentry |
+| `deploy-staging.yml` | Push to develop           | Build images → Deploy to staging           |
+| `deploy-prod.yml`    | Manual or main push       | Build images → Deploy to production        |
 
 Configure GitHub Secrets: Settings → Secrets → Add repository secrets
 
@@ -161,12 +166,14 @@ curl http://localhost:8080/admin/api/health # web-admin
 ## Build Output
 
 ### web-client
+
 - 22 routes (frontend + APIs)
 - Supabase Auth integration
 - React Query data fetching
 - Zustand state management
 
 ### web-admin
+
 - 12 routes (frontend + APIs)
 - Service-role protected APIs
 - Realtime subscriptions
@@ -179,6 +186,7 @@ curl http://localhost:8080/admin/api/health # web-admin
 npm run dev                # All apps
 npm run dev:client         # web-client only
 npm run dev:admin          # web-admin only
+npm run dev:shipper        # web-shipper only
 
 # Validation
 npm run lint               # ESLint all packages
@@ -195,11 +203,13 @@ docker-compose down        # Stop services
 ## Deployment
 
 ### Local / Development
+
 ```bash
 npm run dev
 ```
 
 ### Staging (Docker)
+
 ```bash
 docker-compose build
 docker-compose up -d
@@ -209,6 +219,7 @@ git push origin develop
 ```
 
 ### Production
+
 ```bash
 # Push to main branch to trigger GitHub Actions
 git push origin main
@@ -239,6 +250,7 @@ docker-compose up -d
 ## Troubleshooting
 
 ### Apps not starting
+
 ```bash
 npm install
 npm run build
@@ -246,12 +258,14 @@ docker-compose build
 ```
 
 ### Gateway routing issues
+
 ```bash
 docker-compose logs nginx
 curl docker-compose.exec nginx curl http://web-client:3000/health
 ```
 
 ### TypeScript errors
+
 ```bash
 npm run typecheck
 # Fix errors or
@@ -259,6 +273,7 @@ npm run typecheck -- --pretty
 ```
 
 ### Docker build fails
+
 ```bash
 docker system prune
 docker-compose build --no-cache

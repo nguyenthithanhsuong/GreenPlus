@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
 import { greenCreatorContentFacade } from "../../../../../backend/modules/greencreators/facade/greencreator-content.facade";
 import { AppError } from "../../../../../backend/core/errors";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 function readAccessToken(request: Request): string {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -39,10 +39,7 @@ export const POST = withSentry(async (request) => {
   if (!accessToken) {
     logger.warn("Upload attachment failed - unauthorized");
 
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const authService = new AuthService();
@@ -53,9 +50,7 @@ export const POST = withSentry(async (request) => {
   const formData = await request.formData();
 
   const postIdRaw = formData.get("postId");
-  const postId = typeof postIdRaw === "string"
-    ? postIdRaw.trim()
-    : "";
+  const postId = typeof postIdRaw === "string" ? postIdRaw.trim() : "";
 
   const filesFromList = formData
     .getAll("files")
@@ -78,10 +73,7 @@ export const POST = withSentry(async (request) => {
   if (!postId) {
     logger.error("Upload attachment failed - missing postId");
 
-    return NextResponse.json(
-      { error: "postId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "postId is required" }, { status: 400 });
   }
 
   if (!files.length) {
@@ -89,10 +81,7 @@ export const POST = withSentry(async (request) => {
       postId,
     });
 
-    return NextResponse.json(
-      { error: "files are required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "files are required" }, { status: 400 });
   }
 
   const start = Date.now();

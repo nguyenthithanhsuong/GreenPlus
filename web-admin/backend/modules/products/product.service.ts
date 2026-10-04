@@ -1,1 +1,4 @@
-export { ProductManagementFacade as ProductService, productManagementFacade } from "./facades/product-management.facade";
+export {
+  ProductManagementFacade as ProductService,
+  productManagementFacade,
+} from "./facades/product-management.facade";

@@ -1,6 +1,9 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../../backend/core/errors";
+import {
+  AppError,
+  toErrorMessage,
+} from "../../../../../../backend/core/errors";
 import { traceabilityFacade } from "../../../../../../backend/modules/traceability/facades/traceability.facade";
 import { logger } from "@/lib/logger";
 
@@ -37,7 +40,10 @@ export const GET = withSentry(async (_: Request, context: Params) => {
         batchId: normalizedBatchId,
         message: error.message,
       });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;
