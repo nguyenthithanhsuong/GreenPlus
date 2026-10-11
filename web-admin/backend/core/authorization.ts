@@ -238,4 +238,46 @@ export async function requirePermissionForUser(
   if (!ok) throw new AppError("Forbidden", 403);
 }
 
+export async function requireStorePermissionForUser(
+  userId: string,
+  storeId: string,
+  permissionKey: string,
+) {
+  const supabase = createServiceRoleSupabaseClient();
+  const { data: membership, error } = await supabase
+    .from("store_members")
+    .select("role_id")
+    .eq("user_id", userId)
+    .eq("store_id", storeId)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (error) {
+    throw new AppError("Failed to read store membership: " + error.message);
+  }
+  if (!membership) {
+    const { data: platformAdmin, error: adminError } = await supabase
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (adminError) {
+      throw new AppError(
+        "Failed to read platform admin membership: " + adminError.message,
+      );
+    }
+    if (!platformAdmin) {
+      throw new AppError("Forbidden", 403);
+    }
+    return;
+  }
+
+  const roleRow = await getRoleRow(String(membership.role_id));
+  const permissions = await getPermissionsForRole(roleRow);
+  if (!permissions.includes(permissionKey)) {
+    throw new AppError("Forbidden", 403);
+  }
+}
+
 export { PERMISSION_KEYS };

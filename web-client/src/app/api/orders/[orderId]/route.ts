@@ -1,12 +1,13 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
+import { AppError } from "../../../../../backend/core/errors";
 import { orderFacade } from "../../../../../backend/modules/orders/facades/order.facade";
 import {
   assertCustomerId,
   requireCustomerIdentity,
 } from "../../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../../backend/core/store-context";
 
 type Context = {
   params: Promise<{
@@ -22,6 +23,7 @@ type UpdateOrderBody = {
   deliveryFee?: number;
   delivery_fee?: number;
   note?: string;
+  storeId?: string;
 };
 
 export const GET = withSentry(async (request: Request, context: Context) => {
@@ -31,6 +33,10 @@ export const GET = withSentry(async (request: Request, context: Context) => {
 
   try {
     const { searchParams } = new URL(request.url);
+    const store = await resolveStoreContext(
+      searchParams.get("storeId"),
+      identity,
+    );
 
     userId = assertCustomerId(
       searchParams.get("userId") ?? searchParams.get("user_id") ?? undefined,
@@ -56,7 +62,11 @@ export const GET = withSentry(async (request: Request, context: Context) => {
 
     const start = Date.now();
 
-    const detail = await orderFacade.getOrderDetail(userId, orderId);
+    const detail = await orderFacade.getOrderDetail(
+      userId,
+      store.storeId,
+      orderId,
+    );
 
     logger.info("Get order detail success", {
       userId,
@@ -91,6 +101,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
 
   try {
     const body = (await request.json()) as UpdateOrderBody;
+    const store = await resolveStoreContext(body.storeId, identity);
 
     userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
     const deliveryAddress =
@@ -108,6 +119,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
     if (!userId) {
       logger.error("Update order failed - missing userId", {
         userId,
+        storeId: store.storeId,
         orderId,
       });
 
@@ -121,6 +133,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
 
     const result = await orderFacade.updateOrder({
       userId,
+      storeId: store.storeId,
       orderId,
       deliveryAddress,
       deliveryFee:

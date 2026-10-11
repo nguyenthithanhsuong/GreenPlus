@@ -1,12 +1,12 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError } from "../../../../backend/core/errors";
 import { cartFacade } from "../../../../backend/modules/cart/facades/cart.facade";
 import {
   assertCustomerId,
   requireCustomerIdentity,
 } from "../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../backend/core/store-context";
 
 type CartMutationBody = {
   userId?: string;
@@ -14,11 +14,16 @@ type CartMutationBody = {
   productId?: string;
   product_id?: string;
   quantity?: number;
+  storeId?: string;
 };
 
 export const GET = withSentry(async (request: Request) => {
   const identity = requireCustomerIdentity(request);
   const { searchParams } = new URL(request.url);
+  const store = await resolveStoreContext(
+    searchParams.get("storeId"),
+    identity,
+  );
 
   const userId = assertCustomerId(
     searchParams.get("userId") ?? searchParams.get("user_id") ?? undefined,
@@ -35,7 +40,7 @@ export const GET = withSentry(async (request: Request) => {
 
   const start = Date.now();
 
-  const cart = await cartFacade.getCart(userId);
+  const cart = await cartFacade.getCart(userId, store.storeId);
 
   logger.info("Get cart success", {
     userId,
@@ -48,6 +53,7 @@ export const GET = withSentry(async (request: Request) => {
 export const POST = withSentry(async (request: Request) => {
   const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as CartMutationBody;
+  const store = await resolveStoreContext(body.storeId, identity);
 
   const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
@@ -78,7 +84,12 @@ export const POST = withSentry(async (request: Request) => {
 
   const start = Date.now();
 
-  const cart = await cartFacade.addItem(userId, productId, quantity);
+  const cart = await cartFacade.addItem(
+    userId,
+    productId,
+    quantity,
+    store.storeId,
+  );
 
   logger.info("Add cart item success", {
     userId,
@@ -93,6 +104,7 @@ export const POST = withSentry(async (request: Request) => {
 export const PUT = withSentry(async (request: Request) => {
   const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as CartMutationBody;
+  const store = await resolveStoreContext(body.storeId, identity);
 
   const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
@@ -123,7 +135,12 @@ export const PUT = withSentry(async (request: Request) => {
 
   const start = Date.now();
 
-  const cart = await cartFacade.updateItemQuantity(userId, productId, quantity);
+  const cart = await cartFacade.updateItemQuantity(
+    userId,
+    productId,
+    quantity,
+    store.storeId,
+  );
 
   logger.info("Update cart item success", {
     userId,
@@ -138,6 +155,7 @@ export const PUT = withSentry(async (request: Request) => {
 export const DELETE = withSentry(async (request: Request) => {
   const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as CartMutationBody;
+  const store = await resolveStoreContext(body.storeId, identity);
 
   const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
@@ -162,7 +180,7 @@ export const DELETE = withSentry(async (request: Request) => {
 
   const start = Date.now();
 
-  const cart = await cartFacade.removeItem(userId, productId);
+  const cart = await cartFacade.removeItem(userId, productId, store.storeId);
 
   logger.info("Remove cart item success", {
     userId,

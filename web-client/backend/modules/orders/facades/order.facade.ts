@@ -25,16 +25,26 @@ export class OrderFacade {
     this.notifier.attach(new OrderNotificationObserver());
   }
 
-  async trackMyOrders(userId: string): Promise<OrderSummary[]> {
-    return this.service.listMyOrders(userId);
+  async trackMyOrders(
+    userId: string,
+    storeId: string,
+  ): Promise<OrderSummary[]> {
+    return this.service.listMyOrders(userId, storeId);
   }
 
-  async trackMyPaymentHistory(userId: string): Promise<PaymentHistoryItem[]> {
-    return this.service.listMyPaymentHistory(userId);
+  async trackMyPaymentHistory(
+    userId: string,
+    storeId: string,
+  ): Promise<PaymentHistoryItem[]> {
+    return this.service.listMyPaymentHistory(userId, storeId);
   }
 
-  async getOrderDetail(userId: string, orderId: string): Promise<OrderDetail> {
-    return this.service.getOrderDetail(userId, orderId);
+  async getOrderDetail(
+    userId: string,
+    storeId: string,
+    orderId: string,
+  ): Promise<OrderDetail> {
+    return this.service.getOrderDetail(userId, storeId, orderId);
   }
 
   async createOrderFromCart(

@@ -6,6 +6,7 @@ import {
   requireCustomerIdentity,
 } from "../../../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../../../backend/core/store-context";
 
 type Context = {
   params: Promise<{
@@ -16,6 +17,7 @@ type Context = {
 type ConfirmPaymentBody = {
   userId?: string;
   user_id?: string;
+  storeId?: string;
 };
 
 export const PUT = withSentry(async (request: Request, context: Context) => {
@@ -23,6 +25,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
   const { orderId } = await context.params;
 
   const body = (await request.json()) as ConfirmPaymentBody;
+  const store = await resolveStoreContext(body.storeId, identity);
 
   const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
@@ -31,6 +34,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
   if (!userId) {
     logger.error("Confirm payment failed - missing userId", {
       userId,
+      storeId: store.storeId,
       orderId,
     });
 
@@ -41,6 +45,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
 
   const result = await orderFacade.confirmPayment({
     userId,
+    storeId: store.storeId,
     orderId,
   });
 

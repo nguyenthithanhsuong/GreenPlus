@@ -5,6 +5,7 @@ type RelObj = Record<string, unknown> | Record<string, unknown>[] | null;
 export type CartRow = {
   cart_id: string;
   user_id: string;
+  store_id: string;
 };
 
 export type CartItemWithProductRow = {
@@ -22,11 +23,15 @@ export type CartItemRow = {
 };
 
 export class CartRepository {
-  async findCartByUserId(userId: string): Promise<CartRow | null> {
+  async findCartByUserId(
+    userId: string,
+    storeId: string,
+  ): Promise<CartRow | null> {
     const { data, error } = await supabaseServer
       .from("carts")
-      .select("cart_id,user_id")
+      .select("cart_id,user_id,store_id")
       .eq("user_id", userId)
+      .eq("store_id", storeId)
       .maybeSingle();
 
     if (error) {
@@ -36,11 +41,11 @@ export class CartRepository {
     return (data as CartRow | null) ?? null;
   }
 
-  async createCart(userId: string): Promise<CartRow> {
+  async createCart(userId: string, storeId: string): Promise<CartRow> {
     const { data, error } = await supabaseServer
       .from("carts")
-      .insert({ user_id: userId })
-      .select("cart_id,user_id")
+      .insert({ user_id: userId, store_id: storeId })
+      .select("cart_id,user_id,store_id")
       .single();
 
     if (error) {
@@ -52,13 +57,15 @@ export class CartRepository {
 
   async listCartItemsWithProduct(
     cartId: string,
+    storeId: string,
   ): Promise<CartItemWithProductRow[]> {
     const { data, error } = await supabaseServer
       .from("cart_items")
       .select(
         "cart_item_id,cart_id,product_id,quantity,note,products(name,image_url)",
       )
-      .eq("cart_id", cartId);
+      .eq("cart_id", cartId)
+      .eq("store_id", storeId);
 
     if (error) {
       throw new Error(error.message);
@@ -69,6 +76,7 @@ export class CartRepository {
 
   async listLatestPriceRows(
     productIds: string[],
+    storeId: string,
   ): Promise<Array<{ product_id: string; price: number }>> {
     if (productIds.length === 0) {
       return [];
@@ -77,7 +85,8 @@ export class CartRepository {
     const { data: batchData, error: batchError } = await supabaseServer
       .from("batches")
       .select("batch_id,product_id")
-      .in("product_id", productIds);
+      .in("product_id", productIds)
+      .eq("store_id", storeId);
 
     if (batchError) {
       throw new Error(batchError.message);
@@ -104,6 +113,7 @@ export class CartRepository {
       .from("prices")
       .select("batch_id,price,date")
       .in("batch_id", batchIds)
+      .eq("store_id", storeId)
       .order("date", { ascending: false });
 
     if (error) {
@@ -127,11 +137,15 @@ export class CartRepository {
     return Array.from(latestRows.values());
   }
 
-  async listBatchIdsByProduct(productId: string): Promise<string[]> {
+  async listBatchIdsByProduct(
+    productId: string,
+    storeId: string,
+  ): Promise<string[]> {
     const { data, error } = await supabaseServer
       .from("batches")
       .select("batch_id")
-      .eq("product_id", productId);
+      .eq("product_id", productId)
+      .eq("store_id", storeId);
 
     if (error) {
       throw new Error(error.message);
@@ -140,7 +154,10 @@ export class CartRepository {
     return (data ?? []).map((row) => String(row.batch_id));
   }
 
-  async listInventoryByBatchIds(batchIds: string[]): Promise<number[]> {
+  async listInventoryByBatchIds(
+    batchIds: string[],
+    storeId: string,
+  ): Promise<number[]> {
     if (batchIds.length === 0) {
       return [];
     }
@@ -148,7 +165,8 @@ export class CartRepository {
     const { data, error } = await supabaseServer
       .from("inventory")
       .select("quantity_available")
-      .in("batch_id", batchIds);
+      .in("batch_id", batchIds)
+      .eq("store_id", storeId);
 
     if (error) {
       throw new Error(error.message);
@@ -159,11 +177,13 @@ export class CartRepository {
 
   async findProductById(
     productId: string,
+    storeId: string,
   ): Promise<{ product_id: string } | null> {
     const { data, error } = await supabaseServer
       .from("products")
       .select("product_id")
       .eq("product_id", productId)
+      .eq("store_id", storeId)
       .maybeSingle();
 
     if (error) {
@@ -213,11 +233,13 @@ export class CartRepository {
     cartId: string;
     productId: string;
     quantity: number;
+    storeId: string;
   }): Promise<void> {
     const { error } = await supabaseServer.from("cart_items").insert({
       cart_id: input.cartId,
       product_id: input.productId,
       quantity: input.quantity,
+      store_id: input.storeId,
     });
 
     if (error) {

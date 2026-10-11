@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError } from "../../../../../backend/core/errors";
 import { cartFacade } from "../../../../../backend/modules/cart/facades/cart.facade";
+import { resolveStoreContext } from "../../../../../backend/core/store-context";
 import {
   assertCustomerId,
   requireCustomerIdentity,
@@ -16,11 +16,13 @@ type NoteBody = {
   cartItemId?: string;
   cart_item_id?: string;
   note?: string;
+  storeId?: string;
 };
 
 export const PUT = withSentry(async (request: Request) => {
   const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as NoteBody;
+  const store = await resolveStoreContext(body.storeId, identity);
 
   const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
@@ -53,10 +55,15 @@ export const PUT = withSentry(async (request: Request) => {
 
   const start = Date.now();
 
-  const cart = await cartFacade.upsertItemNote(userId, note, {
-    productId: productId || undefined,
-    cartItemId: cartItemId || undefined,
-  });
+  const cart = await cartFacade.upsertItemNote(
+    userId,
+    note,
+    {
+      productId: productId || undefined,
+      cartItemId: cartItemId || undefined,
+    },
+    store.storeId,
+  );
 
   logger.info("Upsert cart item note success", {
     userId,

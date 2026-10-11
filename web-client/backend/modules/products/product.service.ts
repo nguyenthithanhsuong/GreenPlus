@@ -9,12 +9,12 @@ const DEFAULT_LIMIT = 20;
 export class ProductService {
   constructor(private readonly repository: ProductRepository) {}
 
-  async getActiveBrowseItems(): Promise<ProductBrowseItem[]> {
-    const products = await this.repository.listActiveProducts();
+  async getActiveBrowseItems(storeId: string): Promise<ProductBrowseItem[]> {
+    const products = await this.repository.listActiveProducts(storeId);
     const productIds = products.map((product) => product.product_id);
     const [latestPriceMap, supplierMap] = await Promise.all([
-      this.repository.getLatestPriceMap(productIds),
-      this.repository.getProductSupplierMap(productIds),
+      this.repository.getLatestPriceMap(productIds, storeId),
+      this.repository.getProductSupplierMap(productIds, storeId),
     ]);
 
     return products
@@ -37,6 +37,7 @@ export class ProductService {
     page: number,
     limit: number = DEFAULT_LIMIT,
     sort: ProductSort = "newest",
+    storeId: string,
   ): Promise<BrowseResult> {
     if (page < 1) {
       throw new AppError("page must be at least 1");
@@ -46,7 +47,7 @@ export class ProductService {
       throw new AppError("limit must be between 1 and 100");
     }
 
-    const items = await this.getActiveBrowseItems();
+    const items = await this.getActiveBrowseItems(storeId);
     const sorted = createSortStrategy(sort).apply(items);
 
     const startIndex = (page - 1) * limit;

@@ -32,13 +32,14 @@ export type ProductBatchRow = {
 };
 
 export class ProductRepository {
-  async listActiveProducts(): Promise<ProductRow[]> {
+  async listActiveProducts(storeId: string): Promise<ProductRow[]> {
     const { data, error } = await supabaseServer
       .from("products")
       .select(
         "product_id,category_id,name,description,nutrition,unit,image_url,status,created_at,categories(name)",
       )
       .eq("status", "active")
+      .eq("store_id", storeId)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -48,13 +49,17 @@ export class ProductRepository {
     return (data ?? []) as ProductRow[];
   }
 
-  async getProductById(productId: string): Promise<ProductRow | null> {
+  async getProductById(
+    productId: string,
+    storeId: string,
+  ): Promise<ProductRow | null> {
     const { data, error } = await supabaseServer
       .from("products")
       .select(
         "product_id,category_id,name,description,nutrition,unit,image_url,status,created_at,categories(name)",
       )
       .eq("product_id", productId)
+      .eq("store_id", storeId)
       .maybeSingle();
 
     if (error) {
@@ -64,7 +69,10 @@ export class ProductRepository {
     return (data as ProductRow | null) ?? null;
   }
 
-  async getLatestPriceMap(productIds: string[]): Promise<Map<string, number>> {
+  async getLatestPriceMap(
+    productIds: string[],
+    storeId: string,
+  ): Promise<Map<string, number>> {
     if (productIds.length === 0) {
       return new Map();
     }
@@ -72,7 +80,8 @@ export class ProductRepository {
     const { data: batchData, error: batchError } = await supabaseServer
       .from("batches")
       .select("batch_id,product_id")
-      .in("product_id", productIds);
+      .in("product_id", productIds)
+      .eq("store_id", storeId);
 
     if (batchError) {
       throw new Error(batchError.message);
@@ -104,6 +113,7 @@ export class ProductRepository {
       .from("prices")
       .select("batch_id,price,date")
       .in("batch_id", batchIds)
+      .eq("store_id", storeId)
       .order("date", { ascending: false });
 
     if (error) {
@@ -128,6 +138,7 @@ export class ProductRepository {
 
   async getProductSupplierMap(
     productIds: string[],
+    storeId: string,
   ): Promise<
     Map<string, { supplierId: string | null; certification: string | null }>
   > {
@@ -139,6 +150,7 @@ export class ProductRepository {
       .from("batches")
       .select("product_id,supplier_id,harvest_date,suppliers(certificate)")
       .in("product_id", productIds)
+      .eq("store_id", storeId)
       .order("harvest_date", { ascending: false });
 
     if (error) {
@@ -175,20 +187,25 @@ export class ProductRepository {
     return supplierMap;
   }
 
-  async getLatestPriceForProduct(productId: string): Promise<number | null> {
-    const priceMap = await this.getLatestPriceMap([productId]);
+  async getLatestPriceForProduct(
+    productId: string,
+    storeId: string,
+  ): Promise<number | null> {
+    const priceMap = await this.getLatestPriceMap([productId], storeId);
     return priceMap.get(productId) ?? null;
   }
 
   async getBatchesWithInventoryByProduct(
     productId: string,
+    storeId: string,
   ): Promise<ProductBatchRow[]> {
     const { data, error } = await supabaseServer
       .from("batches")
       .select(
         "batch_id,status,expire_date,quantity,inventory(quantity_available,quantity_reserved)",
       )
-      .eq("product_id", productId);
+      .eq("product_id", productId)
+      .eq("store_id", storeId);
 
     if (error) {
       throw new Error(error.message);

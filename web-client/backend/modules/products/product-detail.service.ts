@@ -38,12 +38,12 @@ function normalizeBatchStatus(
 export class ProductDetailService {
   constructor(private readonly repository: ProductRepository) {}
 
-  async getDetail(productId: string): Promise<ProductDetail> {
+  async getDetail(productId: string, storeId: string): Promise<ProductDetail> {
     if (!productId) {
       throw new AppError("productId is required");
     }
 
-    const product = await this.repository.getProductById(productId);
+    const product = await this.repository.getProductById(productId, storeId);
 
     if (!product) {
       throw new AppError("Product not found", 404);
@@ -55,9 +55,9 @@ export class ProductDetailService {
     }
 
     const [latestPrice, batches, supplierMap] = await Promise.all([
-      this.repository.getLatestPriceForProduct(productId),
-      this.repository.getBatchesWithInventoryByProduct(productId),
-      this.repository.getProductSupplierMap([productId]),
+      this.repository.getLatestPriceForProduct(productId, storeId),
+      this.repository.getBatchesWithInventoryByProduct(productId, storeId),
+      this.repository.getProductSupplierMap([productId], storeId),
     ]);
 
     let totalAvailable = 0;

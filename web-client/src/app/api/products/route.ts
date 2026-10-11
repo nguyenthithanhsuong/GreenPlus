@@ -1,12 +1,13 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../backend/core/errors";
+import { AppError } from "../../../../backend/core/errors";
 import { productFacade } from "../../../../backend/modules/products/facades/product.facade";
 import {
   ProductSort,
   SearchCriteria,
 } from "../../../../backend/modules/products/product.types";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../backend/core/store-context";
 
 const VALID_SORTS: ProductSort[] = ["newest", "price_asc", "price_desc"];
 
@@ -39,6 +40,7 @@ export const GET = withSentry(async (request: Request) => {
 
   try {
     const { searchParams } = new URL(request.url);
+    const store = await resolveStoreContext(searchParams.get("storeId"));
 
     const keyword = searchParams.get("keyword");
     const categoryId = searchParams.get("categoryId") ?? undefined;
@@ -80,7 +82,12 @@ export const GET = withSentry(async (request: Request) => {
         sort,
       });
 
-      result = await productFacade.browseProducts(page, sort, limit);
+      result = await productFacade.browseProducts(
+        page,
+        store.storeId,
+        sort,
+        limit,
+      );
 
       logger.info("Browse products success", {
         duration_ms: Date.now() - start,
@@ -104,7 +111,7 @@ export const GET = withSentry(async (request: Request) => {
       criteria,
     });
 
-    result = await productFacade.searchProducts(criteria);
+    result = await productFacade.searchProducts(criteria, store.storeId);
 
     logger.info("Product search success", {
       resultCount: Array.isArray(result?.items)

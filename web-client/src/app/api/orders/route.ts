@@ -1,6 +1,6 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../backend/core/errors";
+import { AppError } from "../../../../backend/core/errors";
 import { orderFacade } from "../../../../backend/modules/orders/facades/order.facade";
 import { PaymentMethod } from "../../../../backend/modules/orders/order.types";
 import {
@@ -8,6 +8,7 @@ import {
   requireCustomerIdentity,
 } from "../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../backend/core/store-context";
 
 type CreateOrderBody = {
   userId?: string;
@@ -19,6 +20,8 @@ type CreateOrderBody = {
   note?: string;
   paymentMethod?: string;
   payment_method?: string;
+  storeId?: string;
+  idempotencyKey?: string;
 };
 
 export const GET = withSentry(async (request: Request) => {
@@ -27,6 +30,10 @@ export const GET = withSentry(async (request: Request) => {
 
   try {
     const { searchParams } = new URL(request.url);
+    const store = await resolveStoreContext(
+      searchParams.get("storeId"),
+      identity,
+    );
 
     userId = assertCustomerId(
       searchParams.get("userId") ?? searchParams.get("user_id") ?? undefined,
@@ -48,7 +55,7 @@ export const GET = withSentry(async (request: Request) => {
 
     const start = Date.now();
 
-    const result = await orderFacade.trackMyOrders(userId);
+    const result = await orderFacade.trackMyOrders(userId, store.storeId);
 
     logger.info("Track orders success", {
       userId,
@@ -81,6 +88,11 @@ export const POST = withSentry(async (request: Request) => {
 
   try {
     const body = (await request.json()) as CreateOrderBody;
+    const store = await resolveStoreContext(body.storeId, identity);
+    const idempotencyKey =
+      request.headers.get("Idempotency-Key")?.trim() ??
+      body.idempotencyKey?.trim() ??
+      "";
 
     userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
@@ -125,6 +137,8 @@ export const POST = withSentry(async (request: Request) => {
 
     const result = await orderFacade.createOrderFromCart({
       userId,
+      storeId: store.storeId,
+      idempotencyKey,
       deliveryAddress,
       deliveryFee,
       note,

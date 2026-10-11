@@ -38,14 +38,17 @@ export class CartService {
     this.subject.attach(new CartAuditObserver());
   }
 
-  private async getOrCreateCart(userId: string): Promise<CartRow> {
+  private async getOrCreateCart(
+    userId: string,
+    storeId: string,
+  ): Promise<CartRow> {
     if (!userId) {
       throw new AppError("userId is required", 400);
     }
 
     let existing: CartRow | null = null;
     try {
-      existing = await this.repository.findCartByUserId(userId);
+      existing = await this.repository.findCartByUserId(userId, storeId);
     } catch (error) {
       throw new AppError(
         error instanceof Error ? error.message : "Failed to load cart",
@@ -58,7 +61,7 @@ export class CartService {
     }
 
     try {
-      return await this.repository.createCart(userId);
+      return await this.repository.createCart(userId, storeId);
     } catch (error) {
       throw new AppError(
         error instanceof Error ? error.message : "Failed to create cart",
@@ -69,6 +72,7 @@ export class CartService {
 
   private async getLatestPriceMap(
     productIds: string[],
+    storeId: string,
   ): Promise<Map<string, number>> {
     if (productIds.length === 0) {
       return new Map();
@@ -76,7 +80,7 @@ export class CartService {
 
     let data: Array<{ product_id: string; price: number }> = [];
     try {
-      data = await this.repository.listLatestPriceRows(productIds);
+      data = await this.repository.listLatestPriceRows(productIds, storeId);
     } catch (error) {
       throw new AppError(
         error instanceof Error ? error.message : "Failed to load prices",
@@ -95,10 +99,16 @@ export class CartService {
     return map;
   }
 
-  private async getAvailableStock(productId: string): Promise<number> {
+  private async getAvailableStock(
+    productId: string,
+    storeId: string,
+  ): Promise<number> {
     let batchIds: string[] = [];
     try {
-      batchIds = await this.repository.listBatchIdsByProduct(productId);
+      batchIds = await this.repository.listBatchIdsByProduct(
+        productId,
+        storeId,
+      );
     } catch (error) {
       throw new AppError(
         error instanceof Error ? error.message : "Failed to load batches",
@@ -111,8 +121,10 @@ export class CartService {
     }
 
     try {
-      const quantities =
-        await this.repository.listInventoryByBatchIds(batchIds);
+      const quantities = await this.repository.listInventoryByBatchIds(
+        batchIds,
+        storeId,
+      );
       return quantities.reduce((sum, value) => sum + value, 0);
     } catch (error) {
       throw new AppError(
@@ -122,10 +134,13 @@ export class CartService {
     }
   }
 
-  private async ensureProductExists(productId: string): Promise<void> {
+  private async ensureProductExists(
+    productId: string,
+    storeId: string,
+  ): Promise<void> {
     let data: { product_id: string } | null = null;
     try {
-      data = await this.repository.findProductById(productId);
+      data = await this.repository.findProductById(productId, storeId);
     } catch (error) {
       throw new AppError(
         error instanceof Error ? error.message : "Failed to verify product",
@@ -161,12 +176,15 @@ export class CartService {
     this.noteValidator.validate(note);
   }
 
-  async getCartByUser(userId: string): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
+  async getCartByUser(userId: string, storeId: string): Promise<CartView> {
+    const cart = await this.getOrCreateCart(userId, storeId);
 
     let items: CartItemWithProductRow[] = [];
     try {
-      items = await this.repository.listCartItemsWithProduct(cart.cart_id);
+      items = await this.repository.listCartItemsWithProduct(
+        cart.cart_id,
+        storeId,
+      );
     } catch (error) {
       throw new AppError(
         error instanceof Error ? error.message : "Failed to load cart items",
@@ -175,7 +193,7 @@ export class CartService {
     }
 
     const productIds = items.map((item) => item.product_id);
-    const latestPriceMap = await this.getLatestPriceMap(productIds);
+    const latestPriceMap = await this.getLatestPriceMap(productIds, storeId);
 
     const viewItems: CartItemView[] = items.map((item) => {
       const price = latestPriceMap.get(item.product_id) ?? null;
@@ -209,11 +227,12 @@ export class CartService {
     userId: string,
     productId: string,
     quantity: number,
+    storeId: string,
   ): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
-    await this.ensureProductExists(productId);
+    const cart = await this.getOrCreateCart(userId, storeId);
+    await this.ensureProductExists(productId, storeId);
 
-    const stock = await this.getAvailableStock(productId);
+    const stock = await this.getAvailableStock(productId, storeId);
     this.validateQuantity(quantity, stock);
 
     let existingItem: { cart_item_id: string; quantity: number } | null = null;
@@ -235,6 +254,7 @@ export class CartService {
           cartId: cart.cart_id,
           productId,
           quantity,
+          storeId,
         });
 
         this.subject.notify({
@@ -249,7 +269,7 @@ export class CartService {
         );
       }
 
-      return this.getCartByUser(userId);
+      return this.getCartByUser(userId, storeId);
     }
 
     const nextQuantity = Number(existingItem.quantity) + quantity;
@@ -275,18 +295,19 @@ export class CartService {
       );
     }
 
-    return this.getCartByUser(userId);
+    return this.getCartByUser(userId, storeId);
   }
 
   async updateQuantity(
     userId: string,
     productId: string,
     quantity: number,
+    storeId: string,
   ): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
-    await this.ensureProductExists(productId);
+    const cart = await this.getOrCreateCart(userId, storeId);
+    await this.ensureProductExists(productId, storeId);
 
-    const stock = await this.getAvailableStock(productId);
+    const stock = await this.getAvailableStock(productId, storeId);
     this.validateQuantity(quantity, stock);
 
     let existingItem: { cart_item_id: string } | null = null;
@@ -326,11 +347,15 @@ export class CartService {
       );
     }
 
-    return this.getCartByUser(userId);
+    return this.getCartByUser(userId, storeId);
   }
 
-  async removeItem(userId: string, productId: string): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
+  async removeItem(
+    userId: string,
+    productId: string,
+    storeId: string,
+  ): Promise<CartView> {
+    const cart = await this.getOrCreateCart(userId, storeId);
 
     try {
       await this.repository.deleteCartItemByProduct(cart.cart_id, productId);
@@ -347,15 +372,16 @@ export class CartService {
       );
     }
 
-    return this.getCartByUser(userId);
+    return this.getCartByUser(userId, storeId);
   }
 
   async updateNote(
     userId: string,
     note: string,
     target: { productId?: string; cartItemId?: string },
+    storeId: string,
   ): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
+    const cart = await this.getOrCreateCart(userId, storeId);
 
     if (note) {
       this.validateNote(note);
@@ -410,6 +436,6 @@ export class CartService {
       );
     }
 
-    return this.getCartByUser(userId);
+    return this.getCartByUser(userId, storeId);
   }
 }

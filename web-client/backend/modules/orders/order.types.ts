@@ -80,6 +80,8 @@ export type OrderDetail = {
 
 export type CreateOrderInput = {
   userId: string;
+  storeId: string;
+  idempotencyKey: string;
   deliveryAddress: string;
   deliveryFee?: number;
   note?: string;
@@ -88,17 +90,20 @@ export type CreateOrderInput = {
 
 export type CancelOrderInput = {
   userId: string;
+  storeId: string;
   orderId: string;
   note?: string;
 };
 
 export type ConfirmPaymentInput = {
   userId: string;
+  storeId: string;
   orderId: string;
 };
 
 export type UpdateOrderInput = {
   userId: string;
+  storeId: string;
   orderId: string;
   deliveryAddress?: string;
   deliveryFee?: number;

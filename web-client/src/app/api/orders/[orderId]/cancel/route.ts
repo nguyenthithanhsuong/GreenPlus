@@ -1,4 +1,3 @@
-import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import {
   AppError,
@@ -10,6 +9,7 @@ import {
   requireCustomerIdentity,
 } from "../../../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../../../backend/core/store-context";
 
 type Context = {
   params: Promise<{
@@ -21,6 +21,7 @@ type CancelBody = {
   userId?: string;
   user_id?: string;
   note?: string;
+  storeId?: string;
 };
 
 export async function PUT(request: Request, context: Context) {
@@ -33,10 +34,12 @@ export async function PUT(request: Request, context: Context) {
     orderId = id;
 
     const body = (await request.json()) as CancelBody;
+    const store = await resolveStoreContext(body.storeId, identity);
     userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
     logger.info("Cancel order attempt", {
       userId,
+      storeId: store.storeId,
       orderId,
     });
 
@@ -56,6 +59,7 @@ export async function PUT(request: Request, context: Context) {
 
     const result = await orderFacade.cancelOrder({
       userId,
+      storeId: store.storeId,
       orderId,
       note: body.note ?? "",
     });

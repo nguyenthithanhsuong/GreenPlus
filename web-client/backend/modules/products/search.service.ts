@@ -24,7 +24,10 @@ export class SearchService {
     ];
   }
 
-  async search(criteria: SearchCriteria): Promise<BrowseResult> {
+  async search(
+    criteria: SearchCriteria,
+    storeId: string,
+  ): Promise<BrowseResult> {
     const page = criteria.page ?? 1;
     const limit = criteria.limit ?? DEFAULT_LIMIT;
 
@@ -56,7 +59,7 @@ export class SearchService {
       limit,
     };
 
-    let items = await this.productService.getActiveBrowseItems();
+    let items = await this.productService.getActiveBrowseItems(storeId);
 
     this.filterStrategies.forEach((strategy) => {
       items = strategy.apply(items, normalizedCriteria);
