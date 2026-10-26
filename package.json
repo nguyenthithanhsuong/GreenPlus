@@ -21,7 +21,9 @@
     "typecheck": "npm run typecheck -w web-admin && npm run typecheck -w web-client && npm run typecheck -w web-shipper",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "clean": "rimraf .next .turbo out dist",
-    "check-all": "npm run clean && npm run format && npm run lint-fix && npm run typecheck && npm run build"
+    "check-all": "npm run clean && npm run format && npm run lint-fix && npm run typecheck && npm run build",
+    "test:shipper": "npm test -w web-shipper",
+    "test:migrations": "node --test tests/migration-static.test.mjs"
   },
   "devDependencies": {
     "@types/node": "^25.9.2",

@@ -1,195 +1,35 @@
-import Image from "next/image";
-import { Bell, MapPin, User } from "lucide-react";
-import NavigationBar from "./NavigationBar";
-import {
-  SCREEN_BACKGROUND_GRADIENT,
-  SCREEN_CONTENT_PADDING_X,
-  SCREEN_HEADER_PADDING_X,
-  SCREEN_MAX_WIDTH_PX,
-} from "../shared/screen.styles";
+"use client";
+import { useState } from 'react';
+import { MapPin, PackageCheck, RefreshCw } from 'lucide-react';
+import NavigationBar from './NavigationBar';
+import { SCREEN_BACKGROUND_GRADIENT,SCREEN_MAX_WIDTH_PX } from '../shared/screen.styles';
+import type { Delivery } from '../../lib/delivery-types';
 
-const orders = [
-  {
-    id: "ORD-88898",
-    assignedAt: "Phân công lúc 08:30",
-    customer: "Trần Tuấn Kiệt",
-    customerLabel: "Khách hàng",
-    address: "123 Nguyễn Văn Linh, P. Linh Trung, Thủ Đức",
-    cod: "350.000đ",
-    codColor: "text-red-600",
-    status: "Chờ lấy hàng",
-  },
-  {
-    id: "ORD-88899",
-    assignedAt: "Phân công lúc 09:15",
-    customer: "Nguyễn Thị Hoa",
-    customerLabel: "",
-    address: "Vincom Landmark 81, Q. Bình Thạnh",
-    cod: "0đ (Đã TT)",
-    codColor: "text-[#15A651]",
-    status: "Chờ lấy hàng",
-  },
-];
-
-export default function Dashboard() {
-  return (
-    <main
-      className="min-h-screen overflow-hidden"
-      style={{ background: SCREEN_BACKGROUND_GRADIENT }}
-    >
-      <div
-        className="relative flex min-h-screen w-full flex-col overflow-hidden bg-[#F9FAFB]"
-        style={{ maxWidth: SCREEN_MAX_WIDTH_PX, margin: "0 auto" }}
-      >
-        <div className="pointer-events-none absolute -top-14 -right-10 h-36 w-36 rounded-full bg-green-300/35 blur-2xl" />
-        <div className="pointer-events-none absolute top-1/3 -left-12 h-32 w-32 rounded-full bg-emerald-300/30 blur-2xl" />
-
-        <header
-          className="relative z-10 border-b border-white/10 bg-[#15A651]/96 px-5 pt-12 pb-4 backdrop-blur-sm"
-          style={{
-            paddingLeft: SCREEN_HEADER_PADDING_X,
-            paddingRight: SCREEN_HEADER_PADDING_X,
-          }}
-        >
-          <div className="flex w-full items-center justify-between gap-4">
-            <div>
-              <p className="mb-0.5 text-sm font-medium text-white/90">
-                Xin chào, Giao Hàng
-              </p>
-              <h1 className="text-2xl font-bold text-white">Đơn của tôi</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                className="relative rounded-full bg-black/10 p-2 text-white transition-colors hover:bg-black/20"
-                type="button"
-                aria-label="Thông báo"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-[#15A651] bg-red-500" />
-              </button>
-              <Image
-                src="https://i.pravatar.cc/150?img=11"
-                alt="Shipper Avatar"
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-full object-cover border-2 border-white/20"
-              />
-            </div>
-          </div>
-        </header>
-
-        <section className="relative z-10 flex-1 overflow-y-auto pb-[112px]">
-          <div className="flex w-full flex-col">
-            <div className="flex bg-white shadow-sm">
-              <button
-                className="flex-1 border-b-[3px] border-[#15A651] py-3.5 text-sm font-bold text-[#15A651]"
-                type="button"
-              >
-                Chờ lấy hàng
-                <span className="ml-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] leading-none text-white">
-                  3
-                </span>
-              </button>
-              <button
-                className="flex-1 border-b-[3px] border-transparent py-3.5 text-sm font-semibold text-gray-500"
-                type="button"
-              >
-                Đang giao
-                <span className="ml-1 rounded-full bg-blue-500 px-1.5 py-0.5 text-[10px] leading-none text-white">
-                  2
-                </span>
-              </button>
-            </div>
-
-            <div
-              className="flex items-center justify-between gap-4 px-5 py-4 text-sm"
-              style={{
-                paddingLeft: SCREEN_CONTENT_PADDING_X,
-                paddingRight: SCREEN_CONTENT_PADDING_X,
-              }}
-            >
-              <span className="font-bold text-gray-600">Cần lấy: 3 đơn</span>
-              <span className="flex items-center gap-1.5 text-right font-bold text-[#15A651]">
-                <MapPin
-                  className="h-4 w-4 shrink-0 text-black"
-                  fill="currentColor"
-                />
-                Cửa hàng: GreenFarm Củ Chi
-              </span>
-            </div>
-
-            <div
-              className="space-y-4 px-4"
-              style={{
-                paddingLeft: SCREEN_CONTENT_PADDING_X,
-                paddingRight: SCREEN_CONTENT_PADDING_X,
-              }}
-            >
-              {orders.map((order, index) => (
-                <article
-                  key={order.id}
-                  className="rounded-2xl bg-white p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)]"
-                >
-                  <div className="mb-4 flex items-start justify-between gap-4">
-                    <div>
-                      <h2 className="text-base font-bold text-gray-900">
-                        {order.id}
-                      </h2>
-                      <p className="mt-0.5 text-xs text-gray-500">
-                        {order.assignedAt}
-                      </p>
-                    </div>
-                    <span className="rounded-md bg-yellow-100 px-3 py-1 text-[11px] font-bold text-yellow-800">
-                      {order.status}
-                    </span>
-                  </div>
-
-                  <div className="mb-5 space-y-4 rounded-xl bg-[#F8F9FA] p-4">
-                    <div className="flex items-start gap-3">
-                      <User className="mt-0.5 h-5 w-5 shrink-0 text-gray-900" />
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">
-                          {order.customer}
-                        </p>
-                        {index === 0 ? (
-                          <p className="text-xs text-gray-500">
-                            {order.customerLabel}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-gray-900" />
-                      <p className="text-sm leading-snug text-gray-800">
-                        {order.address}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 border-t border-gray-100 pt-4">
-                    <div>
-                      <p className="mb-0.5 text-xs text-gray-500">
-                        Tiền thu (COD)
-                      </p>
-                      <p className={`text-lg font-bold ${order.codColor}`}>
-                        {order.cod}
-                      </p>
-                    </div>
-                    <button
-                      className="rounded-lg bg-[#15A651] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-95"
-                      type="button"
-                    >
-                      Xác nhận Đã Lấy
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <NavigationBar />
-      </div>
-    </main>
-  );
+export default function Dashboard(){
+ const [token,setToken]=useState('');
+ const [items,setItems]=useState<Delivery[]>([]);
+ const [loading,setLoading]=useState(false);
+ const [error,setError]=useState('');
+ const [selected,setSelected]=useState<'assigned'|'in_progress'>('assigned');
+ async function load(){
+  setLoading(true);setError('');
+  try{const response=await fetch('/api/shipper/deliveries',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
+   const data=await response.json();if(!response.ok)throw new Error(data.error||'Không tải được đơn hàng');setItems(data.items);
+  }catch(e){setError(e instanceof Error?e.message:'Có lỗi xảy ra');}finally{setLoading(false);}
+ }
+ async function advance(item:Delivery){
+  const next={assigned:'picked_up',picked_up:'delivering',delivering:'delivered',delivered:null}[item.status];
+  if(!next)return;
+  setLoading(true);setError('');
+  try{const response=await fetch(`/api/shipper/deliveries/${encodeURIComponent(item.order_id)}/status`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({currentStatus:item.status,status:next})});
+   const data=await response.json();if(!response.ok)throw new Error(data.error||'Cập nhật thất bại');setItems(old=>old.map(x=>x.order_id===item.order_id?data:x));
+  }catch(e){setError(e instanceof Error?e.message:'Cập nhật thất bại');}finally{setLoading(false);}
+ }
+ const visible=items.filter(item=>selected==='assigned'?item.status==='assigned':item.status!=='assigned'&&item.status!=='delivered');
+ return <main className="min-h-screen" style={{background:SCREEN_BACKGROUND_GRADIENT}}><div className="relative mx-auto min-h-screen bg-[#F9FAFB] pb-28" style={{maxWidth:SCREEN_MAX_WIDTH_PX}}>
+  <header className="bg-[#15A651] px-5 pb-5 pt-12 text-white"><p className="text-sm opacity-85">GreenPlus • Shipper</p><h1 className="mt-1 text-2xl font-bold">Đơn giao của tôi</h1><p className="mt-1 text-sm opacity-90">Theo dõi đơn được phân công</p></header>
+  <section className="mx-4 mt-4 rounded-2xl bg-white p-4 shadow-sm"><label className="block text-sm font-semibold text-gray-700" htmlFor="sessionToken">Access token của Shipper</label><input id="sessionToken" type="password" value={token} autoComplete="off" onChange={e=>setToken(e.target.value)} placeholder="Nhập token để kết nối API" className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-3 text-gray-900"/><p className="mt-2 text-xs text-gray-500">Bản tích hợp tạm thời: token chỉ giữ trong bộ nhớ trang, không lưu vào trình duyệt. Cần tích hợp đăng nhập thực tế trước khi phát hành.</p><button type="button" onClick={load} disabled={loading||!token.trim()} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#15A651] py-3 font-semibold text-white disabled:opacity-50"><RefreshCw size={18}/>{loading?'Đang xử lý...':'Tải đơn hàng'}</button></section>
+  <div className="mt-4 grid grid-cols-2 bg-white text-sm font-semibold"><button onClick={()=>setSelected('assigned')} className={`p-4 ${selected==='assigned'?'border-b-2 border-green-600 text-green-700':'text-gray-500'}`}>Chờ lấy ({items.filter(x=>x.status==='assigned').length})</button><button onClick={()=>setSelected('in_progress')} className={`p-4 ${selected==='in_progress'?'border-b-2 border-green-600 text-green-700':'text-gray-500'}`}>Đang giao ({items.filter(x=>x.status==='picked_up'||x.status==='delivering').length})</button></div>
+  {error&&<p role="alert" className="mx-4 mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+  <section aria-label="Danh sách đơn" className="space-y-4 p-4">{visible.length===0?<div className="rounded-xl bg-white p-6 text-center text-gray-600">Chưa có đơn trong trạng thái này. Kết nối API để xem dữ liệu thực.</div>:visible.map(item=><article key={item.order_id} className="rounded-2xl bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><h2 className="font-bold text-gray-900">Đơn {item.order_id}</h2><span className="rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">{({assigned:'Chờ lấy',picked_up:'Đã lấy',delivering:'Đang giao',delivered:'Đã giao'} as const)[item.status]}</span></div><p className="mt-3 font-medium text-gray-800">{item.customer_name}</p><p className="mt-2 flex gap-2 text-sm text-gray-600"><MapPin size={18} className="shrink-0"/>{item.delivery_address}</p><p className="mt-3 text-sm text-gray-600">Giá trị đơn: <strong>{item.total_amount.toLocaleString('vi-VN')} ₫</strong></p>{item.status!=='delivered'&&<button disabled={loading} onClick={()=>advance(item)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#15A651] px-4 py-3 font-semibold text-white disabled:opacity-50"><PackageCheck size={18}/>{item.status==='assigned'?'Xác nhận đã lấy':item.status==='picked_up'?'Bắt đầu giao':'Xác nhận giao thành công'}</button>}</article>)}</section><NavigationBar/></div></main>;
 }
