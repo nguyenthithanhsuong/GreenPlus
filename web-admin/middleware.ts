@@ -1,32 +1,35 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import {
+  asPortalRole,
+  canAccessApi,
+  canAccessPage,
+  type PortalRole,
+} from "./src/lib/portal-access";
 
-const PUBLIC_PATHS = [
+const PUBLIC = [
   "/login",
   "/api/auth",
+  "/api/shipper/auth",
   "/api/health",
   "/_next",
   "/favicon.ico",
 ];
+const AUTH_TTL_MS = 8 * 60 * 60 * 1000;
 
-function decodeBase64Url(value: string): ArrayBuffer {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  const decoded = atob(padded);
-  return Uint8Array.from(decoded, (character) => character.charCodeAt(0))
+function base64Url(value: string): ArrayBuffer {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0))
     .buffer as ArrayBuffer;
 }
-
-async function hasValidAuthCookie(request: NextRequest): Promise<boolean> {
+async function readSession(
+  request: NextRequest,
+): Promise<{ id: string; role: PortalRole } | null> {
   const token = request.cookies.get("gp_admin_auth")?.value ?? "";
   const [prefix, payload, signature] = token.split(".");
   const secret =
     process.env.AUTH_HANDOFF_SECRET || process.env.AUTH_SESSION_SECRET;
-
-  if (prefix !== "gpv1" || !payload || !signature || !secret) {
-    return false;
-  }
-
+  if (!secret || prefix !== "gpv1" || !payload || !signature) return null;
   try {
     const key = await crypto.subtle.importKey(
       "raw",
@@ -35,88 +38,59 @@ async function hasValidAuthCookie(request: NextRequest): Promise<boolean> {
       false,
       ["verify"],
     );
-    const validSignature = await crypto.subtle.verify(
-      "HMAC",
-      key,
-      decodeBase64Url(signature),
-      new TextEncoder().encode(payload),
-    );
-
-    if (!validSignature) {
-      return false;
-    }
-
-    const claims = JSON.parse(
-      new TextDecoder().decode(decodeBase64Url(payload)),
-    ) as {
-      userId?: unknown;
-      role?: unknown;
-      loginTime?: unknown;
-    };
-    const loginTimestamp =
-      typeof claims.loginTime === "string"
-        ? Date.parse(claims.loginTime)
-        : Number.NaN;
-
-    return Boolean(
-      typeof claims.userId === "string" &&
-      ["admin", "manager", "employee"].includes(
-        String(claims.role).toLowerCase(),
-      ) &&
-      Number.isFinite(loginTimestamp) &&
-      Date.now() - loginTimestamp <= 7 * 24 * 60 * 60 * 1000,
-    );
+    if (
+      !(await crypto.subtle.verify(
+        "HMAC",
+        key,
+        base64Url(signature),
+        new TextEncoder().encode(payload),
+      ))
+    )
+      return null;
+    const claims = JSON.parse(new TextDecoder().decode(base64Url(payload)));
+    const role = asPortalRole(claims.role);
+    const issued = Date.parse(claims.loginTime);
+    if (
+      !role ||
+      typeof claims.userId !== "string" ||
+      !Number.isFinite(issued) ||
+      issued > Date.now() + 60_000 ||
+      Date.now() - issued > AUTH_TTL_MS
+    )
+      return null;
+    return { id: claims.userId, role };
   } catch {
-    return false;
+    return null;
   }
 }
-
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-
-  if (pathname.startsWith("/register")) {
+  if (pathname.startsWith("/register"))
     return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if (PUBLIC_PATHS.some((prefix) => pathname.startsWith(prefix))) {
+  if (PUBLIC.some((p) => pathname === p || pathname.startsWith(p + "/")))
     return NextResponse.next();
-  }
-
-  const sourceToken = process.env.BETTER_STACK_SOURCE_TOKEN;
-
-  if (sourceToken && pathname.startsWith("/api/")) {
-    const requestInfo = {
-      method: request.method,
-      path: request.nextUrl.pathname,
-      query: request.nextUrl.search,
-      timestamp: new Date().toISOString(),
-    };
-
-    fetch("https://in.betterstack.com/api/v1/logs", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${sourceToken}`,
-      },
-      body: JSON.stringify({
-        dt: new Date().toISOString(),
-        level: "INFO",
-        message: `API Request: ${request.method} ${request.nextUrl.pathname}`,
-        source: "web-admin-middleware",
-        context: requestInfo,
-      }),
-    }).catch((err) => {
-      console.error("[BetterStack Middleware] Log send error:", err);
-    });
-  }
-
-  if (!(await hasValidAuthCookie(request))) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  return NextResponse.next();
+  // Dedicated shipper handlers authenticate bearer tokens and enforce order ownership.
+  if (pathname.startsWith("/api/shipper/deliveries"))
+    return NextResponse.next();
+  const session = await readSession(request);
+  const isApi = pathname.startsWith("/api/");
+  if (!session)
+    return isApi
+      ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      : NextResponse.redirect(new URL("/login", request.url));
+  const allowed = isApi
+    ? canAccessApi(session.role, pathname, request.method)
+    : canAccessPage(session.role, pathname);
+  if (!allowed)
+    return isApi
+      ? NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      : NextResponse.redirect(new URL("/dashboard?access=denied", request.url));
+  // User identity is trusted only after the cookie signature and expiry have been checked.
+  const forwarded = new Headers(request.headers);
+  forwarded.set("x-greenplus-user-id", session.id);
+  forwarded.set("x-greenplus-role", session.role);
+  return NextResponse.next({ request: { headers: forwarded } });
 }
-
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
 };

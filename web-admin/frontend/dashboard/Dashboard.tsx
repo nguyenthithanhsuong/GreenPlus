@@ -6,6 +6,8 @@ import ActionTables from "./ActionTables";
 import Charts from "./Charts";
 import StatCards from "./StatCards";
 import AdminShell from "../shared/AdminShell";
+import { useAuthStore } from "@/lib/stores/authStore";
+import { asPortalRole } from "@/lib/portal-access";
 import { UserSummary } from "../../backend/modules/users/user-management.types";
 import { OrderListRow } from "../../backend/modules/orders/order-tracking.types";
 import { SupplierRow } from "../../backend/modules/suppliers/supplier-management.types";
@@ -28,6 +30,9 @@ const fetchItems = async <T,>(url: string): Promise<T[]> => {
 };
 
 const Dashboard = () => {
+  const role = asPortalRole(
+    useAuthStore((s) => s.user?.role_name ?? s.session?.role_name),
+  );
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [orders, setOrders] = useState<OrderListRow[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
@@ -45,11 +50,21 @@ const Dashboard = () => {
     try {
       const [nextUsers, nextOrders, nextSuppliers, nextComplaints, nextPosts] =
         await Promise.all([
-          fetchItems<UserSummary>("/api/users"),
-          fetchItems<OrderListRow>("/api/orders"),
-          fetchItems<SupplierRow>("/api/suppliers"),
-          fetchItems<ComplaintRow>("/api/complaints"),
-          fetchItems<GreenCreatorPostRow>("/api/greencreators"),
+          role === "admin" || role === "manager"
+            ? fetchItems<UserSummary>("/api/users")
+            : Promise.resolve([]),
+          role === "manager" || role === "employee"
+            ? fetchItems<OrderListRow>("/api/orders")
+            : Promise.resolve([]),
+          role === "manager" || role === "employee"
+            ? fetchItems<SupplierRow>("/api/suppliers")
+            : Promise.resolve([]),
+          role === "manager" || role === "employee"
+            ? fetchItems<ComplaintRow>("/api/complaints")
+            : Promise.resolve([]),
+          role === "admin" || role === "manager"
+            ? fetchItems<GreenCreatorPostRow>("/api/greencreators")
+            : Promise.resolve([]),
         ]);
 
       setUsers(nextUsers);
@@ -71,11 +86,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [role]);
 
   useEffect(() => {
-    void loadDashboardData();
-  }, [loadDashboardData]);
+    if (role) void loadDashboardData();
+  }, [loadDashboardData, role]);
 
   const todayLabel = useMemo(
     () =>
@@ -89,7 +104,7 @@ const Dashboard = () => {
 
   return (
     <AdminShell
-      title="Tổng quan hệ thống"
+      title={role === "admin" ? "Dashboard nền tảng" : "Tổng quan cửa hàng"}
       description="Chào mừng quay trở lại. Đây là tình hình hoạt động của GreenPlus hôm nay."
       pageActions={
         <div className="flex items-center gap-2">
@@ -117,19 +132,42 @@ const Dashboard = () => {
         </div>
       ) : null}
 
-      <StatCards
-        users={users}
-        orders={orders}
-        suppliers={suppliers}
-        complaints={complaints}
-        loading={loading}
-      />
-      <Charts orders={orders} loading={loading} />
-      <ActionTables
-        suppliers={suppliers}
-        posts={greenCreatorPosts}
-        loading={loading}
-      />
+      {role === "admin" ? (
+        <section className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Tài khoản nền tảng
+            </p>
+            <p className="mt-2 text-3xl font-black text-emerald-700">
+              {users.length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Nội dung Green Creator
+            </p>
+            <p className="mt-2 text-3xl font-black text-emerald-700">
+              {greenCreatorPosts.length}
+            </p>
+          </div>
+        </section>
+      ) : (
+        <>
+          <StatCards
+            users={users}
+            orders={orders}
+            suppliers={suppliers}
+            complaints={complaints}
+            loading={loading}
+          />
+          <Charts orders={orders} loading={loading} />
+          <ActionTables
+            suppliers={suppliers}
+            posts={greenCreatorPosts}
+            loading={loading}
+          />
+        </>
+      )}
     </AdminShell>
   );
 };

@@ -64,6 +64,17 @@ export class AuthService {
       Buffer.from(payload, "base64url").toString("utf8"),
     ) as Partial<CustomSessionTokenPayload>;
 
+    // The HMAC authenticates the claims but must not create a perpetual session.
+    const issuedAt =
+      typeof parsed.loginTime === "string" ? Date.parse(parsed.loginTime) : NaN;
+    if (
+      !Number.isFinite(issuedAt) ||
+      issuedAt > Date.now() + 60_000 ||
+      Date.now() - issuedAt > 8 * 60 * 60 * 1000
+    ) {
+      throw new Error("Session expired");
+    }
+
     if (!parsed.userId || typeof parsed.userId !== "string") {
       throw new Error("Invalid session token");
     }

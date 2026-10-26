@@ -18,11 +18,6 @@ export function withSentry<
       console.error("[Unhandled API error]:", error);
 
       Sentry.captureException(error);
-      const flushed = await Sentry.flush(2000);
-
-      if (!flushed) {
-        console.error("[Sentry unavailable] Exception not delivered:", error);
-      }
 
       if (error instanceof AppError) {
         return NextResponse.json(

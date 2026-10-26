@@ -26,7 +26,10 @@ function buildDefaultFieldValues(
 
 export default function SupabaseCrudExplorer() {
   const [selectedTable, setSelectedTable] = useState(DEFAULT_TABLE);
-  const tableOperations = allOperations[selectedTable] ?? {};
+  const tableOperations = useMemo(
+    () => allOperations[selectedTable] ?? {},
+    [selectedTable],
+  );
   const operationNames = useMemo(
     () => Object.keys(tableOperations),
     [tableOperations],

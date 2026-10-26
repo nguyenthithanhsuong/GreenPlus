@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Building2, Bell, LogOut, User } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient";
 import { useAuthStore } from "../../src/lib/stores/authStore";
-import { usePermissions } from "@/lib/usePermissions";
+import { asPortalRole } from "@/lib/portal-access";
 import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
 
 const SettingsNav = () => {
@@ -13,7 +13,9 @@ const SettingsNav = () => {
   const pathname = usePathname();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
-  const { hasPermission, loading: permLoading } = usePermissions();
+  const role = asPortalRole(
+    useAuthStore((s) => s.user?.role_name ?? s.session?.role_name),
+  );
   const { profile } = useCurrentUserProfile();
 
   const goTo = (href: string) => {
@@ -62,16 +64,18 @@ const SettingsNav = () => {
         Hồ sơ cá nhân
       </button>
 
-      <button
-        type="button"
-        onClick={() => goTo("/settings/store")}
-        className={getItemClassName(isExactOrNestedPath("/settings/store"))}
-      >
-        <Building2 className="w-4 h-4" />
-        Cửa hàng của tôi
-      </button>
+      {role === "manager" && (
+        <button
+          type="button"
+          onClick={() => goTo("/settings/store")}
+          className={getItemClassName(isExactOrNestedPath("/settings/store"))}
+        >
+          <Building2 className="w-4 h-4" />
+          Cửa hàng của tôi
+        </button>
+      )}
       {}
-      {!permLoading && profile?.roleName?.toLowerCase()?.includes("admin") && (
+      {role === "admin" && (
         <button
           type="button"
           onClick={() => goTo("/settings/stores")}

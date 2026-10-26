@@ -4,6 +4,7 @@ import { AppError } from "../../../../backend/core/errors";
 import { categoryFacade } from "../../../../backend/modules/categories/facades/category.facade";
 import { CategorySort } from "../../../../backend/modules/categories/category.types";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../backend/core/store-context";
 
 const ALLOWED_SORT: CategorySort[] = ["name_asc", "name_desc", "newest"];
 
@@ -24,12 +25,13 @@ export const GET = withSentry(async (request: Request) => {
 
   const { searchParams } = new URL(request.url);
   sort = parseSort(searchParams.get("sort"));
+  const store = await resolveStoreContext(searchParams.get("storeId"));
 
   logger.info("Browse categories attempt", { sort });
 
   const start = Date.now();
 
-  const result = await categoryFacade.browseCategories(sort);
+  const result = await categoryFacade.browseCategories(sort, store.storeId);
 
   logger.info("Browse categories success", {
     sort,

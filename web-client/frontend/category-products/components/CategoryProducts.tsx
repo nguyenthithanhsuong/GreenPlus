@@ -1,5 +1,6 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
@@ -325,7 +326,7 @@ export default function CategoryProducts({
           query.set("keyword", searchValue.trim());
         }
 
-        const response = await fetch(`/api/products?${query.toString()}`, {
+        const response = await storeFetch(`/api/products?${query.toString()}`, {
           signal: controller.signal,
         });
         const data = (await response.json()) as
@@ -374,7 +375,7 @@ export default function CategoryProducts({
 
     setCartActionLoading(true);
     try {
-      const response = await fetch("/api/cart", {
+      const response = await storeFetch("/api/cart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -451,7 +452,7 @@ export default function CategoryProducts({
     }
 
     return products[0]?.categoryName ?? "Sản phẩm theo danh mục";
-  }, [categoryName, products]);
+  }, [categoryId, categoryName, products]);
 
   return (
     <div style={styles.page}>

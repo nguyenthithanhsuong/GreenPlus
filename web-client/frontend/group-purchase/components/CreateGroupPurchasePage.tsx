@@ -1,5 +1,6 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -185,12 +186,12 @@ export default function CreateGroupPurchasePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch("/api/products?limit=100");
+        const response = await storeFetch("/api/products?limit=100");
         const data = (await response.json()) as { items?: Product[] };
         const productList = data.items ?? [];
         setProducts(productList);
-        if (productList.length > 0 && !productId) {
-          setProductId(productList[0].product_id);
+        if (productList.length > 0) {
+          setProductId((current) => current || productList[0].product_id);
         }
       } catch {
         setMessage({
@@ -237,7 +238,7 @@ export default function CreateGroupPurchasePage() {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/group-purchases", {
+      const response = await storeFetch("/api/group-purchases", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

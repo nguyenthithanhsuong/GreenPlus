@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
 import {
@@ -597,7 +597,7 @@ const GreenCreator = () => {
   const userId = useAuthStore((state) => state.user?.user_id ?? "");
   const userName = useAuthStore((state) => state.user?.name ?? "Bạn");
 
-  const resolveActorUserId = () => {
+  const resolveActorUserId = useCallback(() => {
     if (userId) {
       return userId;
     }
@@ -605,7 +605,7 @@ const GreenCreator = () => {
     return (
       window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? ""
     );
-  };
+  }, [userId]);
 
   useEffect(() => {
     const fallbackUserId =
@@ -1021,7 +1021,14 @@ const GreenCreator = () => {
     }
 
     return results.map(mapCommunityPostToUi);
-  }, [allPosts, activeTab, interactionsByPostId, searchQuery, userId]);
+  }, [
+    allPosts,
+    activeTab,
+    interactionsByPostId,
+    resolveActorUserId,
+    searchQuery,
+    userId,
+  ]);
 
   const renderPostMedia = (post: Post) => {
     const mediaItems = post.images.length

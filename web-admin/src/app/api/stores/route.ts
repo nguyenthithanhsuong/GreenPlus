@@ -1,15 +1,24 @@
+import {
+  portalActor,
+  managerStoreIds,
+} from "../../../../backend/core/manager-scope";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { storesManagementFacade } from "../../../../backend/modules/stores/facades/stores-management.facade";
 import { logger } from "@/lib/logger";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const actor = await portalActor(request);
   logger.info("List stores attempt");
 
   try {
     const start = Date.now();
-    const items = await storesManagementFacade.listStores();
+    let items = await storesManagementFacade.listStores();
+    if (actor.role === "manager") {
+      const stores = await managerStoreIds(actor.id);
+      items = items.filter((item) => stores.includes(item.store_id));
+    }
 
     logger.info("List stores success", {
       count: items.length,
@@ -35,6 +44,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const actor = await portalActor(request);
+    if (actor.role !== "admin")
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const body = (await request.json()) as {
       name?: string;
       description?: string | null;

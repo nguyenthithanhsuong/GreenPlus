@@ -1,5 +1,6 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -769,7 +770,7 @@ export default function Payment() {
     setPlacingOrder(true);
 
     try {
-      const response = await fetch("/api/orders", {
+      const response = await storeFetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

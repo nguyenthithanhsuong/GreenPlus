@@ -78,6 +78,8 @@ const FLAG_TO_PERMISSIONS: Record<string, string[]> = {
     "auth.login",
 
     "users.read",
+    "users.create",
+    "users.update",
 
     "stores.read",
 

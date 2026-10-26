@@ -1,3 +1,4 @@
+import { portalActor } from "../../../../../backend/core/manager-scope";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
@@ -11,6 +12,9 @@ type Context = {
 };
 
 export async function PUT(request: Request, context: Context) {
+  const actor = await portalActor(request);
+  if (actor.role !== "admin")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { storeId } = await context.params;
 
   try {
@@ -76,6 +80,9 @@ export async function PUT(request: Request, context: Context) {
 }
 
 export async function PATCH(request: Request, context: Context) {
+  const actor = await portalActor(request);
+  if (actor.role !== "admin")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { storeId } = await context.params;
 
   try {
@@ -129,7 +136,10 @@ export async function PATCH(request: Request, context: Context) {
   }
 }
 
-export async function DELETE(_: Request, context: Context) {
+export async function DELETE(request: Request, context: Context) {
+  const actor = await portalActor(request);
+  if (actor.role !== "admin")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { storeId } = await context.params;
 
   logger.info("Delete store attempt", { storeId });

@@ -1,5 +1,6 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import NavigationBar from "../../dashboard/components/NavigationBar";
@@ -226,7 +227,7 @@ const Category = () => {
       setError(null);
 
       try {
-        const response = await fetch(`/api/categories?sort=${sortValue}`, {
+        const response = await storeFetch(`/api/categories?sort=${sortValue}`, {
           signal: controller.signal,
         });
         const data = (await response.json()) as

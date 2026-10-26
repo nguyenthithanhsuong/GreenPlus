@@ -1,5 +1,6 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
@@ -792,7 +793,6 @@ export default function ProductDetail({
         console.error("[ProductDetail] load failed", {
           productId,
           error: requestError,
-          debugSteps,
         });
         setError(
           requestError instanceof Error
@@ -890,7 +890,7 @@ export default function ProductDetail({
       throw new Error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
     }
 
-    const response = await fetch("/api/cart", {
+    const response = await storeFetch("/api/cart", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -934,7 +934,7 @@ export default function ProductDetail({
 
     setCartActionLoading(true);
     try {
-      const response = await fetch("/api/subscriptions", {
+      const response = await storeFetch("/api/subscriptions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -987,7 +987,7 @@ export default function ProductDetail({
 
     setCartActionLoading(true);
     try {
-      const response = await fetch("/api/group-purchases", {
+      const response = await storeFetch("/api/group-purchases", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

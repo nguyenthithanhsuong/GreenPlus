@@ -1,5 +1,6 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -953,7 +954,7 @@ export default function OrderDetail() {
     setReviewError(null);
 
     try {
-      const response = await fetch("/api/reviews", {
+      const response = await storeFetch("/api/reviews", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

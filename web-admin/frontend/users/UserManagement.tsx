@@ -8,6 +8,8 @@ import UserTable, { UserViewModel } from "./UserTable";
 import UserDrawer, { UserDrawerMode, UserFormValues } from "./UserDrawer";
 import ConfirmActionDialog from "./ConfirmActionDialog";
 import AdminShell from "../shared/AdminShell";
+import { useAuthStore } from "@/lib/stores/authStore";
+import { asPortalRole } from "@/lib/portal-access";
 
 type RoleOption = {
   roleId: string;
@@ -32,6 +34,9 @@ const emptyForm: UserFormValues = {
 };
 
 const UserManagement = () => {
+  const portalRole = asPortalRole(
+    useAuthStore((state) => state.user?.role_name ?? state.session?.role_name),
+  );
   const [users, setUsers] = useState<UserViewModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -373,8 +378,9 @@ const UserManagement = () => {
         await handleUpdateUser(selectedUser.user_id, {
           name: form.name.trim(),
           email: form.email.trim(),
-          roleId: form.roleId || null,
-          storeId: form.storeId || null,
+          ...(portalRole === "manager"
+            ? {}
+            : { roleId: form.roleId || null, storeId: form.storeId || null }),
           phone: form.phone.trim() || undefined,
           address: form.address.trim() || undefined,
           imageUrl: form.imageUrl.trim() || undefined,
@@ -390,6 +396,7 @@ const UserManagement = () => {
     form,
     handleCreateUser,
     handleUpdateUser,
+    portalRole,
     selectedUser,
   ]);
 

@@ -2,10 +2,11 @@ import { supabaseServer } from "../../core/supabase";
 import { CategoryRow } from "./category.types";
 
 export class CategoryRepository {
-  async listCategories(): Promise<CategoryRow[]> {
+  async listCategories(storeId: string): Promise<CategoryRow[]> {
     const { data, error } = await supabaseServer
       .from("categories")
-      .select("category_id,name,description,image_url");
+      .select("category_id,name,description,image_url")
+      .eq("store_id", storeId);
 
     if (error) {
       throw new Error(error.message);

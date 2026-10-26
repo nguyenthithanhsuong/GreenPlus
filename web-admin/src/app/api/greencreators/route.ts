@@ -22,7 +22,7 @@ function readAccessToken(request: Request): string {
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_portal_session=([^;]+)/);
+  const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_admin_auth=([^;]+)/);
 
   return cookieMatch ? decodeURIComponent(cookieMatch[1]).trim() : "";
 }

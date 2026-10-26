@@ -1,7 +1,8 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import ConfirmationDialog from "../../shared/components/ConfirmationDialog";
@@ -779,99 +780,105 @@ export default function Orders() {
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
 
-  const loadData = async (signal?: AbortSignal) => {
-    if (!user?.user_id) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const [cartResponse, ordersResponse, subscriptionsResponse] =
-        await Promise.all([
-          fetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, {
-            signal,
-            cache: "no-store",
-          }),
-          fetch(`/api/orders?userId=${encodeURIComponent(user.user_id)}`, {
-            signal,
-            cache: "no-store",
-          }),
-          fetch(
-            `/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`,
-            { signal, cache: "no-store" },
-          ),
-        ]);
-
-      if (!cartResponse.ok) {
-        throw new Error("Không thể tải giỏ hàng.");
-      }
-
-      if (!ordersResponse.ok) {
-        throw new Error("Không thể tải danh sách đơn hàng.");
-      }
-
-      const cartData = (await cartResponse.json()) as
-        CartResponse | { error?: string };
-      const ordersData = (await ordersResponse.json()) as
-        OrdersResponse | { error?: string };
-
-      if ("items" in cartData) {
-        setCartItems(cartData.items ?? []);
-        setCartTotal(cartData.cart_total ?? 0);
-        setCartId(cartData.cart_id ?? "");
-        setNoteDrafts(
-          (cartData.items ?? []).reduce<Record<string, string>>(
-            (drafts, item) => {
-              drafts[item.cart_item_id] = item.note ?? "";
-              return drafts;
-            },
-            {},
-          ),
-        );
-      }
-
-      if ("items" in ordersData) {
-        const nextOrders = ((ordersData as OrdersResponse).items ?? []).map(
-          (item) => ({
-            ...item,
-            status: toStatus(item.status),
-          }),
-        );
-        setOrders(nextOrders);
-      }
-
-      if (subscriptionsResponse.ok) {
-        const subscriptionsData = (await subscriptionsResponse.json()) as
-          SubscriptionListResponse | { error?: string };
-        if ("subscriptions" in subscriptionsData) {
-          setSubscriptions(subscriptionsData.subscriptions ?? []);
-        }
-      } else {
-        setSubscriptions([]);
-      }
-    } catch (requestError) {
-      if (
-        requestError instanceof DOMException &&
-        requestError.name === "AbortError"
-      ) {
+  const loadData = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!user?.user_id) {
         return;
       }
 
-      setCartItems([]);
-      setOrders([]);
-      setSubscriptions([]);
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Không thể tải dữ liệu.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      setError(null);
+      setMessage(null);
+
+      try {
+        const [cartResponse, ordersResponse, subscriptionsResponse] =
+          await Promise.all([
+            storeFetch(`/api/cart?userId=${encodeURIComponent(user.user_id)}`, {
+              signal,
+              cache: "no-store",
+            }),
+            storeFetch(
+              `/api/orders?userId=${encodeURIComponent(user.user_id)}`,
+              {
+                signal,
+                cache: "no-store",
+              },
+            ),
+            fetch(
+              `/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`,
+              { signal, cache: "no-store" },
+            ),
+          ]);
+
+        if (!cartResponse.ok) {
+          throw new Error("Không thể tải giỏ hàng.");
+        }
+
+        if (!ordersResponse.ok) {
+          throw new Error("Không thể tải danh sách đơn hàng.");
+        }
+
+        const cartData = (await cartResponse.json()) as
+          CartResponse | { error?: string };
+        const ordersData = (await ordersResponse.json()) as
+          OrdersResponse | { error?: string };
+
+        if ("items" in cartData) {
+          setCartItems(cartData.items ?? []);
+          setCartTotal(cartData.cart_total ?? 0);
+          setCartId(cartData.cart_id ?? "");
+          setNoteDrafts(
+            (cartData.items ?? []).reduce<Record<string, string>>(
+              (drafts, item) => {
+                drafts[item.cart_item_id] = item.note ?? "";
+                return drafts;
+              },
+              {},
+            ),
+          );
+        }
+
+        if ("items" in ordersData) {
+          const nextOrders = ((ordersData as OrdersResponse).items ?? []).map(
+            (item) => ({
+              ...item,
+              status: toStatus(item.status),
+            }),
+          );
+          setOrders(nextOrders);
+        }
+
+        if (subscriptionsResponse.ok) {
+          const subscriptionsData = (await subscriptionsResponse.json()) as
+            SubscriptionListResponse | { error?: string };
+          if ("subscriptions" in subscriptionsData) {
+            setSubscriptions(subscriptionsData.subscriptions ?? []);
+          }
+        } else {
+          setSubscriptions([]);
+        }
+      } catch (requestError) {
+        if (
+          requestError instanceof DOMException &&
+          requestError.name === "AbortError"
+        ) {
+          return;
+        }
+
+        setCartItems([]);
+        setOrders([]);
+        setSubscriptions([]);
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải dữ liệu.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user?.user_id],
+  );
 
   useEffect(() => {
     if (!initialized) {
@@ -889,7 +896,7 @@ export default function Orders() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, user]);
+  }, [initialized, isAuthenticated, loadData, router, user]);
 
   const filteredOrders = useMemo(() => {
     if (activeTab === "all") {
@@ -1076,7 +1083,7 @@ export default function Orders() {
 
   const flushNote = async (item: CartItemView) => {
     const note = (noteDrafts[item.cart_item_id] ?? "").trim();
-    await fetch("/api/cart/note", {
+    await storeFetch("/api/cart/note", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1180,7 +1187,7 @@ export default function Orders() {
 
     try {
       await Promise.all(cartItems.map(flushNote));
-      const response = await fetch("/api/orders", {
+      const response = await storeFetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1230,7 +1237,7 @@ export default function Orders() {
       const failedItems: string[] = [];
 
       for (const subscription of dueSubscriptions) {
-        const response = await fetch("/api/cart", {
+        const response = await storeFetch("/api/cart", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

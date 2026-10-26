@@ -1,8 +1,9 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
@@ -519,75 +520,82 @@ export default function SubscriptionsManagementPage() {
     [subscriptions],
   );
 
-  const loadData = async (signal?: AbortSignal) => {
-    if (!user?.user_id) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const [productResponse, subscriptionResponse] = await Promise.all([
-        fetch("/api/products?limit=100", { signal, cache: "no-store" }),
-        fetch(`/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`, {
-          signal,
-          cache: "no-store",
-        }),
-      ]);
-
-      const productData = (await productResponse.json()) as
-        ProductsResponse | { error?: string };
-      const subscriptionData = (await subscriptionResponse.json()) as
-        SubscriptionListResponse | { error?: string };
-
-      if (!productResponse.ok) {
-        throw new Error(
-          "error" in productData
-            ? (productData.error ?? "Không thể tải danh sách sản phẩm.")
-            : "Không thể tải danh sách sản phẩm.",
-        );
-      }
-
-      if (!subscriptionResponse.ok) {
-        throw new Error(
-          "error" in subscriptionData
-            ? (subscriptionData.error ?? "Không thể tải danh sách đơn định kỳ.")
-            : "Không thể tải danh sách đơn định kỳ.",
-        );
-      }
-
-      const nextProducts = (
-        (productData as ProductsResponse).items ?? []
-      ).filter((item) => item.isAvailable);
-      setProducts(nextProducts);
-
-      if (nextProducts.length > 0) {
-        setProductId((current) => current || nextProducts[0].productId);
-      }
-
-      setSubscriptions(
-        (subscriptionData as SubscriptionListResponse).subscriptions ?? [],
-      );
-    } catch (requestError) {
-      if (
-        requestError instanceof DOMException &&
-        requestError.name === "AbortError"
-      ) {
+  const loadData = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!user?.user_id) {
         return;
       }
 
-      setProducts([]);
-      setSubscriptions([]);
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Không thể tải dữ liệu.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [productResponse, subscriptionResponse] = await Promise.all([
+          storeFetch("/api/products?limit=100", { signal, cache: "no-store" }),
+          storeFetch(
+            `/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`,
+            {
+              signal,
+              cache: "no-store",
+            },
+          ),
+        ]);
+
+        const productData = (await productResponse.json()) as
+          ProductsResponse | { error?: string };
+        const subscriptionData = (await subscriptionResponse.json()) as
+          SubscriptionListResponse | { error?: string };
+
+        if (!productResponse.ok) {
+          throw new Error(
+            "error" in productData
+              ? (productData.error ?? "Không thể tải danh sách sản phẩm.")
+              : "Không thể tải danh sách sản phẩm.",
+          );
+        }
+
+        if (!subscriptionResponse.ok) {
+          throw new Error(
+            "error" in subscriptionData
+              ? (subscriptionData.error ??
+                  "Không thể tải danh sách đơn định kỳ.")
+              : "Không thể tải danh sách đơn định kỳ.",
+          );
+        }
+
+        const nextProducts = (
+          (productData as ProductsResponse).items ?? []
+        ).filter((item) => item.isAvailable);
+        setProducts(nextProducts);
+
+        if (nextProducts.length > 0) {
+          setProductId((current) => current || nextProducts[0].productId);
+        }
+
+        setSubscriptions(
+          (subscriptionData as SubscriptionListResponse).subscriptions ?? [],
+        );
+      } catch (requestError) {
+        if (
+          requestError instanceof DOMException &&
+          requestError.name === "AbortError"
+        ) {
+          return;
+        }
+
+        setProducts([]);
+        setSubscriptions([]);
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải dữ liệu.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user?.user_id],
+  );
 
   useEffect(() => {
     if (!initialized) {
@@ -605,7 +613,7 @@ export default function SubscriptionsManagementPage() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, user]);
+  }, [initialized, isAuthenticated, loadData, router, user]);
 
   const handleCreate = async () => {
     if (!user?.user_id || !productId) {
@@ -618,7 +626,7 @@ export default function SubscriptionsManagementPage() {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/subscriptions", {
+      const response = await storeFetch("/api/subscriptions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -678,7 +686,7 @@ export default function SubscriptionsManagementPage() {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/subscriptions", {
+      const response = await storeFetch("/api/subscriptions", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -726,7 +734,7 @@ export default function SubscriptionsManagementPage() {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/subscriptions", {
+      const response = await storeFetch("/api/subscriptions", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

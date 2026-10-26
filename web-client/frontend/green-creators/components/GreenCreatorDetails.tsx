@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
 import {
@@ -537,28 +537,31 @@ export default function GreenCreatorDetails({
     [currentUserId, interactions],
   );
 
-  const fetchInteractions = async (signal?: AbortSignal) => {
-    if (!postId) {
-      return;
-    }
+  const fetchInteractions = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!postId) {
+        return;
+      }
 
-    const response = await fetch(
-      `/api/community/posts/interactions?postId=${encodeURIComponent(postId)}`,
-      {
-        signal,
-      },
-    );
-    const data = (await response.json()) as {
-      items?: CommunityPostInteractionItem[];
-      error?: string;
-    };
+      const response = await fetch(
+        `/api/community/posts/interactions?postId=${encodeURIComponent(postId)}`,
+        {
+          signal,
+        },
+      );
+      const data = (await response.json()) as {
+        items?: CommunityPostInteractionItem[];
+        error?: string;
+      };
 
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to load interactions");
-    }
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to load interactions");
+      }
 
-    setInteractions(Array.isArray(data.items) ? data.items : []);
-  };
+      setInteractions(Array.isArray(data.items) ? data.items : []);
+    },
+    [postId],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -650,7 +653,7 @@ export default function GreenCreatorDetails({
     return () => {
       controller.abort();
     };
-  }, [postId]);
+  }, [fetchInteractions, postId]);
 
   useEffect(() => {
     const uniqueUserIds = Array.from(

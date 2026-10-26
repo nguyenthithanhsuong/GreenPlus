@@ -1,5 +1,6 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -398,7 +399,7 @@ export default function Complaints() {
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/complaints", {
+      const response = await storeFetch("/api/complaints", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

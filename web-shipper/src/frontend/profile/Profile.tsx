@@ -1,24 +1,66 @@
-import Link from "next/link";
-
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { LogOut, Phone, Mail, UserRound, ShieldCheck } from "lucide-react";
+import NavigationBar from "../dashboard/NavigationBar";
 export default function ProfileScreen() {
+  const router = useRouter();
+  const [user, setUser] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+  } | null>(null);
+  useEffect(() => {
+    void fetch("/api/auth/me", { cache: "no-store" })
+      .then(async (res) => {
+        if (res.status === 401) {
+          router.replace("/login");
+          return;
+        }
+        if (res.ok) setUser((await res.json()).user);
+      })
+      .catch(() => {});
+  }, [router]);
+  async function logout() {
+    await fetch("/api/auth/sign-out", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  }
   return (
-    <main className="min-h-screen bg-slate-50 px-5 py-10 text-slate-900">
-      <section className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
-          GreenPlus Shipper
-        </p>
-        <h1 className="mt-3 text-2xl font-bold">Hồ sơ</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Thông tin hồ sơ shipper sẽ được kết nối với phiên đăng nhập và dữ liệu
-          phân công giao hàng.
-        </p>
-        <Link
-          href="/"
-          className="mt-6 inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+    <main className="min-h-dvh bg-emerald-50 px-4 pb-28 pt-12 text-slate-800">
+      <div className="mx-auto max-w-[540px]">
+        <section className="rounded-3xl bg-gradient-to-br from-emerald-700 to-emerald-500 p-7 text-white shadow-lg">
+          <div className="mb-4 inline-flex rounded-2xl bg-white/20 p-3">
+            <UserRound size={30} />
+          </div>
+          <h1 className="text-2xl font-black">
+            {user?.name || "Hồ sơ Shipper"}
+          </h1>
+          <p className="mt-2 flex items-center gap-2 text-sm text-emerald-50">
+            <ShieldCheck size={16} />
+            Tài khoản nhân viên giao hàng
+          </p>
+        </section>
+        <div className="mt-5 space-y-3 rounded-3xl bg-white p-6 shadow-sm">
+          <p className="flex items-center gap-3 text-sm">
+            <Mail size={18} className="text-emerald-600" />
+            {user?.email || "Đang tải..."}
+          </p>
+          <p className="flex items-center gap-3 text-sm">
+            <Phone size={18} className="text-emerald-600" />
+            {user?.phone || "Chưa cập nhật số điện thoại"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void logout()}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-white p-4 font-semibold text-rose-600 shadow-sm"
         >
-          Về trang chính
-        </Link>
-      </section>
+          <LogOut size={20} />
+          Đăng xuất
+        </button>
+      </div>
+      <NavigationBar />
     </main>
   );
 }

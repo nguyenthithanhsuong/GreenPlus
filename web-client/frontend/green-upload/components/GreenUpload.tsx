@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "@/lib/stores/authStore";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import {
@@ -288,7 +288,7 @@ export default function GreenUpload() {
         "")
       : "");
 
-  const loadMyPosts = async () => {
+  const loadMyPosts = useCallback(async () => {
     if (!activeUserId) {
       setError("Không tìm thấy user_id. Vui lòng đăng nhập trước.");
       return;
@@ -321,11 +321,11 @@ export default function GreenUpload() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeUserId]);
 
   useEffect(() => {
     void loadMyPosts();
-  }, [authUserId]);
+  }, [loadMyPosts]);
 
   useEffect(() => {
     if (!files.length) {

@@ -1,14 +1,18 @@
+import { portalActor } from "../../../../backend/core/manager-scope";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { roleManagementFacade } from "../../../../backend/modules/roles/facades/role-management.facade";
 import { logger } from "@/lib/logger";
 
-export const GET = withSentry(async () => {
+export const GET = withSentry(async (request: Request) => {
+  const actor = await portalActor(request);
   logger.info("List roles attempt");
 
   const start = Date.now();
 
-  const items = await roleManagementFacade.listRoles();
+  let items = await roleManagementFacade.listRoles();
+  if (actor.role === "manager")
+    items = items.filter((role) => role.is_employee === true);
 
   logger.info("List roles success", {
     count: items.length,
@@ -25,6 +29,9 @@ export const GET = withSentry(async () => {
 });
 
 export const POST = withSentry(async (request: Request) => {
+  const actor = await portalActor(request);
+  if (actor.role !== "admin")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = (await request.json()) as {
     roleName?: string;
     description?: string;

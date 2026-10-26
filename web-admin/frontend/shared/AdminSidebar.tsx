@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -19,145 +18,102 @@ import {
   Users,
   Warehouse,
   Wallet,
+  Building2,
 } from "lucide-react";
-import { usePermissions } from "@/lib/usePermissions";
+import { useAuthStore } from "@/lib/stores/authStore";
+import { asPortalRole, canAccessPage } from "@/lib/portal-access";
 
-const navGroups = [
+const groups = [
   {
     label: "Tổng quan",
     items: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
-    label: "Hệ thống",
+    label: "Quản lý",
     items: [
       { href: "/users", label: "Người dùng", icon: Users },
       { href: "/roles", label: "Vai trò", icon: Shield },
       { href: "/suppliers", label: "Nhà cung cấp", icon: Store },
-    ],
-  },
-  {
-    label: "Vận hành",
-    items: [
       { href: "/products", label: "Sản phẩm", icon: Package },
       { href: "/categories", label: "Danh mục", icon: Tag },
       { href: "/batches", label: "Lô hàng", icon: Boxes },
       { href: "/inventories", label: "Tồn kho", icon: Warehouse },
-      { href: "/prices", label: "Giá", icon: Wallet },
+      { href: "/prices", label: "Giá bán", icon: Wallet },
       { href: "/orders", label: "Đơn hàng", icon: ShoppingCart },
       { href: "/shippers", label: "Giao hàng", icon: Truck },
       { href: "/complaints", label: "Khiếu nại", icon: AlertCircle },
       { href: "/customers", label: "Phân tích khách hàng", icon: PieChart },
       { href: "/greencreators", label: "Green Creator", icon: Image },
       { href: "/reports", label: "Báo cáo tài chính", icon: FileText },
+      { href: "/settings/stores", label: "Các cửa hàng", icon: Building2 },
+      { href: "/settings/store", label: "Cửa hàng của tôi", icon: Building2 },
     ],
   },
 ];
-
-function isRouteActive(pathname: string, href: string): boolean {
-  if (href === "/dashboard") {
-    return pathname === "/" || pathname === "/dashboard";
-  }
-
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 export default function AdminSidebar() {
-  const pathname = usePathname();
-  const { permissions, loading } = usePermissions();
-
-  function allowed(href: string) {
-    if (!permissions) return false;
-
-    if (href === "/dashboard" || href === "/settings") return true;
-
-    const map: Record<string, string> = {
-      "/users": "users.read",
-      "/roles": "roles.read",
-      "/suppliers": "suppliers.read",
-      "/products": "products.read",
-      "/categories": "categories.read",
-      "/batches": "batches.read",
-      "/inventories": "inventory.read",
-      "/prices": "prices.read",
-      "/orders": "orders.read",
-      "/shippers": "orders.assign",
-      "/complaints": "complaints.read",
-      "/customers": "reports.customer_analytics",
-      "/greencreators": "content.read",
-      "/reports": "reports.business_view",
-    };
-
-    const required = map[href];
-    if (!required) return true;
-    return permissions.includes(required);
-  }
-
+  const path = usePathname();
+  const role = asPortalRole(
+    useAuthStore((s) => s.user?.role_name ?? s.session?.role_name),
+  );
   return (
-    <aside className="w-[260px] h-screen bg-white border-r border-gray-100 flex flex-col font-sans shrink-0">
-      <div className="h-20 flex items-center px-6 border-b border-gray-50">
+    <aside className="h-screen w-[260px] shrink-0 flex flex-col border-r border-emerald-100 bg-white">
+      <div className="border-b border-emerald-50 px-6 py-5">
         <Link
           href="/dashboard"
-          className="inline-flex"
-          aria-label="GreenPlus dashboard"
+          className="text-2xl font-black tracking-tight text-emerald-700"
         >
-          <img
-            src="https://ujgnuwlljslwokblmrwi.supabase.co/storage/v1/object/public/General/IconText.png"
-            alt="GreenPlus Logo"
-            className="h-10 w-auto object-contain"
-          />
+          Green<span className="text-lime-500">Plus</span>
         </Link>
+        <p className="text-xs capitalize text-slate-500">
+          Cổng {role ?? "quản trị"}
+        </p>
       </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
-        {navGroups.map((group) => (
-          <div key={group.label}>
-            <h3 className="text-sm font-semibold text-gray-400 mb-3 px-3">
-              {group.label}
-            </h3>
-            <ul className="space-y-1">
-              {group.items
-                .filter((it) => {
-                  if (loading) return false;
-                  return allowed(it.href);
-                })
-                .map((item) => {
-                  const Icon = item.icon;
-                  const active = isRouteActive(pathname, item.href);
-
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className={`flex items-center px-3 py-3 rounded-xl transition-colors ${
-                          active
-                            ? "text-[#059669] bg-[#F0FDF4] font-medium"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <Icon
-                          className={`w-[22px] h-[22px] mr-3 ${active ? "text-[#059669]" : "text-gray-800"}`}
-                        />
-                        <span className="text-[15px]">{item.label}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      <div className="p-4 border-t border-gray-100">
+      <nav
+        aria-label="Menu theo vai trò"
+        className="flex-1 space-y-6 overflow-y-auto px-3 py-5"
+      >
+        {role &&
+          groups.map((group) => {
+            const items = group.items.filter((item) =>
+              canAccessPage(role, item.href),
+            );
+            return items.length ? (
+              <div key={group.label}>
+                <p className="px-3 pb-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                  {group.label}
+                </p>
+                <ul className="space-y-1">
+                  {items.map((item) => {
+                    const Icon = item.icon;
+                    const active =
+                      path === item.href ||
+                      (item.href !== "/dashboard" &&
+                        path.startsWith(item.href + "/"));
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          aria-current={active ? "page" : undefined}
+                          href={item.href}
+                          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${active ? "bg-emerald-50 font-bold text-emerald-700" : "text-slate-600 hover:bg-slate-50"}`}
+                        >
+                          <Icon size={19} />
+                          {item.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null;
+          })}
+      </nav>
+      <div className="border-t p-3">
         <Link
           href="/settings"
-          className={`flex items-center px-3 py-3 rounded-xl transition-colors ${
-            isRouteActive(pathname, "/settings")
-              ? "text-[#059669] bg-[#F0FDF4] font-medium"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          }`}
+          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-700 hover:bg-emerald-50"
         >
-          <Settings className="w-[22px] h-[22px] mr-3" />
-          <span className="text-[15px]">Cài đặt</span>
+          <Settings size={18} />
+          Thông tin cá nhân
         </Link>
       </div>
     </aside>

@@ -2,6 +2,11 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { userManagementFacade } from "../../../../../backend/modules/users/facades/user-management.facade";
 import { logger } from "@/lib/logger";
+import {
+  portalActor,
+  assertManagerEmployeeTarget,
+} from "../../../../../backend/core/manager-scope";
+import { AppError } from "../../../../../backend/core/errors";
 
 type Context = {
   params: Promise<{
@@ -11,6 +16,9 @@ type Context = {
 
 export const PUT = withSentry(async (request: Request, context: Context) => {
   const { userId } = await context.params;
+  const actor = await portalActor(request);
+  if (actor.role === "manager")
+    await assertManagerEmployeeTarget(actor.id, userId);
 
   const body = (await request.json()) as {
     roleId?: string | null;
@@ -22,6 +30,12 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
     imageUrl?: string;
     status?: "active" | "inactive" | "banned";
   };
+
+  if (
+    actor.role === "manager" &&
+    (body.roleId !== undefined || body.storeId !== undefined)
+  )
+    throw new AppError("Manager cannot change employee role or store", 403);
 
   logger.info("Update user attempt", {
     userId,
@@ -52,6 +66,9 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
 
 export const PATCH = withSentry(async (request: Request, context: Context) => {
   const { userId } = await context.params;
+  const actor = await portalActor(request);
+  if (actor.role === "manager")
+    await assertManagerEmployeeTarget(actor.id, userId);
 
   const body = (await request.json()) as {
     action?: "disable";
@@ -111,8 +128,11 @@ export const PATCH = withSentry(async (request: Request, context: Context) => {
   );
 });
 
-export const DELETE = withSentry(async (_: Request, context: Context) => {
+export const DELETE = withSentry(async (request: Request, context: Context) => {
   const { userId } = await context.params;
+  const actor = await portalActor(request);
+  if (actor.role !== "admin")
+    throw new AppError("Only Admin may delete accounts", 403);
 
   logger.info("Delete user attempt", {
     userId,

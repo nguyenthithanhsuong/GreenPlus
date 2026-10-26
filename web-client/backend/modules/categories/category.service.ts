@@ -10,8 +10,11 @@ import {
 export class CategoryService {
   constructor(private readonly repository: CategoryRepository) {}
 
-  async getCategories(sort: CategorySort): Promise<CategoryBrowseResult> {
-    const rows = await this.repository.listCategories();
+  async getCategories(
+    sort: CategorySort,
+    storeId: string,
+  ): Promise<CategoryBrowseResult> {
+    const rows = await this.repository.listCategories(storeId);
 
     const mapped: CategoryItem[] = rows
       .filter((row) => createCategoryState(row.name).canDisplay())

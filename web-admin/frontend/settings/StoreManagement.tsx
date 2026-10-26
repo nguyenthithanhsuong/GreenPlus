@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   Building2,
   Clock3,
@@ -188,9 +194,12 @@ const StoreManagement = () => {
     );
   }, [users]);
 
-  const getManagerDisplayName = (managerId: string) => {
-    return managerNameById.get(managerId) ?? managerId ?? "Chưa có";
-  };
+  const getManagerDisplayName = useCallback(
+    (managerId: string) => {
+      return managerNameById.get(managerId) ?? managerId ?? "Chưa có";
+    },
+    [managerNameById],
+  );
 
   const deferredSearchQuery = useDeferredValue(searchQuery);
 

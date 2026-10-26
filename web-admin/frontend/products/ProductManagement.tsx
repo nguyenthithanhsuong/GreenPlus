@@ -189,14 +189,7 @@ const ProductManagement = () => {
     } finally {
       setSaving(false);
     }
-  }, [
-    closeDrawer,
-    form,
-    loadCategories,
-    loadProducts,
-    reloadData,
-    selectedProduct,
-  ]);
+  }, [closeDrawer, form, reloadData, selectedProduct]);
 
   const handleUploadImage = useCallback(async (file: File) => {
     setUploadingImage(true);

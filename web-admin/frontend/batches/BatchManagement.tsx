@@ -494,7 +494,14 @@ const BatchManagement = () => {
     } finally {
       setSaving(false);
     }
-  }, [canForceManageApproved, closeDrawer, form, reloadData, selectedBatch]);
+  }, [
+    canForceManageApproved,
+    closeDrawer,
+    form,
+    reloadData,
+    selectedBatch,
+    suppliers,
+  ]);
 
   const deleteBatch = useCallback(
     (batch: BatchRow) => {

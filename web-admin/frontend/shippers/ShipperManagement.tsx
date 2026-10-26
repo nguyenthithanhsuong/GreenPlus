@@ -265,7 +265,14 @@ const ShipperManagement = () => {
         setSaving(false);
       }
     },
-    [form.employeeId, form.note, form.status, loadDeliveries, selectedDetail],
+    [
+      closeDrawer,
+      form.employeeId,
+      form.note,
+      form.status,
+      loadDeliveries,
+      selectedDetail,
+    ],
   );
 
   return (

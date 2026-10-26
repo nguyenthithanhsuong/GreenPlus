@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { usePermissions } from "@/lib/usePermissions";
+import { asPortalRole, canAccessPage } from "@/lib/portal-access";
 import { useAuthStore } from "@/lib/stores/authStore";
 
 type Props = {
@@ -10,39 +10,15 @@ type Props = {
 };
 
 export default function PageGuard({ children }: Props) {
-  const { permissions, loading } = usePermissions();
+  const role = asPortalRole(
+    useAuthStore((s) => s.user?.role_name ?? s.session?.role_name),
+  );
   const pathname = usePathname();
   const router = useRouter();
   const initialized = useAuthStore((state) => state.initialized);
   const isAuthenticated = useAuthStore((state) =>
     Boolean(state.session && state.user),
   );
-
-  const map: Record<string, string> = {
-    "/users": "users.read",
-    "/roles": "roles.read",
-    "/suppliers": "suppliers.read",
-    "/products": "products.read",
-    "/categories": "categories.read",
-    "/batches": "batches.read",
-    "/inventories": "inventory.read",
-    "/prices": "prices.read",
-    "/orders": "orders.read",
-    "/shippers": "orders.assign",
-    "/complaints": "complaints.read",
-    "/customers": "reports.customer_analytics",
-    "/greencreators": "content.read",
-    "/reports": "reports.business_view",
-  };
-
-  function requiredPermissionForPath(path: string): string | null {
-    for (const href of Object.keys(map)) {
-      if (path === href || path.startsWith(href + "/")) return map[href];
-    }
-    return null;
-  }
-
-  const required = requiredPermissionForPath(pathname || "/");
 
   useEffect(() => {
     if (!initialized) return;
@@ -51,11 +27,11 @@ export default function PageGuard({ children }: Props) {
     }
   }, [initialized, isAuthenticated, pathname, router]);
 
-  if (!initialized || loading) return null;
+  if (!initialized) return null;
 
   if (!isAuthenticated && pathname !== "/login") return null;
 
-  if (required && permissions && !permissions.includes(required)) {
+  if (isAuthenticated && (!role || !canAccessPage(role, pathname))) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center max-w-lg">

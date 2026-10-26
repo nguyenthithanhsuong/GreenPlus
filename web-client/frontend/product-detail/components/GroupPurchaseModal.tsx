@@ -1,5 +1,6 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
 import React, { useEffect, useState } from "react";
 
 type GroupBuy = {
@@ -290,7 +291,7 @@ export default function GroupPurchaseModal({
       setError(null);
 
       try {
-        const response = await fetch("/api/group-purchases");
+        const response = await storeFetch("/api/group-purchases");
         const data = (await response.json()) as {
           groups?: GroupBuy[];
           error?: string;

@@ -1,5 +1,8 @@
 "use client";
 
+import StoreSelector from "../../stores/StoreSelector";
+import { STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
+import { storeFetch } from "@/lib/stores/store-fetch";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -437,6 +440,12 @@ const Dashboard = () => {
     };
   }, []);
 
+  const [storeRevision, setStoreRevision] = useState(0);
+  useEffect(() => {
+    const changed = () => setStoreRevision((n) => n + 1);
+    window.addEventListener(STORE_CHANGE_EVENT, changed);
+    return () => window.removeEventListener(STORE_CHANGE_EVENT, changed);
+  }, []);
   const handleAddToCart = async (productId: string) => {
     setCartActionMessage(null);
 
@@ -448,7 +457,7 @@ const Dashboard = () => {
 
     setCartActionLoading(true);
     try {
-      const response = await fetch("/api/cart", {
+      const response = await storeFetch("/api/cart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -514,7 +523,7 @@ const Dashboard = () => {
       setCategoryError(null);
 
       try {
-        const response = await fetch("/api/categories?sort=name_asc", {
+        const response = await storeFetch("/api/categories?sort=name_asc", {
           signal: controller.signal,
         });
         const data = (await response.json()) as
@@ -550,7 +559,7 @@ const Dashboard = () => {
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [storeRevision]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -568,7 +577,7 @@ const Dashboard = () => {
           query.set("keyword", searchValue.trim());
         }
 
-        const response = await fetch(`/api/products?${query.toString()}`, {
+        const response = await storeFetch(`/api/products?${query.toString()}`, {
           signal: controller.signal,
         });
         const data = (await response.json()) as
@@ -604,7 +613,7 @@ const Dashboard = () => {
     return () => {
       controller.abort();
     };
-  }, [searchValue]);
+  }, [searchValue, storeRevision]);
 
   const runSearch = () => {
     const keyword = searchValue.trim();
@@ -657,37 +666,8 @@ const Dashboard = () => {
     <div style={styles.page}>
       <div style={styles.dashboardContainer}>
         <div style={styles.topSpace} />
-        <div style={styles.locationRow}>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11Z"
-              stroke="#1A4331"
-              strokeWidth="1.8"
-            />
-            <circle cx="12" cy="10" r="2.5" fill="#1A4331" />
-          </svg>
-          <p style={styles.locationText}>Thủ Đức, Hồ Chí Minh</p>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="m6 9 6 6 6-6"
-              stroke="#1A4331"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+        <div className="px-4 pt-2">
+          <StoreSelector />
         </div>
 
         <main style={styles.mainContent}>
