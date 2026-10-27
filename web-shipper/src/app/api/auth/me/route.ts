@@ -33,7 +33,7 @@ export async function PATCH(request: Request) {
     const { data, error } = await shipperDb().from("users")
       .update({...patch,latitude:location?.latitude??null,longitude:location?.longitude??null})
       .eq("user_id", user.user_id)
-      .select("user_id,name,email,phone,address,status")
+      .select("user_id,name,email,phone,address,status,image_url")
       .single();
     if (error || !data) throw new ShipperError("Không lưu được hồ sơ Shipper", 503, "PROFILE_UPDATE_FAILED");
     return NextResponse.json({ user: data }, { headers: noStore });

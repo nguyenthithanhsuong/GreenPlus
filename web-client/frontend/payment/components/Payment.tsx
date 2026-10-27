@@ -1,8 +1,11 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
+import { getCheckoutIdempotencyKey, clearCheckoutIdempotencyKey } from "@/lib/orders/checkout-idempotency";
+import { useSelectedStoreId, useResetOnStoreChange } from "@/lib/stores/use-selected-store";
+import CommerceStorePicker from "../../stores/CommerceStorePicker";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/authStore";
 import {
@@ -509,6 +512,7 @@ export default function Payment() {
   const initialized = useAuthStore((state) => state.initialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const storeId = useSelectedStoreId();
 
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -521,6 +525,12 @@ export default function Payment() {
   const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
+  useResetOnStoreChange(() => {
+    setCart(null);
+    setLoading(false);
+    setError(null);
+  });
+
   useEffect(() => {
     if (!initialized) {
       return;
@@ -530,6 +540,7 @@ export default function Payment() {
       router.replace("/login");
       return;
     }
+    if (!storeId) return;
 
     const controller = new AbortController();
 
@@ -538,7 +549,7 @@ export default function Payment() {
       setError(null);
 
       try {
-        const response = await fetch(
+        const response = await storeFetch(
           `/api/cart?userId=${encodeURIComponent(user.user_id)}`,
           {
             signal: controller.signal,
@@ -592,7 +603,7 @@ export default function Payment() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, user]);
+  }, [initialized, isAuthenticated, router, user, storeId]);
 
   const itemTotal = useMemo(() => Number(cart?.cart_total ?? 0), [cart]);
   const cartItems = useMemo(() => cart?.items ?? [], [cart]);
@@ -633,11 +644,11 @@ export default function Payment() {
   };
 
   const mutateCart = async (
-    request: RequestInfo,
+    request: string,
     init: RequestInit,
     fallbackMessage: string,
   ) => {
-    const response = await fetch(request, init);
+    const response = await storeFetch(request, init);
     const data = (await response.json()) as CartResponse | { error?: string };
 
     if (!response.ok) {
@@ -754,7 +765,10 @@ export default function Payment() {
     }
   };
 
+  const checkoutInFlight = useRef(false);
+
   const handlePlaceOrder = async () => {
+    if (checkoutInFlight.current) return;
     if (!user?.user_id) {
       setMessage("Vui lòng đăng nhập để đặt hàng.");
       return;
@@ -766,17 +780,38 @@ export default function Payment() {
       return;
     }
 
+    if (!storeId || !cart?.cart_id || cartItems.length === 0) {
+      setMessage("Vui lòng chọn cửa hàng và kiểm tra giỏ hàng trước khi đặt.");
+      return;
+    }
+
+    const checkoutContext = {
+      userId: user.user_id,
+      storeId,
+      cartId: cart.cart_id,
+      items: cartItems,
+      deliveryAddress,
+      deliveryFee: shippingFee,
+      paymentMethod,
+      note: note.trim(),
+    };
+    const idempotencyKey = getCheckoutIdempotencyKey(checkoutContext);
+    checkoutInFlight.current = true;
     setMessage(null);
     setPlacingOrder(true);
 
+    let orderConfirmed = false;
     try {
       const response = await storeFetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
         },
         body: JSON.stringify({
           userId: user.user_id,
+          cartId: cart.cart_id,
+          idempotencyKey,
           deliveryAddress,
           deliveryFee: shippingFee,
           note: note.trim(),
@@ -794,6 +829,8 @@ export default function Payment() {
         throw new Error(responseError || "Không thể tạo đơn hàng.");
       }
 
+      clearCheckoutIdempotencyKey(checkoutContext);
+      orderConfirmed = true;
       setMessage("Đặt hàng thành công.");
       router.push("/orders");
     } catch (requestError) {
@@ -803,6 +840,8 @@ export default function Payment() {
           : "Không thể tạo đơn hàng.",
       );
     } finally {
+      // Do not create a new checkout attempt after a successful response.
+      checkoutInFlight.current = orderConfirmed;
       setPlacingOrder(false);
     }
   };
@@ -828,6 +867,8 @@ export default function Payment() {
           </Link>
           <h1 style={styles.headerTitle}>Thanh Toán</h1>
         </header>
+
+        <CommerceStorePicker />
 
         <main style={styles.scrollBody}>
           {!initialized && (

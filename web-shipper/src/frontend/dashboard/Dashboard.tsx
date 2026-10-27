@@ -123,7 +123,7 @@ export default function Dashboard() {
       <section className="mt-6" aria-label="Danh sách đơn hàng">
         <div className="mb-4 flex items-end justify-between gap-3">
           <div><h2 className="text-lg font-extrabold text-slate-800">Danh sách đơn hàng</h2>
-            <p className="gp-muted mt-1">Cập nhật tự động mỗi 20 giây khi trang đang mở</p></div>
+            {/* <p className="gp-muted mt-1">Cập nhật tự động mỗi 20 giây khi trang đang mở</p></div> */}
           <span className="text-xs font-semibold text-slate-500">{loading ? "Đang tải..." : `${visible.length} đơn`}</span>
         </div>
         <div className="gp-tabs" role="tablist" aria-label="Lọc trạng thái đơn">

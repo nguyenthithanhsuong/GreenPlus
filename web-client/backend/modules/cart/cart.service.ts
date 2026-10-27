@@ -233,6 +233,9 @@ export class CartService {
     await this.ensureProductExists(productId, storeId);
 
     const stock = await this.getAvailableStock(productId, storeId);
+    if (stock === 0) {
+      throw new AppError("Sản phẩm đã hết hàng tại cửa hàng đang chọn", 400);
+    }
     this.validateQuantity(quantity, stock);
 
     let existingItem: { cart_item_id: string; quantity: number } | null = null;
@@ -273,6 +276,12 @@ export class CartService {
     }
 
     const nextQuantity = Number(existingItem.quantity) + quantity;
+    if (nextQuantity > stock) {
+      throw new AppError(
+        `Trong giỏ đã có ${existingItem.quantity}; cửa hàng chỉ còn ${stock} sản phẩm khả dụng.`,
+        400,
+      );
+    }
     this.validateQuantity(nextQuantity, stock);
 
     try {
@@ -308,6 +317,9 @@ export class CartService {
     await this.ensureProductExists(productId, storeId);
 
     const stock = await this.getAvailableStock(productId, storeId);
+    if (stock === 0) {
+      throw new AppError("Sản phẩm đã hết hàng tại cửa hàng đang chọn", 400);
+    }
     this.validateQuantity(quantity, stock);
 
     let existingItem: { cart_item_id: string } | null = null;

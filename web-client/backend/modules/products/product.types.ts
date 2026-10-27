@@ -24,6 +24,8 @@ export type ProductBrowseItem = {
   certification: string | null;
   price: number | null;
   isAvailable: boolean;
+  availableQuantity: number;
+  canPurchase: boolean;
   createdAt: string;
 };
 

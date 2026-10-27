@@ -1,5 +1,7 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -61,7 +63,7 @@ export default function BackendOrdersTestPage() {
 
     try {
       const userId = requireUserId();
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders?userId=${encodeURIComponent(userId)}`,
       );
       const data = (await response.json()) as
@@ -92,7 +94,7 @@ export default function BackendOrdersTestPage() {
         throw new Error("orderId is required");
       }
 
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders/${encodeURIComponent(selectedOrderId.trim())}?userId=${encodeURIComponent(userId)}`,
       );
       const data = (await response.json()) as unknown;
@@ -123,7 +125,7 @@ export default function BackendOrdersTestPage() {
 
     try {
       const userId = requireUserId();
-      const response = await fetch("/api/orders", {
+      const response = await storeFetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -167,7 +169,7 @@ export default function BackendOrdersTestPage() {
         throw new Error("orderId is required");
       }
 
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders/${encodeURIComponent(selectedOrderId.trim())}/cancel`,
         {
           method: "PUT",

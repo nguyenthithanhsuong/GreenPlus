@@ -1,6 +1,8 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
+import { STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
+import StoreSelector from "../../stores/StoreSelector";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
@@ -22,6 +24,8 @@ type ProductItem = {
   certification: string | null;
   price: number | null;
   isAvailable: boolean;
+  availableQuantity: number;
+  canPurchase: boolean;
   createdAt: string;
 };
 
@@ -285,6 +289,12 @@ export default function CategoryProducts({
   const [cartActionMessage, setCartActionMessage] = useState<string | null>(
     null,
   );
+  const [storeRevision, setStoreRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => setStoreRevision((current) => current + 1);
+    window.addEventListener(STORE_CHANGE_EVENT, refresh);
+    return () => window.removeEventListener(STORE_CHANGE_EVENT, refresh);
+  }, []);
   const [cartActionLoading, setCartActionLoading] = useState(false);
 
   useEffect(() => {
@@ -362,7 +372,7 @@ export default function CategoryProducts({
     return () => {
       controller.abort();
     };
-  }, [categoryId, searchValue, sortValue]);
+  }, [categoryId, searchValue, sortValue, storeRevision]);
 
   const handleAddToCart = async (productId: string) => {
     setCartActionMessage(null);
@@ -477,6 +487,7 @@ export default function CategoryProducts({
           <div style={{ width: "24px", height: "24px" }} />
         </header>
 
+        <div className="px-4 pb-2"><StoreSelector /></div>
         <main style={styles.mainContent}>
           <div style={styles.searchSection}>
             <div style={styles.searchBox}>
@@ -579,7 +590,7 @@ export default function CategoryProducts({
                           {product.categoryName ?? "Sản phẩm"}
                         </p>
                         <p style={styles.statusText}>
-                          {product.isAvailable ? "Sẵn hàng" : "Tạm hết hàng"}
+                          {product.isAvailable ? (product.canPurchase ? `Còn ${product.availableQuantity}` : `Còn ${product.availableQuantity} · Chưa có giá`) : "Tạm hết hàng"}
                         </p>
                         <div style={styles.priceRow}>
                           <p
@@ -597,13 +608,17 @@ export default function CategoryProducts({
                   </Link>
                   <button
                     type="button"
+                    aria-label={`Thêm ${product.name}`}
+                    title={product.isAvailable && !product.canPurchase ? "Sản phẩm có tồn kho nhưng chưa có giá bán" : undefined}
+                    disabled={!product.canPurchase || cartActionLoading}
                     style={{
                       ...styles.addButton,
                       alignSelf: "flex-end",
                       marginTop: "-42px",
                       marginRight: "8px",
+                      opacity: product.canPurchase ? 1 : 0.45,
+                      cursor: product.canPurchase ? "pointer" : "not-allowed",
                     }}
-                    aria-label={`Thêm ${product.name}`}
                     onClick={() => void handleAddToCart(product.productId)}
                   >
                     +

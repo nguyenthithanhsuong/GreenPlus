@@ -1,6 +1,8 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
+import { STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
+import StoreSelector from "../../stores/StoreSelector";
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import NavigationBar from "../../dashboard/components/NavigationBar";
@@ -212,6 +214,12 @@ const styles: Record<string, React.CSSProperties> = {
 const Category = () => {
   const [searchValue, setSearchValue] = useState("");
   const [sortValue, setSortValue] = useState<CategorySort>("name_asc");
+  const [storeRevision, setStoreRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => setStoreRevision((current) => current + 1);
+    window.addEventListener(STORE_CHANGE_EVENT, refresh);
+    return () => window.removeEventListener(STORE_CHANGE_EVENT, refresh);
+  }, []);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -263,7 +271,7 @@ const Category = () => {
     return () => {
       controller.abort();
     };
-  }, [sortValue]);
+  }, [sortValue, storeRevision]);
 
   const handleCycleSort = () => {
     setSortValue((current) =>
@@ -315,6 +323,7 @@ const Category = () => {
           <div style={{ width: "24px" }}></div>
         </header>
 
+        <div className="px-4 pb-2"><StoreSelector /></div>
         <main style={styles.mainContent}>
           <div style={styles.sectionFrame}>
             <div style={styles.searchSection}>

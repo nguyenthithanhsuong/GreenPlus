@@ -44,6 +44,7 @@ export const PUT = withSentry(async (request: Request) => {
     email?: string;
     phone?: string;
     address?: string;
+    locationHint?: {latitude:number;longitude:number};
     imageUrl?: string;
   };
 
@@ -59,7 +60,10 @@ export const PUT = withSentry(async (request: Request) => {
 
   let location;
   try {
-    if ((body.address ?? "").trim()) location = await resolveDeliveryAddress(body.address);
+    if (body.address !== undefined) {
+      if (!body.address.trim()) throw new LocationError('Địa chỉ giao hàng không được để trống.');
+      location = await resolveDeliveryAddress(body.address, body.locationHint);
+    }
   } catch (error) {
     return NextResponse.json({error:error instanceof Error ? error.message : "Địa chỉ chưa được xác thực"}, {status:error instanceof LocationError ? error.status : 422});
   }
@@ -71,8 +75,8 @@ export const PUT = withSentry(async (request: Request) => {
     email: body.email ?? "",
     phone: body.phone ?? "",
     address: body.address,
-    latitude: location?.latitude ?? null,
-    longitude: location?.longitude ?? null,
+    latitude: location?.latitude,
+    longitude: location?.longitude,
     imageUrl: body.imageUrl,
   });
 

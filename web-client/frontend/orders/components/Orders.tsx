@@ -1,8 +1,11 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
+import { getCheckoutIdempotencyKey, clearCheckoutIdempotencyKey } from "@/lib/orders/checkout-idempotency";
+import { useSelectedStoreId } from "@/lib/stores/use-selected-store";
+import CommerceStorePicker from "../../stores/CommerceStorePicker";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import ConfirmationDialog from "../../shared/components/ConfirmationDialog";
@@ -759,6 +762,7 @@ export default function Orders() {
   const initialized = useAuthStore((state) => state.initialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const storeId = useSelectedStoreId();
 
   const [mainTab, setMainTab] = useState<MainTab>("cart");
   const [loading, setLoading] = useState(true);
@@ -782,7 +786,12 @@ export default function Orders() {
 
   const loadData = useCallback(
     async (signal?: AbortSignal) => {
-      if (!user?.user_id) {
+      if (!user?.user_id || !storeId) {
+        setCartItems([]);
+        setCartTotal(0);
+        setOrders([]);
+        setSubscriptions([]);
+        setLoading(false);
         return;
       }
 
@@ -804,7 +813,7 @@ export default function Orders() {
                 cache: "no-store",
               },
             ),
-            fetch(
+            storeFetch(
               `/api/subscriptions?userId=${encodeURIComponent(user.user_id)}`,
               { signal, cache: "no-store" },
             ),
@@ -877,7 +886,7 @@ export default function Orders() {
         setLoading(false);
       }
     },
-    [user?.user_id],
+    [user?.user_id, storeId],
   );
 
   useEffect(() => {
@@ -960,11 +969,11 @@ export default function Orders() {
   };
 
   const mutateCart = async (
-    request: RequestInfo,
+    request: string,
     init: RequestInit,
     fallbackMessage: string,
   ) => {
-    const response = await fetch(request, init);
+    const response = await storeFetch(request, init);
     const data = (await response.json()) as CartResponse | { error?: string };
 
     if (!response.ok) {
@@ -1124,7 +1133,7 @@ export default function Orders() {
     setMessage(null);
 
     try {
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders/${encodeURIComponent(cancelTarget.order_id)}/cancel`,
         {
           method: "PUT",
@@ -1169,7 +1178,10 @@ export default function Orders() {
     }
   };
 
+  const checkoutInFlight = useRef(false);
+
   const handleCheckout = async () => {
+    if (checkoutInFlight.current) return;
     if (!user?.user_id || !cartId || cartItems.length === 0) {
       setError("Giỏ hàng trống hoặc thông tin không đầy đủ.");
       return;
@@ -1181,21 +1193,43 @@ export default function Orders() {
       return;
     }
 
+    if (!storeId) {
+      setError("Vui lòng chọn cửa hàng trước khi đặt hàng.");
+      return;
+    }
+    const checkoutContext = {
+      userId: user.user_id,
+      storeId,
+      cartId,
+      items: cartItems.map((item) => ({
+        cart_item_id: item.cart_item_id,
+        quantity: item.quantity,
+        note: noteDrafts[item.cart_item_id] ?? item.note,
+      })),
+      deliveryAddress,
+      deliveryFee: DELIVERY_FEE,
+      paymentMethod: "cod",
+    };
+    const idempotencyKey = getCheckoutIdempotencyKey(checkoutContext);
+    checkoutInFlight.current = true;
     setSaving(true);
     setError(null);
     setMessage(null);
 
+    let orderConfirmed = false;
     try {
       await Promise.all(cartItems.map(flushNote));
       const response = await storeFetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
         },
         body: JSON.stringify({
           userId: user.user_id,
           deliveryAddress,
-          cartId: cartId,
+          cartId,
+          idempotencyKey,
           deliveryFee: DELIVERY_FEE,
         }),
       });
@@ -1211,6 +1245,8 @@ export default function Orders() {
       }
 
       const orderData = data as CreateOrderResponse;
+      clearCheckoutIdempotencyKey(checkoutContext);
+      orderConfirmed = true;
       void router.push(`/orders/${orderData.order_id}`);
     } catch (requestError) {
       setError(
@@ -1219,6 +1255,8 @@ export default function Orders() {
           : "Không thể tạo đơn hàng.",
       );
     } finally {
+      // Block a second checkout until navigation unmounts this page.
+      checkoutInFlight.current = orderConfirmed;
       setSaving(false);
     }
   };
@@ -1832,6 +1870,8 @@ export default function Orders() {
           </h1>
           <div style={{ width: "24px" }} />
         </header>
+
+        <CommerceStorePicker />
 
         <section style={styles.tabsWrap}>
           <div style={styles.tabsRow}>

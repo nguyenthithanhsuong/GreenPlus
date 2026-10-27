@@ -15,6 +15,7 @@ export type UserViewModel = {
   user_id: string;
   role_id: string | null;
   store_id: string | null;
+  store_ids?: string[];
   role_name: string | null;
   name: string;
   email: string;
@@ -31,6 +32,9 @@ type UserTableProps = {
   saving: boolean;
   customerRoleId: string | null;
   storeOptions: Array<{ storeId: string; storeName: string }>;
+  selectedStoreId: string;
+  onSelectStore: (storeId: string) => void;
+  portalRole: string;
   onViewUser: (user: UserViewModel) => void;
   onEditUser: (user: UserViewModel) => void;
   onRequestDisableUser: (user: UserViewModel) => void;
@@ -42,6 +46,7 @@ const renderRoleBadge = (role: string) => {
     Admin: "bg-purple-100 text-purple-700",
     Manager: "bg-blue-100 text-blue-700",
     Employee: "bg-orange-100 text-orange-700",
+    Shipper: "bg-emerald-100 text-emerald-700",
     Customer: "bg-gray-100 text-gray-700",
   };
   return (
@@ -121,6 +126,9 @@ const UserTable = ({
   saving,
   customerRoleId,
   storeOptions,
+  selectedStoreId,
+  onSelectStore,
+  portalRole,
   onViewUser,
   onEditUser,
   onRequestDisableUser,
@@ -128,7 +136,7 @@ const UserTable = ({
 }: UserTableProps) => {
   const [activeTab, setActiveTab] = React.useState<
     "all" | "customer" | "staff"
-  >("all");
+  >(portalRole === "manager" ? "staff" : "all");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [searchQuery, setSearchQuery] = React.useState("");
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -146,22 +154,21 @@ const UserTable = ({
   );
 
   const filteredUsers = React.useMemo(() => {
-    const scopedUsers =
-      activeTab === "all"
-        ? users
-        : activeTab === "customer"
-          ? users.filter((user) => isCustomerUser(user))
-          : users.filter((user) => !isCustomerUser(user));
-
+    // Managers must never see customer rows, even if the tab state was
+    // previously "all" before an authentication/session change.
+    const tab = portalRole === "manager" ? "staff" : activeTab;
+    const scopedUsers = tab === "all" ? users
+      : tab === "customer" ? users.filter(isCustomerUser)
+      : users.filter((user) => !isCustomerUser(user));
     return userSearchStrategy.filter(scopedUsers, deferredSearchQuery);
-  }, [activeTab, deferredSearchQuery, isCustomerUser, users]);
+  }, [activeTab, deferredSearchQuery, isCustomerUser, portalRole, users]);
 
   const totalItems = filteredUsers.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, deferredSearchQuery]);
+  }, [activeTab, deferredSearchQuery, selectedStoreId]);
 
   React.useEffect(() => {
     setCurrentPage((previous) => {
@@ -198,40 +205,47 @@ const UserTable = ({
   const canEditGlobal = hasPermission("users.update");
   const canBanGlobal = hasPermission("users.update");
   const canDeleteGlobal = hasPermission("users.delete");
+  const managerMayModify = (user: UserViewModel) => portalRole !== "manager" || user.role_name?.toLowerCase() === "employee";
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-50 gap-4">
-        <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg">
-          <button
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between p-4 sm:p-5 border-b border-gray-50 gap-4">
+        <div className="flex max-w-full items-center space-x-1 overflow-x-auto bg-gray-50 p-1 rounded-lg">
+          {portalRole !== "manager" && <button
             onClick={() => setActiveTab("all")}
             className={`px-4 py-1.5 text-sm font-medium rounded-md ${activeTab === "all" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
           >
             Tất cả
-          </button>
-          <button
+          </button>}
+          {portalRole !== "manager" && <button
             onClick={() => setActiveTab("customer")}
             className={`px-4 py-1.5 text-sm font-medium rounded-md ${activeTab === "customer" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
           >
             Khách hàng
-          </button>
+          </button>}
           <button
             onClick={() => setActiveTab("staff")}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md ${activeTab === "staff" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md ${(activeTab === "staff" || portalRole === "manager") ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
           >
-            Nhân viên & Quản trị
+            {portalRole === "manager" ? "Nhân viên & Quản trị" : "Nhân sự & Giao hàng"}
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative hidden sm:block">
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="user-store-filter" className="sr-only">Lọc người dùng theo cửa hàng</label>
+          <select id="user-store-filter" value={selectedStoreId} onChange={(event) => onSelectStore(event.target.value)}
+            className="h-9 min-w-0 max-w-full rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 focus:border-emerald-500">
+            <option value="">Tất cả cửa hàng được phép xem</option>
+            {storeOptions.map((store) => <option key={store.storeId} value={store.storeId}>{store.storeName}</option>)}
+          </select>
+          <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               type="text"
               placeholder="Tìm theo tên, email, vai trò..."
-              className="h-9 w-64 rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="h-9 w-full min-w-40 sm:w-56 rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
         </div>
@@ -301,9 +315,8 @@ const UserTable = ({
                     {renderRoleBadge(user.role_name ?? "Customer")}
                   </td>
                   <td className="px-6 py-4 text-gray-600">
-                    {user.store_id
-                      ? (storeNameById.get(user.store_id) ?? "Không gán")
-                      : "Không gán"}
+                    {(user.store_ids?.length ? user.store_ids : user.store_id ? [user.store_id] : [])
+                      .map((store) => storeNameById.get(store) ?? store).join(", ") || "Chưa có liên kết"}
                   </td>
                   <td className="px-6 py-4 text-gray-600">
                     {formatDate(user.created_at)}
@@ -333,7 +346,7 @@ const UserTable = ({
                         </button>
                       )}
 
-                      {canEditGlobal && (
+                      {canEditGlobal && managerMayModify(user) && (
                         <button
                           onClick={() => onEditUser(user)}
                           className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
@@ -344,7 +357,7 @@ const UserTable = ({
                         </button>
                       )}
 
-                      {canBanGlobal &&
+                      {canBanGlobal && managerMayModify(user) &&
                         (user.role_name ?? "").toLowerCase() !== "admin" && (
                           <button
                             onClick={() => onRequestDisableUser(user)}
@@ -362,7 +375,7 @@ const UserTable = ({
                           </button>
                         )}
 
-                      {canDeleteGlobal && (
+                      {canDeleteGlobal && portalRole !== "manager" && (
                         <button
                           onClick={() => onRequestDeleteUser(user)}
                           className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

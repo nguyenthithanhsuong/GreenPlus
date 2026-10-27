@@ -48,6 +48,12 @@ const UserManagement = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
   const [storeOptions, setStoreOptions] = useState<StoreOption[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState("");
+  const [verifyingAddress, setVerifyingAddress] = useState(false);
+  const [addressError, setAddressError] = useState<string|null>(null);
+  type AddressMatch = {address:string;latitude:number;longitude:number;source?:string};
+  const [addressMatches, setAddressMatches] = useState<AddressMatch[]>([]);
+  const [verifiedAddress, setVerifiedAddress] = useState<({query:string}&AddressMatch)|null>(null);
   const [confirmState, setConfirmState] = useState<{
     type: "ban" | "unban" | "delete";
     user: UserViewModel;
@@ -60,7 +66,7 @@ const UserManagement = () => {
     setError(null);
 
     try {
-      const response = await fetch("/api/users");
+      const response = await fetch(selectedStoreId ? `/api/users?storeId=${encodeURIComponent(selectedStoreId)}` : "/api/users");
       const data = (await response.json()) as {
         items?: UserViewModel[];
         error?: string;
@@ -81,7 +87,7 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedStoreId]);
 
   const loadRoles = useCallback(async () => {
     try {
@@ -175,6 +181,7 @@ const UserManagement = () => {
       storeId?: string | null;
       phone?: string;
       address?: string;
+      locationHint?: {latitude:number;longitude:number};
       imageUrl?: string;
       status?: "active" | "inactive" | "banned";
     }) => {
@@ -204,6 +211,7 @@ const UserManagement = () => {
         storeId?: string | null;
         phone?: string;
         address?: string;
+        locationHint?: {latitude:number;longitude:number};
         imageUrl?: string;
         status?: "active" | "inactive" | "banned";
       },
@@ -288,6 +296,9 @@ const UserManagement = () => {
     setSelectedUser(null);
     setShowPassword(false);
     setForm(emptyForm);
+    setVerifiedAddress(null);
+    setAddressMatches([]);
+    setAddressError(null);
     setDrawerMode("create");
   }, []);
 
@@ -299,6 +310,9 @@ const UserManagement = () => {
   const openEditDrawer = useCallback((user: UserViewModel) => {
     setSelectedUser(user);
     setShowPassword(false);
+    setVerifiedAddress(null);
+    setAddressMatches([]);
+    setAddressError(null);
     setForm({
       name: user.name,
       email: user.email,
@@ -333,8 +347,26 @@ const UserManagement = () => {
   }, []);
 
   const patchForm = useCallback((patch: Partial<UserFormValues>) => {
+    if ("address" in patch) { setVerifiedAddress(null); setAddressMatches([]); setAddressError(null); }
     setForm((previous) => ({ ...previous, ...patch }));
   }, []);
+
+  const verifyFormAddress = useCallback(async () => {
+    const query = form.address.trim();
+    if (!query) { setAddressError("Vui lòng nhập địa chỉ trước khi xác minh."); return; }
+    setVerifyingAddress(true); setError(null); setAddressError(null); setVerifiedAddress(null); setAddressMatches([]);
+    try {
+      const response = await fetch(`/api/location?q=${encodeURIComponent(query)}`, {cache:"no-store"});
+      const data = await response.json() as {items?:Array<{address:string;latitude:number;longitude:number}>;error?:string};
+      if (!response.ok || !data.items?.length) throw new Error(data.error || "Địa chỉ chưa xác minh được");
+      const location = data.items[0];
+      if (!Number.isFinite(location.latitude) || !Number.isFinite(location.longitude)) throw new Error("Tọa độ không hợp lệ");
+      setAddressMatches(data.items);
+      setVerifiedAddress({query, ...location});
+    } catch (e) {
+      setAddressError(e instanceof Error ? e.message : "Không thể xác minh địa chỉ");
+    } finally { setVerifyingAddress(false); }
+  }, [form.address]);
 
   const handleSubmitDrawer = useCallback(async () => {
     if (!drawerMode) {
@@ -348,6 +380,12 @@ const UserManagement = () => {
 
     if (!form.email.trim()) {
       setError("Email đăng nhập là bắt buộc");
+      return;
+    }
+
+    const addressChanged = drawerMode === "create" || (drawerMode === "edit" && form.address.trim() !== (selectedUser?.address ?? "").trim());
+    if (addressChanged && (!verifiedAddress || verifiedAddress.query !== form.address.trim())) {
+      setError("Hãy xác minh địa chỉ và tọa độ trước khi lưu tài khoản.");
       return;
     }
 
@@ -365,7 +403,8 @@ const UserManagement = () => {
           roleId: form.roleId || null,
           storeId: form.storeId || null,
           phone: form.phone.trim() || undefined,
-          address: form.address.trim() || undefined,
+          address: form.address.trim(),
+          locationHint: verifiedAddress ? {latitude:verifiedAddress.latitude,longitude:verifiedAddress.longitude} : undefined,
           imageUrl: form.imageUrl.trim() || undefined,
           status: form.status,
         });
@@ -382,7 +421,7 @@ const UserManagement = () => {
             ? {}
             : { roleId: form.roleId || null, storeId: form.storeId || null }),
           phone: form.phone.trim() || undefined,
-          address: form.address.trim() || undefined,
+          ...(addressChanged ? {address: form.address.trim(), locationHint: verifiedAddress ? {latitude:verifiedAddress.latitude,longitude:verifiedAddress.longitude} : undefined} : {}),
           imageUrl: form.imageUrl.trim() || undefined,
           status: form.status,
         });
@@ -398,6 +437,7 @@ const UserManagement = () => {
     handleUpdateUser,
     portalRole,
     selectedUser,
+    verifiedAddress,
   ]);
 
   const handleDisableFromDetail = useCallback(async () => {
@@ -539,6 +579,9 @@ const UserManagement = () => {
         saving={saving}
         customerRoleId={customerRoleId}
         storeOptions={storeOptions}
+        selectedStoreId={selectedStoreId}
+        onSelectStore={setSelectedStoreId}
+        portalRole={portalRole}
         onViewUser={openDetailDrawer}
         onEditUser={openEditDrawer}
         onRequestDisableUser={requestToggleBanStatus}
@@ -556,6 +599,13 @@ const UserManagement = () => {
         selectedUser={selectedUser}
         error={error}
         uploadingAvatar={uploadingAvatar}
+        verifyingAddress={verifyingAddress}
+        verifiedAddress={verifiedAddress}
+        addressMatches={addressMatches}
+        addressError={addressError}
+        onSelectAddress={(location) => setVerifiedAddress({ query:form.address.trim(), ...location })}
+        onVerifyAddress={() => void verifyFormAddress()}
+        canManageSelected={portalRole !== "manager" || selectedUser?.role_name?.toLowerCase() === "employee"}
         onTogglePassword={() => setShowPassword((previous) => !previous)}
         onChange={patchForm}
         onUploadAvatar={handleUploadAvatar}

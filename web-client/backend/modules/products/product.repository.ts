@@ -1,3 +1,4 @@
+import { isSellableBatch } from "./product-stock";
 import { supabaseServer } from "../../core/supabase";
 import { BatchStatus, ProductStatus } from "./product.types";
 
@@ -67,6 +68,50 @@ export class ProductRepository {
     }
 
     return (data as ProductRow | null) ?? null;
+  }
+
+  /** Sellable stock in this store only; never include expired or sold-out batches. */
+  async getSellableStockMap(
+    productIds: string[],
+    storeId: string,
+  ): Promise<Map<string, number>> {
+    if (productIds.length === 0) return new Map();
+
+    const result = new Map<string, number>();
+    // Same embedded inventory source and store filter as the product-detail API.
+    // Paging avoids silently treating products beyond PostgREST's row cap as sold out.
+    for (let i = 0; i < productIds.length; i += 50) {
+      const chunk = productIds.slice(i, i + 50);
+      let offset = 0;
+      while (true) {
+        const { data, error } = await supabaseServer
+          .from("batches")
+          .select("product_id,status,expire_date,inventory(quantity_available)")
+          .in("product_id", chunk)
+          .eq("store_id", storeId)
+          .eq("inventory.store_id", storeId)
+          .range(offset, offset + 999);
+        if (error) throw new Error(error.message);
+
+        const batches = data ?? [];
+        for (const batch of batches) {
+          const productId = batch.product_id ? String(batch.product_id) : "";
+          if (!productId) continue;
+          const entries = Array.isArray(batch.inventory)
+            ? batch.inventory
+            : batch.inventory ? [batch.inventory] : [];
+          const available = entries.reduce((total: number, row) => {
+            const quantity = Number(row.quantity_available ?? 0);
+            return total + (Number.isFinite(quantity) ? Math.max(0, quantity) : 0);
+          }, 0);
+          if (!isSellableBatch(batch.status, batch.expire_date, available)) continue;
+          result.set(productId, (result.get(productId) ?? 0) + available);
+        }
+        if (batches.length < 1000) break;
+        offset += 1000;
+      }
+    }
+    return result;
   }
 
   async getLatestPriceMap(
@@ -205,7 +250,8 @@ export class ProductRepository {
         "batch_id,status,expire_date,quantity,inventory(quantity_available,quantity_reserved)",
       )
       .eq("product_id", productId)
-      .eq("store_id", storeId);
+      .eq("store_id", storeId)
+      .eq("inventory.store_id", storeId);
 
     if (error) {
       throw new Error(error.message);

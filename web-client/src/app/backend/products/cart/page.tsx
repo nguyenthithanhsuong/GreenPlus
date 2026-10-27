@@ -1,5 +1,8 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
+import { STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
+
 import { useEffect, useState } from "react";
 
 type CartItem = {
@@ -44,24 +47,29 @@ export default function ProductCartTestPage() {
 
     const loadOptions = async () => {
       try {
-        const response = await fetch("/api/testing/options");
+        const response = await storeFetch("/api/products?limit=100");
         if (!response.ok) {
           return;
         }
 
         const payload = (await response.json()) as {
-          products?: ProductOption[];
+          items?: Array<{ productId: string; name: string; isAvailable: boolean }>;
         };
-        const products = payload.products ?? [];
+        const products = (payload.items ?? [])
+          .filter((item) => item.isAvailable)
+          .map((item) => ({ product_id: item.productId, name: item.name }));
         setProductOptions(products);
-
-        if (products.length > 0) {
-          setProductId((current) => current || products[0].product_id);
-        }
+        setProductId((current) =>
+          products.some((item) => item.product_id === current)
+            ? current
+            : (products[0]?.product_id ?? ""),
+        );
       } catch {}
     };
 
     void loadOptions();
+    window.addEventListener(STORE_CHANGE_EVENT, loadOptions);
+    return () => window.removeEventListener(STORE_CHANGE_EVENT, loadOptions);
   }, []);
 
   const requireLoggedInUserId = (): string => {
@@ -81,7 +89,7 @@ export default function ProductCartTestPage() {
     setError(null);
 
     try {
-      const response = await fetch(path, {
+      const response = await storeFetch(path, {
         method,
         headers: { "Content-Type": "application/json" },
         body: body ? JSON.stringify(body) : undefined,

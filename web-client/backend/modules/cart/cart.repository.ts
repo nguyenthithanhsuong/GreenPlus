@@ -1,3 +1,4 @@
+import { isSellableBatch } from "../products/product-stock";
 import { supabaseServer } from "../../core/supabase";
 
 type RelObj = Record<string, unknown> | Record<string, unknown>[] | null;
@@ -143,7 +144,7 @@ export class CartRepository {
   ): Promise<string[]> {
     const { data, error } = await supabaseServer
       .from("batches")
-      .select("batch_id")
+      .select("batch_id,status,expire_date")
       .eq("product_id", productId)
       .eq("store_id", storeId);
 
@@ -151,7 +152,9 @@ export class CartRepository {
       throw new Error(error.message);
     }
 
-    return (data ?? []).map((row) => String(row.batch_id));
+    return (data ?? [])
+      .filter((row) => isSellableBatch(row.status, row.expire_date, 1))
+      .map((row) => String(row.batch_id));
   }
 
   async listInventoryByBatchIds(

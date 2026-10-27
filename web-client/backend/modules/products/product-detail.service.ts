@@ -80,7 +80,6 @@ export class ProductDetailService {
       );
       const quantityInBatch = Number(batch.quantity ?? 0);
 
-      totalAvailable += availableInBatch;
       totalReserved += reservedInBatch;
       totalQuantity += quantityInBatch;
 
@@ -90,6 +89,7 @@ export class ProductDetailService {
       );
       if (isSellable) {
         hasSellableBatch = true;
+        totalAvailable += availableInBatch;
       }
 
       batchDetails.push({

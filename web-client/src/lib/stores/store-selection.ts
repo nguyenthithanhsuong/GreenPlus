@@ -20,9 +20,17 @@ export function selectedStoreId() {
 }
 export function selectStore(id: string) {
   if (typeof window === "undefined") return;
+  if (window.localStorage.getItem(STORAGE_KEY) === id) return;
   window.localStorage.setItem(STORAGE_KEY, id);
   window.dispatchEvent(
     new CustomEvent(STORE_CHANGE_EVENT, { detail: { storeId: id } }),
+  );
+}
+export function clearSelectedStore() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(STORAGE_KEY);
+  window.dispatchEvent(
+    new CustomEvent(STORE_CHANGE_EVENT, { detail: { storeId: null } }),
   );
 }
 const toNumber = (n: string | number | null) => (n === null ? NaN : Number(n));

@@ -1,6 +1,5 @@
 import { resolve } from "node:path";
 import { config as loadEnv } from "dotenv";
-import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 loadEnv({ path: resolve(process.cwd(), "../.env") });
@@ -13,19 +12,21 @@ const nextConfig: NextConfig = {
 
 const sentryDebug = process.env.SENTRY_DEBUG === "true";
 
-export default withSentryConfig(nextConfig, {
-  silent: !sentryDebug,
-  debug: sentryDebug,
+export default async function config(): Promise<NextConfig> {
+  if (process.env.NODE_ENV === "development") {
+    return nextConfig;
+  }
 
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT_ADMIN,
-  authToken: process.env.SENTRY_AUTH_TOKEN,
+  const { withSentryConfig } = await import("@sentry/nextjs/config");
 
-  //tunnelRoute: "/monitoring",
-
-  release: process.env.GITHUB_SHA
-    ? {
-        name: process.env.GITHUB_SHA,
-      }
-    : undefined,
-});
+  return withSentryConfig(nextConfig, {
+    silent: !sentryDebug,
+    debug: sentryDebug,
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT_ADMIN,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    release: process.env.GITHUB_SHA
+      ? { name: process.env.GITHUB_SHA }
+      : undefined,
+  });
+}

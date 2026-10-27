@@ -12,25 +12,35 @@ export class ProductService {
   async getActiveBrowseItems(storeId: string): Promise<ProductBrowseItem[]> {
     const products = await this.repository.listActiveProducts(storeId);
     const productIds = products.map((product) => product.product_id);
-    const [latestPriceMap, supplierMap] = await Promise.all([
+    const [latestPriceMap, supplierMap, sellableStockMap] = await Promise.all([
       this.repository.getLatestPriceMap(productIds, storeId),
       this.repository.getProductSupplierMap(productIds, storeId),
+      this.repository.getSellableStockMap(productIds, storeId),
     ]);
 
     return products
       .filter((product) => createProductState(product.status).canView())
-      .map((product) => ({
-        productId: product.product_id,
-        name: product.name,
-        imageUrl: product.image_url,
-        categoryId: product.category_id,
-        categoryName: getRelationValue<string>(product.categories, "name"),
-        certification:
-          supplierMap.get(product.product_id)?.certification ?? null,
-        price: latestPriceMap.get(product.product_id) ?? null,
-        isAvailable: true,
-        createdAt: product.created_at,
-      }));
+      .map((product) => {
+        const availableQuantity = sellableStockMap.get(product.product_id) ?? 0;
+        const price = latestPriceMap.get(product.product_id) ?? null;
+        const isAvailable = availableQuantity > 0;
+        const canPurchase = isAvailable && price !== null && Number.isFinite(price) && price > 0;
+
+        return {
+          productId: product.product_id,
+          name: product.name,
+          imageUrl: product.image_url,
+          categoryId: product.category_id,
+          categoryName: getRelationValue<string>(product.categories, "name"),
+          certification: supplierMap.get(product.product_id)?.certification ?? null,
+          price,
+          availableQuantity,
+          // Stock and pricing are different facts. Never label stocked items "Tạm hết" just because pricing is missing.
+          isAvailable,
+          canPurchase,
+          createdAt: product.created_at,
+        };
+      });
   }
 
   async browseProducts(

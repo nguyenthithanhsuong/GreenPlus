@@ -1,5 +1,9 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
+import { useSelectedStoreId, useResetOnStoreChange } from "@/lib/stores/use-selected-store";
+import CommerceStorePicker from "../../../../frontend/stores/CommerceStorePicker";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -344,6 +348,7 @@ export default function TransactionHistoryPage() {
   const initialized = useAuthStore((state) => state.initialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const storeId = useSelectedStoreId();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -353,6 +358,12 @@ export default function TransactionHistoryPage() {
   );
   const [activeStatusTab, setActiveStatusTab] =
     useState<PaymentStatus>("pending");
+
+  useResetOnStoreChange(() => {
+    setItems([]);
+    setLoading(false);
+    setError(null);
+  });
 
   useEffect(() => {
     if (!initialized) {
@@ -364,6 +375,7 @@ export default function TransactionHistoryPage() {
       return;
     }
 
+    if (!storeId) return;
     const controller = new AbortController();
 
     const loadPayments = async () => {
@@ -371,7 +383,7 @@ export default function TransactionHistoryPage() {
       setError(null);
 
       try {
-        const response = await fetch(
+        const response = await storeFetch(
           `/api/payments?userId=${encodeURIComponent(user.user_id)}`,
           {
             signal: controller.signal,
@@ -410,7 +422,7 @@ export default function TransactionHistoryPage() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, user?.user_id]);
+  }, [initialized, isAuthenticated, router, user?.user_id, storeId]);
 
   const summary = useMemo(() => {
     const paid = items.filter((item) => item.payment_status === "paid").length;
@@ -466,6 +478,8 @@ export default function TransactionHistoryPage() {
 
           <div style={{ width: "24px" }} />
         </header>
+
+        <CommerceStorePicker />
 
         <main style={styles.mainContent}>
           <section style={styles.summaryGrid}>

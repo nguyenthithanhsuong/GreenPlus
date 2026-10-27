@@ -135,9 +135,9 @@ export class AuthRepository {
     name: string;
     email: string;
     phone: string;
-    address: string;
-    latitude: number | null;
-    longitude: number | null;
+    address?: string;
+    latitude?: number | null;
+    longitude?: number | null;
     imageUrl: string;
   }): Promise<UserRow> {
     const { data, error } = await supabaseServer
@@ -146,9 +146,9 @@ export class AuthRepository {
         name: input.name,
         email: input.email,
         phone: input.phone,
-        address: input.address,
-        latitude: input.latitude,
-        longitude: input.longitude,
+        ...(input.address !== undefined ? {address:input.address} : {}),
+        ...(input.latitude !== undefined ? {latitude:input.latitude} : {}),
+        ...(input.longitude !== undefined ? {longitude:input.longitude} : {}),
         image_url: input.imageUrl,
       })
       .eq("user_id", input.userId)

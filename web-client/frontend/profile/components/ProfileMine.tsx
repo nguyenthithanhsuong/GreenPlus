@@ -298,6 +298,8 @@ export default function ProfileMine() {
   const [phoneInput, setPhoneInput] = useState("");
   const [addressInput, setAddressInput] = useState("");
   const [addressCheck, setAddressCheck] = useState<{address:string;latitude:number;longitude:number}|null>(null);
+  const [addressOptions, setAddressOptions] = useState<Array<{address:string;latitude:number;longitude:number}>>([]);
+  const [addressError, setAddressError] = useState<string|null>(null);
   const [checkingAddress, setCheckingAddress] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -351,6 +353,8 @@ export default function ProfileMine() {
         setEmailInput(nextProfile.email ?? "");
         setPhoneInput(nextProfile.phone ?? "");
         setAddressInput(nextProfile.address ?? "");
+      setAddressOptions([]);
+      setAddressCheck(null);
         setImageUrlInput(nextProfile.image_url ?? "");
         updateUser({
           name: nextProfile.name,
@@ -428,12 +432,14 @@ export default function ProfileMine() {
   const verifyAddress = async () => {
     setCheckingAddress(true);
     setSaveMessage(null);
+    setAddressError(null);
     try {
       const response = await fetch(`/api/location?q=${encodeURIComponent(addressInput.trim())}`);
       const data = await response.json() as {items?:Array<{address:string;latitude:number;longitude:number}>;error?:string};
       if (!response.ok || !data.items?.length) throw new Error(data.error || "Không tìm thấy địa chỉ chi tiết");
+      setAddressOptions(data.items);
       setAddressCheck(data.items[0]);
-    } catch(error) {setAddressCheck(null);setSaveMessage(error instanceof Error?error.message:"Không kiểm tra được địa chỉ");}
+    } catch(error) {setAddressCheck(null);setAddressOptions([]);setAddressError(error instanceof Error?error.message:"Không kiểm tra được địa chỉ");}
     finally {setCheckingAddress(false);}
   };
 
@@ -453,9 +459,13 @@ export default function ProfileMine() {
       return;
     }
 
-    if (addressInput.trim() && !addressCheck) {
-      // Require an explicit lookup in this edit session; the server repeats the lookup.
-      setSaveMessage("Hãy bấm xác minh địa chỉ và xem vị trí trước khi lưu.");
+    const addressChanged = addressInput.trim() !== (profile?.address ?? "").trim();
+    if (!addressInput.trim()) {
+      setSaveMessage("Vui lòng nhập địa chỉ giao hàng đầy đủ.");
+      return;
+    }
+    if (addressChanged && !addressCheck) {
+      setSaveMessage("Hãy bấm xác minh địa chỉ và chọn vị trí trước khi lưu.");
       return;
     }
     setSaveMessage(null);
@@ -472,7 +482,7 @@ export default function ProfileMine() {
           name: nameInput,
           email: emailInput,
           phone: phoneInput,
-          address: addressInput,
+          ...(addressChanged ? {address:addressInput.trim(), locationHint:addressCheck ? {latitude:addressCheck.latitude,longitude:addressCheck.longitude} : undefined} : {}),
           imageUrl:
             imageUrlInput || profile?.image_url || user?.image_url || "",
         }),
@@ -494,6 +504,8 @@ export default function ProfileMine() {
       setEmailInput(nextProfile.email ?? "");
       setPhoneInput(nextProfile.phone ?? "");
       setAddressInput(nextProfile.address ?? "");
+      setAddressOptions([]);
+      setAddressCheck(null);
       setImageUrlInput(nextProfile.image_url ?? "");
       updateUser({
         name: nextProfile.name,
@@ -728,22 +740,46 @@ export default function ProfileMine() {
                     <p style={styles.inputLabel}>Địa chỉ</p>
                     <textarea
                       value={addressInput}
-                      onChange={(event) => { setAddressInput(event.target.value);setAddressCheck(null); }}
+                      onChange={(event) => { setAddressInput(event.target.value);setAddressCheck(null);setAddressOptions([]);setAddressError(null); }}
                       style={styles.textArea}
                       placeholder="Nhập địa chỉ giao hàng"
                     />
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%"}}>
+                  <section aria-label="Xác minh vị trí giao hàng" style={{display:"flex",flexDirection:"column",gap:10,width:"100%",padding:14,borderRadius:18,border:"1px solid #bbf7d0",background:"#f0fdf4"}}>
+                    <strong style={{color:"#064e3b",fontSize:15}}>Xác minh vị trí giao hàng</strong>
+                    <span style={{fontSize:12,color:"#475569",lineHeight:1.6}}>Nhập đầy đủ số nhà, tên đường, phường/xã và tỉnh/thành phố. Chỉ chọn vị trí đúng với địa chỉ nhận hàng của bạn.</span>
                     <button type="button" disabled={checkingAddress || !addressInput.trim()} onClick={() => void verifyAddress()}
-                      style={{padding:"10px 14px",borderRadius:12,background:"#047857",color:"white",fontWeight:700,opacity:checkingAddress?0.6:1}}>
-                      {checkingAddress ? "Đang xác minh địa chỉ..." : "Xác minh địa chỉ và tọa độ"}
+                      style={{padding:"12px 14px",borderRadius:12,background:"#047857",color:"white",fontWeight:700,opacity:checkingAddress?0.6:1,border:"none",cursor:"pointer"}}>
+                      {checkingAddress ? "Đang tìm vị trí..." : "Tìm địa chỉ & lấy tọa độ"}
                     </button>
-                    {addressCheck && <div role="status" style={{fontSize:12,color:"#065f46",background:"#ecfdf5",padding:12,borderRadius:12}}>
-                      <strong>Vị trí đã tìm thấy (hãy kiểm tra trước khi lưu):</strong><p>{addressCheck.address}</p>
-                      <p>Latitude {addressCheck.latitude.toFixed(6)} · Longitude {addressCheck.longitude.toFixed(6)}</p>
-                    </div>}
-                    <small style={{color:"#64748b"}}>Khi xác minh, địa chỉ nhập được gửi tới Photon (dịch vụ OpenStreetMap công cộng). Không nhập thông tin nhạy cảm vào địa chỉ.</small>
-                  </div>
+                    {addressError && <div role="alert" style={{border:"1px solid #fecaca",background:"#fff1f2",color:"#9f1239",padding:12,borderRadius:12,fontSize:12,lineHeight:1.6}}>{addressError}</div>}
+                    {addressOptions.length > 0 && (
+                      <fieldset style={{border:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:8}}>
+                        <legend style={{fontSize:13,fontWeight:700,color:"#064e3b",marginBottom:8}}>Chọn điểm giao phù hợp ({addressOptions.length} kết quả)</legend>
+                        {addressOptions.map((location,i) => {
+                          const selected = addressCheck?.latitude === location.latitude && addressCheck?.longitude === location.longitude;
+                          return <label key={`${location.latitude}-${location.longitude}-${i}`}
+                            style={{display:"flex",alignItems:"flex-start",gap:10,padding:12,borderRadius:12,border:selected?"1px solid #059669":"1px solid #e2e8f0",background:selected?"#d1fae5":"#fff",cursor:"pointer"}}>
+                            <input type="radio" name="delivery-location" checked={selected} onChange={()=>setAddressCheck(location)} style={{marginTop:4,accentColor:"#047857"}} />
+                            <span style={{fontSize:12,color:"#334155",lineHeight:1.6,wordBreak:"break-word"}}>{location.address}</span>
+                          </label>;
+                        })}
+                      </fieldset>
+                    )}
+                    {addressCheck && (
+                      <div role="status" style={{background:"white",borderRadius:14,overflow:"hidden",border:"1px solid #bbf7d0"}}>
+                        <p style={{padding:"12px 12px 0",color:"#065f46",fontWeight:700,fontSize:13}}>Vị trí đã chọn — xem kỹ ghim trên bản đồ</p>
+                        <p style={{padding:"4px 12px 10px",fontSize:12,color:"#475569"}}>{addressCheck.address}</p>
+                        <iframe title="Bản đồ vị trí giao hàng" loading="lazy" referrerPolicy="no-referrer"
+                          style={{width:"100%",height:210,border:0}}
+                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${addressCheck.longitude-0.004}%2C${addressCheck.latitude-0.003}%2C${addressCheck.longitude+0.004}%2C${addressCheck.latitude+0.003}&layer=mapnik&marker=${addressCheck.latitude}%2C${addressCheck.longitude}`} />
+                        <a target="_blank" rel="noopener noreferrer"
+                          href={`https://www.openstreetmap.org/?mlat=${addressCheck.latitude}&mlon=${addressCheck.longitude}#map=18/${addressCheck.latitude}/${addressCheck.longitude}`}
+                          style={{display:"block",padding:"10px 12px",color:"#047857",fontSize:12,fontWeight:700,textDecoration:"underline"}}>Xem bản đồ lớn</a>
+                      </div>
+                    )}
+                    <small style={{fontSize:11,color:"#64748b",lineHeight:1.6}}>GreenPlus chỉ gửi địa chỉ cho dịch vụ OpenStreetMap khi bạn bấm tìm. Đây là tọa độ ước tính từ bản đồ, không chứng minh số nhà tồn tại hoặc người nhận có mặt. © OpenStreetMap contributors.</small>
+                  </section>
                   <div style={styles.formActions}>
                     <button
                       type="button"

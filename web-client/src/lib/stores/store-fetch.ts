@@ -3,7 +3,9 @@ import { selectedStoreId } from "./store-selection";
 export function storeFetch(input: string, init: RequestInit = {}) {
   if (!input.startsWith("/api/")) return fetch(input, init);
   const storeId = selectedStoreId();
-  if (!storeId) return fetch(input, init);
+  if (!storeId) {
+    return Promise.reject(new Error("Vui lòng chọn cửa hàng trước khi xem sản phẩm hoặc thêm vào giỏ hàng."));
+  }
   const url = new URL(input, window.location.origin);
   url.searchParams.set("storeId", storeId);
   let nextInit = init;

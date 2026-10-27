@@ -13,17 +13,33 @@ import {
   type ActiveStore,
   nearestStore,
   selectStore,
+  clearSelectedStore,
   selectedStoreId,
 } from "@/lib/stores/store-selection";
+import { useAuthStore } from "@/lib/stores/authStore";
 
 export default function StoreSelector() {
+  const authUser = useAuthStore((state) =>
+    state.isAuthenticated ? state.user : null,
+  );
   const [stores, setStores] = useState<ActiveStore[]>([]);
   const [id, setId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [suggested, setSuggested] = useState<string | null>(null);
-  const [address, setAddress] = useState("");
+  const [addressDraft, setAddressDraft] = useState<{
+    userId: string | null;
+    value: string;
+  } | null>(null);
+  const authUserId = authUser?.user_id ?? null;
+  // The logged-in user may be restored asynchronously. Read their address
+  // until they start typing; never overwrite a manual edit or reuse it for
+  // another account.
+  const address =
+    addressDraft?.userId === authUserId
+      ? addressDraft.value
+      : (authUser?.address?.trim() ?? "");
   const [resolvedAddress, setResolvedAddress] = useState("");
 
   const choose = useCallback((storeId: string) => {
@@ -118,6 +134,10 @@ export default function StoreSelector() {
         if (chosen) {
           setId(chosen.store_id);
           if (saved !== chosen.store_id) selectStore(chosen.store_id);
+        } else if (saved) {
+          // A deleted/disabled store must not remain the tenant for later requests.
+          setId(null);
+          clearSelectedStore();
         }
         // Started after async API resolution, not synchronously in an effect.
         if (list.length > 1) recommend(list, false, () => active);
@@ -247,7 +267,15 @@ export default function StoreSelector() {
               <input
                 id="manual-address"
                 value={address}
-                onChange={(event) => setAddress(event.target.value)}
+                onChange={(event) => {
+                  setAddressDraft({
+                    userId: authUserId,
+                    value: event.target.value,
+                  });
+                  setResolvedAddress("");
+                  setSuggested(null);
+                  setError("");
+                }}
                 placeholder="Địa chỉ hoặc 10.82, 106.74"
                 autoComplete="street-address"
                 maxLength={160}
@@ -263,9 +291,11 @@ export default function StoreSelector() {
               </button>
             </form>
             <p className="mt-2 text-xs text-slate-500">
-              Không cần bật GPS: nhập địa chỉ (cần Mapbox API) hoặc tọa độ để
-              nhận gợi ý. Bạn vẫn tự chọn cửa hàng bên dưới. Khoảng cách gợi ý
-              là đường chim bay, không phải phí ship.
+              {authUser?.address?.trim() && addressDraft?.userId !== authUserId
+                ? "Đã điền địa chỉ từ hồ sơ. Bạn có thể sửa và bấm Tìm địa chỉ để nhận gợi ý cửa hàng gần nhất. "
+                : "Không cần bật GPS: nhập địa chỉ chi tiết hoặc tọa độ để nhận gợi ý cửa hàng. "}
+              Bạn vẫn tự chọn cửa hàng bên dưới. Khoảng cách gợi ý là đường
+              chim bay, không phải phí ship.
             </p>
             {resolvedAddress && (
               <p className="mt-2 text-sm text-emerald-700">

@@ -37,6 +37,13 @@ type UserDrawerProps = {
   selectedUser: UserViewModel | null;
   error: string | null;
   uploadingAvatar: boolean;
+  verifyingAddress: boolean;
+  verifiedAddress: {query:string;address:string;latitude:number;longitude:number}|null;
+  addressMatches: Array<{address:string;latitude:number;longitude:number;source?:string}>;
+  addressError: string|null;
+  onSelectAddress: (location:{address:string;latitude:number;longitude:number;source?:string}) => void;
+  onVerifyAddress: () => void;
+  canManageSelected: boolean;
   onTogglePassword: () => void;
   onChange: (patch: Partial<UserFormValues>) => void;
   onUploadAvatar: (file: File) => Promise<void>;
@@ -64,6 +71,13 @@ const UserDrawer = ({
   selectedUser,
   error,
   uploadingAvatar,
+  verifyingAddress,
+  verifiedAddress,
+  addressMatches,
+  addressError,
+  onSelectAddress,
+  onVerifyAddress,
+  canManageSelected,
   onTogglePassword,
   onChange,
   onUploadAvatar,
@@ -167,11 +181,9 @@ const UserDrawer = ({
                       Cửa hàng
                     </p>
                     <p className="mt-1 text-sm text-gray-800">
-                      {selectedUser?.store_id
-                        ? (storeOptions.find(
-                            (store) => store.storeId === selectedUser.store_id,
-                          )?.storeName ?? selectedUser.store_id)
-                        : "Chưa gán"}
+                      {(selectedUser?.store_ids?.length ? selectedUser.store_ids : selectedUser?.store_id ? [selectedUser.store_id] : [])
+                        .map((storeId) => storeOptions.find((store) => store.storeId === storeId)?.storeName ?? storeId)
+                        .join(", ") || "Chưa có liên kết cửa hàng"}
                     </p>
                   </div>
                   <div>
@@ -406,20 +418,62 @@ const UserDrawer = ({
                   </div>
                 </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">
-                    Địa chỉ
+                <section className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 sm:p-5" aria-label="Xác minh địa chỉ người dùng">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-base font-bold text-emerald-950">Địa chỉ & vị trí giao nhận</h3>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">Nhập địa chỉ chi tiết, kiểm tra vị trí trên bản đồ và chọn kết quả phù hợp trước khi lưu.</p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-700">Việt Nam</span>
+                  </div>
+                  <label htmlFor="admin-user-address" className="mt-4 mb-1.5 block text-sm font-semibold text-gray-800">
+                    Số nhà, tên đường, phường/xã, tỉnh/thành phố <span className="text-rose-600">*</span>
                   </label>
-                  <textarea
+                  <textarea id="admin-user-address"
                     value={form.address}
-                    onChange={(event) =>
-                      onChange({ address: event.target.value })
-                    }
-                    placeholder="Số nhà, đường, phường/xã..."
+                    onChange={event => onChange({address:event.target.value})}
+                    placeholder="Ví dụ: 12 Nguyễn Huệ, phường Sài Gòn, TP. Hồ Chí Minh"
                     rows={3}
-                    className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
+                    className="w-full resize-y rounded-xl border border-emerald-200 bg-white p-3 text-sm text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                   />
-                </div>
+                  <button type="button" onClick={onVerifyAddress}
+                    disabled={saving || verifyingAddress || !form.address.trim()}
+                    className="mt-3 w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
+                    {verifyingAddress ? "Đang tìm tọa độ..." : "Tìm & xác minh vị trí"}
+                  </button>
+                  {addressError && <p role="alert" className="mt-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-700">{addressError}</p>}
+                  {addressMatches.length > 0 && (
+                    <fieldset className="mt-4 space-y-2">
+                      <legend className="mb-2 text-sm font-bold text-slate-800">Chọn điểm phù hợp ({addressMatches.length} kết quả)</legend>
+                      {addressMatches.map((match,i) => {
+                        const selected = verifiedAddress?.latitude === match.latitude && verifiedAddress?.longitude === match.longitude;
+                        return <label key={`${match.latitude}-${match.longitude}-${i}`}
+                          className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-xs leading-5 ${selected ? "border-emerald-500 bg-emerald-100/70" : "border-slate-200 bg-white hover:border-emerald-300"}`}>
+                          <input type="radio" name="user-address-match" className="mt-1 accent-emerald-700"
+                            checked={selected} onChange={() => onSelectAddress(match)} />
+                          <span className="flex-1 text-slate-700">{match.address}</span>
+                        </label>;
+                      })}
+                    </fieldset>
+                  )}
+                  {verifiedAddress && verifiedAddress.query === form.address.trim() && (
+                    <div role="status" className="mt-4 overflow-hidden rounded-xl border border-emerald-200 bg-white">
+                      <div className="p-3 text-xs text-emerald-900">
+                        <p className="font-bold">Ghim đang chọn — kiểm tra trên bản đồ</p>
+                        <p className="mt-1 break-words">{verifiedAddress.address}</p>
+                        <p className="mt-1 font-mono text-slate-600">{verifiedAddress.latitude.toFixed(6)}, {verifiedAddress.longitude.toFixed(6)}</p>
+                      </div>
+                      <iframe title="Bản đồ vị trí đã chọn" loading="lazy" referrerPolicy="no-referrer"
+                        className="h-52 w-full border-0"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${verifiedAddress.longitude-0.004}%2C${verifiedAddress.latitude-0.003}%2C${verifiedAddress.longitude+0.004}%2C${verifiedAddress.latitude+0.003}&layer=mapnik&marker=${verifiedAddress.latitude}%2C${verifiedAddress.longitude}`} />
+                      <a href={`https://www.openstreetmap.org/?mlat=${verifiedAddress.latitude}&mlon=${verifiedAddress.longitude}#map=18/${verifiedAddress.latitude}/${verifiedAddress.longitude}`}
+                        target="_blank" rel="noopener noreferrer" className="block border-t border-emerald-100 px-3 py-2 text-xs font-bold text-emerald-700 underline">
+                        Mở bản đồ lớn để đối chiếu
+                      </a>
+                    </div>
+                  )}
+                  <p className="mt-3 text-xs leading-5 text-slate-500">Địa chỉ nhập sẽ được gửi đến dịch vụ bản đồ ngoài GreenPlus chỉ khi bạn bấm tìm. Kết quả là vị trí ước tính; hãy xác nhận số nhà và vị trí giao nhận trước khi lưu. Dữ liệu © OpenStreetMap contributors.</p>
+                </section>
               </form>
             )}
           </div>
@@ -436,30 +490,30 @@ const UserDrawer = ({
 
             {mode === "detail" ? (
               <>
-                <button
+                {canManageSelected && <button
                   type="button"
                   onClick={onDisableFromDetail}
                   className="rounded-md bg-amber-500 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600 disabled:opacity-60"
                   disabled={saving}
                 >
                   Khóa tài khoản
-                </button>
-                <button
+                </button>}
+                {canManageSelected && <button
                   type="button"
                   onClick={onSwitchToEdit}
                   className="rounded-md bg-[#1da453] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#168a44] disabled:opacity-60"
                   disabled={saving}
                 >
                   Chỉnh sửa
-                </button>
-                <button
+                </button>}
+                {canManageSelected && <button
                   type="button"
                   onClick={onDeleteFromDetail}
                   className="rounded-md bg-rose-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-700 disabled:opacity-60"
                   disabled={saving}
                 >
                   Xóa
-                </button>
+                </button>}
               </>
             ) : (
               <button

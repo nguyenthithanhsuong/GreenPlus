@@ -11,12 +11,13 @@ import Modal from "../shared/Modal";
 import InfoRow from "../shared/InfoRow";
 import type { Delivery } from "../../lib/delivery-types";
 
-type Profile = { user_id: string; name: string; email: string; phone: string | null; address: string | null; status: string };
+type Profile = { user_id: string; name: string; email: string; phone: string | null; address: string | null; status: string; image_url: string | null };
 type Draft = { name: string; phone: string; address: string };
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [user, setUser] = useState<Profile | null>(null);
+  const [imageFailed, setImageFailed] = useState(false);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,6 +45,7 @@ export default function ProfileScreen() {
       const [authData, orderData] = await Promise.all([me.json(), orders.json()]);
       if (!me.ok || !orders.ok) throw new Error(authData.error || orderData.error || "Không tải được hồ sơ");
       setUser(authData.user);
+      setImageFailed(false);
       setDeliveries(Array.isArray(orderData.items) ? orderData.items : []);
       setError("");
     } catch (e) { setError(e instanceof Error ? e.message : "Không tải được hồ sơ"); }
@@ -130,7 +132,13 @@ export default function ProfileScreen() {
         <div className="h-20 bg-gradient-to-r from-[#115e59] via-[#209968] to-[#51b788]" aria-hidden="true" />
         <div className="px-4 pb-5">
           <div className="-mt-9 flex items-end justify-between gap-2">
-            <div className="flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-full border-4 border-white bg-[#dcf5e5] text-2xl font-extrabold text-emerald-800">{initials}</div>
+            {user?.image_url?.trim() && !imageFailed ? (
+              <img src={user.image_url} alt={`Ảnh đại diện của ${user.name}`}
+                onError={() => setImageFailed(true)}
+                className="h-[74px] w-[74px] shrink-0 rounded-full border-4 border-white bg-[#dcf5e5] object-cover" />
+            ) : (
+              <div className="flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-full border-4 border-white bg-[#dcf5e5] text-2xl font-extrabold text-emerald-800">{initials}</div>
+            )}
             <span className="gp-status gp-status-success mb-1"><BadgeCheck size={14} />{user?.status === "active" ? "Đang hoạt động" : loading ? "Đang xác minh" : "Shipper"}</span>
           </div>
           <h2 className="mt-2 text-xl font-extrabold text-slate-800">{user?.name || (loading ? "Đang tải..." : "Shipper GreenPlus")}</h2>

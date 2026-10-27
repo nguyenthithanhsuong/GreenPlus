@@ -1,5 +1,9 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
+import { useSelectedStoreId, useResetOnStoreChange } from "@/lib/stores/use-selected-store";
+import CommerceStorePicker from "../../stores/CommerceStorePicker";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -197,6 +201,7 @@ export default function OrderPaymentPage() {
   const initialized = useAuthStore((state) => state.initialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const storeId = useSelectedStoreId();
 
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
@@ -204,6 +209,13 @@ export default function OrderPaymentPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
 
+
+  useResetOnStoreChange(() => {
+    setDetail(null);
+    setLoading(false);
+    setError(null);
+    setMessage(null);
+  });
   useEffect(() => {
     if (!initialized) {
       return;
@@ -213,6 +225,8 @@ export default function OrderPaymentPage() {
       router.replace("/login");
       return;
     }
+
+    if (!storeId) return;
 
     const orderId = String(params?.orderId ?? "").trim();
     if (!orderId) {
@@ -228,7 +242,7 @@ export default function OrderPaymentPage() {
       setError(null);
 
       try {
-        const response = await fetch(
+        const response = await storeFetch(
           `/api/orders/${encodeURIComponent(orderId)}?userId=${encodeURIComponent(user.user_id)}`,
           {
             signal: controller.signal,
@@ -267,7 +281,7 @@ export default function OrderPaymentPage() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, params?.orderId, router, user?.user_id]);
+  }, [initialized, isAuthenticated, params?.orderId, router, user?.user_id, storeId]);
 
   const canPay = useMemo(() => {
     if (!detail) {
@@ -310,7 +324,7 @@ export default function OrderPaymentPage() {
     setMessage(null);
 
     try {
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders/${encodeURIComponent(detail.order_id)}/confirm-payment`,
         {
           method: "PUT",
@@ -366,6 +380,8 @@ export default function OrderPaymentPage() {
           </Link>
           <h1 style={styles.headerTitle}>Thanh toán đơn hàng</h1>
         </header>
+
+        <CommerceStorePicker />
 
         <main style={styles.body}>
           {loading && (

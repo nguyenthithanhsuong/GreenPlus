@@ -90,10 +90,21 @@ export const POST = withSentry(async (request: Request) => {
   try {
     const body = (await request.json()) as CreateOrderBody;
     const store = await resolveStoreContext(body.storeId, identity);
-    const idempotencyKey =
-      request.headers.get("Idempotency-Key")?.trim() ??
-      body.idempotencyKey?.trim() ??
-      "";
+    const headerKey = request.headers.get("Idempotency-Key")?.trim();
+    const bodyKey = body.idempotencyKey?.trim();
+    if (headerKey && bodyKey && headerKey !== bodyKey) {
+      return NextResponse.json(
+        { error: "Mã xác nhận đơn hàng không khớp.", code: "IDEMPOTENCY_KEY_MISMATCH" },
+        { status: 400 },
+      );
+    }
+    const idempotencyKey = headerKey || bodyKey || "";
+    if (!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey)) {
+      return NextResponse.json(
+        { error: "Không thể xác nhận yêu cầu đặt hàng. Vui lòng tải lại trang và thử lại.", code: "INVALID_IDEMPOTENCY_KEY" },
+        { status: 400 },
+      );
+    }
 
     userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 

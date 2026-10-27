@@ -23,8 +23,11 @@ export class UserManagementRepository {
   }
 
   async listUsers(): Promise<UserRow[]> {
-    const { data, error } = await this.supabase
-      .from("users")
+    const items: UserRow[] = [];
+    for (let page = 0; page < 80; page++) {
+      const from = page * 500;
+      const { data, error } = await this.supabase
+        .from("users")
       .select(
         `
   user_id,
@@ -48,13 +51,14 @@ export class UserManagementRepository {
   )
 `,
       )
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      throw new Error(error.message);
+      .order("created_at", { ascending: false })
+      .order("user_id", { ascending: true })
+      .range(from, from + 499);
+      if (error) throw new Error(error.message);
+      items.push(...((data ?? []) as UserRow[]));
+      if ((data ?? []).length < 500) return items;
     }
-
-    return (data ?? []) as UserRow[];
+    throw new Error("Too many users to enumerate safely; switch to server pagination");
   }
 
   async findById(userId: string): Promise<UserRow | null> {
@@ -147,6 +151,8 @@ export class UserManagementRepository {
         password: input.passwordHash,
         phone: input.phone?.trim() || null,
         address: input.address?.trim() || null,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
         image_url: input.imageUrl?.trim() || null,
         status: input.status ?? "active",
       })
@@ -183,7 +189,7 @@ export class UserManagementRepository {
   }
 
   async updateUser(input: UpdateUserInput): Promise<UserRow | null> {
-    const payload: Record<string, string | null> = {};
+    const payload: Record<string, string | number | null> = {};
 
     if (typeof input.roleId !== "undefined") payload.role_id = input.roleId;
     if (typeof input.storeId !== "undefined") payload.store_id = input.storeId;
@@ -194,6 +200,8 @@ export class UserManagementRepository {
       payload.phone = input.phone.trim() || null;
     if (typeof input.address !== "undefined")
       payload.address = input.address.trim() || null;
+    if (typeof input.latitude !== "undefined") payload.latitude = input.latitude;
+    if (typeof input.longitude !== "undefined") payload.longitude = input.longitude;
     if (typeof input.imageUrl !== "undefined")
       payload.image_url = input.imageUrl.trim() || null;
     if (typeof input.status !== "undefined") payload.status = input.status;

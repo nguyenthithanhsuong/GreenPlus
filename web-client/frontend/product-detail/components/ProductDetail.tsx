@@ -1,6 +1,8 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
+import { STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
+import StoreSelector from "../../stores/StoreSelector";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
@@ -577,6 +579,12 @@ export default function ProductDetail({
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(Boolean(productId));
   const [error, setError] = useState<string | null>(null);
+  const [storeRevision, setStoreRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => setStoreRevision((current) => current + 1);
+    window.addEventListener(STORE_CHANGE_EVENT, refresh);
+    return () => window.removeEventListener(STORE_CHANGE_EVENT, refresh);
+  }, []);
   const [cartActionLoading, setCartActionLoading] = useState(false);
   const [cartActionMessage, setCartActionMessage] = useState<string | null>(
     null,
@@ -663,6 +671,10 @@ export default function ProductDetail({
     const parseJsonResponse = <T,>(text: string): T => JSON.parse(text) as T;
 
     const loadProduct = async () => {
+      setProduct(null);
+      setRelatedProducts([]);
+      setReviews([]);
+      setQuantity(1);
       setLoading(true);
       setError(null);
       updateStep("product detail fetch", {
@@ -676,7 +688,7 @@ export default function ProductDetail({
       updateStep("reviews fetch", { status: "idle", detail: undefined });
 
       try {
-        const detailResponse = await fetch(
+        const detailResponse = await storeFetch(
           `/api/products/${encodeURIComponent(productId)}`,
           { signal: controller.signal },
         );
@@ -711,7 +723,7 @@ export default function ProductDetail({
             status: "loading",
             detail: `GET /api/products?categoryId=${resolvedDetail.category.id}&limit=6`,
           });
-          const relatedResponse = await fetch(
+          const relatedResponse = await storeFetch(
             `/api/products?categoryId=${encodeURIComponent(resolvedDetail.category.id)}&sort=newest&limit=6`,
             { signal: controller.signal },
           );
@@ -809,7 +821,7 @@ export default function ProductDetail({
     return () => {
       controller.abort();
     };
-  }, [productId]);
+  }, [productId, storeRevision]);
 
   const heroImage = useMemo(() => {
     return product?.images?.[0] ?? null;
@@ -858,13 +870,17 @@ export default function ProductDetail({
 
     const isExpired =
       product.inventory.status === "expired" || allBatchesExpired;
-    const canPurchase = !isExpired && hasSellableUnexpiredBatch;
+    const hasValidPrice = product.availablePrice !== null &&
+      Number.isFinite(product.availablePrice) && product.availablePrice > 0;
+    const canPurchase = !isExpired && hasSellableUnexpiredBatch && hasValidPrice;
 
     let warning: string | null = null;
     if (isExpired) {
       warning = "Sản phẩm này đã hết hạn, hiện không thể mua.";
-    } else if (!canPurchase) {
+    } else if (!hasSellableUnexpiredBatch) {
       warning = "Sản phẩm hiện không còn lô hàng khả dụng để mua.";
+    } else if (!hasValidPrice) {
+      warning = "Sản phẩm vẫn còn hàng nhưng chưa có giá bán hợp lệ.";
     }
 
     return { isExpired, canPurchase, warning };
@@ -873,7 +889,7 @@ export default function ProductDetail({
   const resolvedStatus = product
     ? effectiveAvailability.isExpired
       ? "Hết hạn"
-      : effectiveAvailability.canPurchase
+      : product.inventory.hasSellableBatch
         ? "Sẵn hàng"
         : "Tạm hết"
     : null;
@@ -1146,6 +1162,7 @@ export default function ProductDetail({
           <div style={{ width: "24px", height: "24px" }} />
         </header>
 
+        <div className="px-4 pb-2"><StoreSelector /></div>
         {heroImage ? (
           <img
             src={heroImage}
@@ -1215,7 +1232,12 @@ export default function ProductDetail({
                 <div style={styles.quantityValue}>{quantity}</div>
                 <button
                   style={styles.quantityButton}
-                  onClick={() => setQuantity((value) => value + 1)}
+                  onClick={() =>
+                    setQuantity((value) =>
+                      Math.min(value + 1, Math.max(1, product?.inventory.totalAvailable ?? 1)),
+                    )
+                  }
+                  disabled={!product || quantity >= product.inventory.totalAvailable}
                   aria-label="Tăng số lượng"
                 >
                   +
