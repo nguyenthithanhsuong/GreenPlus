@@ -13,12 +13,13 @@ export type ShipperUser = {
   name: string;
   email: string;
   phone: string | null;
+  address: string | null;
   status: string;
 };
 
 type UserWithPassword = ShipperUser & { password: string };
 
-const basicFields = 'user_id,name,email,phone,status';
+const basicFields = 'user_id,name,email,phone,address,status';
 
 function dbError(): never { throw new ShipperError('Không thể truy cập dữ liệu Shipper', 503, 'DATABASE_UNAVAILABLE'); }
 
@@ -40,7 +41,7 @@ export async function signInShipper(email: string, password: string): Promise<{u
       .eq('user_id', user.user_id).eq('password', user.password);
     if (upgradeError) dbError();
   }
-  const publicUser: ShipperUser = {user_id:user.user_id, name:user.name, email:user.email, phone:user.phone, status:user.status};
+  const publicUser: ShipperUser = {user_id:user.user_id, name:user.name, email:user.email, phone:user.phone, address:user.address, status:user.status};
   const token = createShipperSession(user.user_id, process.env.SHIPPER_SESSION_SECRET ?? '');
   return { user: publicUser, token };
 }
@@ -57,8 +58,8 @@ export async function requireShipper(): Promise<ShipperUser> {
     .eq('user_id', userId).eq('roles.is_shipper', true).maybeSingle();
   if (error) dbError();
   if (!data || data.status !== 'active') throw new ShipperError('Tài khoản Shipper không còn quyền truy cập', 403, 'SHIPPER_DENIED');
-  const { user_id, name, email, phone, status } = data;
-  return { user_id, name, email, phone, status };
+  const { user_id, name, email, phone, address, status } = data;
+  return { user_id, name, email, phone, address, status };
 }
 
 export function shipperApiError(error: unknown): { message: string; status: number; code: string } {
