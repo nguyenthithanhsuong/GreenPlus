@@ -1,3 +1,4 @@
+import { resolveDeliveryAddress, LocationError } from "../../../../../../packages/location/index.mjs";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
@@ -107,6 +108,11 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
     const deliveryAddress =
       body.deliveryAddress?.trim() ?? body.delivery_address?.trim();
 
+    let location;
+    if (deliveryAddress !== undefined) {
+      try { location = await resolveDeliveryAddress(deliveryAddress); }
+      catch(error) { return NextResponse.json({error:error instanceof Error?error.message:"Địa chỉ giao không hợp lệ"},{status:error instanceof LocationError?error.status:422}); }
+    }
     const deliveryFeeRaw = body.deliveryFee ?? body.delivery_fee;
 
     const note = body.note;
@@ -136,6 +142,8 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
       storeId: store.storeId,
       orderId,
       deliveryAddress,
+      deliveryLatitude: location?.latitude,
+      deliveryLongitude: location?.longitude,
       deliveryFee:
         typeof deliveryFeeRaw === "undefined"
           ? undefined

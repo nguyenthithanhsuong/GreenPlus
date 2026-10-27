@@ -8,7 +8,7 @@ import {haversineKm, validPoint, type GeoPoint} from '../../lib/map-helpers.mjs'
 
 const MapCanvas=dynamic(()=>import('./MapCanvas'),{ssr:false,loading:()=>
   <div className="flex h-[330px] items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">Đang mở bản đồ…</div>});
-type MapDetails={orderId:string;pickup:GeoPoint|null;storeName:string;storeAddress:string;deliveryAddress:string};
+type MapDetails={orderId:string;pickup:GeoPoint|null;dropoff:GeoPoint|null;storeName:string;storeAddress:string;deliveryAddress:string};
 type Road={points:GeoPoint[];distanceMeters:number;durationSeconds:number};
 export default function DeliveryMapPanel({orderId,onClose}:{orderId:string;onClose:()=>void}) {
   const [details,setDetails]=useState<MapDetails|null>(null);
@@ -33,7 +33,7 @@ export default function DeliveryMapPanel({orderId,onClose}:{orderId:string;onClo
         const body=await response.json();
         if (!response.ok)throw new Error(body.error||'Không tải được thông tin vị trí');
         if(!controller.signal.aborted){
-          setDetails(body);setPickup(validPoint(body.pickup)?body.pickup:null);
+          setDetails(body);setPickup(validPoint(body.pickup)?body.pickup:null);setDropoff(validPoint(body.dropoff)?body.dropoff:null);
         }
       }catch(e){if(!controller.signal.aborted)setError(e instanceof Error?e.message:'Không tải được bản đồ');}
       finally{if(!controller.signal.aborted)setLoading(false);}

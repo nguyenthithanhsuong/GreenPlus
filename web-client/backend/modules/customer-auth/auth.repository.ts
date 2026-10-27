@@ -136,6 +136,8 @@ export class AuthRepository {
     email: string;
     phone: string;
     address: string;
+    latitude: number | null;
+    longitude: number | null;
     imageUrl: string;
   }): Promise<UserRow> {
     const { data, error } = await supabaseServer
@@ -145,6 +147,8 @@ export class AuthRepository {
         email: input.email,
         phone: input.phone,
         address: input.address,
+        latitude: input.latitude,
+        longitude: input.longitude,
         image_url: input.imageUrl,
       })
       .eq("user_id", input.userId)

@@ -23,6 +23,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "clean": "rimraf .next .turbo out dist",
     "check-all": "npm run clean && npm run format && npm run lint-fix && npm run typecheck && npm run build",
+    "mobile:client:init": "node scripts/mobile-twa.mjs client init",
+    "mobile:shipper:init": "node scripts/mobile-twa.mjs shipper init",
+    "mobile:client:build": "node scripts/mobile-twa.mjs client build",
+    "mobile:shipper:build": "node scripts/mobile-twa.mjs shipper build",
     "test:shipper": "npm test -w web-shipper",
     "test:migrations": "node --test tests/migration-static.test.mjs"
   },

@@ -27,6 +27,8 @@ export default function ProfileScreen() {
   const [draft, setDraft] = useState<Draft>({ name: "", phone: "", address: "" });
   const [passwordDraft, setPasswordDraft] = useState({ currentPassword: "", newPassword: "", confirm: "" });
   const [saving, setSaving] = useState(false);
+  const [addressCheck, setAddressCheck] = useState<{address:string;latitude:number;longitude:number}|null>(null);
+  const [checkingAddress, setCheckingAddress] = useState(false);
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
   const [notice, setNotice] = useState("");
@@ -52,12 +54,24 @@ export default function ProfileScreen() {
   function startEdit() {
     if (!user) return;
     setDraft({ name: user.name, phone: user.phone || "", address: user.address || "" });
-    setFormError(""); setEditing(true);
+    setAddressCheck(null);setFormError(""); setEditing(true);
+  }
+
+  async function verifyAddress() {
+    setCheckingAddress(true); setFormError("");
+    try {
+      const response = await fetch(`/api/location?q=${encodeURIComponent(draft.address)}`);
+      const payload = await response.json() as {items?:Array<{address:string;latitude:number;longitude:number}>;error?:string};
+      if (!response.ok || !payload.items?.length) throw new Error(payload.error || "Không xác minh được vị trí");
+      setAddressCheck(payload.items[0]);
+    } catch (error) { setAddressCheck(null);setFormError(error instanceof Error ? error.message : "Không xác minh được địa chỉ"); }
+    finally {setCheckingAddress(false);}
   }
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving) return;
+    if (draft.address.trim() && !addressCheck) {setFormError("Hãy xác minh địa chỉ liên hệ trước khi lưu.");return;}
     setSaving(true); setFormError("");
     try {
       const response = await fetch("/api/auth/me", {
@@ -162,7 +176,14 @@ export default function ProfileScreen() {
         <form id="gp-profile-edit" onSubmit={(event) => void saveProfile(event)} className="space-y-4">
           <div><label className="gp-label" htmlFor="gp-profile-name">Họ và tên</label><input id="gp-profile-name" className="gp-input" required minLength={2} maxLength={100} value={draft.name} onChange={(e) => setDraft((old) => ({ ...old, name: e.target.value }))} /></div>
           <div><label className="gp-label" htmlFor="gp-profile-phone">Số điện thoại</label><input id="gp-profile-phone" type="tel" className="gp-input" maxLength={20} value={draft.phone} onChange={(e) => setDraft((old) => ({ ...old, phone: e.target.value }))} placeholder="Ví dụ: 0901234567" /></div>
-          <div><label className="gp-label" htmlFor="gp-profile-address">Địa chỉ liên hệ</label><textarea id="gp-profile-address" className="gp-input min-h-24 resize-y" maxLength={500} value={draft.address} onChange={(e) => setDraft((old) => ({ ...old, address: e.target.value }))} placeholder="Địa chỉ của bạn" /></div>
+          <div><label className="gp-label" htmlFor="gp-profile-address">Địa chỉ liên hệ</label><textarea id="gp-profile-address" className="gp-input min-h-24 resize-y" maxLength={500} value={draft.address} onChange={(e) => {setDraft((old) => ({ ...old, address: e.target.value }));setAddressCheck(null);}} placeholder="Địa chỉ của bạn" /></div>
+          <button type="button" onClick={() => void verifyAddress()} disabled={checkingAddress||!draft.address.trim()} className="gp-secondary-button w-full disabled:opacity-50">
+            {checkingAddress ? "Đang xác minh..." : "Xác minh địa chỉ và tính tọa độ"}
+          </button>
+          {addressCheck && <div role="status" className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-900">
+            {addressCheck.address}<br/>Latitude {addressCheck.latitude.toFixed(6)} · Longitude {addressCheck.longitude.toFixed(6)}
+          </div>}
+          <p className="text-xs text-slate-500">Khi tra cứu, địa chỉ liên hệ được gửi tới Photon công cộng · © OpenStreetMap contributors</p>
           {formError && <p role="alert" className="gp-alert"><AlertCircle size={17} />{formError}</p>}
           <p className="gp-muted">Email và quyền tài khoản do quản lý phụ trách.</p>
         </form>

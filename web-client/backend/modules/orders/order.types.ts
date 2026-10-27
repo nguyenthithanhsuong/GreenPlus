@@ -83,6 +83,8 @@ export type CreateOrderInput = {
   storeId: string;
   idempotencyKey: string;
   deliveryAddress: string;
+  deliveryLatitude: number;
+  deliveryLongitude: number;
   deliveryFee?: number;
   note?: string;
   paymentMethod?: PaymentMethod;
@@ -106,6 +108,8 @@ export type UpdateOrderInput = {
   storeId: string;
   orderId: string;
   deliveryAddress?: string;
+  deliveryLatitude?: number;
+  deliveryLongitude?: number;
   deliveryFee?: number;
   note?: string;
 };

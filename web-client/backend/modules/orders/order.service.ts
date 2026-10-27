@@ -464,6 +464,8 @@ export class OrderService {
         storeId: input.storeId,
         idempotencyKey: input.idempotencyKey,
         deliveryAddress: input.deliveryAddress.trim(),
+        deliveryLatitude: input.deliveryLatitude,
+        deliveryLongitude: input.deliveryLongitude,
         deliveryFee,
         note: (input.note ?? "").trim() || null,
         paymentMethod,
@@ -734,6 +736,8 @@ export class OrderService {
         deliveryAddress: hasDeliveryAddress
           ? input.deliveryAddress?.trim()
           : undefined,
+        deliveryLatitude: hasDeliveryAddress ? input.deliveryLatitude : undefined,
+        deliveryLongitude: hasDeliveryAddress ? input.deliveryLongitude : undefined,
         deliveryFee: normalizedDeliveryFee,
         note: hasNote ? (input.note ?? "").trim() || null : undefined,
       });

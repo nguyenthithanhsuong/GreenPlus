@@ -321,6 +321,8 @@ export class AuthFacade {
       email: normalizedEmail,
       phone: input.phone.trim(),
       address: (input.address ?? "").trim(),
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
       imageUrl: (input.imageUrl ?? "").trim(),
     });
 

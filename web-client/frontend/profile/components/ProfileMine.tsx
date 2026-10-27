@@ -297,6 +297,8 @@ export default function ProfileMine() {
   const [emailInput, setEmailInput] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
   const [addressInput, setAddressInput] = useState("");
+  const [addressCheck, setAddressCheck] = useState<{address:string;latitude:number;longitude:number}|null>(null);
+  const [checkingAddress, setCheckingAddress] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState("");
@@ -423,6 +425,18 @@ export default function ProfileMine() {
     }
   };
 
+  const verifyAddress = async () => {
+    setCheckingAddress(true);
+    setSaveMessage(null);
+    try {
+      const response = await fetch(`/api/location?q=${encodeURIComponent(addressInput.trim())}`);
+      const data = await response.json() as {items?:Array<{address:string;latitude:number;longitude:number}>;error?:string};
+      if (!response.ok || !data.items?.length) throw new Error(data.error || "Không tìm thấy địa chỉ chi tiết");
+      setAddressCheck(data.items[0]);
+    } catch(error) {setAddressCheck(null);setSaveMessage(error instanceof Error?error.message:"Không kiểm tra được địa chỉ");}
+    finally {setCheckingAddress(false);}
+  };
+
   const handleSaveProfile = async () => {
     if (!userId) {
       setSaveMessage("Không tìm thấy tài khoản để cập nhật hồ sơ.");
@@ -439,6 +453,11 @@ export default function ProfileMine() {
       return;
     }
 
+    if (addressInput.trim() && !addressCheck) {
+      // Require an explicit lookup in this edit session; the server repeats the lookup.
+      setSaveMessage("Hãy bấm xác minh địa chỉ và xem vị trí trước khi lưu.");
+      return;
+    }
     setSaveMessage(null);
     setSaving(true);
 
@@ -709,10 +728,21 @@ export default function ProfileMine() {
                     <p style={styles.inputLabel}>Địa chỉ</p>
                     <textarea
                       value={addressInput}
-                      onChange={(event) => setAddressInput(event.target.value)}
+                      onChange={(event) => { setAddressInput(event.target.value);setAddressCheck(null); }}
                       style={styles.textArea}
                       placeholder="Nhập địa chỉ giao hàng"
                     />
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%"}}>
+                    <button type="button" disabled={checkingAddress || !addressInput.trim()} onClick={() => void verifyAddress()}
+                      style={{padding:"10px 14px",borderRadius:12,background:"#047857",color:"white",fontWeight:700,opacity:checkingAddress?0.6:1}}>
+                      {checkingAddress ? "Đang xác minh địa chỉ..." : "Xác minh địa chỉ và tọa độ"}
+                    </button>
+                    {addressCheck && <div role="status" style={{fontSize:12,color:"#065f46",background:"#ecfdf5",padding:12,borderRadius:12}}>
+                      <strong>Vị trí đã tìm thấy (hãy kiểm tra trước khi lưu):</strong><p>{addressCheck.address}</p>
+                      <p>Latitude {addressCheck.latitude.toFixed(6)} · Longitude {addressCheck.longitude.toFixed(6)}</p>
+                    </div>}
+                    <small style={{color:"#64748b"}}>Khi xác minh, địa chỉ nhập được gửi tới Photon (dịch vụ OpenStreetMap công cộng). Không nhập thông tin nhạy cảm vào địa chỉ.</small>
                   </div>
                   <div style={styles.formActions}>
                     <button

@@ -50,6 +50,8 @@ export class OrderRepository {
     storeId: string;
     idempotencyKey: string;
     deliveryAddress: string;
+    deliveryLatitude: number;
+    deliveryLongitude: number;
     deliveryFee: number;
     note: string | null;
     paymentMethod: PaymentMethod;
@@ -76,6 +78,12 @@ export class OrderRepository {
     if (!result?.order_id || result.status !== "pending") {
       throw new Error("Checkout RPC returned an invalid result");
     }
+    // checkout_cart is legacy RPC without coordinate arguments. Scope the follow-up
+    // update to the exact user/store/order and retain idempotent checkout semantics.
+    const { error: geoError } = await supabaseServer.from("orders")
+      .update({ delivery_latitude: input.deliveryLatitude, delivery_longitude: input.deliveryLongitude })
+      .eq("order_id", result.order_id).eq("user_id", input.userId).eq("store_id", input.storeId);
+    if (geoError) throw new Error("Order was created, but could not save delivery coordinates: " + geoError.message);
     return {
       order_id: result.order_id,
       status: "pending",
@@ -585,6 +593,8 @@ export class OrderRepository {
     orderId: string;
     storeId: string;
     deliveryAddress?: string;
+    deliveryLatitude?: number;
+    deliveryLongitude?: number;
     deliveryFee?: number;
     note?: string | null;
   }): Promise<void> {
@@ -592,6 +602,8 @@ export class OrderRepository {
 
     if (typeof input.deliveryAddress === "string") {
       payload.delivery_address = input.deliveryAddress;
+      payload.delivery_latitude = input.deliveryLatitude;
+      payload.delivery_longitude = input.deliveryLongitude;
     }
 
     if (typeof input.deliveryFee === "number") {

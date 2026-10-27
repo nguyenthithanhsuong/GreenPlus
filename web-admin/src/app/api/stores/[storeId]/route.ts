@@ -1,3 +1,4 @@
+import { resolveDeliveryAddress, LocationError } from "../../../../../../packages/location/index.mjs";
 import { portalActor } from "../../../../../backend/core/manager-scope";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
@@ -35,6 +36,14 @@ export async function PUT(request: Request, context: Context) {
       closingTime?: string | null;
     };
 
+    let location;
+    if (typeof body.address === "string") {
+      try {
+        location = await resolveDeliveryAddress([body.address, body.ward, body.district, body.city].filter(Boolean).join(", "));
+      } catch(error) {
+        return NextResponse.json({error:error instanceof Error ? error.message : "Địa chỉ cửa hàng không xác thực được"}, {status:error instanceof LocationError ? error.status : 422});
+      }
+    }
     logger.info("Update store attempt", { storeId, name: body.name });
 
     const start = Date.now();
@@ -50,8 +59,8 @@ export async function PUT(request: Request, context: Context) {
       email: body.email,
       managerId: body.managerId,
       status: body.status,
-      latitude: body.latitude,
-      longitude: body.longitude,
+      latitude: location?.latitude,
+      longitude: location?.longitude,
       openingTime: body.openingTime,
       closingTime: body.closingTime,
     });

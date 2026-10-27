@@ -8,6 +8,8 @@ import type { NextConfig } from "next";
 loadEnv({ path: resolve(process.cwd(), "../.env") });
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  outputFileTracingRoot: resolve(process.cwd(), ".."),
   reactCompiler: true,
   images: {
     remotePatterns: [

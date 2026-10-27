@@ -3,7 +3,7 @@ import { shipperDb } from './shipper-db';
 import { ShipperError, type ShipperUser } from './shipper-auth';
 import { allowedTransition, normalizeDelivery, safeOrderId } from '../lib/delivery-contract.mjs';
 
-const columns = 'delivery_id,order_id,employee_id,store_id,status,pickup_time,delivery_time,orders(delivery_address,total_amount,store_id,users(name))';
+const columns = 'delivery_id,order_id,employee_id,store_id,status,pickup_time,delivery_time,orders(delivery_address,delivery_latitude,delivery_longitude,total_amount,store_id,users(name))';
 
 type DeliveryRow = {
   delivery_id: string;
@@ -13,7 +13,7 @@ type DeliveryRow = {
   status: string;
   pickup_time: string | null;
   delivery_time: string | null;
-  orders: {delivery_address: string | null; total_amount: number | null; store_id: string | null; users: {name: string | null} | null} | null;
+  orders: {delivery_address: string | null; delivery_latitude: number | string | null; delivery_longitude: number | string | null; total_amount: number | null; store_id: string | null; users: {name: string | null} | null} | null;
 };
 
 async function assignedStores(user: ShipperUser): Promise<Set<string>> {
@@ -103,9 +103,14 @@ export async function getShipperMapDetails(user: ShipperUser, orderId: string) {
   const pickup = latitude != null && longitude != null && Number.isFinite(latitude) &&
     Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180
     ? { lat: latitude, lng: longitude } : null;
+  const dlat = row.orders?.delivery_latitude == null ? NaN : Number(row.orders.delivery_latitude);
+  const dlng = row.orders?.delivery_longitude == null ? NaN : Number(row.orders.delivery_longitude);
+  const dropoff = Number.isFinite(dlat) && Number.isFinite(dlng) &&
+    Math.abs(dlat)<=90 && Math.abs(dlng)<=180 ? {lat:dlat,lng:dlng} : null;
   return {
     orderId: row.order_id,
     pickup,
+    dropoff,
     storeName: String(store.name || 'Cửa hàng GreenPlus'),
     storeAddress: String(store.address || ''),
     deliveryAddress: String(row.orders?.delivery_address || ''),
