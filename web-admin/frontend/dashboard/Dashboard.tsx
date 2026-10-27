@@ -6,6 +6,7 @@ import ActionTables from "./ActionTables";
 import Charts from "./Charts";
 import StatCards from "./StatCards";
 import AdminShell from "../shared/AdminShell";
+import PlatformDashboard from "./PlatformDashboard";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { asPortalRole } from "@/lib/portal-access";
 import { UserSummary } from "../../backend/modules/users/user-management.types";
@@ -89,7 +90,13 @@ const Dashboard = () => {
   }, [role]);
 
   useEffect(() => {
-    if (role) void loadDashboardData();
+    if (role && role !== "admin") {
+      void loadDashboardData();
+      const id = window.setInterval(() => {
+        if (document.visibilityState === "visible") void loadDashboardData();
+      }, 30000);
+      return () => window.clearInterval(id);
+    }
   }, [loadDashboardData, role]);
 
   const todayLabel = useMemo(
@@ -133,24 +140,7 @@ const Dashboard = () => {
       ) : null}
 
       {role === "admin" ? (
-        <section className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-slate-500">
-              Tài khoản nền tảng
-            </p>
-            <p className="mt-2 text-3xl font-black text-emerald-700">
-              {users.length}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-slate-500">
-              Nội dung Green Creator
-            </p>
-            <p className="mt-2 text-3xl font-black text-emerald-700">
-              {greenCreatorPosts.length}
-            </p>
-          </div>
-        </section>
+        <PlatformDashboard />
       ) : (
         <>
           <StatCards

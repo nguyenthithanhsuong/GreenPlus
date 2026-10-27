@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "dev": "turbo dev --ui=tui",
+    "dev-all": "concurrently -n SERVER,WARM \"turbo dev --ui=stream\" \"node scripts/prewarm-dev.mjs\"",
     "dev:turbo": "turbo dev --ui=tui",
     "dev:admin": "turbo dev --filter=web-admin",
     "dev:client": "turbo dev --filter=web-client",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.9.2",
+    "concurrently": "^10.0.6",
     "dotenv": "^16.6.1",
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",

@@ -66,6 +66,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3002
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SHIPPER_SESSION_SECRET: ${SHIPPER_SESSION_SECRET}
     expose:
       - "3002"
     ports:

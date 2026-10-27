@@ -1,4 +1,5 @@
 "use client";
+import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Plus, RefreshCw, Trash2, X } from "lucide-react";
@@ -92,6 +93,8 @@ const ProductManagement = () => {
     void loadProducts();
     void loadCategories();
   }, [loadCategories, loadProducts]);
+
+  useAutoReload(loadProducts);
 
   const stats = useMemo(() => {
     const activeProducts = products.filter(

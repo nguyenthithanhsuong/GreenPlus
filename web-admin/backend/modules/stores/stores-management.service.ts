@@ -1,3 +1,4 @@
+import { createServiceRoleSupabaseClient } from "../../core/supabase";
 import { AppError } from "../../core/errors";
 import { StoresManagementRepository } from "./stores-management.repository";
 import {
@@ -120,9 +121,36 @@ export class StoresManagementService {
     };
   }
 
+  private async verifyManager(managerId: string): Promise<void> {
+    const { data, error } = await createServiceRoleSupabaseClient()
+      .from("users")
+      .select("user_id,status,roles!inner(is_manager,is_admin,is_shipper)")
+      .eq("user_id", managerId)
+      .eq("roles.is_manager", true)
+      .maybeSingle();
+    if (error) throw new AppError("Không kiểm tra được tài khoản Manager", 503);
+    const flags = data?.roles as unknown as {
+      is_manager?: boolean;
+      is_admin?: boolean;
+      is_shipper?: boolean;
+    } | null;
+    if (
+      !data ||
+      data.status !== "active" ||
+      !flags?.is_manager ||
+      flags.is_admin ||
+      flags.is_shipper
+    )
+      throw new AppError(
+        "Chỉ có thể gán tài khoản đang hoạt động với vai trò Manager",
+        400,
+      );
+  }
+
   async createStore(input: CreateStoreInput): Promise<StoreRow> {
     const normalized = this.normalizeInput(input);
     this.ensureRequiredFields(normalized);
+    await this.verifyManager(normalized.managerId.trim());
 
     return this.repository.createStore({
       name: normalized.name.trim(),
@@ -167,6 +195,7 @@ export class StoresManagementService {
     }
 
     const normalized = this.normalizeInput(input);
+    if (normalized.managerId) await this.verifyManager(normalized.managerId);
 
     const updated = await this.repository.updateStore({
       storeId: input.storeId,

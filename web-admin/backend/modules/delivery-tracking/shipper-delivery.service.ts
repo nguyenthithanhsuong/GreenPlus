@@ -53,7 +53,7 @@ export async function requireShipper(request: Request): Promise<string> {
     .eq("roles.is_shipper", true)
     .maybeSingle();
   if (error) throw new ShipperDeliveryError("User lookup failed", 503);
-  if (!data || data.status === "banned" || data.status === "inactive")
+  if (!data || data.status !== "active")
     throw new ShipperDeliveryError("Shipper access denied", 403);
   return identity.id;
 }

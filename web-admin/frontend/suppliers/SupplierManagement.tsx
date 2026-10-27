@@ -1,4 +1,5 @@
 "use client";
+import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw, X } from "lucide-react";
@@ -67,6 +68,8 @@ const SupplierManagement = () => {
   useEffect(() => {
     void loadSuppliers();
   }, []);
+
+  useAutoReload(loadSuppliers);
 
   const stats = useMemo(
     () => ({

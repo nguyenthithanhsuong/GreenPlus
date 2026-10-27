@@ -9,33 +9,51 @@ import {
 } from "../../../../backend/core/manager-scope";
 import { createServiceRoleSupabaseClient } from "../../../../backend/core/supabase";
 import { AppError } from "../../../../backend/core/errors";
+import { activeTenantScope } from "../../../../backend/core/tenant-store";
+import type { UserSummary } from "../../../../backend/modules/users/user-management.types";
 
 export const GET = withSentry(async (request: Request) => {
   const actor = await portalActor(request);
   logger.info("List users attempt");
 
   const start = Date.now();
-  let items = await userManagementFacade.listUsers();
+  let items: UserSummary[];
   if (actor.role === "manager") {
-    const ids = await managerStoreIds(actor.id);
+    const currentStore = activeTenantScope()?.storeIds[0];
+    if (!currentStore) throw new AppError("No authorized store", 403);
     const db = createServiceRoleSupabaseClient();
-    const { data: assigned, error } = await db
+    const { data: members, error: memberError } = await db
       .from("store_members")
       .select("user_id")
-      .in(
-        "store_id",
-        ids.length ? ids : ["00000000-0000-0000-0000-000000000000"],
-      )
+      .eq("store_id", currentStore)
       .eq("status", "active");
-    if (error) throw new AppError("Failed to filter employees", 503);
-    const assignedIds = new Set(
-      (assigned ?? []).map((row) => String(row.user_id)),
-    );
-    items = items.filter(
-      (u) =>
-        u.role_name?.toLowerCase() === "employee" &&
-        (ids.includes(u.store_id ?? "") || assignedIds.has(u.user_id)),
-    );
+    if (memberError) throw new AppError("Failed to filter employees", 503);
+    const userIds = [
+      ...new Set((members ?? []).map((row) => String(row.user_id))),
+    ];
+    if (!userIds.length) items = [];
+    else {
+      const { data, error } = await db
+        .from("users")
+        .select(
+          "user_id,role_id,store_id,name,email,phone,address,status,created_at,image_url,roles!inner(role_name,is_employee)",
+        )
+        .in("user_id", userIds)
+        .eq("roles.is_employee", true);
+      if (error) throw new AppError("Failed to load employees", 503);
+      items = (data ?? []).map((row) => {
+        const rel = row.roles as unknown as
+          { role_name?: string } | { role_name?: string }[] | null;
+        return {
+          ...row,
+          role_name: Array.isArray(rel)
+            ? (rel[0]?.role_name ?? null)
+            : (rel?.role_name ?? null),
+        };
+      }) as UserSummary[];
+    }
+  } else {
+    items = await userManagementFacade.listUsers();
   }
 
   logger.info("List users success", {

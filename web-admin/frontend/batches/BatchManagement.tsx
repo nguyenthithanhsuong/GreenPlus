@@ -1,4 +1,5 @@
 "use client";
+import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Hash, Plus, RefreshCw, ScanSearch } from "lucide-react";
@@ -159,6 +160,8 @@ const BatchManagement = () => {
     void loadProducts();
     void loadSuppliers();
   }, [loadBatches, loadProducts, loadSuppliers]);
+
+  useAutoReload(loadBatches);
 
   useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {

@@ -1,4 +1,5 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
+import { activeTenantScope } from "../../core/tenant-store";
 import {
   DeliveryShipperOption,
   DeliveryStatus,
@@ -161,13 +162,38 @@ export class DeliveryTrackingRepository {
     }
   }
 
-  async listShippers(): Promise<DeliveryShipperOption[]> {
+  async orderExistsInScope(orderId: string): Promise<boolean> {
     const { data, error } = await this.supabase
+      .from("orders")
+      .select("order_id")
+      .eq("order_id", orderId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return Boolean(data);
+  }
+
+  private async authorizedShipperIds(): Promise<string[] | null> {
+    const scope = activeTenantScope();
+    if (!scope) return null;
+    const { data, error } = await this.supabase
+      .from("store_members")
+      .select("user_id")
+      .in("store_id", scope.storeIds)
+      .eq("status", "active");
+    if (error) throw new Error("Shipper store membership lookup failed");
+    return [...new Set((data ?? []).map((row) => String(row.user_id)))];
+  }
+
+  async listShippers(): Promise<DeliveryShipperOption[]> {
+    const allowed = await this.authorizedShipperIds();
+    if (allowed && !allowed.length) return [];
+    let query = this.supabase
       .from("users")
       .select("user_id,name,phone,status,roles!inner(role_name,is_shipper)")
       .eq("roles.is_shipper", true)
-      .neq("status", "banned")
-      .order("name", { ascending: true });
+      .eq("status", "active");
+    if (allowed) query = query.in("user_id", allowed);
+    const { data, error } = await query.order("name", { ascending: true });
 
     if (error) {
       throw new Error(error.message);
@@ -185,12 +211,14 @@ export class DeliveryTrackingRepository {
   async findShipperById(
     employeeId: string,
   ): Promise<DeliveryShipperOption | null> {
+    const allowed = await this.authorizedShipperIds();
+    if (allowed && !allowed.includes(employeeId)) return null;
     const { data, error } = await this.supabase
       .from("users")
       .select("user_id,name,phone,status,roles!inner(role_name,is_shipper)")
       .eq("user_id", employeeId)
       .eq("roles.is_shipper", true)
-      .neq("status", "banned")
+      .eq("status", "active")
       .maybeSingle();
 
     if (error) {

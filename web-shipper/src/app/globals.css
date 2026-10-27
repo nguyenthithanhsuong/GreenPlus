@@ -25,3 +25,14 @@ body {
   background: radial-gradient(circle at 10% 10%, #dcfce7 0%, #bbf7d0 35%, #86efac 55%, #4ade80 75%, #16a34a 100%);
   background-attachment: fixed;
 }
+
+.gp-map-marker { background: transparent; border: 0; }
+.gp-map-marker-inner {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border: 3px solid white;
+  border-radius: 50% 50% 50% 5px; transform: rotate(-45deg);
+  box-shadow: 0 3px 10px rgba(0,0,0,.25); font-size: 20px;
+}
+.gp-map-store { background: #d1fae5; }
+.gp-map-destination { background: #fef3c7; }
+.gp-map-marker-inner::first-letter { transform: rotate(45deg); }

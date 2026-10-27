@@ -10,7 +10,7 @@ type Context = {
   }>;
 };
 
-export async function GET(_: Request, context: Context) {
+async function handleGET(_: Request, context: Context) {
   const { orderId } = await context.params;
   logger.info("Get order detail attempt", { orderId });
 
@@ -44,7 +44,7 @@ export async function GET(_: Request, context: Context) {
   }
 }
 
-export async function PATCH(request: Request, context: Context) {
+async function handlePATCH(request: Request, context: Context) {
   const { orderId } = await context.params;
 
   try {
@@ -94,3 +94,6 @@ export async function PATCH(request: Request, context: Context) {
     return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
+
+export const GET = withSentry(handleGET);
+export const PATCH = withSentry(handlePATCH);

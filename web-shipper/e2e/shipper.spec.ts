@@ -1,20 +1,31 @@
 import { test, expect } from "@playwright/test";
-test("shipper renders mobile-first UI and does not fabricate orders", async ({
+
+test("unauthenticated shipper is directed to branded login", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: "Đơn giao của tôi" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Chưa có đơn trong trạng thái này."),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Tải đơn hàng" }),
-  ).toBeDisabled();
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: /GreenPlus/ })).toBeVisible();
+  await expect(page.getByLabel("Email tài khoản Shipper")).toBeVisible();
+  await expect(page.getByLabel("Mật khẩu")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeVisible();
 });
-test("api rejects unauthenticated reads", async ({ request }) => {
+
+test("shipper API never returns another user orders to guests", async ({
+  request,
+}) => {
   const response = await request.get("/api/shipper/deliveries");
-  expect([401, 503]).toContain(response.status());
+  expect(response.status()).toBe(401);
+});
+
+test("sign-in rejects invalid fields without creating a session", async ({
+  request,
+}) => {
+  const response = await request.post("/api/auth/sign-in", {
+    data: { email: "", password: "" },
+  });
+  expect(response.status()).toBe(400);
+  expect(response.headers()["set-cookie"] ?? "").not.toContain(
+    "gp_shipper_session=",
+  );
 });

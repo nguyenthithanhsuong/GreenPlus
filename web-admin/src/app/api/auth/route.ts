@@ -12,45 +12,51 @@ function readAccessToken(request: Request, fallbackToken?: string): string {
   return (fallbackToken ?? bearerToken).trim();
 }
 
-export const GET = withSentry(async () => {
-  logger.info("Auth API health check");
+export const GET = withSentry(
+  async () => {
+    logger.info("Auth API health check");
 
-  return NextResponse.json(
-    {
-      message: "auth api is ready",
-      methods: ["POST"],
-      requirement: "Provide Bearer access token or accessToken in body",
-    },
-    { status: 200 },
-  );
-});
-
-export const POST = withSentry(async (request) => {
-  const start = Date.now();
-  let userId = "";
-
-  const body = (await request.json()) as { accessToken?: string };
-  const accessToken = readAccessToken(request, body.accessToken);
-
-  logger.info("Auth session verification attempt");
-
-  if (!accessToken) {
-    logger.error("Auth session verification failed - missing accessToken");
     return NextResponse.json(
-      { error: "accessToken is required" },
-      { status: 400 },
+      {
+        message: "auth api is ready",
+        methods: ["POST"],
+        requirement: "Provide Bearer access token or accessToken in body",
+      },
+      { status: 200 },
     );
-  }
+  },
+  { publicRoute: true },
+);
 
-  const controller = new AuthController(new AuthService());
-  const result = await controller.verifySession(accessToken);
+export const POST = withSentry(
+  async (request) => {
+    const start = Date.now();
+    let userId = "";
 
-  userId = result?.id ?? "";
+    const body = (await request.json()) as { accessToken?: string };
+    const accessToken = readAccessToken(request, body.accessToken);
 
-  logger.info("Auth session verification success", {
-    userId,
-    duration_ms: Date.now() - start,
-  });
+    logger.info("Auth session verification attempt");
 
-  return NextResponse.json(result, { status: 200 });
-});
+    if (!accessToken) {
+      logger.error("Auth session verification failed - missing accessToken");
+      return NextResponse.json(
+        { error: "accessToken is required" },
+        { status: 400 },
+      );
+    }
+
+    const controller = new AuthController(new AuthService());
+    const result = await controller.verifySession(accessToken);
+
+    userId = result?.id ?? "";
+
+    logger.info("Auth session verification success", {
+      userId,
+      duration_ms: Date.now() - start,
+    });
+
+    return NextResponse.json(result, { status: 200 });
+  },
+  { publicRoute: true },
+);

@@ -11,7 +11,7 @@ type Context = {
   }>;
 };
 
-export async function PUT(request: Request, context: Context) {
+async function handlePUT(request: Request, context: Context) {
   const { inventoryId } = await context.params;
 
   try {
@@ -62,7 +62,7 @@ export async function PUT(request: Request, context: Context) {
   }
 }
 
-export async function DELETE(_: Request, context: Context) {
+async function handleDELETE(_: Request, context: Context) {
   const { inventoryId } = await context.params;
 
   logger.info("Delete inventory attempt", { inventoryId });
@@ -96,3 +96,6 @@ export async function DELETE(_: Request, context: Context) {
     return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
+
+export const PUT = withSentry(handlePUT);
+export const DELETE = withSentry(handleDELETE);

@@ -1,4 +1,5 @@
 "use client";
+import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
@@ -110,6 +111,8 @@ const InventoryManagement = () => {
   const refreshAll = useCallback(async () => {
     await Promise.all([loadInventory(), loadTransactions()]);
   }, [loadInventory, loadTransactions]);
+
+  useAutoReload(refreshAll);
 
   useEffect(() => {
     void loadInventory();

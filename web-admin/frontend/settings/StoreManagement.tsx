@@ -22,8 +22,6 @@ import {
   X,
 } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
-import SettingsNav from "./SettingsNav";
-import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
 import { usePermissions } from "@/lib/usePermissions";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import type {
@@ -116,7 +114,6 @@ function getStatusChip(status: StoreStatus) {
 }
 
 const StoreManagement = () => {
-  const { profile } = useCurrentUserProfile();
   const { hasPermission, loading: permLoading } = usePermissions();
   const canModify =
     !permLoading &&
@@ -189,9 +186,13 @@ const StoreManagement = () => {
   }, [users]);
 
   const managerOptions = useMemo(() => {
-    return [...users].sort((left, right) =>
-      left.name.localeCompare(right.name),
-    );
+    return [...users]
+      .filter(
+        (user) =>
+          user.role_name?.trim().toLowerCase() === "manager" &&
+          user.status === "active",
+      )
+      .sort((left, right) => left.name.localeCompare(right.name));
   }, [users]);
 
   const getManagerDisplayName = useCallback(
@@ -242,7 +243,7 @@ const StoreManagement = () => {
 
   const openCreateForm = () => {
     setEditingStore(null);
-    setForm(emptyForm(profile?.userId ?? ""));
+    setForm(emptyForm());
     setFormOpen(true);
     setSuccessMessage(null);
   };
@@ -272,11 +273,28 @@ const StoreManagement = () => {
   const closeForm = () => {
     setFormOpen(false);
     setEditingStore(null);
-    setForm(emptyForm(profile?.userId ?? ""));
+    setForm(emptyForm());
   };
 
   const submitForm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const manager = users.find((user) => user.user_id === form.managerId);
+    const differentOwnedStore = stores.find(
+      (store) =>
+        store.manager_id === form.managerId &&
+        store.store_id !== editingStore?.store_id,
+    );
+    if (
+      manager &&
+      (!editingStore || editingStore.manager_id !== form.managerId) &&
+      ((manager.store_id && manager.store_id !== editingStore?.store_id) ||
+        differentOwnedStore)
+    ) {
+      const ok = window.confirm(
+        `Manager ${manager.name} đang được liên kết với một cửa hàng khác. Bạn muốn đổi cửa hàng mặc định sang cửa hàng này? Quyền quản lý cửa hàng cũ sẽ chưa tự bị thu hồi.`,
+      );
+      if (!ok) return;
+    }
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
@@ -364,8 +382,9 @@ const StoreManagement = () => {
 
   return (
     <AdminShell
-      title="Cài đặt cửa hàng"
-      description="Thêm, sửa và xóa thông tin cửa hàng trong mục cài đặt."
+      fullWidth
+      title="Các cửa hàng"
+      description="Quản lý tất cả cửa hàng và phân công Manager trong toàn nền tảng."
       searchPlaceholder="Tìm kiếm cửa hàng..."
       pageActions={
         <div className="flex items-center gap-2">
@@ -392,252 +411,244 @@ const StoreManagement = () => {
         </div>
       }
     >
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-        <SettingsNav />
+      <div className="w-full min-w-0 space-y-6">
+        {error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
 
-        <div className="min-w-0 flex-1 space-y-6">
-          {error ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          ) : null}
+        {successMessage ? (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {successMessage}
+          </div>
+        ) : null}
 
-          {successMessage ? (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-              {successMessage}
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-gray-50 p-3">
-                  <Store className="h-6 w-6 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">
-                    Tổng cửa hàng
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stats.total}
-                  </p>
-                </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-gray-50 p-3">
+                <Store className="h-6 w-6 text-gray-600" />
               </div>
-            </div>
-
-            <div className="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-emerald-50 p-3">
-                  <Building2 className="h-6 w-6 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">
-                    Đang hoạt động
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stats.active}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-amber-100 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-amber-50 p-3">
-                  <Clock3 className="h-6 w-6 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Tạm ngưng</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stats.inactive}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-slate-50 p-3">
-                  <Trash2 className="h-6 w-6 text-slate-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Đã đóng</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stats.closed}
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">
+                  Tổng cửa hàng
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.total}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <div className="flex flex-col gap-4 border-b border-gray-100 p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-emerald-50 p-3">
+                <Building2 className="h-6 w-6 text-emerald-600" />
+              </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900">
-                  Danh sách cửa hàng
-                </h2>
-                <p className="text-sm text-gray-500">
-                  Quản lý thông tin địa chỉ, liên hệ và thời gian hoạt động.
+                <p className="text-sm font-medium text-gray-500">
+                  Đang hoạt động
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.active}
                 </p>
               </div>
+            </div>
+          </div>
 
-              <div className="relative w-full max-w-md">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  type="text"
-                  placeholder="Tìm cửa hàng theo tên, địa chỉ, liên hệ..."
-                  className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
+          <div className="rounded-xl border border-amber-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-amber-50 p-3">
+                <Clock3 className="h-6 w-6 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Tạm ngưng</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.inactive}
+                </p>
               </div>
             </div>
+          </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-gray-100 bg-gray-50/60 text-xs uppercase tracking-wide text-gray-500">
-                  <tr>
-                    <th className="px-5 py-4 font-medium">Cửa hàng</th>
-                    <th className="px-5 py-4 font-medium">Địa chỉ</th>
-                    <th className="px-5 py-4 font-medium">Liên hệ</th>
-                    <th className="px-5 py-4 font-medium">Quản lý</th>
-                    <th className="px-5 py-4 font-medium">Giờ mở / đóng</th>
-                    <th className="px-5 py-4 font-medium">Trạng thái</th>
-                    <th className="px-5 py-4 text-right font-medium">
-                      Thao tác
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td
-                        className="px-5 py-12 text-center text-gray-500"
-                        colSpan={7}
-                      >
-                        Đang tải danh sách cửa hàng...
-                      </td>
-                    </tr>
-                  ) : filteredStores.length === 0 ? (
-                    <tr>
-                      <td
-                        className="px-5 py-12 text-center text-gray-500"
-                        colSpan={7}
-                      >
-                        {searchQuery.trim()
-                          ? "Không tìm thấy cửa hàng phù hợp."
-                          : "Chưa có cửa hàng nào."}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredStores.map((store) => {
-                      const statusChip = getStatusChip(store.status);
-                      return (
-                        <tr
-                          key={store.store_id}
-                          className="border-b border-gray-50 transition-colors hover:bg-gray-50/60"
-                        >
-                          <td className="px-5 py-4 align-top">
-                            <div className="flex flex-col gap-1">
-                              <p className="font-semibold text-gray-900">
-                                {store.name}
-                              </p>
-                              <p className="line-clamp-2 text-xs text-gray-500">
-                                {store.description || "Chưa có mô tả"}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 align-top text-gray-700">
-                            <div className="flex flex-col gap-1">
-                              <span>{store.address}</span>
-                              <span className="text-xs text-gray-500">
-                                {[store.ward, store.district, store.city]
-                                  .filter(Boolean)
-                                  .join(", ") || "Chưa có khu vực"}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                <MapPin className="mr-1 inline-block h-3.5 w-3.5 align-[-2px] text-gray-400" />
-                                {formatCoordinate(store.latitude)},{" "}
-                                {formatCoordinate(store.longitude)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 align-top text-gray-700">
-                            <div className="flex flex-col gap-1 text-xs text-gray-500">
-                              <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
-                                <Phone className="h-3.5 w-3.5 text-gray-400" />
-                                {store.phone || "Chưa có"}
-                              </span>
-                              <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
-                                <Mail className="h-3.5 w-3.5 text-gray-400" />
-                                {store.email || "Chưa có"}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 align-top text-gray-700">
-                            <div className="flex flex-col gap-1">
-                              <span className="font-medium text-gray-900">
-                                {getManagerDisplayName(store.manager_id)}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {store.manager_id}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 align-top text-gray-700">
-                            <div className="flex flex-col gap-1 text-sm">
-                              <span>{formatTime(store.opening_time)}</span>
-                              <span className="text-xs text-gray-500">
-                                đến {formatTime(store.closing_time)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 align-top">
-                            <span
-                              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusChip.border} ${statusChip.bg} ${statusChip.text}`}
-                            >
-                              <span
-                                className={`h-2 w-2 rounded-full ${statusChip.dot}`}
-                              />
-                              {statusChip.label}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 align-top text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              {!permLoading &&
-                                hasPermission("stores.update") && (
-                                  <button
-                                    type="button"
-                                    onClick={() => openEditForm(store)}
-                                    disabled={saving}
-                                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                  >
-                                    <Edit className="h-3.5 w-3.5" />
-                                    Sửa
-                                  </button>
-                                )}
-
-                              {!permLoading &&
-                                hasPermission("stores.delete") && (
-                                  <button
-                                    type="button"
-                                    onClick={() => requestDeleteStore(store)}
-                                    disabled={saving}
-                                    className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                    Xóa
-                                  </button>
-                                )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+          <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-slate-50 p-3">
+                <Trash2 className="h-6 w-6 text-slate-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Đã đóng</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.closed}
+                </p>
+              </div>
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-gray-100 p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">
+                Danh sách cửa hàng
+              </h2>
+              <p className="text-sm text-gray-500">
+                Quản lý thông tin địa chỉ, liên hệ và thời gian hoạt động.
+              </p>
+            </div>
+
+            <div className="relative w-full max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                type="text"
+                placeholder="Tìm cửa hàng theo tên, địa chỉ, liên hệ..."
+                className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-gray-100 bg-gray-50/60 text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th className="px-5 py-4 font-medium">Cửa hàng</th>
+                  <th className="px-5 py-4 font-medium">Địa chỉ</th>
+                  <th className="px-5 py-4 font-medium">Liên hệ</th>
+                  <th className="px-5 py-4 font-medium">Quản lý</th>
+                  <th className="px-5 py-4 font-medium">Giờ mở / đóng</th>
+                  <th className="px-5 py-4 font-medium">Trạng thái</th>
+                  <th className="px-5 py-4 text-right font-medium">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td
+                      className="px-5 py-12 text-center text-gray-500"
+                      colSpan={7}
+                    >
+                      Đang tải danh sách cửa hàng...
+                    </td>
+                  </tr>
+                ) : filteredStores.length === 0 ? (
+                  <tr>
+                    <td
+                      className="px-5 py-12 text-center text-gray-500"
+                      colSpan={7}
+                    >
+                      {searchQuery.trim()
+                        ? "Không tìm thấy cửa hàng phù hợp."
+                        : "Chưa có cửa hàng nào."}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStores.map((store) => {
+                    const statusChip = getStatusChip(store.status);
+                    return (
+                      <tr
+                        key={store.store_id}
+                        className="border-b border-gray-50 transition-colors hover:bg-gray-50/60"
+                      >
+                        <td className="px-5 py-4 align-top">
+                          <div className="flex flex-col gap-1">
+                            <p className="font-semibold text-gray-900">
+                              {store.name}
+                            </p>
+                            <p className="line-clamp-2 text-xs text-gray-500">
+                              {store.description || "Chưa có mô tả"}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 align-top text-gray-700">
+                          <div className="flex flex-col gap-1">
+                            <span>{store.address}</span>
+                            <span className="text-xs text-gray-500">
+                              {[store.ward, store.district, store.city]
+                                .filter(Boolean)
+                                .join(", ") || "Chưa có khu vực"}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              <MapPin className="mr-1 inline-block h-3.5 w-3.5 align-[-2px] text-gray-400" />
+                              {formatCoordinate(store.latitude)},{" "}
+                              {formatCoordinate(store.longitude)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 align-top text-gray-700">
+                          <div className="flex flex-col gap-1 text-xs text-gray-500">
+                            <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
+                              <Phone className="h-3.5 w-3.5 text-gray-400" />
+                              {store.phone || "Chưa có"}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
+                              <Mail className="h-3.5 w-3.5 text-gray-400" />
+                              {store.email || "Chưa có"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 align-top text-gray-700">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium text-gray-900">
+                              {getManagerDisplayName(store.manager_id)}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {store.manager_id}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 align-top text-gray-700">
+                          <div className="flex flex-col gap-1 text-sm">
+                            <span>{formatTime(store.opening_time)}</span>
+                            <span className="text-xs text-gray-500">
+                              đến {formatTime(store.closing_time)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 align-top">
+                          <span
+                            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusChip.border} ${statusChip.bg} ${statusChip.text}`}
+                          >
+                            <span
+                              className={`h-2 w-2 rounded-full ${statusChip.dot}`}
+                            />
+                            {statusChip.label}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 align-top text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {!permLoading && hasPermission("stores.update") && (
+                              <button
+                                type="button"
+                                onClick={() => openEditForm(store)}
+                                disabled={saving}
+                                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                                Sửa
+                              </button>
+                            )}
+
+                            {!permLoading && hasPermission("stores.delete") && (
+                              <button
+                                type="button"
+                                onClick={() => requestDeleteStore(store)}
+                                disabled={saving}
+                                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Xóa
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

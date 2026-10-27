@@ -1,4 +1,5 @@
 "use client";
+import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Plus } from "lucide-react";
@@ -115,6 +116,8 @@ const PriceManagement = () => {
     void loadPrices();
     void loadBatches();
   }, [loadBatches, loadPrices]);
+
+  useAutoReload(loadPrices);
 
   const filteredItems = useMemo(
     () => priceSearchStrategy.filter(items, searchQuery),

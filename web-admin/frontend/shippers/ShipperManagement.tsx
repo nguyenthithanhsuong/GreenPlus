@@ -1,4 +1,5 @@
 "use client";
+import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -100,6 +101,8 @@ const ShipperManagement = () => {
   useEffect(() => {
     void loadDeliveries();
   }, [loadDeliveries]);
+
+  useAutoReload(loadDeliveries);
 
   useEffect(() => {
     void loadShippers();

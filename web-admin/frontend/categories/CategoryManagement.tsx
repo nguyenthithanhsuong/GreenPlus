@@ -1,4 +1,5 @@
 "use client";
+import { useAutoReload } from "@/lib/useAutoReload";
 
 import {
   useCallback,
@@ -69,6 +70,8 @@ const CategoryManagement = () => {
   useEffect(() => {
     void loadCategories();
   }, [loadCategories]);
+
+  useAutoReload(loadCategories);
 
   const filteredCategories = useMemo(
     () => categorySearchStrategy.filter(categories, deferredSearchQuery),

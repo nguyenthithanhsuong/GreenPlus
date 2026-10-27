@@ -1,4 +1,5 @@
 "use client";
+import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
@@ -60,6 +61,8 @@ const ComplaintManagement = () => {
   useEffect(() => {
     void loadComplaints();
   }, [loadComplaints]);
+
+  useAutoReload(loadComplaints);
 
   const updateStatus = useCallback(
     async (

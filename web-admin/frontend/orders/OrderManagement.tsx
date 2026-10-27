@@ -1,4 +1,5 @@
 "use client";
+import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -87,6 +88,8 @@ const OrderManagement = () => {
   useEffect(() => {
     void loadOrders();
   }, [loadOrders]);
+
+  useAutoReload(loadOrders);
 
   const statusFilteredOrders = useMemo(() => {
     if (statusFilter === "all") {

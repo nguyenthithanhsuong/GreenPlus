@@ -71,6 +71,9 @@ export class DeliveryTrackingService {
     }
 
     await this.requireShipper(employeeId);
+    // Ownership must be checked on the parent order too, not just on the delivery row.
+    if (!(await this.repository.orderExistsInScope(orderId)))
+      throw new AppError("Order not found in the authorized store", 404);
 
     const existing = await this.repository.getDeliveryByOrderId(orderId);
     if (existing) {
