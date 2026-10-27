@@ -1,8 +1,15 @@
-import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../../backend/core/errors";
+import {
+  AppError,
+  toErrorMessage,
+} from "../../../../../../backend/core/errors";
 import { orderFacade } from "../../../../../../backend/modules/orders/facades/order.facade";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../../../backend/core/store-context";
 
 type Context = {
   params: Promise<{
@@ -14,9 +21,11 @@ type CancelBody = {
   userId?: string;
   user_id?: string;
   note?: string;
+  storeId?: string;
 };
 
 export async function PUT(request: Request, context: Context) {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let orderId = "";
 
@@ -25,10 +34,12 @@ export async function PUT(request: Request, context: Context) {
     orderId = id;
 
     const body = (await request.json()) as CancelBody;
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    const store = await resolveStoreContext(body.storeId, identity);
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
     logger.info("Cancel order attempt", {
       userId,
+      storeId: store.storeId,
       orderId,
     });
 
@@ -40,7 +51,7 @@ export async function PUT(request: Request, context: Context) {
 
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,6 +59,7 @@ export async function PUT(request: Request, context: Context) {
 
     const result = await orderFacade.cancelOrder({
       userId,
+      storeId: store.storeId,
       orderId,
       note: body.note ?? "",
     });
@@ -70,7 +82,7 @@ export async function PUT(request: Request, context: Context) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -80,9 +92,6 @@ export async function PUT(request: Request, context: Context) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }

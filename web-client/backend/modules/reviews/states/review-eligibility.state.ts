@@ -14,7 +14,9 @@ class IneligibleReviewState implements ReviewEligibilityState {
   }
 }
 
-export function createReviewEligibilityState(hasDeliveredPurchase: boolean): ReviewEligibilityState {
+export function createReviewEligibilityState(
+  hasDeliveredPurchase: boolean,
+): ReviewEligibilityState {
   if (hasDeliveredPurchase) {
     return new EligibleReviewState();
   }

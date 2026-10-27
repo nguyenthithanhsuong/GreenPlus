@@ -38,7 +38,8 @@ export default function ProductCartTestPage() {
   const [cart, setCart] = useState<CartView | null>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const saved =
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
     setActiveUserId(saved);
 
     const loadOptions = async () => {
@@ -48,15 +49,16 @@ export default function ProductCartTestPage() {
           return;
         }
 
-        const payload = (await response.json()) as { products?: ProductOption[] };
+        const payload = (await response.json()) as {
+          products?: ProductOption[];
+        };
         const products = payload.products ?? [];
         setProductOptions(products);
 
         if (products.length > 0) {
           setProductId((current) => current || products[0].product_id);
         }
-      } catch {
-      }
+      } catch {}
     };
 
     void loadOptions();
@@ -70,7 +72,11 @@ export default function ProductCartTestPage() {
     return activeUserId;
   };
 
-  const request = async (path: string, method: string, body?: Record<string, unknown>) => {
+  const request = async (
+    path: string,
+    method: string,
+    body?: Record<string, unknown>,
+  ) => {
     setLoading(true);
     setError(null);
 
@@ -88,7 +94,11 @@ export default function ProductCartTestPage() {
 
       setCart(data as CartView);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -97,13 +107,24 @@ export default function ProductCartTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Giỏ hàng và ghi chú mua hàng</h1>
-        <p className="text-sm text-slate-600">Kiểm tra các route cho use case 27 và 28 qua /api/cart và /api/cart/note.</p>
-        <p className="text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Kiểm thử backend: Giỏ hàng và ghi chú mua hàng
+        </h1>
+        <p className="text-sm text-slate-600">
+          Kiểm tra các route cho use case 27 và 28 qua /api/cart và
+          /api/cart/note.
+        </p>
+        <p className="text-xs text-slate-500">
+          Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}
+        </p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            <select value={productId} onChange={(e) => setProductId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
+            <select
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            >
               <option value="">Chọn product_id</option>
               {productOptions.map((product) => (
                 <option key={product.product_id} value={product.product_id}>
@@ -111,22 +132,92 @@ export default function ProductCartTestPage() {
                 </option>
               ))}
             </select>
-            <input value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="quantity" className="rounded border border-slate-300 px-3 py-2 text-sm" />
-            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="note" className="rounded border border-slate-300 px-3 py-2 text-sm" />
+            <input
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="quantity"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="note"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => void request(`/api/cart?userId=${encodeURIComponent(requireLoggedInUserId())}`, "GET")} disabled={loading} className="rounded bg-slate-800 px-3 py-2 text-xs text-white">Get Cart</button>
-            <button onClick={() => void request("/api/cart", "POST", { userId: requireLoggedInUserId(), productId, quantity: Number(quantity) })} disabled={loading} className="rounded bg-emerald-700 px-3 py-2 text-xs text-white">Add Item</button>
-            <button onClick={() => void request("/api/cart", "PUT", { userId: requireLoggedInUserId(), productId, quantity: Number(quantity) })} disabled={loading} className="rounded bg-amber-700 px-3 py-2 text-xs text-white">Update Qty</button>
-            <button onClick={() => void request("/api/cart", "DELETE", { userId: requireLoggedInUserId(), productId })} disabled={loading} className="rounded bg-rose-700 px-3 py-2 text-xs text-white">Remove Item</button>
-            <button onClick={() => void request("/api/cart/note", "PUT", { userId: requireLoggedInUserId(), productId, note })} disabled={loading} className="rounded bg-blue-700 px-3 py-2 text-xs text-white">Save Note</button>
+            <button
+              onClick={() =>
+                void request(
+                  `/api/cart?userId=${encodeURIComponent(requireLoggedInUserId())}`,
+                  "GET",
+                )
+              }
+              disabled={loading}
+              className="rounded bg-slate-800 px-3 py-2 text-xs text-white"
+            >
+              Get Cart
+            </button>
+            <button
+              onClick={() =>
+                void request("/api/cart", "POST", {
+                  userId: requireLoggedInUserId(),
+                  productId,
+                  quantity: Number(quantity),
+                })
+              }
+              disabled={loading}
+              className="rounded bg-emerald-700 px-3 py-2 text-xs text-white"
+            >
+              Add Item
+            </button>
+            <button
+              onClick={() =>
+                void request("/api/cart", "PUT", {
+                  userId: requireLoggedInUserId(),
+                  productId,
+                  quantity: Number(quantity),
+                })
+              }
+              disabled={loading}
+              className="rounded bg-amber-700 px-3 py-2 text-xs text-white"
+            >
+              Update Qty
+            </button>
+            <button
+              onClick={() =>
+                void request("/api/cart", "DELETE", {
+                  userId: requireLoggedInUserId(),
+                  productId,
+                })
+              }
+              disabled={loading}
+              className="rounded bg-rose-700 px-3 py-2 text-xs text-white"
+            >
+              Remove Item
+            </button>
+            <button
+              onClick={() =>
+                void request("/api/cart/note", "PUT", {
+                  userId: requireLoggedInUserId(),
+                  productId,
+                  note,
+                })
+              }
+              disabled={loading}
+              className="rounded bg-blue-700 px-3 py-2 text-xs text-white"
+            >
+              Save Note
+            </button>
           </div>
         </section>
 
         {error && <p className="text-sm text-rose-700">{error}</p>}
         {cart && (
-          <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">{JSON.stringify(cart, null, 2)}</pre>
+          <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
+            {JSON.stringify(cart, null, 2)}
+          </pre>
         )}
       </div>
     </main>

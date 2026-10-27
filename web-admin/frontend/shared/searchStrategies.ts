@@ -43,7 +43,9 @@ abstract class BaseSearchStrategy<T> implements SearchStrategy<T> {
     return searchableText.includes(normalizedQuery);
   }
 
-  protected abstract getSearchableText(item: T): Array<string | number | null | undefined>;
+  protected abstract getSearchableText(
+    item: T,
+  ): Array<string | number | null | undefined>;
 }
 
 class UserSearchStrategy extends BaseSearchStrategy<{
@@ -103,7 +105,15 @@ class SupplierSearchStrategy extends BaseSearchStrategy<{
     status: "pending" | "approved" | "rejected";
     created_at: string;
   }): Array<string | number | null | undefined> {
-    return [item.supplier_id, item.name, item.address, item.certificate, item.description, item.status, item.created_at];
+    return [
+      item.supplier_id,
+      item.name,
+      item.address,
+      item.certificate,
+      item.description,
+      item.status,
+      item.created_at,
+    ];
   }
 }
 
@@ -153,7 +163,9 @@ class BatchSearchStrategy extends BaseSearchStrategy<{
 }
 
 class RoleSearchStrategy extends BaseSearchStrategy<RoleSummary> {
-  protected getSearchableText(item: RoleSummary): Array<string | number | null | undefined> {
+  protected getSearchableText(
+    item: RoleSummary,
+  ): Array<string | number | null | undefined> {
     return [
       item.role_id,
       item.role_name,
@@ -184,12 +196,21 @@ class CategorySearchStrategy extends BaseSearchStrategy<{
     product_count: number;
     created_at: string;
   }): Array<string | number | null | undefined> {
-    return [item.category_id, item.name, item.description, item.image_url, item.product_count, item.created_at];
+    return [
+      item.category_id,
+      item.name,
+      item.description,
+      item.image_url,
+      item.product_count,
+      item.created_at,
+    ];
   }
 }
 
 class InventorySearchStrategy extends BaseSearchStrategy<InventoryRow> {
-  protected getSearchableText(item: InventoryRow): Array<string | number | null | undefined> {
+  protected getSearchableText(
+    item: InventoryRow,
+  ): Array<string | number | null | undefined> {
     return [
       item.inventory_id,
       item.batch_id,
@@ -204,7 +225,9 @@ class InventorySearchStrategy extends BaseSearchStrategy<InventoryRow> {
 }
 
 class PriceSearchStrategy extends BaseSearchStrategy<PriceRow> {
-  protected getSearchableText(item: PriceRow): Array<string | number | null | undefined> {
+  protected getSearchableText(
+    item: PriceRow,
+  ): Array<string | number | null | undefined> {
     return [
       item.price_id,
       item.batch_id,
@@ -219,7 +242,9 @@ class PriceSearchStrategy extends BaseSearchStrategy<PriceRow> {
 }
 
 class OrderSearchStrategy extends BaseSearchStrategy<OrderListRow> {
-  protected getSearchableText(item: OrderListRow): Array<string | number | null | undefined> {
+  protected getSearchableText(
+    item: OrderListRow,
+  ): Array<string | number | null | undefined> {
     return [
       item.order_id,
       item.user_id,
@@ -239,7 +264,9 @@ class OrderSearchStrategy extends BaseSearchStrategy<OrderListRow> {
 }
 
 class DeliveryTrackingSearchStrategy extends BaseSearchStrategy<DeliveryTrackingRow> {
-  protected getSearchableText(item: DeliveryTrackingRow): Array<string | number | null | undefined> {
+  protected getSearchableText(
+    item: DeliveryTrackingRow,
+  ): Array<string | number | null | undefined> {
     return [
       item.delivery_id,
       item.order_id,
@@ -267,4 +294,5 @@ export const categorySearchStrategy = new CategorySearchStrategy();
 export const inventorySearchStrategy = new InventorySearchStrategy();
 export const priceSearchStrategy = new PriceSearchStrategy();
 export const orderSearchStrategy = new OrderSearchStrategy();
-export const deliveryTrackingSearchStrategy = new DeliveryTrackingSearchStrategy();
+export const deliveryTrackingSearchStrategy =
+  new DeliveryTrackingSearchStrategy();

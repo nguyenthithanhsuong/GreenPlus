@@ -1,13 +1,17 @@
 import { AppError } from "../../core/errors";
 import { CartAuditObserver, CartSubject } from "./observers/cart.observer";
-import { CartRepository, CartRow, CartItemWithProductRow } from "./cart.repository";
+import {
+  CartRepository,
+  CartRow,
+  CartItemWithProductRow,
+} from "./cart.repository";
 import { createCartItemState } from "./states/cart-item.state";
 import { createCartNoteValidationStrategy } from "./strategies/cart-note.strategy";
 import { CartItemView, CartView } from "./cart.types";
 
 function readRelValue<T = string>(
   rel: Record<string, unknown> | Record<string, unknown>[] | null,
-  field: string
+  field: string,
 ): T | null {
   if (!rel) {
     return null;
@@ -34,16 +38,22 @@ export class CartService {
     this.subject.attach(new CartAuditObserver());
   }
 
-  private async getOrCreateCart(userId: string): Promise<CartRow> {
+  private async getOrCreateCart(
+    userId: string,
+    storeId: string,
+  ): Promise<CartRow> {
     if (!userId) {
       throw new AppError("userId is required", 400);
     }
 
     let existing: CartRow | null = null;
     try {
-      existing = await this.repository.findCartByUserId(userId);
+      existing = await this.repository.findCartByUserId(userId, storeId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load cart", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load cart",
+        500,
+      );
     }
 
     if (existing) {
@@ -51,22 +61,31 @@ export class CartService {
     }
 
     try {
-      return await this.repository.createCart(userId);
+      return await this.repository.createCart(userId, storeId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to create cart", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to create cart",
+        500,
+      );
     }
   }
 
-  private async getLatestPriceMap(productIds: string[]): Promise<Map<string, number>> {
+  private async getLatestPriceMap(
+    productIds: string[],
+    storeId: string,
+  ): Promise<Map<string, number>> {
     if (productIds.length === 0) {
       return new Map();
     }
 
     let data: Array<{ product_id: string; price: number }> = [];
     try {
-      data = await this.repository.listLatestPriceRows(productIds);
+      data = await this.repository.listLatestPriceRows(productIds, storeId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load prices", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load prices",
+        500,
+      );
     }
 
     const map = new Map<string, number>();
@@ -80,12 +99,21 @@ export class CartService {
     return map;
   }
 
-  private async getAvailableStock(productId: string): Promise<number> {
+  private async getAvailableStock(
+    productId: string,
+    storeId: string,
+  ): Promise<number> {
     let batchIds: string[] = [];
     try {
-      batchIds = await this.repository.listBatchIdsByProduct(productId);
+      batchIds = await this.repository.listBatchIdsByProduct(
+        productId,
+        storeId,
+      );
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load batches", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load batches",
+        500,
+      );
     }
 
     if (batchIds.length === 0) {
@@ -93,19 +121,31 @@ export class CartService {
     }
 
     try {
-      const quantities = await this.repository.listInventoryByBatchIds(batchIds);
+      const quantities = await this.repository.listInventoryByBatchIds(
+        batchIds,
+        storeId,
+      );
       return quantities.reduce((sum, value) => sum + value, 0);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load inventory", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load inventory",
+        500,
+      );
     }
   }
 
-  private async ensureProductExists(productId: string): Promise<void> {
+  private async ensureProductExists(
+    productId: string,
+    storeId: string,
+  ): Promise<void> {
     let data: { product_id: string } | null = null;
     try {
-      data = await this.repository.findProductById(productId);
+      data = await this.repository.findProductById(productId, storeId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to verify product", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to verify product",
+        500,
+      );
     }
 
     if (!data) {
@@ -136,18 +176,24 @@ export class CartService {
     this.noteValidator.validate(note);
   }
 
-  async getCartByUser(userId: string): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
+  async getCartByUser(userId: string, storeId: string): Promise<CartView> {
+    const cart = await this.getOrCreateCart(userId, storeId);
 
     let items: CartItemWithProductRow[] = [];
     try {
-      items = await this.repository.listCartItemsWithProduct(cart.cart_id);
+      items = await this.repository.listCartItemsWithProduct(
+        cart.cart_id,
+        storeId,
+      );
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load cart items", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load cart items",
+        500,
+      );
     }
 
     const productIds = items.map((item) => item.product_id);
-    const latestPriceMap = await this.getLatestPriceMap(productIds);
+    const latestPriceMap = await this.getLatestPriceMap(productIds, storeId);
 
     const viewItems: CartItemView[] = items.map((item) => {
       const price = latestPriceMap.get(item.product_id) ?? null;
@@ -157,7 +203,8 @@ export class CartService {
         cart_item_id: item.cart_item_id,
         cart_id: item.cart_id,
         product_id: item.product_id,
-        product_name: readRelValue<string>(item.products, "name") ?? "Unknown product",
+        product_name:
+          readRelValue<string>(item.products, "name") ?? "Unknown product",
         product_image_url: readRelValue<string>(item.products, "image_url"),
         quantity: Number(item.quantity),
         note: item.note,
@@ -176,18 +223,29 @@ export class CartService {
     };
   }
 
-  async addProduct(userId: string, productId: string, quantity: number): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
-    await this.ensureProductExists(productId);
+  async addProduct(
+    userId: string,
+    productId: string,
+    quantity: number,
+    storeId: string,
+  ): Promise<CartView> {
+    const cart = await this.getOrCreateCart(userId, storeId);
+    await this.ensureProductExists(productId, storeId);
 
-    const stock = await this.getAvailableStock(productId);
+    const stock = await this.getAvailableStock(productId, storeId);
     this.validateQuantity(quantity, stock);
 
     let existingItem: { cart_item_id: string; quantity: number } | null = null;
     try {
-      existingItem = await this.repository.findCartItemByProduct(cart.cart_id, productId);
+      existingItem = await this.repository.findCartItemByProduct(
+        cart.cart_id,
+        productId,
+      );
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load cart item", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load cart item",
+        500,
+      );
     }
 
     if (!existingItem) {
@@ -196,6 +254,7 @@ export class CartService {
           cartId: cart.cart_id,
           productId,
           quantity,
+          storeId,
         });
 
         this.subject.notify({
@@ -204,17 +263,23 @@ export class CartService {
           changedAt: new Date().toISOString(),
         });
       } catch (error) {
-        throw new AppError(error instanceof Error ? error.message : "Failed to insert cart item", 500);
+        throw new AppError(
+          error instanceof Error ? error.message : "Failed to insert cart item",
+          500,
+        );
       }
 
-      return this.getCartByUser(userId);
+      return this.getCartByUser(userId, storeId);
     }
 
     const nextQuantity = Number(existingItem.quantity) + quantity;
     this.validateQuantity(nextQuantity, stock);
 
     try {
-      await this.repository.updateCartItemQuantity(existingItem.cart_item_id, nextQuantity);
+      await this.repository.updateCartItemQuantity(
+        existingItem.cart_item_id,
+        nextQuantity,
+      );
 
       this.subject.notify({
         userId,
@@ -222,24 +287,40 @@ export class CartService {
         changedAt: new Date().toISOString(),
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to update cart quantity", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update cart quantity",
+        500,
+      );
     }
 
-    return this.getCartByUser(userId);
+    return this.getCartByUser(userId, storeId);
   }
 
-  async updateQuantity(userId: string, productId: string, quantity: number): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
-    await this.ensureProductExists(productId);
+  async updateQuantity(
+    userId: string,
+    productId: string,
+    quantity: number,
+    storeId: string,
+  ): Promise<CartView> {
+    const cart = await this.getOrCreateCart(userId, storeId);
+    await this.ensureProductExists(productId, storeId);
 
-    const stock = await this.getAvailableStock(productId);
+    const stock = await this.getAvailableStock(productId, storeId);
     this.validateQuantity(quantity, stock);
 
     let existingItem: { cart_item_id: string } | null = null;
     try {
-      existingItem = await this.repository.findCartItemByProduct(cart.cart_id, productId);
+      existingItem = await this.repository.findCartItemByProduct(
+        cart.cart_id,
+        productId,
+      );
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load cart item", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load cart item",
+        500,
+      );
     }
 
     if (!existingItem) {
@@ -247,7 +328,10 @@ export class CartService {
     }
 
     try {
-      await this.repository.updateCartItemQuantity(existingItem.cart_item_id, quantity);
+      await this.repository.updateCartItemQuantity(
+        existingItem.cart_item_id,
+        quantity,
+      );
 
       this.subject.notify({
         userId,
@@ -255,14 +339,23 @@ export class CartService {
         changedAt: new Date().toISOString(),
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to update cart quantity", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update cart quantity",
+        500,
+      );
     }
 
-    return this.getCartByUser(userId);
+    return this.getCartByUser(userId, storeId);
   }
 
-  async removeItem(userId: string, productId: string): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
+  async removeItem(
+    userId: string,
+    productId: string,
+    storeId: string,
+  ): Promise<CartView> {
+    const cart = await this.getOrCreateCart(userId, storeId);
 
     try {
       await this.repository.deleteCartItemByProduct(cart.cart_id, productId);
@@ -273,18 +366,22 @@ export class CartService {
         changedAt: new Date().toISOString(),
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to remove cart item", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to remove cart item",
+        500,
+      );
     }
 
-    return this.getCartByUser(userId);
+    return this.getCartByUser(userId, storeId);
   }
 
   async updateNote(
     userId: string,
     note: string,
-    target: { productId?: string; cartItemId?: string }
+    target: { productId?: string; cartItemId?: string },
+    storeId: string,
   ): Promise<CartView> {
-    const cart = await this.getOrCreateCart(userId);
+    const cart = await this.getOrCreateCart(userId, storeId);
 
     if (note) {
       this.validateNote(note);
@@ -298,12 +395,21 @@ export class CartService {
 
     try {
       if (target.cartItemId) {
-        existingItem = await this.repository.findCartItemById(cart.cart_id, target.cartItemId);
+        existingItem = await this.repository.findCartItemById(
+          cart.cart_id,
+          target.cartItemId,
+        );
       } else if (target.productId) {
-        existingItem = await this.repository.findCartItemByProduct(cart.cart_id, target.productId);
+        existingItem = await this.repository.findCartItemByProduct(
+          cart.cart_id,
+          target.productId,
+        );
       }
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load cart item", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load cart item",
+        500,
+      );
     }
 
     if (!existingItem) {
@@ -313,7 +419,10 @@ export class CartService {
     const nextNote = note.trim().length === 0 ? null : note;
 
     try {
-      await this.repository.updateCartItemNote(existingItem.cart_item_id, nextNote);
+      await this.repository.updateCartItemNote(
+        existingItem.cart_item_id,
+        nextNote,
+      );
 
       this.subject.notify({
         userId,
@@ -321,9 +430,12 @@ export class CartService {
         changedAt: new Date().toISOString(),
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to update note", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to update note",
+        500,
+      );
     }
 
-    return this.getCartByUser(userId);
+    return this.getCartByUser(userId, storeId);
   }
 }

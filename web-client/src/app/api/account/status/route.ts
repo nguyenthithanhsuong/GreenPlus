@@ -2,9 +2,14 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../backend/core/request-auth";
 
 export async function PUT(request: Request) {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
 
   try {
@@ -13,16 +18,19 @@ export async function PUT(request: Request) {
       status?: string;
     };
 
-    userId = body.userId ?? "";
+    userId = assertCustomerId(body.userId, identity.userId);
     const status = body.status;
 
     logger.info("Update account status attempt", { userId, status });
 
     if (!userId) {
-      logger.error("Update account status failed - missing userId", { userId, status });
+      logger.error("Update account status failed - missing userId", {
+        userId,
+        status,
+      });
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -32,11 +40,11 @@ export async function PUT(request: Request) {
       status !== "banned" &&
       status !== "suspended"
     ) {
-      logger.error("Update account status failed - invalid status", { userId, status });
-      return NextResponse.json(
-        { error: "Invalid status" },
-        { status: 400 }
-      );
+      logger.error("Update account status failed - invalid status", {
+        userId,
+        status,
+      });
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
     const start = Date.now();
@@ -63,7 +71,7 @@ export async function PUT(request: Request) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -72,9 +80,6 @@ export async function PUT(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }

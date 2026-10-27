@@ -43,7 +43,9 @@ export class DeliveryTrackingSubject {
   }
 
   async notify(event: DeliveryTrackingEvent): Promise<void> {
-    await Promise.all(Array.from(this.observers).map((observer) => observer.update(event)));
+    await Promise.all(
+      Array.from(this.observers).map((observer) => observer.update(event)),
+    );
   }
 }
 

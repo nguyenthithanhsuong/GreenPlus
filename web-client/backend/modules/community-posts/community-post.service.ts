@@ -24,14 +24,22 @@ export class CommunityPostService {
     return content.trim();
   }
 
-  private parseStoredContent(raw: string): { content: string; mediaUrl: string | null } {
+  private parseStoredContent(raw: string): {
+    content: string;
+    mediaUrl: string | null;
+  } {
     const normalized = raw.replace(/\r\n/g, "\n");
 
-    const taggedMatch = normalized.match(/\[(media_url|image_url|video_url)\]\s*:??\s*(https?:\/\/\S+)/i);
+    const taggedMatch = normalized.match(
+      /\[(media_url|image_url|video_url)\]\s*:??\s*(https?:\/\/\S+)/i,
+    );
     if (taggedMatch) {
       const mediaUrl = taggedMatch[2]?.trim() ?? "";
       const cleaned = normalized
-        .replace(/\n*\[(media_url|image_url|video_url)\]\s*:??\s*https?:\/\/\S+\s*$/i, "")
+        .replace(
+          /\n*\[(media_url|image_url|video_url)\]\s*:??\s*https?:\/\/\S+\s*$/i,
+          "",
+        )
         .trimEnd();
 
       return {
@@ -55,7 +63,11 @@ export class CommunityPostService {
     return "JPG";
   }
 
-  private inferMediaType(type: CommunityPostType, mediaUrls: string[], fallbackUrl: string | null): CommunityMediaType {
+  private inferMediaType(
+    type: CommunityPostType,
+    mediaUrls: string[],
+    fallbackUrl: string | null,
+  ): CommunityMediaType {
     const firstUrl = mediaUrls[0] ?? fallbackUrl ?? "";
     const normalized = firstUrl.toLowerCase();
 
@@ -70,17 +82,22 @@ export class CommunityPostService {
     return this.toMediaType(type);
   }
 
-  private toSummary(row: {
-    post_id: string;
-    user_id: string;
-    title: string;
-    content: string;
+  private toSummary(
+    row: {
+      post_id: string;
+      user_id: string;
+      title: string;
+      content: string;
       type: CommunityPostType;
-    status: "pending" | "approved" | "rejected";
-    created_at: string;
-  }, mediaUrls: string[]): CommunityPostSummary {
+      status: "pending" | "approved" | "rejected";
+      created_at: string;
+    },
+    mediaUrls: string[],
+  ): CommunityPostSummary {
     const parsed = this.parseStoredContent(row.content);
-    const normalizedMediaUrls = mediaUrls.map((url) => url.trim()).filter(Boolean);
+    const normalizedMediaUrls = mediaUrls
+      .map((url) => url.trim())
+      .filter(Boolean);
     const mediaUrl = normalizedMediaUrls[0] ?? parsed.mediaUrl;
 
     return {
@@ -97,7 +114,10 @@ export class CommunityPostService {
     };
   }
 
-  private normalizeMediaUrlInput(input: { mediaUrl?: string; mediaUrls?: string[] }): string[] {
+  private normalizeMediaUrlInput(input: {
+    mediaUrl?: string;
+    mediaUrls?: string[];
+  }): string[] {
     if (Array.isArray(input.mediaUrls) && input.mediaUrls.length) {
       return input.mediaUrls.map((url) => url.trim()).filter(Boolean);
     }
@@ -111,8 +131,12 @@ export class CommunityPostService {
       throw new AppError("At least one file is required", 400);
     }
 
-    const imageCount = files.filter((file) => file.type.startsWith("image/")).length;
-    const videoCount = files.filter((file) => file.type.startsWith("video/")).length;
+    const imageCount = files.filter((file) =>
+      file.type.startsWith("image/"),
+    ).length;
+    const videoCount = files.filter((file) =>
+      file.type.startsWith("video/"),
+    ).length;
     const unknownCount = files.length - imageCount - videoCount;
 
     if (unknownCount > 0) {
@@ -128,7 +152,9 @@ export class CommunityPostService {
     }
   }
 
-  async createPost(input: CreateCommunityPostInput): Promise<CommunityPostCreatedResult> {
+  async createPost(
+    input: CreateCommunityPostInput,
+  ): Promise<CommunityPostCreatedResult> {
     if (!input.userId.trim()) {
       throw new AppError("userId is required", 400);
     }
@@ -169,12 +195,18 @@ export class CommunityPostService {
         await this.repository.replacePostMedia(created.post_id, mediaUrls);
       }
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to create post", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to create post",
+        500,
+      );
     }
 
     const visibility = createCommunityPostState(created.status);
     if (visibility.canBeVisible()) {
-      throw new AppError("New community post must start with pending status", 500);
+      throw new AppError(
+        "New community post must start with pending status",
+        500,
+      );
     }
 
     return {
@@ -204,17 +236,24 @@ export class CommunityPostService {
     try {
       rows = await this.repository.getPostsByUserId(userId.trim());
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load posts", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load posts",
+        500,
+      );
     }
 
     let mediaByPostId: Record<string, string[]> = {};
     try {
-      mediaByPostId = await this.repository.listMediaByPostIds(rows.map((row) => row.post_id));
+      mediaByPostId = await this.repository.listMediaByPostIds(
+        rows.map((row) => row.post_id),
+      );
     } catch {
       mediaByPostId = {};
     }
 
-    return rows.map((row) => this.toSummary(row, mediaByPostId[row.post_id] ?? []));
+    return rows.map((row) =>
+      this.toSummary(row, mediaByPostId[row.post_id] ?? []),
+    );
   }
 
   async listAllPosts(): Promise<CommunityPostSummary[]> {
@@ -231,20 +270,29 @@ export class CommunityPostService {
     try {
       rows = await this.repository.getAllPosts();
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load posts", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load posts",
+        500,
+      );
     }
 
     let mediaByPostId: Record<string, string[]> = {};
     try {
-      mediaByPostId = await this.repository.listMediaByPostIds(rows.map((row) => row.post_id));
+      mediaByPostId = await this.repository.listMediaByPostIds(
+        rows.map((row) => row.post_id),
+      );
     } catch {
       mediaByPostId = {};
     }
 
-    return rows.map((row) => this.toSummary(row, mediaByPostId[row.post_id] ?? []));
+    return rows.map((row) =>
+      this.toSummary(row, mediaByPostId[row.post_id] ?? []),
+    );
   }
 
-  async updatePost(input: UpdateCommunityPostInput): Promise<CommunityPostSummary> {
+  async updatePost(
+    input: UpdateCommunityPostInput,
+  ): Promise<CommunityPostSummary> {
     if (!input.userId.trim()) {
       throw new AppError("userId is required", 400);
     }
@@ -292,7 +340,10 @@ export class CommunityPostService {
         await this.repository.replacePostMedia(input.postId.trim(), mediaUrls);
       }
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to update post", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to update post",
+        500,
+      );
     }
 
     if (!updated) {
@@ -301,9 +352,14 @@ export class CommunityPostService {
 
     let mediaByPostId: Record<string, string[]> = {};
     try {
-      mediaByPostId = await this.repository.listMediaByPostIds([updated.post_id]);
+      mediaByPostId = await this.repository.listMediaByPostIds([
+        updated.post_id,
+      ]);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load post media", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load post media",
+        500,
+      );
     }
 
     return this.toSummary(updated, mediaByPostId[updated.post_id] ?? []);
@@ -325,7 +381,10 @@ export class CommunityPostService {
         userId: input.userId.trim(),
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to delete post", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to delete post",
+        500,
+      );
     }
 
     if (!deleted) {
@@ -333,7 +392,9 @@ export class CommunityPostService {
     }
   }
 
-  async uploadAttachment(input: UploadCommunityAttachmentInput): Promise<UploadCommunityAttachmentResult> {
+  async uploadAttachment(
+    input: UploadCommunityAttachmentInput,
+  ): Promise<UploadCommunityAttachmentResult> {
     const userId = input.userId.trim();
     const postId = input.postId.trim();
 
@@ -351,7 +412,12 @@ export class CommunityPostService {
     try {
       hasOwnership = await this.repository.hasPostOwnership(postId, userId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to verify post ownership", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to verify post ownership",
+        500,
+      );
     }
 
     if (!hasOwnership) {
@@ -361,7 +427,11 @@ export class CommunityPostService {
     const uploadedItems: Array<{ path: string; publicUrl: string }> = [];
     try {
       for (const file of input.files) {
-        const path = this.attachmentStrategy.buildObjectPath(userId, postId, file.name || "attachment.bin");
+        const path = this.attachmentStrategy.buildObjectPath(
+          userId,
+          postId,
+          file.name || "attachment.bin",
+        );
         await this.repository.uploadAttachment(path, file);
         uploadedItems.push({
           path,
@@ -370,10 +440,16 @@ export class CommunityPostService {
       }
 
       if (input.replaceExisting ?? true) {
-        await this.repository.replacePostMedia(postId, uploadedItems.map((item) => item.publicUrl));
+        await this.repository.replacePostMedia(
+          postId,
+          uploadedItems.map((item) => item.publicUrl),
+        );
       }
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to upload attachment", 400);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to upload attachment",
+        400,
+      );
     }
 
     return {

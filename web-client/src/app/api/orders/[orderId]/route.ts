@@ -1,8 +1,13 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
+import { AppError } from "../../../../../backend/core/errors";
 import { orderFacade } from "../../../../../backend/modules/orders/facades/order.facade";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../../backend/core/store-context";
 
 type Context = {
   params: Promise<{
@@ -18,19 +23,25 @@ type UpdateOrderBody = {
   deliveryFee?: number;
   delivery_fee?: number;
   note?: string;
+  storeId?: string;
 };
 
 export const GET = withSentry(async (request: Request, context: Context) => {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let orderId = "";
 
   try {
     const { searchParams } = new URL(request.url);
+    const store = await resolveStoreContext(
+      searchParams.get("storeId"),
+      identity,
+    );
 
-    userId =
-      searchParams.get("userId")?.trim() ??
-      searchParams.get("user_id")?.trim() ??
-      "";
+    userId = assertCustomerId(
+      searchParams.get("userId") ?? searchParams.get("user_id") ?? undefined,
+      identity.userId,
+    );
 
     const params = await context.params;
     orderId = params.orderId;
@@ -45,13 +56,17 @@ export const GET = withSentry(async (request: Request, context: Context) => {
 
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const start = Date.now();
 
-    const detail = await orderFacade.getOrderDetail(userId, orderId);
+    const detail = await orderFacade.getOrderDetail(
+      userId,
+      store.storeId,
+      orderId,
+    );
 
     logger.info("Get order detail success", {
       userId,
@@ -71,7 +86,7 @@ export const GET = withSentry(async (request: Request, context: Context) => {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -80,19 +95,19 @@ export const GET = withSentry(async (request: Request, context: Context) => {
 });
 
 export const PUT = withSentry(async (request: Request, context: Context) => {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let orderId = "";
 
   try {
     const body = (await request.json()) as UpdateOrderBody;
+    const store = await resolveStoreContext(body.storeId, identity);
 
-    userId = body.userId?.trim() ?? body.user_id?.trim() ?? "";
+    userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
     const deliveryAddress =
-      body.deliveryAddress?.trim() ??
-      body.delivery_address?.trim();
+      body.deliveryAddress?.trim() ?? body.delivery_address?.trim();
 
-    const deliveryFeeRaw =
-      body.deliveryFee ?? body.delivery_fee;
+    const deliveryFeeRaw = body.deliveryFee ?? body.delivery_fee;
 
     const note = body.note;
 
@@ -104,12 +119,13 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
     if (!userId) {
       logger.error("Update order failed - missing userId", {
         userId,
+        storeId: store.storeId,
         orderId,
       });
 
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -117,6 +133,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
 
     const result = await orderFacade.updateOrder({
       userId,
+      storeId: store.storeId,
       orderId,
       deliveryAddress,
       deliveryFee:
@@ -144,7 +161,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 

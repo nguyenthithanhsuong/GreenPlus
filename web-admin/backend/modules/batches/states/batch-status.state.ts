@@ -34,7 +34,12 @@ class ExpiredBatchState implements BatchStatusState {
   readonly name: BatchStatus = "expired";
 
   canTransitionTo(next: BatchStatus): boolean {
-    return next === "expired" || next === "pending" || next === "sold_out" || next === "available";
+    return (
+      next === "expired" ||
+      next === "pending" ||
+      next === "sold_out" ||
+      next === "available"
+    );
   }
 }
 
@@ -42,7 +47,12 @@ class SoldOutBatchState implements BatchStatusState {
   readonly name: BatchStatus = "sold_out";
 
   canTransitionTo(next: BatchStatus): boolean {
-    return next === "sold_out" || next === "pending" || next === "available" || next === "expired";
+    return (
+      next === "sold_out" ||
+      next === "pending" ||
+      next === "available" ||
+      next === "expired"
+    );
   }
 }
 

@@ -29,8 +29,12 @@ export default function BackendSignInTestPage() {
   const [result, setResult] = useState<unknown>(null);
 
   useEffect(() => {
-    const savedUserId = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
-    const savedToken = window.localStorage.getItem(BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY)?.trim() ?? "";
+    const savedUserId =
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const savedToken =
+      window.localStorage
+        .getItem(BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY)
+        ?.trim() ?? "";
     setActiveUserId(savedUserId);
     setActiveToken(savedToken);
   }, []);
@@ -59,7 +63,10 @@ export default function BackendSignInTestPage() {
 
       const signInData = data as SignInResult;
       const userId = signInData.user?.user_id ?? signInData.user?.id ?? "";
-      const token = signInData.session?.access_token ?? signInData.session?.session_id ?? "";
+      const token =
+        signInData.session?.access_token ??
+        signInData.session?.session_id ??
+        "";
 
       if (userId) {
         window.localStorage.setItem(BACKEND_TEST_USER_STORAGE_KEY, userId);
@@ -67,12 +74,19 @@ export default function BackendSignInTestPage() {
       }
 
       if (token) {
-        window.localStorage.setItem(BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY, token);
+        window.localStorage.setItem(
+          BACKEND_TEST_ACCESS_TOKEN_STORAGE_KEY,
+          token,
+        );
         setActiveToken(token);
       }
     } catch (submitError) {
       setResult(null);
-      setError(submitError instanceof Error ? submitError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Đã xảy ra lỗi không mong muốn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -83,18 +97,33 @@ export default function BackendSignInTestPage() {
       <div className="mx-auto max-w-3xl space-y-4">
         <section className="rounded-xl border border-slate-300 bg-white p-5">
           <h1 className="text-2xl font-bold">Kiểm thử backend: Đăng nhập</h1>
-          <p className="mt-2 text-sm text-slate-600">Dùng trang này để kiểm tra /api/auth/sign-in.</p>
+          <p className="mt-2 text-sm text-slate-600">
+            Dùng trang này để kiểm tra /api/auth/sign-in.
+          </p>
           <p className="mt-1 text-xs text-slate-500">Route: /backend/signin</p>
-          <p className="mt-1 text-xs text-slate-500">Người dùng kiểm thử hiện tại: {activeUserId || "chưa thiết lập"}</p>
-          <p className="mt-1 text-xs text-slate-500">Token/mã phiên đã lưu: {activeToken ? "đã có" : "chưa thiết lập"}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Người dùng kiểm thử hiện tại: {activeUserId || "chưa thiết lập"}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Token/mã phiên đã lưu: {activeToken ? "đã có" : "chưa thiết lập"}
+          </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <Link href="/backend/register" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/register"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Đi tới kiểm thử đăng ký
             </Link>
-            <Link href="/backend/profile" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/profile"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Đi tới kiểm thử hồ sơ
             </Link>
-            <Link href="/backend/products" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/products"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Kiểm thử backend sản phẩm
             </Link>
           </div>

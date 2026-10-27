@@ -33,7 +33,10 @@ export class ProductRatingUpdaterObserver implements ReviewObserver {
     }
 
     const ratings = (data ?? []).map((row) => Number(row.rating));
-    const average = ratings.length === 0 ? event.rating : ratings.reduce((sum, value) => sum + value, 0) / ratings.length;
+    const average =
+      ratings.length === 0
+        ? event.rating
+        : ratings.reduce((sum, value) => sum + value, 0) / ratings.length;
 
     void average;
   }

@@ -1,21 +1,26 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
-import { logger } from "@/lib/logger"; 
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../backend/core/request-auth";
+import { logger } from "@/lib/logger";
 
 export const GET = withSentry(async (request: Request) => {
   const { searchParams } = new URL(request.url);
-  const userId = (searchParams.get("userId") ?? "").trim();
+  const identity = requireCustomerIdentity(request);
+  const userId = assertCustomerId(
+    searchParams.get("userId") ?? undefined,
+    identity.userId,
+  );
 
   logger.info("Get profile attempt", { userId });
 
   if (!userId) {
     logger.error("Get profile failed - missing userId", { userId });
 
-    return NextResponse.json(
-      { error: "userId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
 
   const start = Date.now();
@@ -31,6 +36,7 @@ export const GET = withSentry(async (request: Request) => {
 });
 
 export const PUT = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as {
     userId?: string;
     name?: string;
@@ -40,17 +46,14 @@ export const PUT = withSentry(async (request: Request) => {
     imageUrl?: string;
   };
 
-  const userId = (body.userId ?? "").trim();
+  const userId = assertCustomerId(body.userId, identity.userId);
 
   logger.info("Update profile attempt", { userId });
 
   if (!userId) {
     logger.error("Update profile failed - missing userId", { userId });
 
-    return NextResponse.json(
-      { error: "userId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
 
   const start = Date.now();

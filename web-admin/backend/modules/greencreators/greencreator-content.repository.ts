@@ -54,7 +54,8 @@ export class GreenCreatorContentRepository {
   async listPosts(): Promise<GreenCreatorPostRow[]> {
     const { data, error } = await this.supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         post_id,
         user_id,
         title,
@@ -74,7 +75,8 @@ export class GreenCreatorContentRepository {
           status,
           actor:users!post_interactions_user_id_fkey(name,image_url)
         )
-      `)
+      `,
+      )
       .order("created_at", { ascending: false, nullsFirst: false });
 
     if (error) {
@@ -87,7 +89,8 @@ export class GreenCreatorContentRepository {
   async findPostById(postId: string): Promise<GreenCreatorPostRow | null> {
     const { data, error } = await this.supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         post_id,
         user_id,
         title,
@@ -107,7 +110,8 @@ export class GreenCreatorContentRepository {
           status,
           actor:users!post_interactions_user_id_fkey(name,image_url)
         )
-      `)
+      `,
+      )
       .eq("post_id", postId)
       .maybeSingle();
 
@@ -118,14 +122,18 @@ export class GreenCreatorContentRepository {
     return data ? this.mapPostRow(data as PostDbRow) : null;
   }
 
-  async updatePostStatus(input: { postId: string; status: GreenCreatorPostStatus }): Promise<GreenCreatorPostRow | null> {
+  async updatePostStatus(input: {
+    postId: string;
+    status: GreenCreatorPostStatus;
+  }): Promise<GreenCreatorPostRow | null> {
     const { data, error } = await this.supabase
       .from("posts")
       .update({
         status: input.status,
       })
       .eq("post_id", input.postId)
-      .select(`
+      .select(
+        `
         post_id,
         user_id,
         title,
@@ -145,7 +153,8 @@ export class GreenCreatorContentRepository {
           status,
           actor:users!post_interactions_user_id_fkey(name,image_url)
         )
-      `)
+      `,
+      )
       .maybeSingle();
 
     if (error) {
@@ -160,7 +169,13 @@ export class GreenCreatorContentRepository {
     title: string;
     content: string;
     type: GreenCreatorPostType;
-  }): Promise<{ post_id: string; user_id: string; type: GreenCreatorPostType; status: GreenCreatorPostStatus; created_at: string | null }> {
+  }): Promise<{
+    post_id: string;
+    user_id: string;
+    type: GreenCreatorPostType;
+    status: GreenCreatorPostStatus;
+    created_at: string | null;
+  }> {
     const { data, error } = await this.supabase
       .from("posts")
       .insert({
@@ -251,7 +266,9 @@ export class GreenCreatorContentRepository {
   }
 
   getAttachmentPublicUrl(path: string): string {
-    const { data } = this.supabase.storage.from(this.attachmentBucket).getPublicUrl(path);
+    const { data } = this.supabase.storage
+      .from(this.attachmentBucket)
+      .getPublicUrl(path);
     return data.publicUrl;
   }
 
@@ -275,7 +292,7 @@ export class GreenCreatorContentRepository {
         mediaUrls.map((mediaUrl) => ({
           post_id: postId,
           media_url: mediaUrl,
-        }))
+        })),
       );
 
     if (insertError) {
@@ -285,7 +302,9 @@ export class GreenCreatorContentRepository {
 
   private mapPostRow(row: PostDbRow): GreenCreatorPostRow {
     const media = Array.isArray(row.post_medias) ? row.post_medias : [];
-    const interactions = Array.isArray(row.post_interactions) ? row.post_interactions : [];
+    const interactions = Array.isArray(row.post_interactions)
+      ? row.post_interactions
+      : [];
 
     return {
       post_id: row.post_id,
@@ -325,7 +344,9 @@ export class GreenCreatorContentRepository {
     };
   }
 
-  private normalizeStatus(status: string | null | undefined): GreenCreatorPostStatus {
+  private normalizeStatus(
+    status: string | null | undefined,
+  ): GreenCreatorPostStatus {
     if (status === "approved" || status === "rejected") {
       return status;
     }
@@ -341,7 +362,10 @@ export class GreenCreatorContentRepository {
     return "blog";
   }
 
-  private pickUserField(user: UserJoin, field: "name" | "image_url"): string | null {
+  private pickUserField(
+    user: UserJoin,
+    field: "name" | "image_url",
+  ): string | null {
     if (Array.isArray(user)) {
       return user[0]?.[field] ?? null;
     }

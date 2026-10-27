@@ -1,6 +1,10 @@
 import { AppError } from "../../core/errors";
 import { ComplaintManagementRepository } from "./complaint-management.repository";
-import { ComplaintRow, ComplaintStatus, UpdateComplaintStatusInput } from "./complaint-management.types";
+import {
+  ComplaintRow,
+  ComplaintStatus,
+  UpdateComplaintStatusInput,
+} from "./complaint-management.types";
 
 export class ComplaintManagementService {
   constructor(private readonly repository: ComplaintManagementRepository) {}
@@ -20,7 +24,10 @@ export class ComplaintManagementService {
     }
 
     if (input.status === "rejected" && !input.rejectReason?.trim()) {
-      throw new AppError("rejectReason is required when status is rejected", 400);
+      throw new AppError(
+        "rejectReason is required when status is rejected",
+        400,
+      );
     }
 
     const updated = await this.repository.updateStatus(input);

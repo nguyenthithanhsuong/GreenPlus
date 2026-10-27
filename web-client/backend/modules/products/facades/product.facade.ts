@@ -7,7 +7,12 @@ import {
   ProductChangeNotifier,
   SearchIndexUpdaterObserver,
 } from "../observers/product.observer";
-import { BrowseResult, ProductChangedEvent, ProductDetail, SearchCriteria } from "../product.types";
+import {
+  BrowseResult,
+  ProductChangedEvent,
+  ProductDetail,
+  SearchCriteria,
+} from "../product.types";
 
 export class ProductFacade {
   private readonly notifier: ProductChangeNotifier;
@@ -25,19 +30,38 @@ export class ProductFacade {
     this.notifier.attach(new SearchIndexUpdaterObserver());
     this.notifier.attach(new CacheUpdaterObserver());
   }
-  async browseProducts(page: number, sort?: SearchCriteria["sort"], limit?: number): Promise<BrowseResult> {
-    return this.productService.browseProducts(page, limit, sort ?? "newest");
+  async browseProducts(
+    page: number,
+    storeId: string,
+    sort?: SearchCriteria["sort"],
+    limit?: number,
+  ): Promise<BrowseResult> {
+    return this.productService.browseProducts(
+      page,
+      limit,
+      sort ?? "newest",
+      storeId,
+    );
   }
 
-  async searchProducts(criteria: SearchCriteria): Promise<BrowseResult> {
-    return this.searchService.search(criteria);
+  async searchProducts(
+    criteria: SearchCriteria,
+    storeId: string,
+  ): Promise<BrowseResult> {
+    return this.searchService.search(criteria, storeId);
   }
 
-  async getProductDetail(productId: string): Promise<ProductDetail> {
-    return this.productDetailService.getDetail(productId);
+  async getProductDetail(
+    productId: string,
+    storeId: string,
+  ): Promise<ProductDetail> {
+    return this.productDetailService.getDetail(productId, storeId);
   }
 
-  notifyProductChanged(productId: string, event: ProductChangedEvent["event"]): void {
+  notifyProductChanged(
+    productId: string,
+    event: ProductChangedEvent["event"],
+  ): void {
     this.notifier.notify({
       productId,
       event,

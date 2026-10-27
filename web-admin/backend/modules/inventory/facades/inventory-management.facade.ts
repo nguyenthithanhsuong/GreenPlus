@@ -11,37 +11,26 @@ import {
 } from "../inventory-management.types";
 
 export class InventoryManagementFacade {
-  private readonly repository =
-    new InventoryManagementRepository();
+  private readonly repository = new InventoryManagementRepository();
 
-  private readonly service =
-    new InventoryManagementService(
-      this.repository
-    );
+  private readonly service = new InventoryManagementService(this.repository);
 
-  private readonly subject =
-    new InventoryManagementSubject();
+  private readonly subject = new InventoryManagementSubject();
 
   constructor() {
-    this.subject.attach(
-      new InventoryManagementAuditObserver()
-    );
+    this.subject.attach(new InventoryManagementAuditObserver());
   }
 
   async listInventories(): Promise<InventoryRow[]> {
     return this.service.listInventories();
   }
 
-  async updateInventory(
-    input: UpdateInventoryInput
-  ): Promise<InventoryRow> {
-    const previousInventory =
-      await this.repository.findInventoryById(
-        input.inventoryId
-      );
+  async updateInventory(input: UpdateInventoryInput): Promise<InventoryRow> {
+    const previousInventory = await this.repository.findInventoryById(
+      input.inventoryId,
+    );
 
-    const updated =
-      await this.service.updateInventory(input);
+    const updated = await this.service.updateInventory(input);
 
     await this.subject.notify({
       type: "inventory_updated",
@@ -50,23 +39,19 @@ export class InventoryManagementFacade {
     });
 
     if (updated.batch_id) {
-      const previousQuantity =
-        previousInventory?.quantity_available ?? 0;
+      const previousQuantity = previousInventory?.quantity_available ?? 0;
 
-      const nextQuantity =
-        updated.quantity_available;
+      const nextQuantity = updated.quantity_available;
 
-      const quantity = Math.abs(
-        nextQuantity - previousQuantity
-      );
+      const quantity = Math.abs(nextQuantity - previousQuantity);
 
       if (quantity > 0) {
         const transactionType =
           typeof input.type !== "undefined" && input.type !== "adjustment"
             ? input.type
             : nextQuantity > previousQuantity
-            ? "adjust_in"
-            : "adjust_out";
+              ? "adjust_in"
+              : "adjust_out";
 
         await this.subject.notify({
           type: "inventory_transaction_created",
@@ -83,12 +68,8 @@ export class InventoryManagementFacade {
     return updated;
   }
 
-  async deleteInventory(
-    inventoryId: string
-  ): Promise<void> {
-    await this.service.deleteInventory(
-      inventoryId
-    );
+  async deleteInventory(inventoryId: string): Promise<void> {
+    await this.service.deleteInventory(inventoryId);
 
     await this.subject.notify({
       type: "inventory_deleted",
@@ -100,11 +81,9 @@ export class InventoryManagementFacade {
     return this.repository.listTransactions();
   }
   async listTransactionsByBatchId(
-    batchId: string
+    batchId: string,
   ): Promise<InventoryTransactionRow[]> {
-    return this.service.listTransactionsByBatchId(
-      batchId
-    );
+    return this.service.listTransactionsByBatchId(batchId);
   }
 
   async updateInventoryForDelivery(input: {
@@ -115,19 +94,16 @@ export class InventoryManagementFacade {
     }>;
     note?: string;
   }): Promise<void> {
-    await this.service.updateInventoryForDelivery(
-      input
-    );
+    await this.service.updateInventoryForDelivery(input);
 
     for (const item of input.orderItems) {
       if (!item.batchId) {
         continue;
       }
 
-      const inventory =
-        await this.repository.findInventoryByBatchId(
-          item.batchId
-        );
+      const inventory = await this.repository.findInventoryByBatchId(
+        item.batchId,
+      );
 
       if (!inventory) {
         continue;
@@ -148,5 +124,4 @@ export class InventoryManagementFacade {
   }
 }
 
-export const inventoryManagementFacade =
-  new InventoryManagementFacade();
+export const inventoryManagementFacade = new InventoryManagementFacade();

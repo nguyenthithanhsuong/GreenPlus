@@ -33,7 +33,9 @@ export class ProductManagementSubject {
   }
 
   async notify(event: ProductManagementEvent): Promise<void> {
-    await Promise.all(Array.from(this.observers).map((observer) => observer.update(event)));
+    await Promise.all(
+      Array.from(this.observers).map((observer) => observer.update(event)),
+    );
   }
 }
 

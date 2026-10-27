@@ -12,7 +12,8 @@ type TrendBucket = {
   orders: number;
 };
 
-const monthKey = (dateValue: Date) => `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, "0")}`;
+const monthKey = (dateValue: Date) =>
+  `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, "0")}`;
 
 const formatCompactMoney = (value: number) => {
   if (value >= 1_000_000_000) {
@@ -29,12 +30,19 @@ const formatCompactMoney = (value: number) => {
 const Charts = ({ orders, loading }: ChartsProps) => {
   const now = new Date();
   const lastSixMonths: TrendBucket[] = Array.from({ length: 6 }, (_, index) => {
-    const dateValue = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    const dateValue = new Date(
+      now.getFullYear(),
+      now.getMonth() - (5 - index),
+      1,
+    );
     const key = monthKey(dateValue);
 
     return {
       key,
-      label: dateValue.toLocaleDateString("vi-VN", { month: "2-digit", year: "2-digit" }),
+      label: dateValue.toLocaleDateString("vi-VN", {
+        month: "2-digit",
+        year: "2-digit",
+      }),
       revenue: 0,
       orders: 0,
     };
@@ -58,8 +66,14 @@ const Charts = ({ orders, loading }: ChartsProps) => {
     bucket.revenue += Number(order.total_amount ?? 0);
   }
 
-  const maxRevenue = Math.max(...lastSixMonths.map((bucket) => bucket.revenue), 1);
-  const maxOrders = Math.max(...lastSixMonths.map((bucket) => bucket.orders), 1);
+  const maxRevenue = Math.max(
+    ...lastSixMonths.map((bucket) => bucket.revenue),
+    1,
+  );
+  const maxOrders = Math.max(
+    ...lastSixMonths.map((bucket) => bucket.orders),
+    1,
+  );
 
   const customerSpend = new Map<string, number>();
   const customerOrders = new Map<string, number>();
@@ -68,12 +82,23 @@ const Charts = ({ orders, loading }: ChartsProps) => {
       continue;
     }
 
-    customerSpend.set(order.user_id, (customerSpend.get(order.user_id) ?? 0) + Number(order.total_amount ?? 0));
-    customerOrders.set(order.user_id, (customerOrders.get(order.user_id) ?? 0) + 1);
+    customerSpend.set(
+      order.user_id,
+      (customerSpend.get(order.user_id) ?? 0) + Number(order.total_amount ?? 0),
+    );
+    customerOrders.set(
+      order.user_id,
+      (customerOrders.get(order.user_id) ?? 0) + 1,
+    );
   }
 
-  const spendValues = Array.from(customerSpend.values()).sort((left, right) => left - right);
-  const vipThreshold = spendValues.length > 0 ? spendValues[Math.floor(spendValues.length * 0.9)] : Number.POSITIVE_INFINITY;
+  const spendValues = Array.from(customerSpend.values()).sort(
+    (left, right) => left - right,
+  );
+  const vipThreshold =
+    spendValues.length > 0
+      ? spendValues[Math.floor(spendValues.length * 0.9)]
+      : Number.POSITIVE_INFINITY;
 
   let vipCount = 0;
   let returningCount = 0;
@@ -93,9 +118,14 @@ const Charts = ({ orders, loading }: ChartsProps) => {
     }
   }
 
-  const totalSegmentCustomers = Math.max(vipCount + returningCount + newCount, 1);
+  const totalSegmentCustomers = Math.max(
+    vipCount + returningCount + newCount,
+    1,
+  );
   const vipPercent = Math.round((vipCount / totalSegmentCustomers) * 100);
-  const returningPercent = Math.round((returningCount / totalSegmentCustomers) * 100);
+  const returningPercent = Math.round(
+    (returningCount / totalSegmentCustomers) * 100,
+  );
   const newPercent = Math.max(0, 100 - vipPercent - returningPercent);
 
   const donutStyle = {
@@ -106,20 +136,38 @@ const Charts = ({ orders, loading }: ChartsProps) => {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
         <div className="mb-6 flex items-center justify-between">
-          <h3 className="font-bold text-gray-900">Tăng trưởng doanh thu và đơn hàng (6 tháng)</h3>
-          <span className="rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">Dữ liệu từ orders</span>
+          <h3 className="font-bold text-gray-900">
+            Tăng trưởng doanh thu và đơn hàng (6 tháng)
+          </h3>
+          <span className="rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+            Dữ liệu từ orders
+          </span>
         </div>
 
         <div className="grid h-64 grid-cols-6 items-end gap-3 border-b border-gray-100 pb-2">
           {lastSixMonths.map((bucket) => {
-            const revenueHeight = Math.max(6, (bucket.revenue / maxRevenue) * 100);
+            const revenueHeight = Math.max(
+              6,
+              (bucket.revenue / maxRevenue) * 100,
+            );
             const orderHeight = Math.max(6, (bucket.orders / maxOrders) * 100);
 
             return (
-              <div key={bucket.key} className="flex flex-col items-center gap-2">
+              <div
+                key={bucket.key}
+                className="flex flex-col items-center gap-2"
+              >
                 <div className="flex h-52 w-full items-end justify-center gap-1">
-                  <div className="w-3 rounded-t bg-emerald-500/90" style={{ height: `${revenueHeight}%` }} title={formatCompactMoney(bucket.revenue)} />
-                  <div className="w-3 rounded-t bg-blue-400/90" style={{ height: `${orderHeight}%` }} title={`${bucket.orders} đơn`} />
+                  <div
+                    className="w-3 rounded-t bg-emerald-500/90"
+                    style={{ height: `${revenueHeight}%` }}
+                    title={formatCompactMoney(bucket.revenue)}
+                  />
+                  <div
+                    className="w-3 rounded-t bg-blue-400/90"
+                    style={{ height: `${orderHeight}%` }}
+                    title={`${bucket.orders} đơn`}
+                  />
                 </div>
                 <p className="text-[11px] text-gray-500">{bucket.label}</p>
               </div>
@@ -127,16 +175,25 @@ const Charts = ({ orders, loading }: ChartsProps) => {
           })}
         </div>
 
-        {loading ? <p className="mt-3 text-xs text-gray-400">Đang tải dữ liệu biểu đồ...</p> : null}
+        {loading ? (
+          <p className="mt-3 text-xs text-gray-400">
+            Đang tải dữ liệu biểu đồ...
+          </p>
+        ) : null}
       </div>
 
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <h3 className="mb-6 font-bold text-gray-900">Phân khúc khách hàng</h3>
         <div className="flex flex-col items-center justify-center">
-          <div className="relative mb-6 h-40 w-40 rounded-full" style={donutStyle}>
+          <div
+            className="relative mb-6 h-40 w-40 rounded-full"
+            style={donutStyle}
+          >
             <div className="absolute inset-[18%] flex items-center justify-center rounded-full bg-white text-center">
               <div>
-                <p className="text-xl font-bold text-gray-900">{totalSegmentCustomers.toLocaleString("vi-VN")}</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {totalSegmentCustomers.toLocaleString("vi-VN")}
+                </p>
                 <p className="text-xs text-gray-500">khách có đơn</p>
               </div>
             </div>
@@ -146,7 +203,9 @@ const Charts = ({ orders, loading }: ChartsProps) => {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
                 <span className="mr-2 h-2 w-2 rounded-full bg-emerald-500" />
-                <span className="text-gray-600">Khách hàng cũ ({">="}2 đơn)</span>
+                <span className="text-gray-600">
+                  Khách hàng cũ ({">="}2 đơn)
+                </span>
               </div>
               <span className="font-medium">{returningPercent}%</span>
             </div>
@@ -160,7 +219,9 @@ const Charts = ({ orders, loading }: ChartsProps) => {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
                 <span className="mr-2 h-2 w-2 rounded-full bg-yellow-400" />
-                <span className="text-gray-600">Khách VIP (top 10% chi tiêu)</span>
+                <span className="text-gray-600">
+                  Khách VIP (top 10% chi tiêu)
+                </span>
               </div>
               <span className="font-medium">{vipPercent}%</span>
             </div>

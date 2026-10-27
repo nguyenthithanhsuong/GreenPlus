@@ -12,7 +12,10 @@ type CategoryProductsPageProps = {
   }>;
 };
 
-export default async function CategoryProductsPage({ params, searchParams }: CategoryProductsPageProps) {
+export default async function CategoryProductsPage({
+  params,
+  searchParams,
+}: CategoryProductsPageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
 

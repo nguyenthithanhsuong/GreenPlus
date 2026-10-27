@@ -13,10 +13,7 @@ export const POST = withSentry(async (request: Request) => {
   const orderId = body.orderId?.trim() ?? body.order_id?.trim() ?? "";
 
   if (!orderId) {
-    return NextResponse.json(
-      { error: "orderId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "orderId is required" }, { status: 400 });
   }
 
   const result = await loyaltyFacade.award({ orderId });

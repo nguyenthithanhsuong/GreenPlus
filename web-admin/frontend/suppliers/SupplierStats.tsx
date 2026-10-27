@@ -1,5 +1,5 @@
-import React from 'react';
-import { ListOrdered, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import React from "react";
+import { ListOrdered, CheckCircle2, Clock, XCircle } from "lucide-react";
 
 type SupplierStatsProps = {
   total: number;
@@ -8,7 +8,12 @@ type SupplierStatsProps = {
   rejected: number;
 };
 
-const SupplierStats = ({ total, approved, pending, rejected }: SupplierStatsProps) => {
+const SupplierStats = ({
+  total,
+  approved,
+  pending,
+  rejected,
+}: SupplierStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
@@ -37,7 +42,9 @@ const SupplierStats = ({ total, approved, pending, rejected }: SupplierStatsProp
           <Clock className="w-6 h-6 text-yellow-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500">Chờ duyệt (Pending)</p>
+          <p className="text-sm font-medium text-gray-500">
+            Chờ duyệt (Pending)
+          </p>
           <h3 className="text-2xl font-bold text-gray-900">{pending}</h3>
         </div>
       </div>

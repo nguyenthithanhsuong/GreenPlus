@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../backend/core/errors";
 import { batchManagementFacade } from "../../../../backend/modules/batches/facades/batch-management.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const GET = withSentry(async () => {
   logger.info("List batches attempt");
@@ -31,10 +31,13 @@ export const POST = withSentry(async (request: Request) => {
     force?: boolean;
   };
 
-  logger.info("Create batch attempt", { productId: body.productId, supplierId: body.supplierId });
+  logger.info("Create batch attempt", {
+    productId: body.productId,
+    supplierId: body.supplierId,
+  });
 
   const start = Date.now();
-  
+
   try {
     const created = await batchManagementFacade.createBatch({
       productId: body.productId ?? "",
@@ -42,7 +45,8 @@ export const POST = withSentry(async (request: Request) => {
       harvestDate: body.harvestDate ?? "",
       expireDate: body.expireDate ?? "",
       quantity: typeof body.quantity === "number" ? body.quantity : Number.NaN,
-      importPrice: typeof body.importPrice === "number" ? body.importPrice : Number.NaN,
+      importPrice:
+        typeof body.importPrice === "number" ? body.importPrice : Number.NaN,
       qrCode: body.qrCode,
       status: body.status,
       force: body.force === true,
@@ -57,7 +61,10 @@ export const POST = withSentry(async (request: Request) => {
   } catch (error) {
     if (error instanceof AppError) {
       logger.error("Create batch failed", { message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;

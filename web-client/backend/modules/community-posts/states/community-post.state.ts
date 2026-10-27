@@ -22,7 +22,9 @@ class RejectedCommunityPostState implements CommunityPostState {
   }
 }
 
-export function createCommunityPostState(status: CommunityPostStatus): CommunityPostState {
+export function createCommunityPostState(
+  status: CommunityPostStatus,
+): CommunityPostState {
   if (status === "approved") {
     return new ApprovedCommunityPostState();
   }

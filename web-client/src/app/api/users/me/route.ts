@@ -45,7 +45,7 @@ function parsePortalPayload(portalSession: string): PortalPayload | null {
 
   const expected = createHmac(
     "sha256",
-    process.env.AUTH_HANDOFF_SECRET ?? "greenplus-dev-handoff-secret"
+    process.env.AUTH_HANDOFF_SECRET ?? "greenplus-dev-handoff-secret",
   )
     .update(payloadEncoded)
     .digest("base64url");
@@ -112,10 +112,14 @@ export const GET = withSentry(async (request: Request) => {
   }
 
   const portalSession = cookies.gp_portal_session;
-  const portalPayload = portalSession ? parsePortalPayload(portalSession) : null;
+  const portalPayload = portalSession
+    ? parsePortalPayload(portalSession)
+    : null;
 
   if (portalPayload) {
-    logger.info("Get session success - portal user", { userId: portalPayload.sub });
+    logger.info("Get session success - portal user", {
+      userId: portalPayload.sub,
+    });
     return NextResponse.json(
       {
         item: {
@@ -129,7 +133,7 @@ export const GET = withSentry(async (request: Request) => {
           status: "active",
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 
@@ -148,7 +152,7 @@ export const GET = withSentry(async (request: Request) => {
           status: "active",
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 

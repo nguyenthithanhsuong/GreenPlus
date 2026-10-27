@@ -77,14 +77,27 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function ProfileSubPage({ title, description }: ProfileSubPageProps) {
+export default function ProfileSubPage({
+  title,
+  description,
+}: ProfileSubPageProps) {
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <Link href="/profile" style={styles.backLink} aria-label="Quay lại profile">
+          <Link
+            href="/profile"
+            style={styles.backLink}
+            aria-label="Quay lại profile"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.title}>{title}</h1>

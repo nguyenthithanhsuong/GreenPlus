@@ -9,8 +9,16 @@ type ProductDetailPageProps = {
   }>;
 };
 
-export default async function ProductDetailPage({ params, searchParams }: ProductDetailPageProps) {
+export default async function ProductDetailPage({
+  params,
+  searchParams,
+}: ProductDetailPageProps) {
   const { productId } = await params;
   const resolvedSearchParams = await searchParams;
-  return <ProductDetail productId={productId} backHref={resolvedSearchParams?.backTo} />;
+  return (
+    <ProductDetail
+      productId={productId}
+      backHref={resolvedSearchParams?.backTo}
+    />
+  );
 }

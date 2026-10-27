@@ -7,7 +7,11 @@ type ShipperStatsProps = {
   deliveredCount: number;
 };
 
-const ShipperStats = ({ totalDeliveries, inProgressCount, deliveredCount }: ShipperStatsProps) => {
+const ShipperStats = ({
+  totalDeliveries,
+  inProgressCount,
+  deliveredCount,
+}: ShipperStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
@@ -16,7 +20,9 @@ const ShipperStats = ({ totalDeliveries, inProgressCount, deliveredCount }: Ship
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500">Tổng đơn giao</p>
-          <h3 className="text-2xl font-bold text-gray-900">{totalDeliveries}</h3>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {totalDeliveries}
+          </h3>
         </div>
       </div>
 
@@ -26,7 +32,9 @@ const ShipperStats = ({ totalDeliveries, inProgressCount, deliveredCount }: Ship
         </div>
         <div>
           <p className="text-sm font-bold text-blue-700">Đang xử lý</p>
-          <h3 className="text-2xl font-bold text-gray-900">{inProgressCount}</h3>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {inProgressCount}
+          </h3>
         </div>
       </div>
 
@@ -39,7 +47,6 @@ const ShipperStats = ({ totalDeliveries, inProgressCount, deliveredCount }: Ship
           <h3 className="text-2xl font-bold text-gray-900">{deliveredCount}</h3>
         </div>
       </div>
-
     </div>
   );
 };

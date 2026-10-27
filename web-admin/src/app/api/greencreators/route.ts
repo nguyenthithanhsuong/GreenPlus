@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { AppError } from "../../../../backend/core/errors";
 import { AuthService } from "../../../../backend/modules/auth/auth.service";
 import { greenCreatorContentFacade } from "../../../../backend/modules/greencreators/facade/greencreator-content.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 type CreateGreenCreatorPostBody = {
   title?: string;
@@ -22,7 +22,7 @@ function readAccessToken(request: Request): string {
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_portal_session=([^;]+)/);
+  const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_admin_auth=([^;]+)/);
 
   return cookieMatch ? decodeURIComponent(cookieMatch[1]).trim() : "";
 }
@@ -64,10 +64,7 @@ export const POST = withSentry(async (request: Request) => {
   if (!accessToken) {
     logger.warn("Create GreenCreator post failed - unauthorized");
 
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const authService = new AuthService();

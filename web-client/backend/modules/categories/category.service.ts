@@ -1,13 +1,20 @@
 import { createCategoryState } from "./states/category.state";
 import { createCategorySortStrategy } from "./strategies/category-query.strategy";
 import { CategoryRepository } from "./category.repository";
-import { CategoryBrowseResult, CategoryItem, CategorySort } from "./category.types";
+import {
+  CategoryBrowseResult,
+  CategoryItem,
+  CategorySort,
+} from "./category.types";
 
 export class CategoryService {
   constructor(private readonly repository: CategoryRepository) {}
 
-  async getCategories(sort: CategorySort): Promise<CategoryBrowseResult> {
-    const rows = await this.repository.listCategories();
+  async getCategories(
+    sort: CategorySort,
+    storeId: string,
+  ): Promise<CategoryBrowseResult> {
+    const rows = await this.repository.listCategories(storeId);
 
     const mapped: CategoryItem[] = rows
       .filter((row) => createCategoryState(row.name).canDisplay())

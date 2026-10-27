@@ -6,7 +6,7 @@ export function getSupabaseServer() {
 
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error(
-      "Missing Supabase env vars. Expected NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
+      "Missing Supabase env vars. Expected NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
     );
   }
 
@@ -18,8 +18,11 @@ export function getSupabaseServer() {
   });
 }
 
-export const supabaseServer = new Proxy({} as ReturnType<typeof getSupabaseServer>, {
-  get(_target, prop) {
-    return Reflect.get(getSupabaseServer(), prop);
+export const supabaseServer = new Proxy(
+  {} as ReturnType<typeof getSupabaseServer>,
+  {
+    get(_target, prop) {
+      return Reflect.get(getSupabaseServer(), prop);
+    },
   },
-});
+);

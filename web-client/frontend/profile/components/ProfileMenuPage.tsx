@@ -145,10 +145,14 @@ export default function ProfileMenuPage() {
 
     const loadProfile = async () => {
       try {
-        const response = await fetch(`/api/account/profile?userId=${encodeURIComponent(user.user_id)}`, {
-          signal: controller.signal,
-        });
-        const data = (await response.json()) as ProfileResult | { error?: string };
+        const response = await fetch(
+          `/api/account/profile?userId=${encodeURIComponent(user.user_id)}`,
+          {
+            signal: controller.signal,
+          },
+        );
+        const data = (await response.json()) as
+          ProfileResult | { error?: string };
 
         if (!response.ok) {
           return;
@@ -204,9 +208,20 @@ export default function ProfileMenuPage() {
           <section style={styles.hero}>
             <div style={styles.heroAvatar}>
               {displayAvatar ? (
-                <img src={displayAvatar} alt={displayName} style={styles.heroAvatarImage} />
+                <img
+                  src={displayAvatar}
+                  alt={displayName}
+                  style={styles.heroAvatarImage}
+                />
               ) : (
-                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.4">
+                <svg
+                  width="60"
+                  height="60"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#6B7280"
+                  strokeWidth="1.4"
+                >
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
@@ -219,12 +234,21 @@ export default function ProfileMenuPage() {
             <button
               key={item.title}
               type="button"
-              style={{ ...styles.menuCard, ...(item.destructive ? styles.destructiveText : {}) }}
+              style={{
+                ...styles.menuCard,
+                ...(item.destructive ? styles.destructiveText : {}),
+              }}
               onClick={() => handleMenuClick(item)}
             >
               <span>{item.title}</span>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M9 18L15 12L9 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
           ))}

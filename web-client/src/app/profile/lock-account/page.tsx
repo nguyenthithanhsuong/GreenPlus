@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import NavigationBar from "../../../../frontend/dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import ConfirmActionDialog from '../../../../frontend/shared/ConfirmActionDialog';
+import ConfirmActionDialog from "../../../../frontend/shared/ConfirmActionDialog";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -191,7 +191,9 @@ export default function LockAccountPage() {
       await supabase.auth.signOut();
     } finally {
       clearAuth();
-      await fetch("/api/auth/sync", { method: "DELETE" }).catch(() => undefined);
+      await fetch("/api/auth/sync", { method: "DELETE" }).catch(
+        () => undefined,
+      );
       router.replace("/login");
     }
   };
@@ -216,7 +218,9 @@ export default function LockAccountPage() {
         }),
       });
 
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
       if (!response.ok) {
         throw new Error(data?.error ?? "Không thể khóa tài khoản.");
       }
@@ -224,11 +228,17 @@ export default function LockAccountPage() {
       const supabase = getSupabaseClient();
       await supabase.auth.signOut();
       clearAuth();
-      await fetch("/api/auth/sync", { method: "DELETE" }).catch(() => undefined);
+      await fetch("/api/auth/sync", { method: "DELETE" }).catch(
+        () => undefined,
+      );
       setMessage("Tài khoản đã được khóa và bạn đã được đăng xuất.");
       router.replace("/login");
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Không thể khóa tài khoản.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể khóa tài khoản.",
+      );
     } finally {
       setProcessing(false);
     }
@@ -238,9 +248,20 @@ export default function LockAccountPage() {
     <div style={styles.page}>
       <div style={styles.container}>
         <header style={styles.topNav}>
-          <button type="button" onClick={() => router.back()} style={styles.backLink} aria-label="Quay lại">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            style={styles.backLink}
+            aria-label="Quay lại"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
           <h1 style={styles.title}>Khóa tài khoản</h1>
@@ -250,16 +271,21 @@ export default function LockAccountPage() {
         <main style={styles.mainContent}>
           <section style={styles.card}>
             <span style={styles.badge}>Cảnh báo</span>
-            <h2 style={styles.headline}>Đưa tài khoản về trạng thái không hoạt động</h2>
+            <h2 style={styles.headline}>
+              Đưa tài khoản về trạng thái không hoạt động
+            </h2>
             <p style={styles.description}>
-              Khi khóa tài khoản, bạn sẽ bị đăng xuất ngay và lần đăng nhập sau sẽ cần mở khóa lại.
+              Khi khóa tài khoản, bạn sẽ bị đăng xuất ngay và lần đăng nhập sau
+              sẽ cần mở khóa lại.
             </p>
 
             <div style={styles.userBox}>
               <p style={styles.userLabel}>Tài khoản hiện tại</p>
               <p style={styles.userValue}>{user?.name ?? "Người dùng"}</p>
               <p style={styles.infoText}>{user?.email ?? "Chưa có email"}</p>
-              <p style={styles.infoText}>Trạng thái hiện tại: {user?.status ?? "không xác định"}</p>
+              <p style={styles.infoText}>
+                Trạng thái hiện tại: {user?.status ?? "không xác định"}
+              </p>
             </div>
 
             {message ? <p style={styles.infoText}>{message}</p> : null}

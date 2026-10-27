@@ -65,10 +65,13 @@ export default function ProfileChangePassword() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ updated?: boolean; error?: string } | null>(null);
+  const [result, setResult] = useState<{
+    updated?: boolean;
+    error?: string;
+  } | null>(null);
 
   const changePassword = async () => {
     if (!user?.user_id) {
@@ -97,7 +100,10 @@ export default function ProfileChangePassword() {
         }),
       });
 
-      const data = (await response.json()) as { updated?: boolean; error?: string };
+      const data = (await response.json()) as {
+        updated?: boolean;
+        error?: string;
+      };
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể đổi mật khẩu.");
       }
@@ -108,7 +114,11 @@ export default function ProfileChangePassword() {
       setConfirmPassword("");
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Đã xảy ra lỗi không mong muốn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -117,11 +127,20 @@ export default function ProfileChangePassword() {
   return (
     <div style={styles.page}>
       <div style={styles.container}>
-        
         <header style={styles.topNav}>
-          <Link href="/profile" style={styles.backLink} aria-label="Quay lại hồ sơ">
+          <Link
+            href="/profile"
+            style={styles.backLink}
+            aria-label="Quay lại hồ sơ"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#1E1E1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 18L9 12L15 6"
+                stroke="#1E1E1E"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <h1 style={styles.title}>Đổi mật khẩu</h1>
@@ -136,41 +155,50 @@ export default function ProfileChangePassword() {
 
             <div className="flex w-full flex-col gap-4">
               <div className="flex w-full flex-col gap-4">
-  <input
-    value={currentPassword}
-    onChange={(event) => setCurrentPassword(event.target.value)}
-    placeholder="Mật khẩu hiện tại"
-    type="password"
-    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-  />
+                <input
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  placeholder="Mật khẩu hiện tại"
+                  type="password"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                />
 
-  <input
-    value={newPassword}
-    onChange={(event) => setNewPassword(event.target.value)}
-    placeholder="Mật khẩu mới"
-    type="password"
-    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-  />
+                <input
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  placeholder="Mật khẩu mới"
+                  type="password"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                />
 
-  <input
-    value={confirmPassword}
-    onChange={(event) => setConfirmPassword(event.target.value)}
-    placeholder="Xác nhận mật khẩu mới"
-    type="password"
-    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-  />
-</div>
+                <input
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Xác nhận mật khẩu mới"
+                  type="password"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                />
+              </div>
             </div>
 
-            {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
+            {error && (
+              <p className="mt-3 text-sm font-medium text-red-600">{error}</p>
+            )}
             {result?.updated && (
-              <p className="mt-3 text-sm font-medium text-green-600">Mật khẩu đã được thay đổi thành công!</p>
+              <p className="mt-3 text-sm font-medium text-green-600">
+                Mật khẩu đã được thay đổi thành công!
+              </p>
             )}
 
             <div className="mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => void changePassword()}
-                disabled={loading || !currentPassword || !newPassword || !confirmPassword}
+                disabled={
+                  loading ||
+                  !currentPassword ||
+                  !newPassword ||
+                  !confirmPassword
+                }
                 className="rounded bg-rose-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-800 disabled:opacity-60"
               >
                 {loading ? "Đang lưu..." : "Đổi mật khẩu"}

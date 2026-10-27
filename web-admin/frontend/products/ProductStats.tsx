@@ -1,5 +1,5 @@
-import React from 'react';
-import { Package, CheckCircle2, Ban } from 'lucide-react';
+import React from "react";
+import { Package, CheckCircle2, Ban } from "lucide-react";
 
 type ProductStatsProps = {
   totalProducts: number;
@@ -7,7 +7,11 @@ type ProductStatsProps = {
   inactiveProducts: number;
 };
 
-const ProductStats = ({ totalProducts, activeProducts, inactiveProducts }: ProductStatsProps) => {
+const ProductStats = ({
+  totalProducts,
+  activeProducts,
+  inactiveProducts,
+}: ProductStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-5">
@@ -15,8 +19,12 @@ const ProductStats = ({ totalProducts, activeProducts, inactiveProducts }: Produ
           <Package className="w-6 h-6 text-gray-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500 mb-1">Tổng số Sản phẩm gốc</p>
-          <h3 className="text-2xl font-bold text-gray-900">{totalProducts.toLocaleString("vi-VN")}</h3>
+          <p className="text-sm font-medium text-gray-500 mb-1">
+            Tổng số Sản phẩm gốc
+          </p>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {totalProducts.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
 
@@ -25,8 +33,12 @@ const ProductStats = ({ totalProducts, activeProducts, inactiveProducts }: Produ
           <CheckCircle2 className="w-6 h-6 text-emerald-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500 mb-1">Trạng thái (Active)</p>
-          <h3 className="text-2xl font-bold text-gray-900">{activeProducts.toLocaleString("vi-VN")}</h3>
+          <p className="text-sm font-medium text-gray-500 mb-1">
+            Trạng thái (Active)
+          </p>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {activeProducts.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
 
@@ -35,8 +47,12 @@ const ProductStats = ({ totalProducts, activeProducts, inactiveProducts }: Produ
           <Ban className="w-6 h-6 text-gray-600" />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500 mb-1">Ngừng kinh doanh (Inactive)</p>
-          <h3 className="text-2xl font-bold text-gray-900">{inactiveProducts.toLocaleString("vi-VN")}</h3>
+          <p className="text-sm font-medium text-gray-500 mb-1">
+            Ngừng kinh doanh (Inactive)
+          </p>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {inactiveProducts.toLocaleString("vi-VN")}
+          </h3>
         </div>
       </div>
     </div>

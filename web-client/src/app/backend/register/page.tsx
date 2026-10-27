@@ -41,7 +41,11 @@ export default function BackendRegisterTestPage() {
       setResult(data);
     } catch (submitError) {
       setResult(null);
-      setError(submitError instanceof Error ? submitError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Đã xảy ra lỗi không mong muốn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -52,16 +56,29 @@ export default function BackendRegisterTestPage() {
       <div className="mx-auto max-w-3xl space-y-4">
         <section className="rounded-xl border border-slate-300 bg-white p-5">
           <h1 className="text-2xl font-bold">Kiểm thử backend: Đăng ký</h1>
-          <p className="mt-2 text-sm text-slate-600">Dùng trang này để kiểm tra /api/auth/register.</p>
-          <p className="mt-1 text-xs text-slate-500">Route: /backend/register</p>
+          <p className="mt-2 text-sm text-slate-600">
+            Dùng trang này để kiểm tra /api/auth/register.
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Route: /backend/register
+          </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <Link href="/backend/signin" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/signin"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Đi tới kiểm thử đăng nhập
             </Link>
-            <Link href="/backend/profile" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/profile"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Đi tới kiểm thử hồ sơ
             </Link>
-            <Link href="/backend/products" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/products"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Kiểm thử backend sản phẩm
             </Link>
           </div>

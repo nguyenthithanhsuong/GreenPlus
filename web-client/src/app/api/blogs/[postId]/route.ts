@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { blogFacade } from "../../../../../backend/modules/blogs/facades/blog.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 type Context = {
   params: Promise<{
@@ -39,7 +39,7 @@ export async function GET(_: Request, context: Context) {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 
@@ -48,9 +48,6 @@ export async function GET(_: Request, context: Context) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }

@@ -1,8 +1,9 @@
+import { portalActor } from "../../../../../backend/core/manager-scope";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { storesManagementFacade } from "../../../../../backend/modules/stores/facades/stores-management.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 type Context = {
   params: Promise<{
@@ -11,6 +12,9 @@ type Context = {
 };
 
 export async function PUT(request: Request, context: Context) {
+  const actor = await portalActor(request);
+  if (actor.role !== "admin")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { storeId } = await context.params;
 
   try {
@@ -61,18 +65,24 @@ export async function PUT(request: Request, context: Context) {
   } catch (error) {
     if (error instanceof AppError) {
       logger.error("Update store failed", { storeId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
-    logger.error("Update store unexpected error", { storeId, error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
+    logger.error("Update store unexpected error", {
+      storeId,
+      error: toErrorMessage(error),
+    });
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
 export async function PATCH(request: Request, context: Context) {
+  const actor = await portalActor(request);
+  if (actor.role !== "admin")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { storeId } = await context.params;
 
   try {
@@ -82,13 +92,22 @@ export async function PATCH(request: Request, context: Context) {
 
     if (typeof body.status === "undefined") {
       logger.warn("Patch store status failed - missing status", { storeId });
-      return NextResponse.json({ error: "status is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "status is required" },
+        { status: 400 },
+      );
     }
 
-    logger.info("Change store status attempt", { storeId, status: body.status });
+    logger.info("Change store status attempt", {
+      storeId,
+      status: body.status,
+    });
 
     const start = Date.now();
-    const updated = await storesManagementFacade.changeStatus(storeId, body.status);
+    const updated = await storesManagementFacade.changeStatus(
+      storeId,
+      body.status,
+    );
 
     logger.info("Change store status success", {
       storeId,
@@ -99,19 +118,28 @@ export async function PATCH(request: Request, context: Context) {
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
-      logger.error("Change store status failed", { storeId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      logger.error("Change store status failed", {
+        storeId,
+        message: error.message,
+      });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
-    logger.error("Change store status unexpected error", { storeId, error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
+    logger.error("Change store status unexpected error", {
+      storeId,
+      error: toErrorMessage(error),
+    });
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
-export async function DELETE(_: Request, context: Context) {
+export async function DELETE(request: Request, context: Context) {
+  const actor = await portalActor(request);
+  if (actor.role !== "admin")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { storeId } = await context.params;
 
   logger.info("Delete store attempt", { storeId });
@@ -119,7 +147,7 @@ export async function DELETE(_: Request, context: Context) {
   try {
     const start = Date.now();
     await storesManagementFacade.deleteStore(storeId);
-    
+
     logger.info("Delete store success", {
       storeId,
       duration_ms: Date.now() - start,
@@ -129,13 +157,16 @@ export async function DELETE(_: Request, context: Context) {
   } catch (error) {
     if (error instanceof AppError) {
       logger.error("Delete store failed", { storeId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
-    logger.error("Delete store unexpected error", { storeId, error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
+    logger.error("Delete store unexpected error", {
+      storeId,
+      error: toErrorMessage(error),
+    });
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }

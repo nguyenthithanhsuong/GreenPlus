@@ -22,7 +22,10 @@ export class DefaultProductStatusStrategy implements ProductStatusStrategy {
     const state = createProductStatusState(current);
 
     if (!state.canTransitionTo(next)) {
-      throw new AppError(`Cannot transition product status from ${current} to ${next}`, 400);
+      throw new AppError(
+        `Cannot transition product status from ${current} to ${next}`,
+        400,
+      );
     }
 
     return next;

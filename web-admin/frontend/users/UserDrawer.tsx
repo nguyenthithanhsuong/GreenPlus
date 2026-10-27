@@ -87,7 +87,9 @@ const UserDrawer = ({
         : "Chi Tiết Người Dùng";
 
   return (
-    <div className={`fixed inset-0 z-50 ${isOpen ? "" : "pointer-events-none"}`}>
+    <div
+      className={`fixed inset-0 z-50 ${isOpen ? "" : "pointer-events-none"}`}
+    >
       <button
         type="button"
         className={`absolute inset-0 bg-black/35 transition-opacity ${isOpen ? "opacity-100" : "opacity-0"}`}
@@ -123,54 +125,86 @@ const UserDrawer = ({
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
                   {selectedUser?.image_url ? (
-                    <img src={selectedUser.image_url} alt={selectedUser.name} className="h-16 w-16 rounded-full object-cover" />
+                    <img
+                      src={selectedUser.image_url}
+                      alt={selectedUser.name}
+                      className="h-16 w-16 rounded-full object-cover"
+                    />
                   ) : (
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-xl font-semibold text-emerald-700">
                       {(selectedUser?.name.trim()[0] ?? "U").toUpperCase()}
                     </div>
                   )}
                   <div>
-                    <p className="text-lg font-bold text-gray-900">{selectedUser?.name}</p>
-                    <p className="text-sm text-gray-500">{selectedUser?.email}</p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {selectedUser?.name}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {selectedUser?.email}
+                    </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Số điện thoại</p>
-                    <p className="mt-1 text-sm text-gray-800">{selectedUser?.phone || "-"}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                      Số điện thoại
+                    </p>
+                    <p className="mt-1 text-sm text-gray-800">
+                      {selectedUser?.phone || "-"}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Vai trò</p>
-                    <p className="mt-1 text-sm text-gray-800">{selectedUser?.role_name || "Mặc định"}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                      Vai trò
+                    </p>
+                    <p className="mt-1 text-sm text-gray-800">
+                      {selectedUser?.role_name || "Mặc định"}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Cửa hàng</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                      Cửa hàng
+                    </p>
                     <p className="mt-1 text-sm text-gray-800">
                       {selectedUser?.store_id
-                        ? storeOptions.find((store) => store.storeId === selectedUser.store_id)?.storeName ?? selectedUser.store_id
+                        ? (storeOptions.find(
+                            (store) => store.storeId === selectedUser.store_id,
+                          )?.storeName ?? selectedUser.store_id)
                         : "Chưa gán"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Trạng thái</p>
-                    <p className="mt-1 text-sm text-gray-800">{selectedUser ? statusLabel[selectedUser.status] : "-"}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                      Trạng thái
+                    </p>
+                    <p className="mt-1 text-sm text-gray-800">
+                      {selectedUser ? statusLabel[selectedUser.status] : "-"}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Ngày tham gia</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                      Ngày tham gia
+                    </p>
                     <p className="mt-1 text-sm text-gray-800">
                       {selectedUser?.created_at
-                        ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(selectedUser.created_at))
+                        ? new Intl.DateTimeFormat("vi-VN", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(selectedUser.created_at))
                         : "-"}
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Địa chỉ</p>
-                  <p className="mt-1 text-sm text-gray-800">{selectedUser?.address || "-"}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Địa chỉ
+                  </p>
+                  <p className="mt-1 text-sm text-gray-800">
+                    {selectedUser?.address || "-"}
+                  </p>
                 </div>
-
               </div>
             ) : (
               <form
@@ -183,12 +217,18 @@ const UserDrawer = ({
                 <div className="mb-4 flex flex-col items-center">
                   <div className="mb-3 flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-gray-300">
                     {form.imageUrl ? (
-                      <img src={form.imageUrl} alt="avatar" className="h-20 w-20 rounded-full object-cover" />
+                      <img
+                        src={form.imageUrl}
+                        alt="avatar"
+                        className="h-20 w-20 rounded-full object-cover"
+                      />
                     ) : (
                       <span className="text-xs text-gray-400">Avatar</span>
                     )}
                   </div>
-                  <span className="text-sm font-medium text-[#1da453]">Tải ảnh đại diện lên (URL)</span>
+                  <span className="text-sm font-medium text-[#1da453]">
+                    Tải ảnh đại diện lên (URL)
+                  </span>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -233,7 +273,9 @@ const UserDrawer = ({
                   </label>
                   <input
                     value={form.email}
-                    onChange={(event) => onChange({ email: event.target.value })}
+                    onChange={(event) =>
+                      onChange({ email: event.target.value })
+                    }
                     type="email"
                     placeholder="email@greenplus.vn"
                     className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -248,7 +290,9 @@ const UserDrawer = ({
                     <div className="relative">
                       <input
                         value={form.password}
-                        onChange={(event) => onChange({ password: event.target.value })}
+                        onChange={(event) =>
+                          onChange({ password: event.target.value })
+                        }
                         type={showPassword ? "text" : "password"}
                         placeholder="Tối thiểu 6 ký tự"
                         className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -258,29 +302,43 @@ const UserDrawer = ({
                         onClick={onTogglePassword}
                         className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                       >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
                       </button>
                     </div>
-                    <p className="mt-2 text-xs text-gray-500">Mật khẩu này sẽ được gửi đến email của người dùng.</p>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Mật khẩu này sẽ được gửi đến email của người dùng.
+                    </p>
                   </div>
                 ) : null}
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-sm font-bold text-gray-800">Số điện thoại</label>
+                    <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                      Số điện thoại
+                    </label>
                     <input
                       value={form.phone}
-                      onChange={(event) => onChange({ phone: event.target.value })}
+                      onChange={(event) =>
+                        onChange({ phone: event.target.value })
+                      }
                       type="text"
                       placeholder="09xx..."
                       className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-bold text-gray-800">Phân quyền (Role)</label>
+                    <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                      Phân quyền (Role)
+                    </label>
                     <select
                       value={form.roleId}
-                      onChange={(event) => onChange({ roleId: event.target.value })}
+                      onChange={(event) =>
+                        onChange({ roleId: event.target.value })
+                      }
                       className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                     >
                       <option value="">Mặc định hệ thống</option>
@@ -292,10 +350,14 @@ const UserDrawer = ({
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-bold text-gray-800">Cửa hàng</label>
+                    <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                      Cửa hàng
+                    </label>
                     <select
                       value={form.storeId}
-                      onChange={(event) => onChange({ storeId: event.target.value })}
+                      onChange={(event) =>
+                        onChange({ storeId: event.target.value })
+                      }
                       className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                     >
                       <option value="">Chưa gán cửa hàng</option>
@@ -310,11 +372,16 @@ const UserDrawer = ({
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-sm font-bold text-gray-800">Trạng thái</label>
+                    <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                      Trạng thái
+                    </label>
                     <select
                       value={form.status}
                       onChange={(event) =>
-                        onChange({ status: event.target.value as UserFormValues["status"] })
+                        onChange({
+                          status: event.target
+                            .value as UserFormValues["status"],
+                        })
                       }
                       className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                     >
@@ -324,10 +391,14 @@ const UserDrawer = ({
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-bold text-gray-800">Ảnh đại diện (URL)</label>
+                    <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                      Ảnh đại diện (URL)
+                    </label>
                     <input
                       value={form.imageUrl}
-                      onChange={(event) => onChange({ imageUrl: event.target.value })}
+                      onChange={(event) =>
+                        onChange({ imageUrl: event.target.value })
+                      }
                       type="text"
                       placeholder="https://..."
                       className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
@@ -336,10 +407,14 @@ const UserDrawer = ({
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">Địa chỉ</label>
+                  <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                    Địa chỉ
+                  </label>
                   <textarea
                     value={form.address}
-                    onChange={(event) => onChange({ address: event.target.value })}
+                    onChange={(event) =>
+                      onChange({ address: event.target.value })
+                    }
                     placeholder="Số nhà, đường, phường/xã..."
                     rows={3}
                     className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"

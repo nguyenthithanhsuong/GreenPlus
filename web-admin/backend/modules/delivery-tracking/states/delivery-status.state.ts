@@ -34,7 +34,9 @@ class DeliveredDeliveryState implements DeliveryStatusState {
   }
 }
 
-export function createDeliveryStatusState(status: DeliveryStatus): DeliveryStatusState {
+export function createDeliveryStatusState(
+  status: DeliveryStatus,
+): DeliveryStatusState {
   switch (status) {
     case "assigned":
       return new AssignedDeliveryState();

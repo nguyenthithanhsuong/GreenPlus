@@ -1,8 +1,23 @@
 "use client";
 
 import React from "react";
-import { AlignLeft, Check, ChevronLeft, ChevronRight, Eye, Image as ImageIcon, MessageSquareText, PlaySquare, Search, Trash2, X } from "lucide-react";
-import { GreenCreatorPostRow, GreenCreatorPostStatus } from "../../backend/modules/greencreators/greencreator-content.types";
+import {
+  AlignLeft,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Image as ImageIcon,
+  MessageSquareText,
+  PlaySquare,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+import {
+  GreenCreatorPostRow,
+  GreenCreatorPostStatus,
+} from "../../backend/modules/greencreators/greencreator-content.types";
 
 type ContentStatusFilter = "all" | GreenCreatorPostStatus;
 
@@ -78,12 +93,17 @@ const isVideoUrl = (url: string | null | undefined) => {
   })();
 
   const normalizedPath = rawPath.split("?")[0].toLowerCase();
-  return VIDEO_EXTENSIONS.some((extension) => normalizedPath.endsWith(extension));
+  return VIDEO_EXTENSIONS.some((extension) =>
+    normalizedPath.endsWith(extension),
+  );
 };
 
 const PAGE_SIZE = 8;
 
-const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+const buildPageItems = (
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
@@ -93,10 +113,25 @@ const buildPageItems = (currentPage: number, totalPages: number): Array<number |
   }
 
   if (currentPage >= totalPages - 2) {
-    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [
+      1,
+      "ellipsis",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
   }
 
-  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    totalPages,
+  ];
 };
 
 const ContentTable = ({
@@ -137,8 +172,12 @@ const ContentTable = ({
   }, [currentPage, posts]);
 
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
-  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const endItem =
+    totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(
+    () => buildPageItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -153,7 +192,9 @@ const ContentTable = ({
                 type="button"
                 onClick={() => onStatusChange(tab.value)}
                 className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  active ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  active
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 {tab.label}
@@ -190,13 +231,19 @@ const ContentTable = ({
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-6 py-12 text-center text-sm text-gray-500" colSpan={6}>
+                <td
+                  className="px-6 py-12 text-center text-sm text-gray-500"
+                  colSpan={6}
+                >
                   Đang tải dữ liệu Green Creator...
                 </td>
               </tr>
             ) : posts.length === 0 ? (
               <tr>
-                <td className="px-6 py-12 text-center text-sm text-gray-500" colSpan={6}>
+                <td
+                  className="px-6 py-12 text-center text-sm text-gray-500"
+                  colSpan={6}
+                >
                   Không có bài đăng phù hợp với bộ lọc hiện tại.
                 </td>
               </tr>
@@ -206,10 +253,14 @@ const ContentTable = ({
                 const saving = savingPostId === post.post_id;
                 const statusLabel = formatStatusLabel(status);
                 const firstMediaUrl = post.media[0]?.media_url ?? null;
-                const shouldRenderVideoThumb = post.type === "video" || isVideoUrl(firstMediaUrl);
+                const shouldRenderVideoThumb =
+                  post.type === "video" || isVideoUrl(firstMediaUrl);
 
                 return (
-                  <tr key={post.post_id} className="border-b border-gray-50 transition-colors hover:bg-gray-50/60">
+                  <tr
+                    key={post.post_id}
+                    className="border-b border-gray-50 transition-colors hover:bg-gray-50/60"
+                  >
                     <td className="px-6 py-4 align-top">
                       <div className="flex items-start gap-4">
                         {firstMediaUrl ? (
@@ -240,25 +291,40 @@ const ContentTable = ({
                         )}
 
                         <div className="min-w-0">
-                          <p className="mb-0.5 truncate font-bold text-gray-900">{post.title}</p>
-                          <p className="line-clamp-2 text-xs text-gray-500">{post.content}</p>
+                          <p className="mb-0.5 truncate font-bold text-gray-900">
+                            {post.title}
+                          </p>
+                          <p className="line-clamp-2 text-xs text-gray-500">
+                            {post.content}
+                          </p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-6 py-4 align-top">{renderTypeBadge(post.type)}</td>
+                    <td className="px-6 py-4 align-top">
+                      {renderTypeBadge(post.type)}
+                    </td>
 
                     <td className="px-6 py-4 align-top">
                       <div className="flex items-center gap-2">
                         <img
-                          src={post.author_image_url ?? "https://i.pravatar.cc/150?img=32"}
+                          src={
+                            post.author_image_url ??
+                            "https://i.pravatar.cc/150?img=32"
+                          }
                           alt={post.author_name ?? "Author"}
                           className="h-7 w-7 rounded-full object-cover"
                         />
                         <div>
-                          <p className="font-semibold text-gray-800">{post.author_name ?? "N/A"}</p>
+                          <p className="font-semibold text-gray-800">
+                            {post.author_name ?? "N/A"}
+                          </p>
                           <p className="text-xs text-gray-400">
-                            {post.created_at ? new Date(post.created_at).toLocaleString("vi-VN") : "Chưa có thời gian"}
+                            {post.created_at
+                              ? new Date(post.created_at).toLocaleString(
+                                  "vi-VN",
+                                )
+                              : "Chưa có thời gian"}
                           </p>
                         </div>
                       </div>
@@ -270,7 +336,10 @@ const ContentTable = ({
                           <MessageSquareText className="h-3.5 w-3.5 text-gray-400" />
                           {post.comment_count.toLocaleString("vi-VN")} bình luận
                         </p>
-                        <p>{post.interaction_count.toLocaleString("vi-VN")} tương tác</p>
+                        <p>
+                          {post.interaction_count.toLocaleString("vi-VN")} tương
+                          tác
+                        </p>
                         <p>{post.media_count.toLocaleString("vi-VN")} media</p>
                       </div>
                     </td>
@@ -279,7 +348,11 @@ const ContentTable = ({
                       <div className="mt-1 flex items-center gap-1.5">
                         <span
                           className={`h-1.5 w-1.5 rounded-full ${
-                            status === "approved" ? "bg-emerald-500" : status === "rejected" ? "bg-red-500" : "bg-yellow-500"
+                            status === "approved"
+                              ? "bg-emerald-500"
+                              : status === "rejected"
+                                ? "bg-red-500"
+                                : "bg-yellow-500"
                           }`}
                         />
                         <span
@@ -310,7 +383,9 @@ const ContentTable = ({
                         <button
                           type="button"
                           onClick={() => onApprovePost(post)}
-                          disabled={!canModerate || saving || status === "approved"}
+                          disabled={
+                            !canModerate || saving || status === "approved"
+                          }
                           className="rounded-full p-2 text-gray-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
                           title="Duyệt"
                         >
@@ -320,7 +395,9 @@ const ContentTable = ({
                         <button
                           type="button"
                           onClick={() => onRejectPost(post)}
-                          disabled={!canModerate || saving || status === "rejected"}
+                          disabled={
+                            !canModerate || saving || status === "rejected"
+                          }
                           className="rounded-full p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                           title="Từ chối"
                         >
@@ -354,8 +431,8 @@ const ContentTable = ({
           <span className="font-bold text-gray-900">
             {startItem} - {endItem}
           </span>{" "}
-          trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>{" "}
-          bài đăng
+          trong tổng số{" "}
+          <span className="font-bold text-gray-900">{totalItems}</span> bài đăng
         </span>
 
         <div className="flex items-center gap-1">
@@ -399,7 +476,9 @@ const ContentTable = ({
           <button
             type="button"
             className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             aria-label="Trang sau"
           >

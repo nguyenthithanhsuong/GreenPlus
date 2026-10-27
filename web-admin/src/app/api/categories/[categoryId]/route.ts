@@ -25,7 +25,10 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
     imageUrl: body.imageUrl,
   });
 
-  logger.info("Update category success", { categoryId, duration_ms: Date.now() - start });
+  logger.info("Update category success", {
+    categoryId,
+    duration_ms: Date.now() - start,
+  });
   return NextResponse.json(updated, { status: 200 });
 });
 
@@ -37,6 +40,9 @@ export const DELETE = withSentry(async (request: Request, context: Context) => {
 
   await categoryManagementFacade.deleteCategory(categoryId);
 
-  logger.info("Delete category success", { categoryId, duration_ms: Date.now() - start });
+  logger.info("Delete category success", {
+    categoryId,
+    duration_ms: Date.now() - start,
+  });
   return NextResponse.json({ deleted: true }, { status: 200 });
 });

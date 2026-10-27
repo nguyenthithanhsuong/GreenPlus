@@ -29,10 +29,12 @@ export default function CommunityPostTestPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const selectedPost = myPosts.find((post) => post.post_id === selectedPostId) ?? null;
+  const selectedPost =
+    myPosts.find((post) => post.post_id === selectedPostId) ?? null;
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const saved =
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
     setActiveUserId(saved);
   }, []);
 
@@ -70,7 +72,11 @@ export default function CommunityPostTestPage() {
       await loadMyPosts();
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -85,8 +91,11 @@ export default function CommunityPostTestPage() {
         throw new Error("Please login test user from top-right corner first");
       }
 
-      const response = await fetch(`/api/community/posts?userId=${encodeURIComponent(activeUserId)}`);
-      const data = (await response.json()) as CommunityPostItem[] | { error: string };
+      const response = await fetch(
+        `/api/community/posts?userId=${encodeURIComponent(activeUserId)}`,
+      );
+      const data = (await response.json()) as
+        CommunityPostItem[] | { error: string };
       if (!response.ok) {
         throw new Error("error" in data ? data.error : "Request failed");
       }
@@ -96,7 +105,11 @@ export default function CommunityPostTestPage() {
       setResult(posts);
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -110,7 +123,10 @@ export default function CommunityPostTestPage() {
     setMediaUrl(post.media_url ?? "");
   };
 
-  const renderMediaPreview = (post: CommunityPostItem, size: "large" | "small") => {
+  const renderMediaPreview = (
+    post: CommunityPostItem,
+    size: "large" | "small",
+  ) => {
     const hasMedia = Boolean(post.media_url);
     const isVideo = post.media_type === "MP4";
     const mediaUrlValue = post.media_url ?? "";
@@ -118,17 +134,31 @@ export default function CommunityPostTestPage() {
 
     if (!hasMedia) {
       return (
-        <div className={`flex ${mediaHeightClass} w-full items-center justify-center bg-slate-200 text-xs text-slate-600`}>
+        <div
+          className={`flex ${mediaHeightClass} w-full items-center justify-center bg-slate-200 text-xs text-slate-600`}
+        >
           No media URL found
         </div>
       );
     }
 
     if (isVideo) {
-      return <video src={mediaUrlValue} controls className={`${mediaHeightClass} w-full bg-slate-900 object-cover`} />;
+      return (
+        <video
+          src={mediaUrlValue}
+          controls
+          className={`${mediaHeightClass} w-full bg-slate-900 object-cover`}
+        />
+      );
     }
 
-    return <img src={mediaUrlValue} alt={post.title} className={`${mediaHeightClass} w-full object-cover`} />;
+    return (
+      <img
+        src={mediaUrlValue}
+        alt={post.title}
+        className={`${mediaHeightClass} w-full object-cover`}
+      />
+    );
   };
 
   const updateSelectedPost = async () => {
@@ -157,7 +187,8 @@ export default function CommunityPostTestPage() {
         }),
       });
 
-      const data = (await response.json()) as CommunityPostItem | { error: string };
+      const data = (await response.json()) as
+        CommunityPostItem | { error: string };
       if (!response.ok) {
         throw new Error("error" in data ? data.error : "Request failed");
       }
@@ -166,7 +197,11 @@ export default function CommunityPostTestPage() {
       await loadMyPosts();
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -175,46 +210,108 @@ export default function CommunityPostTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Đăng bài cộng đồng</h1>
-        <p className="text-sm text-slate-600">Kiểm tra route qua /api/community/posts.</p>
-        <p className="text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
-        <p className="text-xs text-slate-500">Bài viết đã chọn: {selectedPostId || "không có"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Kiểm thử backend: Đăng bài cộng đồng
+        </h1>
+        <p className="text-sm text-slate-600">
+          Kiểm tra route qua /api/community/posts.
+        </p>
+        <p className="text-xs text-slate-500">
+          Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}
+        </p>
+        <p className="text-xs text-slate-500">
+          Bài viết đã chọn: {selectedPostId || "không có"}
+        </p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="title" className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-            <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="content <= 1000 chars" className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2" rows={4} />
-            <select value={mediaType} onChange={(e) => setMediaType(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="title"
+              className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+            />
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="content <= 1000 chars"
+              className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+              rows={4}
+            />
+            <select
+              value={mediaType}
+              onChange={(e) => setMediaType(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            >
               <option value="JPG">JPG</option>
               <option value="PNG">PNG</option>
               <option value="MP4">MP4</option>
             </select>
-            <input value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} placeholder="media url" className="rounded border border-slate-300 px-3 py-2 text-sm" />
+            <input
+              value={mediaUrl}
+              onChange={(e) => setMediaUrl(e.target.value)}
+              placeholder="media url"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => void submit()} disabled={loading} className="rounded bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">Create Post</button>
-            <button onClick={() => void loadMyPosts()} disabled={loading} className="rounded bg-blue-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">Load My Posts</button>
-            <button onClick={() => void updateSelectedPost()} disabled={loading} className="rounded bg-amber-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">Update Selected Post</button>
+            <button
+              onClick={() => void submit()}
+              disabled={loading}
+              className="rounded bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            >
+              Create Post
+            </button>
+            <button
+              onClick={() => void loadMyPosts()}
+              disabled={loading}
+              className="rounded bg-blue-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            >
+              Load My Posts
+            </button>
+            <button
+              onClick={() => void updateSelectedPost()}
+              disabled={loading}
+              className="rounded bg-amber-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            >
+              Update Selected Post
+            </button>
           </div>
         </section>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <h2 className="text-sm font-semibold text-slate-800">My Posts</h2>
           {myPosts.length === 0 ? (
-            <p className="mt-2 text-xs text-slate-500">No posts loaded yet. Click Load My Posts.</p>
+            <p className="mt-2 text-xs text-slate-500">
+              No posts loaded yet. Click Load My Posts.
+            </p>
           ) : (
             <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
               {myPosts.map((post) => (
-                <article key={post.post_id} className="overflow-hidden rounded border border-slate-300 bg-white">
+                <article
+                  key={post.post_id}
+                  className="overflow-hidden rounded border border-slate-300 bg-white"
+                >
                   {renderMediaPreview(post, "small")}
                   <div className="space-y-2 p-4">
-                    <p className="text-base font-semibold text-slate-900">{post.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(post.created_at).toLocaleString()} | status: {post.status}
+                    <p className="text-base font-semibold text-slate-900">
+                      {post.title}
                     </p>
-                    <p className="text-xs text-slate-600">post_id: {post.post_id}</p>
-                    {post.media_url && <p className="truncate text-xs text-slate-600">media_url: {post.media_url}</p>}
-                    <p className="line-clamp-3 text-sm text-slate-700">{post.content || "No content"}</p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(post.created_at).toLocaleString()} | status:{" "}
+                      {post.status}
+                    </p>
+                    <p className="text-xs text-slate-600">
+                      post_id: {post.post_id}
+                    </p>
+                    {post.media_url && (
+                      <p className="truncate text-xs text-slate-600">
+                        media_url: {post.media_url}
+                      </p>
+                    )}
+                    <p className="line-clamp-3 text-sm text-slate-700">
+                      {post.content || "No content"}
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       <Link
                         href={`/backend/products/community/${post.post_id}`}
@@ -238,7 +335,11 @@ export default function CommunityPostTestPage() {
         </section>
 
         {error && <p className="text-sm text-rose-700">{error}</p>}
-        {result !== null && <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">{JSON.stringify(result, null, 2)}</pre>}
+        {result !== null && (
+          <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        )}
       </div>
     </main>
   );

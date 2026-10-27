@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { orderTrackingFacade } from "../../../../../backend/modules/orders/facades/order-tracking.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 type Context = {
   params: Promise<{
@@ -10,7 +10,7 @@ type Context = {
   }>;
 };
 
-export async function GET(_: Request, context: Context) {
+async function handleGET(_: Request, context: Context) {
   const { orderId } = await context.params;
   logger.info("Get order detail attempt", { orderId });
 
@@ -26,19 +26,25 @@ export async function GET(_: Request, context: Context) {
     return NextResponse.json(detail, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
-      logger.error("Get order detail failed", { orderId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      logger.error("Get order detail failed", {
+        orderId,
+        message: error.message,
+      });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
-    logger.error("Get order detail unexpected error", { orderId, error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
+    logger.error("Get order detail unexpected error", {
+      orderId,
+      error: toErrorMessage(error),
+    });
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
 
-export async function PATCH(request: Request, context: Context) {
+async function handlePATCH(request: Request, context: Context) {
   const { orderId } = await context.params;
 
   try {
@@ -48,10 +54,10 @@ export async function PATCH(request: Request, context: Context) {
       employeeId?: string;
     };
 
-    logger.info("Update order status attempt", { 
-      orderId, 
-      status: body.status, 
-      employeeId: body.employeeId 
+    logger.info("Update order status attempt", {
+      orderId,
+      status: body.status,
+      employeeId: body.employeeId,
     });
 
     const start = Date.now();
@@ -71,14 +77,23 @@ export async function PATCH(request: Request, context: Context) {
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
-      logger.error("Update order status failed", { orderId, message: error.message });
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      logger.error("Update order status failed", {
+        orderId,
+        message: error.message,
+      });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
-    logger.error("Update order status unexpected error", { orderId, error: toErrorMessage(error) });
-    return NextResponse.json(
-      { error: toErrorMessage(error) },
-      { status: 500 },
-    );
+    logger.error("Update order status unexpected error", {
+      orderId,
+      error: toErrorMessage(error),
+    });
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }
+
+export const GET = withSentry(handleGET);
+export const PATCH = withSentry(handlePATCH);

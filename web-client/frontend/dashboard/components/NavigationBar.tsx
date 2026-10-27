@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
-import { SCREEN_MAX_WIDTH_PX, SCREEN_SIDE_PADDING_PX } from "../../shared/screen.styles";
+import {
+  SCREEN_MAX_WIDTH_PX,
+  SCREEN_SIDE_PADDING_PX,
+} from "../../shared/screen.styles";
 
 type NavItem = {
   label: string;
@@ -74,7 +77,16 @@ const navItems: NavItem[] = [
     label: "Trang chủ",
     href: "/dashboard",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        width="24"
+        height="24"
+      >
         <path d="M3 10.5 12 3l9 7.5" />
         <path d="M5 10v10h5v-6h4v6h5V10" />
       </svg>
@@ -84,7 +96,16 @@ const navItems: NavItem[] = [
     label: "Danh Mục",
     href: "/category",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        width="24"
+        height="24"
+      >
         <path d="M4 6h7" />
         <path d="M4 12h16" />
         <path d="M4 18h10" />
@@ -96,7 +117,16 @@ const navItems: NavItem[] = [
     label: "Đơn hàng",
     href: "/orders",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        width="24"
+        height="24"
+      >
         <path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.5L21 8H6" />
         <circle cx="10" cy="20" r="1.5" fill="currentColor" stroke="none" />
         <circle cx="17" cy="20" r="1.5" fill="currentColor" stroke="none" />
@@ -108,7 +138,16 @@ const navItems: NavItem[] = [
     label: "Green Creator",
     href: "/green-creators",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        width="24"
+        height="24"
+      >
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
       </svg>
     ),
@@ -117,7 +156,16 @@ const navItems: NavItem[] = [
     label: "Hồ sơ",
     href: "/profile",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        width="24"
+        height="24"
+      >
         <circle cx="12" cy="8" r="3.5" />
         <path d="M5 20a7 7 0 0 1 14 0" />
       </svg>
@@ -145,7 +193,14 @@ const NavigationBar = () => {
                 fontWeight: isActive ? 700 : 500,
               }}
             >
-              <div style={{ ...styles.iconWrapper, color: isActive ? activeColor : "#111827" }}>{item.icon}</div>
+              <div
+                style={{
+                  ...styles.iconWrapper,
+                  color: isActive ? activeColor : "#111827",
+                }}
+              >
+                {item.icon}
+              </div>
               <span style={styles.label}>{item.label}</span>
             </Link>
           );

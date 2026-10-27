@@ -1,5 +1,9 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { ComplaintRow, ComplaintStatus, UpdateComplaintStatusInput } from "./complaint-management.types";
+import {
+  ComplaintRow,
+  ComplaintStatus,
+  UpdateComplaintStatusInput,
+} from "./complaint-management.types";
 
 type UserJoin =
   | {
@@ -33,7 +37,8 @@ export class ComplaintManagementRepository {
   async listComplaints(): Promise<ComplaintRow[]> {
     const { data, error } = await this.supabase
       .from("complaints")
-      .select(`
+      .select(
+        `
         complaint_id,
         user_id,
         order_id,
@@ -44,20 +49,24 @@ export class ComplaintManagementRepository {
         resolved_at,
         reject_reason,
         users(name,email,image_url)
-      `)
+      `,
+      )
       .order("created_at", { ascending: false, nullsFirst: false });
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return (data ?? []).map((row) => this.mapComplaintRow(row as ComplaintDbRow));
+    return (data ?? []).map((row) =>
+      this.mapComplaintRow(row as ComplaintDbRow),
+    );
   }
 
   async findById(complaintId: string): Promise<ComplaintRow | null> {
     const { data, error } = await this.supabase
       .from("complaints")
-      .select(`
+      .select(
+        `
         complaint_id,
         user_id,
         order_id,
@@ -68,7 +77,8 @@ export class ComplaintManagementRepository {
         resolved_at,
         reject_reason,
         users(name,email,image_url)
-      `)
+      `,
+      )
       .eq("complaint_id", complaintId)
       .maybeSingle();
 
@@ -79,7 +89,9 @@ export class ComplaintManagementRepository {
     return data ? this.mapComplaintRow(data as ComplaintDbRow) : null;
   }
 
-  async updateStatus(input: UpdateComplaintStatusInput): Promise<ComplaintRow | null> {
+  async updateStatus(
+    input: UpdateComplaintStatusInput,
+  ): Promise<ComplaintRow | null> {
     const now = new Date().toISOString();
     const payload: {
       status: ComplaintStatus;
@@ -105,7 +117,8 @@ export class ComplaintManagementRepository {
       .from("complaints")
       .update(payload)
       .eq("complaint_id", input.complaintId)
-      .select(`
+      .select(
+        `
         complaint_id,
         user_id,
         order_id,
@@ -116,7 +129,8 @@ export class ComplaintManagementRepository {
         resolved_at,
         reject_reason,
         users(name,email,image_url)
-      `)
+      `,
+      )
       .maybeSingle();
 
     if (error) {
@@ -151,7 +165,10 @@ export class ComplaintManagementRepository {
     return "pending";
   }
 
-  private pickUserField(user: UserJoin, field: "name" | "email" | "image_url"): string | null {
+  private pickUserField(
+    user: UserJoin,
+    field: "name" | "email" | "image_url",
+  ): string | null {
     if (Array.isArray(user)) {
       return user[0]?.[field] ?? null;
     }

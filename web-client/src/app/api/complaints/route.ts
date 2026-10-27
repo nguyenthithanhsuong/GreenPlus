@@ -2,7 +2,11 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { complaintFacade } from "../../../../backend/modules/complaints/facades/complaint.facade";
 import { ComplaintType } from "../../../../backend/modules/complaints/complaint.types";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../backend/core/request-auth";
 
 type ComplaintBody = {
   userId?: string;
@@ -14,13 +18,12 @@ type ComplaintBody = {
 };
 
 export const POST = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as ComplaintBody;
 
-  const userId =
-    body.userId?.trim() ?? body.user_id?.trim() ?? "";
+  const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
-  const orderId =
-    body.orderId?.trim() ?? body.order_id?.trim() ?? "";
+  const orderId = body.orderId?.trim() ?? body.order_id?.trim() ?? "";
 
   const type = body.type;
   const description = body.description?.trim() ?? "";
@@ -40,8 +43,7 @@ export const POST = withSentry(async (request: Request) => {
 
     return NextResponse.json(
       {
-        error:
-          "userId, orderId, type and description are required",
+        error: "userId, orderId, type and description are required",
       },
       { status: 400 },
     );
@@ -67,12 +69,15 @@ export const POST = withSentry(async (request: Request) => {
 });
 
 export const GET = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const url = new URL(request.url);
 
-  const userId =
-    (url.searchParams.get("userId") ??
+  const userId = assertCustomerId(
+    url.searchParams.get("userId") ??
       url.searchParams.get("user_id") ??
-      "").trim();
+      undefined,
+    identity.userId,
+  );
 
   logger.info("List complaints attempt", { userId });
 
@@ -81,16 +86,12 @@ export const GET = withSentry(async (request: Request) => {
       userId,
     });
 
-    return NextResponse.json(
-      { error: "userId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
 
   const start = Date.now();
 
-  const items =
-    await complaintFacade.listComplaintsByUser(userId);
+  const items = await complaintFacade.listComplaintsByUser(userId);
 
   logger.info("List complaints success", {
     userId,

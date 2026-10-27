@@ -9,8 +9,8 @@ export interface Relationship {
 
 export interface TableRelationships {
   table: string;
-  outgoing: Relationship[]; 
-  incoming: Relationship[]; 
+  outgoing: Relationship[];
+  incoming: Relationship[];
   category: string;
 }
 
@@ -514,7 +514,9 @@ export const ALL_RELATIONSHIPS: Record<string, TableRelationships> = {
   },
 };
 
-export function getRelationshipsForTable(tableName: string): TableRelationships | undefined {
+export function getRelationshipsForTable(
+  tableName: string,
+): TableRelationships | undefined {
   return ALL_RELATIONSHIPS[tableName];
 }
 

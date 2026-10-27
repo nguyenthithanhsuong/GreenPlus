@@ -1,6 +1,7 @@
 export type CartChangedEvent = {
   userId: string;
-  event: "item_added" | "item_quantity_updated" | "item_removed" | "note_updated";
+  event:
+    "item_added" | "item_quantity_updated" | "item_removed" | "note_updated";
   changedAt: string;
 };
 

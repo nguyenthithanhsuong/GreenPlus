@@ -4,7 +4,11 @@ import {
   UserManagementAuditObserver,
   UserManagementSubject,
 } from "../observers/user-management.observer";
-import { CreateUserInput, UpdateUserInput, UserSummary } from "../user-management.types";
+import {
+  CreateUserInput,
+  UpdateUserInput,
+  UserSummary,
+} from "../user-management.types";
 
 export class UserManagementFacade {
   private readonly repository = new UserManagementRepository();
@@ -19,25 +23,40 @@ export class UserManagementFacade {
     return this.service.listUsers();
   }
 
-  async findCurrentUser(input: { userId?: string; email?: string | null }): Promise<UserSummary | null> {
+  async findCurrentUser(input: {
+    userId?: string;
+    email?: string | null;
+  }): Promise<UserSummary | null> {
     return this.service.findCurrentUser(input);
   }
 
   async createUser(input: CreateUserInput): Promise<UserSummary> {
     const created = await this.service.createUser(input);
-    await this.subject.notify({ type: "user_created", userId: created.user_id, actor: "admin" });
+    await this.subject.notify({
+      type: "user_created",
+      userId: created.user_id,
+      actor: "admin",
+    });
     return created;
   }
 
   async updateUser(input: UpdateUserInput): Promise<UserSummary> {
     const updated = await this.service.updateUser(input);
-    await this.subject.notify({ type: "user_updated", userId: updated.user_id, actor: "admin" });
+    await this.subject.notify({
+      type: "user_updated",
+      userId: updated.user_id,
+      actor: "admin",
+    });
     return updated;
   }
 
   async disableUser(userId: string): Promise<UserSummary> {
     const updated = await this.service.disableUser(userId);
-    await this.subject.notify({ type: "user_disabled", userId: updated.user_id, actor: "admin" });
+    await this.subject.notify({
+      type: "user_disabled",
+      userId: updated.user_id,
+      actor: "admin",
+    });
     return updated;
   }
 

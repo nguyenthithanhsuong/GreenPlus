@@ -9,7 +9,10 @@ export const GET = withSentry(async () => {
     return NextResponse.json(options, { status: 200 });
   } catch (error) {
     if (error instanceof AppError) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;

@@ -43,7 +43,8 @@ export default function ProductSubscriptionTestPage() {
   const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const saved =
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
     setActiveUserId(saved);
 
     const loadOptions = async () => {
@@ -53,15 +54,16 @@ export default function ProductSubscriptionTestPage() {
           return;
         }
 
-        const payload = (await response.json()) as { products?: ProductOption[] };
+        const payload = (await response.json()) as {
+          products?: ProductOption[];
+        };
         const products = payload.products ?? [];
         setProductOptions(products);
 
         if (products.length > 0) {
           setProductId((current) => current || products[0].product_id);
         }
-      } catch {
-      }
+      } catch {}
     };
 
     void loadOptions();
@@ -92,10 +94,15 @@ export default function ProductSubscriptionTestPage() {
       const response = await fetch("/api/subscriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: requireLoggedInUserId(), productId, frequency }),
+        body: JSON.stringify({
+          userId: requireLoggedInUserId(),
+          productId,
+          frequency,
+        }),
       });
 
-      const data = (await response.json()) as SubscriptionResult | { error: string };
+      const data = (await response.json()) as
+        SubscriptionResult | { error: string };
       if (!response.ok) {
         throw new Error("error" in data ? data.error : "Subscription failed");
       }
@@ -104,7 +111,9 @@ export default function ProductSubscriptionTestPage() {
       await loadSubscriptions(requireLoggedInUserId());
     } catch (submitError) {
       setResult(null);
-      setError(submitError instanceof Error ? submitError.message : "Unexpected error");
+      setError(
+        submitError instanceof Error ? submitError.message : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -115,17 +124,24 @@ export default function ProductSubscriptionTestPage() {
     setListLoading(true);
 
     try {
-      const response = await fetch(`/api/subscriptions?userId=${encodeURIComponent(resolvedUserId)}`);
-      const data = (await response.json()) as SubscriptionListResponse | { error: string };
+      const response = await fetch(
+        `/api/subscriptions?userId=${encodeURIComponent(resolvedUserId)}`,
+      );
+      const data = (await response.json()) as
+        SubscriptionListResponse | { error: string };
 
       if (!response.ok) {
-        throw new Error("error" in data ? data.error : "Failed to load subscriptions");
+        throw new Error(
+          "error" in data ? data.error : "Failed to load subscriptions",
+        );
       }
 
       setSubscriptions((data as SubscriptionListResponse).subscriptions ?? []);
     } catch (listError) {
       setSubscriptions([]);
-      setError(listError instanceof Error ? listError.message : "Unexpected error");
+      setError(
+        listError instanceof Error ? listError.message : "Unexpected error",
+      );
     } finally {
       setListLoading(false);
     }
@@ -139,17 +155,25 @@ export default function ProductSubscriptionTestPage() {
       const response = await fetch("/api/subscriptions", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: requireLoggedInUserId(), subscriptionId }),
+        body: JSON.stringify({
+          userId: requireLoggedInUserId(),
+          subscriptionId,
+        }),
       });
 
-      const data = (await response.json()) as UnsubscribeResult | { error: string };
+      const data = (await response.json()) as
+        UnsubscribeResult | { error: string };
       if (!response.ok) {
         throw new Error("error" in data ? data.error : "Unsubscribe failed");
       }
 
       await loadSubscriptions(requireLoggedInUserId());
     } catch (unsubscribeError) {
-      setError(unsubscribeError instanceof Error ? unsubscribeError.message : "Lỗi không xác định");
+      setError(
+        unsubscribeError instanceof Error
+          ? unsubscribeError.message
+          : "Lỗi không xác định",
+      );
     } finally {
       setCancelingId("");
     }
@@ -158,13 +182,23 @@ export default function ProductSubscriptionTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-3xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Đăng ký đơn hàng định kỳ</h1>
-        <p className="text-sm text-slate-600">Kiểm tra route cho use case 36 qua /api/subscriptions.</p>
-          <p className="text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Kiểm thử backend: Đăng ký đơn hàng định kỳ
+        </h1>
+        <p className="text-sm text-slate-600">
+          Kiểm tra route cho use case 36 qua /api/subscriptions.
+        </p>
+        <p className="text-xs text-slate-500">
+          Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}
+        </p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2">
-            <select value={productId} onChange={(e) => setProductId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
+            <select
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            >
               <option value="">Chọn product_id</option>
               {productOptions.map((product) => (
                 <option key={product.product_id} value={product.product_id}>
@@ -172,19 +206,29 @@ export default function ProductSubscriptionTestPage() {
                 </option>
               ))}
             </select>
-            <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
+            <select
+              value={frequency}
+              onChange={(e) => setFrequency(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            >
               <option value="weekly">hàng tuần</option>
               <option value="monthly">hàng tháng</option>
             </select>
           </div>
-          <button onClick={() => void submit()} disabled={loading} className="mt-3 rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60">
+          <button
+            onClick={() => void submit()}
+            disabled={loading}
+            className="mt-3 rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
+          >
             {loading ? "Đang gửi..." : "Tạo đăng ký"}
           </button>
         </section>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Các đăng ký hiện tại</h2>
+            <h2 className="text-sm font-semibold text-slate-900">
+              Các đăng ký hiện tại
+            </h2>
             <button
               onClick={() => void loadSubscriptions()}
               disabled={listLoading || !activeUserId}
@@ -195,11 +239,16 @@ export default function ProductSubscriptionTestPage() {
           </div>
 
           {subscriptions.length === 0 ? (
-            <p className="mt-3 text-xs text-slate-500">Không tìm thấy đăng ký nào cho người dùng này.</p>
+            <p className="mt-3 text-xs text-slate-500">
+              Không tìm thấy đăng ký nào cho người dùng này.
+            </p>
           ) : (
             <div className="mt-3 space-y-2">
               {subscriptions.map((item) => (
-                <div key={item.subscriptionId} className="rounded border border-slate-200 p-3">
+                <div
+                  key={item.subscriptionId}
+                  className="rounded border border-slate-200 p-3"
+                >
                   <div className="grid grid-cols-1 gap-1 text-xs text-slate-700 sm:grid-cols-2">
                     <p>subscriptionId: {item.subscriptionId}</p>
                     <p>productId: {item.productId}</p>
@@ -210,10 +259,15 @@ export default function ProductSubscriptionTestPage() {
                   </div>
                   <button
                     onClick={() => void unsubscribe(item.subscriptionId)}
-                    disabled={cancelingId === item.subscriptionId || item.status === "cancelled"}
+                    disabled={
+                      cancelingId === item.subscriptionId ||
+                      item.status === "cancelled"
+                    }
                     className="mt-3 rounded bg-rose-600 px-3 py-1 text-xs text-white disabled:opacity-60"
                   >
-                    {cancelingId === item.subscriptionId ? "Unsubscribing..." : "Unsubscribe"}
+                    {cancelingId === item.subscriptionId
+                      ? "Unsubscribing..."
+                      : "Unsubscribe"}
                   </button>
                 </div>
               ))}
@@ -222,7 +276,11 @@ export default function ProductSubscriptionTestPage() {
         </section>
 
         {error && <p className="text-sm text-rose-700">{error}</p>}
-        {result && <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">{JSON.stringify(result, null, 2)}</pre>}
+        {result && (
+          <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        )}
       </div>
     </main>
   );

@@ -8,13 +8,23 @@ export class BlogService {
   private readonly repository = new BlogRepository();
 
   private extractImageUrl(content: string): string | null {
-    const markdownImageMatch = content.match(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/i);
+    const markdownImageMatch = content.match(
+      /!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/i,
+    );
     if (markdownImageMatch?.[1]) {
       return markdownImageMatch[1];
     }
 
-    const urlMatches = Array.from(content.matchAll(/https?:\/\/[^\s"')]+/gi)).map((match) => match[0]);
-    const knownImageHosts = ["gstatic.com", "googleusercontent.com", "imgur.com", "unsplash.com", "cloudinary.com"];
+    const urlMatches = Array.from(
+      content.matchAll(/https?:\/\/[^\s"')]+/gi),
+    ).map((match) => match[0]);
+    const knownImageHosts = [
+      "gstatic.com",
+      "googleusercontent.com",
+      "imgur.com",
+      "unsplash.com",
+      "cloudinary.com",
+    ];
 
     for (const rawUrl of urlMatches) {
       const normalizedUrl = rawUrl.replace(/[),.;!?]+$/, "");
@@ -24,15 +34,18 @@ export class BlogService {
         const hostname = parsed.hostname.toLowerCase();
         const queryQ = parsed.searchParams.get("q") ?? "";
 
-        const hasImageExtension = /\.(?:png|jpe?g|gif|webp|svg|avif|bmp)$/.test(pathname);
-        const isKnownImageHost = knownImageHosts.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+        const hasImageExtension = /\.(?:png|jpe?g|gif|webp|svg|avif|bmp)$/.test(
+          pathname,
+        );
+        const isKnownImageHost = knownImageHosts.some(
+          (host) => hostname === host || hostname.endsWith(`.${host}`),
+        );
         const isGoogleImageProxy = queryQ.includes("tbn:");
 
         if (hasImageExtension || isKnownImageHost || isGoogleImageProxy) {
           return normalizedUrl;
         }
-      } catch {
-      }
+      } catch {}
     }
 
     return null;
@@ -43,7 +56,10 @@ export class BlogService {
     try {
       rows = await this.repository.listBlogPosts();
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load blogs", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load blogs",
+        500,
+      );
     }
 
     const visible = rows
@@ -69,7 +85,10 @@ export class BlogService {
     try {
       row = await this.repository.findBlogById(postId.trim());
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load blog", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load blog",
+        500,
+      );
     }
 
     if (!row) {

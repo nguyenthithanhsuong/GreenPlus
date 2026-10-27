@@ -21,14 +21,21 @@ type PostMediaRow = {
 const COMMUNITY_ATTACHMENT_BUCKET = "Post-Attachment";
 
 export class CommunityPostRepository {
-  private readonly mediaStorageStrategy = createCommunityPostMediaStorageStrategy();
+  private readonly mediaStorageStrategy =
+    createCommunityPostMediaStorageStrategy();
 
   async createPost(input: {
     userId: string;
     title: string;
     content: string;
     type: CommunityPostType;
-  }): Promise<{ post_id: string; user_id: string; type: CommunityPostType; status: "pending"; created_at: string }> {
+  }): Promise<{
+    post_id: string;
+    user_id: string;
+    type: CommunityPostType;
+    status: "pending";
+    created_at: string;
+  }> {
     const { data, error } = await supabaseServer
       .from("posts")
       .insert({
@@ -124,7 +131,10 @@ export class CommunityPostRepository {
     return Boolean(data?.post_id);
   }
 
-  async deletePost(input: { postId: string; userId: string }): Promise<boolean> {
+  async deletePost(input: {
+    postId: string;
+    userId: string;
+  }): Promise<boolean> {
     const { data, error } = await supabaseServer
       .from("posts")
       .delete()
@@ -153,11 +163,15 @@ export class CommunityPostRepository {
   }
 
   getAttachmentPublicUrl(path: string): string {
-    const { data } = supabaseServer.storage.from(COMMUNITY_ATTACHMENT_BUCKET).getPublicUrl(path);
+    const { data } = supabaseServer.storage
+      .from(COMMUNITY_ATTACHMENT_BUCKET)
+      .getPublicUrl(path);
     return data.publicUrl;
   }
 
-  async listMediaByPostIds(postIds: string[]): Promise<Record<string, string[]>> {
+  async listMediaByPostIds(
+    postIds: string[],
+  ): Promise<Record<string, string[]>> {
     if (!postIds.length) {
       return {};
     }

@@ -64,7 +64,7 @@ export default function CommunityPostDetailsPage() {
   const params = useParams<{ postId: string }>();
   const postId = useMemo(() => {
     const raw = params?.postId;
-    return Array.isArray(raw) ? raw[0] : raw ?? "";
+    return Array.isArray(raw) ? raw[0] : (raw ?? "");
   }, [params]);
 
   const [posts, setPosts] = useState<CommunityPostItem[]>([]);
@@ -85,15 +85,24 @@ export default function CommunityPostDetailsPage() {
 
       try {
         const response = await fetch("/api/community/posts?scope=all");
-        const data = (await response.json()) as CommunityPostItem[] | { error: string };
+        const data = (await response.json()) as
+          CommunityPostItem[] | { error: string };
 
         if (!response.ok || !Array.isArray(data)) {
-          throw new Error(!Array.isArray(data) && "error" in data ? data.error : "Failed to load posts");
+          throw new Error(
+            !Array.isArray(data) && "error" in data
+              ? data.error
+              : "Failed to load posts",
+          );
         }
 
         setPosts(data);
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Unexpected error",
+        );
       } finally {
         setLoading(false);
       }
@@ -108,24 +117,43 @@ export default function CommunityPostDetailsPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Post Details</h1>
-            <p className="text-sm text-slate-600">Dedicated post view with media rendering.</p>
+            <p className="text-sm text-slate-600">
+              Dedicated post view with media rendering.
+            </p>
           </div>
-          <Link href="/backend/products/community" className="rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+          <Link
+            href="/backend/products/community"
+            className="rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+          >
             Back to Posts
           </Link>
         </div>
 
-        {loading ? <p className="text-sm text-slate-600">Loading post details...</p> : null}
-        {error ? <p className="text-sm font-medium text-rose-700">{error}</p> : null}
+        {loading ? (
+          <p className="text-sm text-slate-600">Loading post details...</p>
+        ) : null}
+        {error ? (
+          <p className="text-sm font-medium text-rose-700">{error}</p>
+        ) : null}
 
         {post ? (
           <article style={styles.card}>
             <div style={styles.mediaFrame}>
               {post.media_url ? (
                 post.media_type === "MP4" ? (
-                  <video src={post.media_url} controls playsInline preload="metadata" style={styles.mediaVideo} />
+                  <video
+                    src={post.media_url}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    style={styles.mediaVideo}
+                  />
                 ) : (
-                  <img src={post.media_url} alt={post.title} style={styles.mediaImage} />
+                  <img
+                    src={post.media_url}
+                    alt={post.title}
+                    style={styles.mediaImage}
+                  />
                 )
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-slate-200 text-sm text-slate-600">
@@ -136,7 +164,9 @@ export default function CommunityPostDetailsPage() {
 
             <div className="space-y-3 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-semibold text-slate-900">{post.title}</h2>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  {post.title}
+                </h2>
                 <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800">
                   {post.status}
                 </span>
@@ -149,13 +179,21 @@ export default function CommunityPostDetailsPage() {
                 <p>{new Date(post.created_at).toLocaleString("vi-VN")}</p>
               </div>
 
-              {post.media_url ? <p className="break-all text-sm text-slate-600">media_url: {post.media_url}</p> : null}
-              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{post.content || "No content"}</p>
+              {post.media_url ? (
+                <p className="break-all text-sm text-slate-600">
+                  media_url: {post.media_url}
+                </p>
+              ) : null}
+              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                {post.content || "No content"}
+              </p>
             </div>
           </article>
         ) : null}
 
-        {!loading && !error && !post ? <p className="text-sm text-slate-600">Post not found.</p> : null}
+        {!loading && !error && !post ? (
+          <p className="text-sm text-slate-600">Post not found.</p>
+        ) : null}
       </div>
     </main>
   );

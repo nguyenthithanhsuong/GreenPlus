@@ -31,7 +31,7 @@ const PAGE_SIZE = 8;
 
 const buildPageItems = (
   currentPage: number,
-  totalPages: number
+  totalPages: number,
 ): Array<number | "ellipsis"> => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -65,7 +65,7 @@ const buildPageItems = (
 
 const formatCurrency = (value: number): string => {
   return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(
-    value
+    value,
   )} đ`;
 };
 
@@ -155,7 +155,7 @@ const PriceTable = ({
     totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
   const pageItems = React.useMemo(
     () => buildPageItems(currentPage, totalPages),
-    [currentPage, totalPages]
+    [currentPage, totalPages],
   );
 
   return (
@@ -191,7 +191,9 @@ const PriceTable = ({
               <th className="px-6 py-4 font-medium w-[30%]">Sản phẩm</th>
               <th className="px-6 py-4 font-medium">Phạm vi áp dụng</th>
               <th className="px-6 py-4 font-medium text-center">Giá</th>
-              <th className="px-6 py-4 font-medium text-center">Ngày áp dụng</th>
+              <th className="px-6 py-4 font-medium text-center">
+                Ngày áp dụng
+              </th>
               <th className="px-6 py-4 font-medium text-center">Trạng thái</th>
               <th className="px-6 py-4 font-medium text-right">Thao tác</th>
             </tr>
@@ -200,13 +202,19 @@ const PriceTable = ({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
+                <td
+                  colSpan={6}
+                  className="px-6 py-10 text-center text-gray-500"
+                >
                   Đang tải bảng giá...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
+                <td
+                  colSpan={6}
+                  className="px-6 py-10 text-center text-gray-500"
+                >
                   {searchQuery.trim()
                     ? "Không tìm thấy mức giá phù hợp."
                     : "Chưa có dữ liệu giá."}
@@ -217,8 +225,7 @@ const PriceTable = ({
                 const deletable =
                   canDelete(item.status) ||
                   (item.status === "active" && canForceManagePrice);
-                const canEdit =
-                  item.status !== "active" || canForceManagePrice;
+                const canEdit = item.status !== "active" || canForceManagePrice;
                 const canModerate = canQuickModerate(item.status);
 
                 return (
@@ -246,7 +253,9 @@ const PriceTable = ({
                         }`}
                       >
                         <Package className="w-3.5 h-3.5" />
-                        {item.batch_id ? `Lô: ${item.batch_id}` : "Áp dụng chung"}
+                        {item.batch_id
+                          ? `Lô: ${item.batch_id}`
+                          : "Áp dụng chung"}
                       </span>
                     </td>
 
@@ -269,7 +278,7 @@ const PriceTable = ({
                     <td className="px-6 py-4 text-center">
                       <span
                         className={`inline-flex px-2.5 py-1 rounded text-[11px] font-bold border ${getStatusBadge(
-                          item.status
+                          item.status,
                         )}`}
                       >
                         {getStatusLabel(item.status)}
@@ -351,8 +360,8 @@ const PriceTable = ({
           <span className="font-bold text-gray-900">
             {startItem} - {endItem}
           </span>{" "}
-          trong tổng số <span className="font-bold text-gray-900">{totalItems}</span>{" "}
-          mức giá
+          trong tổng số{" "}
+          <span className="font-bold text-gray-900">{totalItems}</span> mức giá
         </span>
 
         <div className="flex items-center gap-1">
@@ -396,7 +405,9 @@ const PriceTable = ({
           <button
             type="button"
             className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             aria-label="Trang sau"
           >

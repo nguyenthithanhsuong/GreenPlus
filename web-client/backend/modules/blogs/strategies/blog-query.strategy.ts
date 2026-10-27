@@ -6,7 +6,10 @@ export interface BlogSortStrategy {
 
 class LatestBlogSortStrategy implements BlogSortStrategy {
   apply(items: BlogSummary[]): BlogSummary[] {
-    return [...items].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return [...items].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
   }
 }
 

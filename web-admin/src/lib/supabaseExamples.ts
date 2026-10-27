@@ -22,7 +22,9 @@ export type TableDefinition = {
 
 const parsePayload = (raw: string): Record<string, unknown> => {
   if (!raw || raw.trim().length === 0) {
-    throw new Error("payload_json is required and must be a valid JSON object.");
+    throw new Error(
+      "payload_json is required and must be a valid JSON object.",
+    );
   }
 
   let parsed: unknown;
@@ -33,13 +35,18 @@ const parsePayload = (raw: string): Record<string, unknown> => {
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error("payload_json must be a JSON object, not array/string/number.");
+    throw new Error(
+      "payload_json must be a JSON object, not array/string/number.",
+    );
   }
 
   return parsed as Record<string, unknown>;
 };
 
-const makeCrudOperations = (table: string, idColumn: string): Record<string, OperationDefinition> => ({
+const makeCrudOperations = (
+  table: string,
+  idColumn: string,
+): Record<string, OperationDefinition> => ({
   select: {
     description: `Select first 20 rows from ${table}`,
     query: `supabase\n  .from("${table}")\n  .select("*")\n  .limit(20)`,
@@ -56,9 +63,15 @@ const makeCrudOperations = (table: string, idColumn: string): Record<string, Ope
   selectById: {
     description: `Select a row from ${table} by ${idColumn}`,
     query: `supabase\n  .from("${table}")\n  .select("*")\n  .eq("${idColumn}", id)\n  .single()`,
-    inputFields: [{ name: "id", type: "UUID", required: true, example: "uuid-here" }],
+    inputFields: [
+      { name: "id", type: "UUID", required: true, example: "uuid-here" },
+    ],
     execute: async (id: string) => {
-      const { data, error } = await supabase.from(table).select("*").eq(idColumn, id).single();
+      const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .eq(idColumn, id)
+        .single();
       return { data, error };
     },
   },
@@ -75,7 +88,10 @@ const makeCrudOperations = (table: string, idColumn: string): Record<string, Ope
     ],
     execute: async (payloadJson: string) => {
       const payload = parsePayload(payloadJson);
-      const { data, error } = await supabase.from(table).insert([payload]).select();
+      const { data, error } = await supabase
+        .from(table)
+        .insert([payload])
+        .select();
       return { data, error };
     },
   },
@@ -93,16 +109,26 @@ const makeCrudOperations = (table: string, idColumn: string): Record<string, Ope
     ],
     execute: async (id: string, payloadJson: string) => {
       const payload = parsePayload(payloadJson);
-      const { data, error } = await supabase.from(table).update(payload).eq(idColumn, id).select();
+      const { data, error } = await supabase
+        .from(table)
+        .update(payload)
+        .eq(idColumn, id)
+        .select();
       return { data, error };
     },
   },
   deleteById: {
     description: `Delete row in ${table} by ${idColumn}`,
     query: `supabase\n  .from("${table}")\n  .delete()\n  .eq("${idColumn}", id)`,
-    inputFields: [{ name: "id", type: "UUID", required: true, example: "uuid-here" }],
+    inputFields: [
+      { name: "id", type: "UUID", required: true, example: "uuid-here" },
+    ],
     execute: async (id: string) => {
-      const { data, error } = await supabase.from(table).delete().eq(idColumn, id).select();
+      const { data, error } = await supabase
+        .from(table)
+        .delete()
+        .eq(idColumn, id)
+        .select();
       return { data, error };
     },
   },
@@ -133,5 +159,8 @@ export const tableDefinitions: TableDefinition[] = [
 ];
 
 export const allOperations = Object.fromEntries(
-  tableDefinitions.map(({ table, idColumn }) => [table, makeCrudOperations(table, idColumn)])
+  tableDefinitions.map(({ table, idColumn }) => [
+    table,
+    makeCrudOperations(table, idColumn),
+  ]),
 );

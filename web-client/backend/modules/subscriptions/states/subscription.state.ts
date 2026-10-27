@@ -22,7 +22,9 @@ class CancelledSubscriptionState implements SubscriptionState {
   }
 }
 
-export function createSubscriptionState(status: SubscriptionStatus): SubscriptionState {
+export function createSubscriptionState(
+  status: SubscriptionStatus,
+): SubscriptionState {
   switch (status) {
     case "active":
       return new ActiveSubscriptionState();

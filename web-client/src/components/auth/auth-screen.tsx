@@ -19,7 +19,8 @@ function getAuthCopy(mode: AuthMode) {
   return mode === "login"
     ? {
         title: "Đăng nhập",
-        subtitle: "Chào mừng bạn quay lại. Đăng nhập để tiếp tục vào GreenPlus.",
+        subtitle:
+          "Chào mừng bạn quay lại. Đăng nhập để tiếp tục vào GreenPlus.",
         submitLabel: "Đăng nhập",
         toggleLabel: "Tạo tài khoản",
         toggleHref: "/register",
@@ -78,6 +79,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         session_id?: string;
         user_id?: string;
         login_time?: string;
+        access_token?: string;
       } | null;
       user?: {
         user_id?: string;
@@ -91,7 +93,8 @@ export function AuthScreen({ mode }: AuthScreenProps) {
     };
 
     const sessionId = payload.session?.session_id?.trim() ?? "";
-    const userId = payload.session?.user_id?.trim() ?? payload.user?.user_id?.trim() ?? "";
+    const userId =
+      payload.session?.user_id?.trim() ?? payload.user?.user_id?.trim() ?? "";
 
     if (!sessionId || !userId || !payload.user) {
       throw new Error("Phản hồi đăng nhập không hợp lệ.");
@@ -112,169 +115,217 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         image_url: payload.user.image_url ?? null,
         status: payload.user.status ?? "active",
       },
-      token: sessionId,
+      token: payload.session?.access_token ?? sessionId,
     });
 
     router.replace("/dashboard");
   };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
-  setLoading(true);
-  setError(null);
-  setSuccess(null);
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
 
-  try {
-    if (isLogin) {
-      logger.info("Login attempt", { email });
+    try {
+      if (isLogin) {
+        logger.info("Login attempt", { email });
+        const start = Date.now();
+
+        const signInResponse = await fetch("/api/auth/sign-in", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const signInData = (await signInResponse
+          .json()
+          .catch(() => null)) as unknown;
+        const duration_ms = Date.now() - start;
+
+        if (!signInResponse.ok) {
+          const message =
+            typeof signInData === "object" &&
+            signInData !== null &&
+            "error" in signInData
+              ? String((signInData as { error: string }).error)
+              : "Không thể đăng nhập.";
+
+          if (
+            typeof signInData === "object" &&
+            signInData !== null &&
+            "status" in signInData
+          ) {
+            const status = (signInData as { status?: string }).status;
+            if (status === "banned") {
+              logger.warn("Login blocked: account banned", { email });
+              setBannedDialogOpen(true);
+              return;
+            } else if (status === "inactive" || status === "suspended") {
+              logger.warn("Login blocked: account inactive/suspended", {
+                email,
+                status,
+              });
+              setUnlockDialogOpen(true);
+              return;
+            }
+          }
+
+          if (message.includes("banned")) {
+            logger.warn("Login blocked: banned (message)", { email });
+            setBannedDialogOpen(true);
+            return;
+          }
+
+          if (message.includes("account is not active")) {
+            logger.warn("Login blocked: account not active (message)", {
+              email,
+            });
+            setUnlockDialogOpen(true);
+            return;
+          }
+
+          logger.error("Login failed", {
+            email,
+            message,
+            status: signInResponse.status,
+            duration_ms,
+          });
+          throw new Error(message);
+        }
+
+        logger.info("Login success", { email, duration_ms });
+        setSuccess("Đăng nhập thành công.");
+        applyLoginResponse(signInData);
+        return;
+      }
+
+      logger.info("Register attempt", { email, name });
       const start = Date.now();
 
-      const signInResponse = await fetch("/api/auth/sign-in", {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, confirmPassword }),
+      });
+
+      const data = (await response.json().catch(() => null)) as unknown;
+      const duration_ms = Date.now() - start;
+
+      if (!response.ok) {
+        const message =
+          typeof data === "object" && data !== null && "error" in data
+            ? String((data as { error: string }).error)
+            : "Không thể đăng ký.";
+        logger.error("Register failed", {
+          email,
+          message,
+          status: response.status,
+          duration_ms,
+        });
+        throw new Error(message);
+      }
+
+      logger.info("Register success", { email, duration_ms });
+      setSuccess("Tài khoản đã được tạo thành công.");
+    } catch (submitError) {
+      if (!(
+        submitError instanceof Error &&
+        submitError.message !== "Đã xảy ra lỗi không mong muốn."
+      )) {
+        logger.error("Unexpected auth error", {
+          error:
+            submitError instanceof Error
+              ? submitError.message
+              : String(submitError),
+          mode,
+          email,
+        });
+      }
+      setSuccess(null);
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Đã xảy ra lỗi không mong muốn.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  async function handleConfirmUnlock() {
+    setUnlockDialogOpen(false);
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      logger.info("Unlock attempt", { email });
+
+      const unlockResponse = await fetch("/api/auth/unlock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const signInData = (await signInResponse.json().catch(() => null)) as unknown;
-      const duration_ms = Date.now() - start;
-
-      if (!signInResponse.ok) {
-        const message =
-          typeof signInData === "object" && signInData !== null && "error" in signInData
-            ? String((signInData as { error: string }).error)
-            : "Không thể đăng nhập.";
-
-        if (typeof signInData === "object" && signInData !== null && "status" in signInData) {
-          const status = (signInData as { status?: string }).status;
-          if (status === "banned") {
-            logger.warn("Login blocked: account banned", { email });
-            setBannedDialogOpen(true);
-            return;
-          } else if (status === "inactive" || status === "suspended") {
-            logger.warn("Login blocked: account inactive/suspended", { email, status });
-            setUnlockDialogOpen(true);
-            return;
-          }
-        }
-
-        if (message.includes("banned")) {
-          logger.warn("Login blocked: banned (message)", { email });
-          setBannedDialogOpen(true);
-          return;
-        }
-
-        if (message.includes("account is not active")) {
-          logger.warn("Login blocked: account not active (message)", { email });
-          setUnlockDialogOpen(true);
-          return;
-        }
-
-        logger.error("Login failed", { email, message, status: signInResponse.status, duration_ms });
-        throw new Error(message);
+      const unlockData = (await unlockResponse
+        .json()
+        .catch(() => null)) as unknown;
+      if (!unlockResponse.ok) {
+        const unlockMessage =
+          typeof unlockData === "object" &&
+          unlockData !== null &&
+          "error" in unlockData
+            ? String((unlockData as { error: string }).error)
+            : "Không thể mở khóa tài khoản.";
+        logger.error("Unlock failed", {
+          email,
+          message: unlockMessage,
+          status: unlockResponse.status,
+        });
+        throw new Error(unlockMessage);
       }
 
-      logger.info("Login success", { email, duration_ms });
-      setSuccess("Đăng nhập thành công.");
-      applyLoginResponse(signInData);
-      return;
-    }
+      logger.info("Unlock success, retrying login", { email });
 
-    logger.info("Register attempt", { email, name });
-    const start = Date.now();
+      const retryResponse = await fetch("/api/auth/sign-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, confirmPassword }),
-    });
+      const retryData = (await retryResponse
+        .json()
+        .catch(() => null)) as unknown;
+      if (!retryResponse.ok) {
+        const retryMessage =
+          typeof retryData === "object" &&
+          retryData !== null &&
+          "error" in retryData
+            ? String((retryData as { error: string }).error)
+            : "Không thể đăng nhập.";
+        logger.error("Login after unlock failed", {
+          email,
+          message: retryMessage,
+        });
+        throw new Error(retryMessage);
+      }
 
-    const data = (await response.json().catch(() => null)) as unknown;
-    const duration_ms = Date.now() - start;
-
-    if (!response.ok) {
-      const message =
-        typeof data === "object" && data !== null && "error" in data
-          ? String((data as { error: string }).error)
-          : "Không thể đăng ký.";
-      logger.error("Register failed", { email, message, status: response.status, duration_ms });
-      throw new Error(message);
-    }
-
-    logger.info("Register success", { email, duration_ms });
-    setSuccess("Tài khoản đã được tạo thành công.");
-
-  } catch (submitError) {
-    if (!(submitError instanceof Error && submitError.message !== "Đã xảy ra lỗi không mong muốn.")) {
-      logger.error("Unexpected auth error", {
-        error: submitError instanceof Error ? submitError.message : String(submitError),
-        mode,
+      logger.info("Login after unlock success", { email });
+      setSuccess("Tài khoản đã được mở khóa và đăng nhập thành công.");
+      applyLoginResponse(retryData);
+    } catch (e) {
+      logger.error("Unlock flow error", {
+        error: e instanceof Error ? e.message : String(e),
         email,
       });
+      setError(
+        e instanceof Error ? e.message : "Đã xảy ra lỗi không mong muốn.",
+      );
+    } finally {
+      setLoading(false);
     }
-    setSuccess(null);
-    setError(submitError instanceof Error ? submitError.message : "Đã xảy ra lỗi không mong muốn.");
-  } finally {
-    setLoading(false);
   }
-};
-
-async function handleConfirmUnlock() {
-  setUnlockDialogOpen(false);
-  setLoading(true);
-  setError(null);
-  setSuccess(null);
-
-  try {
-    logger.info("Unlock attempt", { email });
-
-    const unlockResponse = await fetch("/api/auth/unlock", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const unlockData = (await unlockResponse.json().catch(() => null)) as unknown;
-    if (!unlockResponse.ok) {
-      const unlockMessage =
-        typeof unlockData === "object" && unlockData !== null && "error" in unlockData
-          ? String((unlockData as { error: string }).error)
-          : "Không thể mở khóa tài khoản.";
-      logger.error("Unlock failed", { email, message: unlockMessage, status: unlockResponse.status });
-      throw new Error(unlockMessage);
-    }
-
-    logger.info("Unlock success, retrying login", { email });
-
-    const retryResponse = await fetch("/api/auth/sign-in", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const retryData = (await retryResponse.json().catch(() => null)) as unknown;
-    if (!retryResponse.ok) {
-      const retryMessage =
-        typeof retryData === "object" && retryData !== null && "error" in retryData
-          ? String((retryData as { error: string }).error)
-          : "Không thể đăng nhập.";
-      logger.error("Login after unlock failed", { email, message: retryMessage });
-      throw new Error(retryMessage);
-    }
-
-    logger.info("Login after unlock success", { email });
-    setSuccess("Tài khoản đã được mở khóa và đăng nhập thành công.");
-    applyLoginResponse(retryData);
-
-  } catch (e) {
-    logger.error("Unlock flow error", {
-      error: e instanceof Error ? e.message : String(e),
-      email,
-    });
-    setError(e instanceof Error ? e.message : "Đã xảy ra lỗi không mong muốn.");
-  } finally {
-    setLoading(false);
-  }
-}
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">
@@ -282,7 +333,6 @@ async function handleConfirmUnlock() {
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur xl:grid-cols-[1.05fr_0.95fr]">
-          
           <section className="hidden flex-col justify-between bg-[linear-gradient(160deg,_#0f172a_0%,_#115e59_55%,_#10b981_100%)] p-10 text-white xl:flex">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-200">
@@ -346,25 +396,25 @@ async function handleConfirmUnlock() {
                     Mật khẩu
                   </label>
                   <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Nhập mật khẩu"
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Nhập mật khẩu"
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {!isLogin && (
@@ -373,29 +423,25 @@ async function handleConfirmUnlock() {
                       Xác nhận mật khẩu
                     </label>
                     <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) =>
-                        setConfirmPassword(e.target.value)
-                      }
-                      placeholder="Nhập lại mật khẩu"
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword((prev) => !prev)
-                      }
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Nhập lại mật khẩu"
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -410,9 +456,7 @@ async function handleConfirmUnlock() {
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-600">
-                  {isLogin
-                    ? "Chưa có tài khoản?"
-                    : "Đã có tài khoản?"}
+                  {isLogin ? "Chưa có tài khoản?" : "Đã có tài khoản?"}
                 </p>
                 <Link
                   href={copy.toggleHref}

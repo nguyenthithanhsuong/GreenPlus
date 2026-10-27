@@ -27,7 +27,9 @@ export class PriceManagementRepository {
   async listPrices(): Promise<PriceRow[]> {
     const { data, error } = await this.supabase
       .from("prices")
-      .select("price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name)),status")
+      .select(
+        "price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name)),status",
+      )
       .order("date", { ascending: false })
       .order("created_at", { ascending: false, nullsFirst: false });
 
@@ -41,7 +43,9 @@ export class PriceManagementRepository {
   async findPriceById(priceId: string): Promise<PriceRow | null> {
     const { data, error } = await this.supabase
       .from("prices")
-      .select("price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name))")
+      .select(
+        "price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name))",
+      )
       .eq("price_id", priceId)
       .maybeSingle();
 
@@ -66,7 +70,9 @@ export class PriceManagementRepository {
         date: input.date,
         status: input.status,
       })
-      .select("price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name))")
+      .select(
+        "price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name))",
+      )
       .single();
 
     if (error) {
@@ -110,7 +116,9 @@ export class PriceManagementRepository {
       .from("prices")
       .update(payload)
       .eq("price_id", input.priceId)
-      .select("price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name))")
+      .select(
+        "price_id,batch_id,price,date,created_at,batches(batch_id,products(name),suppliers(name))",
+      )
       .maybeSingle();
 
     if (error) {

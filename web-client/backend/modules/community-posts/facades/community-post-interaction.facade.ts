@@ -7,21 +7,30 @@ import {
 import { communityPostInteractionService } from "../community-post-interaction.service";
 
 export class CommunityPostInteractionFacade {
-  async listByPostId(postId: string): Promise<CommunityPostInteractionSummary[]> {
+  async listByPostId(
+    postId: string,
+  ): Promise<CommunityPostInteractionSummary[]> {
     return communityPostInteractionService.listByPostId(postId);
   }
 
-  async addInteraction(input: CreateCommunityPostInteractionInput): Promise<CommunityPostInteractionSummary | null> {
+  async addInteraction(
+    input: CreateCommunityPostInteractionInput,
+  ): Promise<CommunityPostInteractionSummary | null> {
     return communityPostInteractionService.addInteraction(input);
   }
 
-  async editComment(input: UpdateCommunityPostInteractionInput): Promise<CommunityPostInteractionSummary> {
+  async editComment(
+    input: UpdateCommunityPostInteractionInput,
+  ): Promise<CommunityPostInteractionSummary> {
     return communityPostInteractionService.editComment(input);
   }
 
-  async deleteInteraction(input: DeleteCommunityPostInteractionInput): Promise<{ success: true }> {
+  async deleteInteraction(
+    input: DeleteCommunityPostInteractionInput,
+  ): Promise<{ success: true }> {
     return communityPostInteractionService.deleteInteraction(input);
   }
 }
 
-export const communityPostInteractionFacade = new CommunityPostInteractionFacade();
+export const communityPostInteractionFacade =
+  new CommunityPostInteractionFacade();

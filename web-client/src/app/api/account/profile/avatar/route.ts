@@ -1,16 +1,23 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { authFacade } from "../../../../../../backend/modules/customer-auth/facades/auth.facade";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
 
 export const POST = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const formData = await request.formData();
 
   const userIdRaw = formData.get("userId");
   const fileRaw = formData.get("file");
 
-  const userId =
-    typeof userIdRaw === "string" ? userIdRaw.trim() : "";
+  const userId = assertCustomerId(
+    typeof userIdRaw === "string" ? userIdRaw : undefined,
+    identity.userId,
+  );
 
   logger.info("Upload profile image attempt", { userId });
 
@@ -19,10 +26,7 @@ export const POST = withSentry(async (request: Request) => {
       userId,
     });
 
-    return NextResponse.json(
-      { error: "userId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
 
   const file = fileRaw instanceof File ? fileRaw : null;
@@ -32,10 +36,7 @@ export const POST = withSentry(async (request: Request) => {
       userId,
     });
 
-    return NextResponse.json(
-      { error: "file is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "file is required" }, { status: 400 });
   }
 
   const start = Date.now();

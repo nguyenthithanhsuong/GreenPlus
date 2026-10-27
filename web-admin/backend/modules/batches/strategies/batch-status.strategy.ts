@@ -8,7 +8,8 @@ export interface BatchStatusStrategy {
   transition(current: BatchStatus, next: BatchStatus): BatchStatus;
 }
 
-const toMidnight = (value: string): number => new Date(`${value}T00:00:00`).getTime();
+const toMidnight = (value: string): number =>
+  new Date(`${value}T00:00:00`).getTime();
 
 const todayAtMidnight = (): number => {
   const today = new Date();
@@ -20,7 +21,13 @@ export class DefaultBatchStatusStrategy implements BatchStatusStrategy {
   normalize(value?: string | null): BatchStatus {
     const normalized = (value ?? "available").trim().toLowerCase();
 
-    if (normalized === "pending" || normalized === "available" || normalized === "rejected" || normalized === "expired" || normalized === "sold_out") {
+    if (
+      normalized === "pending" ||
+      normalized === "available" ||
+      normalized === "rejected" ||
+      normalized === "expired" ||
+      normalized === "sold_out"
+    ) {
       return normalized;
     }
 
@@ -43,7 +50,10 @@ export class DefaultBatchStatusStrategy implements BatchStatusStrategy {
     const state = createBatchStatusState(current);
 
     if (!state.canTransitionTo(next)) {
-      throw new AppError(`Cannot transition batch status from ${current} to ${next}`, 400);
+      throw new AppError(
+        `Cannot transition batch status from ${current} to ${next}`,
+        400,
+      );
     }
 
     return next;

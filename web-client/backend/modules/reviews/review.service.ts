@@ -1,5 +1,9 @@
 import { AppError } from "../../core/errors";
-import { CreateReviewInput, ReviewCreatedResult, ReviewListItem } from "./review.types";
+import {
+  CreateReviewInput,
+  ReviewCreatedResult,
+  ReviewListItem,
+} from "./review.types";
 import { ReviewRepository } from "./review.repository";
 import { createReviewEligibilityState } from "./states/review-eligibility.state";
 import { createReviewValidationStrategy } from "./strategies/review-validation.strategy";
@@ -24,28 +28,51 @@ export class ReviewService {
     this.validationStrategy.validate(input.rating, comment);
   }
 
-  private async verifyPurchasedProduct(userId: string, productId: string): Promise<void> {
+  private async verifyPurchasedProduct(
+    userId: string,
+    productId: string,
+  ): Promise<void> {
     let deliveredOrderIds: string[] = [];
     try {
-      deliveredOrderIds = await this.repository.listDeliveredOrderIdsByUser(userId);
+      deliveredOrderIds =
+        await this.repository.listDeliveredOrderIdsByUser(userId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load delivered orders", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load delivered orders",
+        500,
+      );
     }
 
     if (deliveredOrderIds.length === 0) {
-      throw new AppError("Review rejected: delivered order not found for this user", 400);
+      throw new AppError(
+        "Review rejected: delivered order not found for this user",
+        400,
+      );
     }
 
     let hasDeliveredItem = false;
     try {
-      hasDeliveredItem = await this.repository.hasDeliveredOrderItemForProduct(deliveredOrderIds, productId);
+      hasDeliveredItem = await this.repository.hasDeliveredOrderItemForProduct(
+        deliveredOrderIds,
+        productId,
+      );
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to verify purchased product", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to verify purchased product",
+        500,
+      );
     }
 
     const eligibilityState = createReviewEligibilityState(hasDeliveredItem);
     if (!eligibilityState.canSubmit()) {
-      throw new AppError("Review rejected: product has not been purchased in delivered orders", 400);
+      throw new AppError(
+        "Review rejected: product has not been purchased in delivered orders",
+        400,
+      );
     }
   }
 
@@ -54,7 +81,12 @@ export class ReviewService {
     try {
       ratings = await this.repository.listRatingsByProduct(productId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to compute average rating", 500);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to compute average rating",
+        500,
+      );
     }
 
     if (ratings.length === 0) {
@@ -86,7 +118,10 @@ export class ReviewService {
         comment: trimmedComment,
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to create review", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to create review",
+        500,
+      );
     }
 
     await this.subject.notify({
@@ -107,7 +142,10 @@ export class ReviewService {
     };
   }
 
-  async listReviewsByProduct(productId: string, limit = 20): Promise<ReviewListItem[]> {
+  async listReviewsByProduct(
+    productId: string,
+    limit = 20,
+  ): Promise<ReviewListItem[]> {
     if (!productId) {
       throw new AppError("productId is required");
     }
@@ -125,7 +163,10 @@ export class ReviewService {
     try {
       rows = await this.repository.listReviewsByProduct(productId, limit);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to load reviews", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to load reviews",
+        500,
+      );
     }
 
     return rows.map((row) => ({

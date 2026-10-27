@@ -30,7 +30,9 @@ class MonthlySubscriptionStrategy implements SubscriptionStrategy {
   }
 }
 
-export function createSubscriptionStrategy(frequency: string): SubscriptionStrategy {
+export function createSubscriptionStrategy(
+  frequency: string,
+): SubscriptionStrategy {
   const normalized = frequency.trim().toLowerCase();
 
   switch (normalized) {
@@ -41,6 +43,9 @@ export function createSubscriptionStrategy(frequency: string): SubscriptionStrat
     case "monthly":
       return new MonthlySubscriptionStrategy();
     default:
-      throw new AppError("frequency must be one of: weekly, biweekly, monthly", 400);
+      throw new AppError(
+        "frequency must be one of: weekly, biweekly, monthly",
+        400,
+      );
   }
 }

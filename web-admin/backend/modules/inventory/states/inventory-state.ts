@@ -23,7 +23,7 @@ class InUseInventoryState implements InventoryState {
 
 export function createInventoryState(
   quantityAvailable: number,
-  quantityReserved: number | null
+  quantityReserved: number | null,
 ): InventoryState {
   const reserved = quantityReserved ?? 0;
 

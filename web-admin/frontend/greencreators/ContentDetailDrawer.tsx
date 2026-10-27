@@ -1,6 +1,13 @@
 "use client";
 
-import { CalendarDays, Check, Image as ImageIcon, MessageSquareText, PlaySquare, X } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Image as ImageIcon,
+  MessageSquareText,
+  PlaySquare,
+  X,
+} from "lucide-react";
 import { GreenCreatorPostRow } from "../../backend/modules/greencreators/greencreator-content.types";
 
 type ContentDetailDrawerProps = {
@@ -12,8 +19,10 @@ type ContentDetailDrawerProps = {
 };
 
 const formatStatus = (status: GreenCreatorPostRow["status"]) => {
-  if (status === "approved") return { label: "Approved", className: "text-emerald-600 bg-emerald-50" };
-  if (status === "rejected") return { label: "Rejected", className: "text-red-600 bg-red-50" };
+  if (status === "approved")
+    return { label: "Approved", className: "text-emerald-600 bg-emerald-50" };
+  if (status === "rejected")
+    return { label: "Rejected", className: "text-red-600 bg-red-50" };
   return { label: "Pending", className: "text-yellow-700 bg-yellow-50" };
 };
 
@@ -39,10 +48,18 @@ const isVideoUrl = (url: string | null | undefined) => {
   })();
 
   const normalizedPath = rawPath.split("?")[0].toLowerCase();
-  return VIDEO_EXTENSIONS.some((extension) => normalizedPath.endsWith(extension));
+  return VIDEO_EXTENSIONS.some((extension) =>
+    normalizedPath.endsWith(extension),
+  );
 };
 
-const ContentDetailDrawer = ({ post, saving, onClose, onApprove, onReject }: ContentDetailDrawerProps) => {
+const ContentDetailDrawer = ({
+  post,
+  saving,
+  onClose,
+  onApprove,
+  onReject,
+}: ContentDetailDrawerProps) => {
   if (!post) {
     return null;
   }
@@ -51,7 +68,9 @@ const ContentDetailDrawer = ({ post, saving, onClose, onApprove, onReject }: Con
   const type = formatTypeLabel(post.type);
   const TypeIcon = type.icon;
   const mediaItems = post.media.filter((item) => Boolean(item.media_url));
-  const comments = post.interactions.filter((interaction) => Boolean(interaction.comment?.trim()));
+  const comments = post.interactions.filter((interaction) =>
+    Boolean(interaction.comment?.trim()),
+  );
 
   return (
     <div className="fixed inset-0 z-50">
@@ -66,7 +85,11 @@ const ContentDetailDrawer = ({ post, saving, onClose, onApprove, onReject }: Con
         <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
           <div className="min-w-0">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}>{status.label}</span>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}
+              >
+                {status.label}
+              </span>
               <span className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
                 <TypeIcon className="h-3.5 w-3.5" />
                 {type.label}
@@ -76,8 +99,13 @@ const ContentDetailDrawer = ({ post, saving, onClose, onApprove, onReject }: Con
               </span>
             </div>
 
-            <h2 className="truncate text-xl font-bold text-gray-900">{post.title}</h2>
-            <p className="mt-1 text-sm text-gray-500">Xem nội dung, media, bình luận và toàn bộ tương tác của bài đăng này.</p>
+            <h2 className="truncate text-xl font-bold text-gray-900">
+              {post.title}
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Xem nội dung, media, bình luận và toàn bộ tương tác của bài đăng
+              này.
+            </p>
           </div>
 
           <button
@@ -93,33 +121,53 @@ const ContentDetailDrawer = ({ post, saving, onClose, onApprove, onReject }: Con
         <div className="flex-1 overflow-y-auto px-6 py-5">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Tác giả</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                Tác giả
+              </p>
               <div className="mt-3 flex items-center gap-3">
                 <img
-                  src={post.author_image_url ?? "https://i.pravatar.cc/150?img=32"}
+                  src={
+                    post.author_image_url ?? "https://i.pravatar.cc/150?img=32"
+                  }
                   alt={post.author_name ?? "Author"}
                   className="h-11 w-11 rounded-full object-cover"
                 />
                 <div>
-                  <p className="font-semibold text-gray-900">{post.author_name ?? "N/A"}</p>
-                  <p className="text-sm text-gray-500">{post.user_id ?? "Không rõ user_id"}</p>
+                  <p className="font-semibold text-gray-900">
+                    {post.author_name ?? "N/A"}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {post.user_id ?? "Không rõ user_id"}
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Thời gian đăng</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                Thời gian đăng
+              </p>
               <div className="mt-3 flex items-center gap-3 text-gray-800">
                 <CalendarDays className="h-5 w-5 text-gray-400" />
                 <div>
-                  <p className="font-semibold">{post.created_at ? new Date(post.created_at).toLocaleDateString("vi-VN") : "Chưa có"}</p>
-                  <p className="text-sm text-gray-500">{post.created_at ? new Date(post.created_at).toLocaleTimeString("vi-VN") : ""}</p>
+                  <p className="font-semibold">
+                    {post.created_at
+                      ? new Date(post.created_at).toLocaleDateString("vi-VN")
+                      : "Chưa có"}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {post.created_at
+                      ? new Date(post.created_at).toLocaleTimeString("vi-VN")
+                      : ""}
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Tổng quan</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                Tổng quan
+              </p>
               <div className="mt-3 space-y-1 text-sm text-gray-600">
                 <p>{post.media_count} media</p>
                 <p>{post.interaction_count} tương tác</p>
@@ -131,14 +179,22 @@ const ContentDetailDrawer = ({ post, saving, onClose, onApprove, onReject }: Con
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
             <section className="space-y-4">
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <p className="text-sm font-semibold text-gray-900">Nội dung bài đăng</p>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-600">{post.content}</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  Nội dung bài đăng
+                </p>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-600">
+                  {post.content}
+                </p>
               </div>
 
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-gray-900">Media đính kèm</p>
-                  <span className="text-xs font-medium text-gray-500">{mediaItems.length} file</span>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Media đính kèm
+                  </p>
+                  <span className="text-xs font-medium text-gray-500">
+                    {mediaItems.length} file
+                  </span>
                 </div>
 
                 {mediaItems.length > 0 ? (
@@ -151,7 +207,8 @@ const ContentDetailDrawer = ({ post, saving, onClose, onApprove, onReject }: Con
                         rel="noreferrer"
                         className="group overflow-hidden rounded-xl border border-gray-100 bg-gray-50"
                       >
-                        {isVideoUrl(media.media_url) || post.type === "video" ? (
+                        {isVideoUrl(media.media_url) ||
+                        post.type === "video" ? (
                           <div className="relative">
                             <video
                               src={media.media_url ?? undefined}
@@ -175,41 +232,65 @@ const ContentDetailDrawer = ({ post, saving, onClose, onApprove, onReject }: Con
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-4 text-sm text-gray-500">Bài đăng này chưa có media.</p>
+                  <p className="mt-4 text-sm text-gray-500">
+                    Bài đăng này chưa có media.
+                  </p>
                 )}
               </div>
 
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-gray-900">Bình luận</p>
-                  <span className="text-xs font-medium text-gray-500">{comments.length} comment</span>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Bình luận
+                  </p>
+                  <span className="text-xs font-medium text-gray-500">
+                    {comments.length} comment
+                  </span>
                 </div>
 
                 <div className="mt-4 space-y-3">
                   {comments.length > 0 ? (
                     comments.map((interaction) => (
-                      <article key={interaction.interaction_id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                      <article
+                        key={interaction.interaction_id}
+                        className="rounded-xl border border-gray-100 bg-gray-50 p-4"
+                      >
                         <div className="flex items-start gap-3">
                           <img
-                            src={interaction.user_image_url ?? "https://i.pravatar.cc/150?img=32"}
+                            src={
+                              interaction.user_image_url ??
+                              "https://i.pravatar.cc/150?img=32"
+                            }
                             alt={interaction.user_name ?? "User"}
                             className="h-9 w-9 rounded-full object-cover"
                           />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="font-semibold text-gray-900">{interaction.user_name ?? "Người dùng ẩn danh"}</p>
+                              <p className="font-semibold text-gray-900">
+                                {interaction.user_name ?? "Người dùng ẩn danh"}
+                              </p>
                               <span className="text-xs text-gray-400">
-                                {interaction.created_at ? new Date(interaction.created_at).toLocaleString("vi-VN") : ""}
+                                {interaction.created_at
+                                  ? new Date(
+                                      interaction.created_at,
+                                    ).toLocaleString("vi-VN")
+                                  : ""}
                               </span>
                             </div>
-                            <p className="mt-1 text-sm leading-6 text-gray-600">{interaction.comment}</p>
-                            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-400">{interaction.type}</p>
+                            <p className="mt-1 text-sm leading-6 text-gray-600">
+                              {interaction.comment}
+                            </p>
+                            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-400">
+                              {interaction.type}
+                            </p>
                           </div>
                         </div>
                       </article>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-500">Chưa có bình luận nào cho bài đăng này.</p>
+                    <p className="text-sm text-gray-500">
+                      Chưa có bình luận nào cho bài đăng này.
+                    </p>
                   )}
                 </div>
               </div>
@@ -222,29 +303,47 @@ const ContentDetailDrawer = ({ post, saving, onClose, onApprove, onReject }: Con
                 <div className="mt-4 space-y-3">
                   {post.interactions.length > 0 ? (
                     post.interactions.map((interaction) => (
-                      <div key={interaction.interaction_id} className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+                      <div
+                        key={interaction.interaction_id}
+                        className="rounded-xl border border-gray-100 bg-gray-50 p-3"
+                      >
                         <div className="flex items-start gap-3">
                           <img
-                            src={interaction.user_image_url ?? "https://i.pravatar.cc/150?img=32"}
+                            src={
+                              interaction.user_image_url ??
+                              "https://i.pravatar.cc/150?img=32"
+                            }
                             alt={interaction.user_name ?? "User"}
                             className="h-8 w-8 rounded-full object-cover"
                           />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="truncate text-sm font-semibold text-gray-900">{interaction.user_name ?? "Người dùng ẩn danh"}</p>
-                              <span className="text-xs text-gray-400">{interaction.type}</span>
+                              <p className="truncate text-sm font-semibold text-gray-900">
+                                {interaction.user_name ?? "Người dùng ẩn danh"}
+                              </p>
+                              <span className="text-xs text-gray-400">
+                                {interaction.type}
+                              </span>
                             </div>
                             <p className="mt-1 text-xs text-gray-500">
                               {interaction.status ?? "no-status"}
-                              {interaction.created_at ? ` • ${new Date(interaction.created_at).toLocaleString("vi-VN")}` : ""}
+                              {interaction.created_at
+                                ? ` • ${new Date(interaction.created_at).toLocaleString("vi-VN")}`
+                                : ""}
                             </p>
-                            {interaction.comment ? <p className="mt-2 text-sm text-gray-600">{interaction.comment}</p> : null}
+                            {interaction.comment ? (
+                              <p className="mt-2 text-sm text-gray-600">
+                                {interaction.comment}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-500">Bài đăng này chưa có tương tác nào.</p>
+                    <p className="text-sm text-gray-500">
+                      Bài đăng này chưa có tương tác nào.
+                    </p>
                   )}
                 </div>
               </div>

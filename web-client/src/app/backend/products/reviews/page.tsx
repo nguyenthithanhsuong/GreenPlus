@@ -30,7 +30,8 @@ export default function ProductReviewTestPage() {
   const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const saved =
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
     setActiveUserId(saved);
 
     const loadOptions = async () => {
@@ -40,15 +41,16 @@ export default function ProductReviewTestPage() {
           return;
         }
 
-        const payload = (await response.json()) as { products?: ProductOption[] };
+        const payload = (await response.json()) as {
+          products?: ProductOption[];
+        };
         const products = payload.products ?? [];
         setProductOptions(products);
 
         if (products.length > 0) {
           setProductId((current) => current || products[0].product_id);
         }
-      } catch {
-      }
+      } catch {}
     };
 
     void loadOptions();
@@ -86,7 +88,9 @@ export default function ProductReviewTestPage() {
       setResult(data as ReviewResult);
     } catch (submitError) {
       setResult(null);
-      setError(submitError instanceof Error ? submitError.message : "Unexpected error");
+      setError(
+        submitError instanceof Error ? submitError.message : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -95,13 +99,23 @@ export default function ProductReviewTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-3xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Đánh giá sản phẩm</h1>
-        <p className="text-sm text-slate-600">Kiểm tra route cho use case 34 qua /api/reviews.</p>
-        <p className="text-xs text-slate-500">Người dùng kiểm thử đang актив: {activeUserId || "chưa thiết lập"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Kiểm thử backend: Đánh giá sản phẩm
+        </h1>
+        <p className="text-sm text-slate-600">
+          Kiểm tra route cho use case 34 qua /api/reviews.
+        </p>
+        <p className="text-xs text-slate-500">
+          Người dùng kiểm thử đang актив: {activeUserId || "chưa thiết lập"}
+        </p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <div className="grid grid-cols-1 gap-2">
-            <select value={productId} onChange={(e) => setProductId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
+            <select
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            >
               <option value="">Chọn product_id</option>
               {productOptions.map((product) => (
                 <option key={product.product_id} value={product.product_id}>
@@ -109,16 +123,35 @@ export default function ProductReviewTestPage() {
                 </option>
               ))}
             </select>
-            <input value={rating} onChange={(e) => setRating(e.target.value)} placeholder="đánh giá 1..5" className="rounded border border-slate-300 px-3 py-2 text-sm" />
-            <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="bình luận (tối đa 500 ký tự)" className="rounded border border-slate-300 px-3 py-2 text-sm" rows={4} />
+            <input
+              value={rating}
+              onChange={(e) => setRating(e.target.value)}
+              placeholder="đánh giá 1..5"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="bình luận (tối đa 500 ký tự)"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+              rows={4}
+            />
           </div>
-          <button onClick={() => void submit()} disabled={loading} className="mt-3 rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60">
+          <button
+            onClick={() => void submit()}
+            disabled={loading}
+            className="mt-3 rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
+          >
             {loading ? "Đang gửi..." : "Gửi đánh giá"}
           </button>
         </section>
 
         {error && <p className="text-sm text-rose-700">{error}</p>}
-        {result && <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">{JSON.stringify(result, null, 2)}</pre>}
+        {result && (
+          <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        )}
       </div>
     </main>
   );

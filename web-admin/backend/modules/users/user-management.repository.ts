@@ -1,5 +1,9 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { CreateUserInput, UpdateUserInput, UserRow } from "./user-management.types";
+import {
+  CreateUserInput,
+  UpdateUserInput,
+  UserRow,
+} from "./user-management.types";
 
 export class UserManagementRepository {
   private readonly supabase = createServiceRoleSupabaseClient();
@@ -21,7 +25,8 @@ export class UserManagementRepository {
   async listUsers(): Promise<UserRow[]> {
     const { data, error } = await this.supabase
       .from("users")
-      .select(`
+      .select(
+        `
   user_id,
   role_id,
   store_id,
@@ -41,7 +46,8 @@ export class UserManagementRepository {
     is_employee,
     is_shipper
   )
-`)
+`,
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -54,7 +60,8 @@ export class UserManagementRepository {
   async findById(userId: string): Promise<UserRow | null> {
     const { data, error } = await this.supabase
       .from("users")
-      .select(`
+      .select(
+        `
   user_id,
   role_id,
   store_id,
@@ -74,7 +81,8 @@ export class UserManagementRepository {
     is_employee,
     is_shipper
   )
-`)
+`,
+      )
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -93,7 +101,8 @@ export class UserManagementRepository {
 
     const { data, error } = await this.supabase
       .from("users")
-      .select(`
+      .select(
+        `
   user_id,
   role_id,
   store_id,
@@ -113,7 +122,8 @@ export class UserManagementRepository {
     is_employee,
     is_shipper
   )
-`)
+`,
+      )
       .eq("email", normalizedEmail)
       .maybeSingle();
 
@@ -124,7 +134,9 @@ export class UserManagementRepository {
     return (data as UserRow | null) ?? null;
   }
 
-  async createUser(input: CreateUserInput & { passwordHash: string }): Promise<UserRow> {
+  async createUser(
+    input: CreateUserInput & { passwordHash: string },
+  ): Promise<UserRow> {
     const { data, error } = await this.supabase
       .from("users")
       .insert({
@@ -138,7 +150,8 @@ export class UserManagementRepository {
         image_url: input.imageUrl?.trim() || null,
         status: input.status ?? "active",
       })
-      .select(`
+      .select(
+        `
   user_id,
   role_id,
   store_id,
@@ -158,7 +171,8 @@ export class UserManagementRepository {
     is_employee,
     is_shipper
   )
-`)
+`,
+      )
       .single();
 
     if (error) {
@@ -174,17 +188,22 @@ export class UserManagementRepository {
     if (typeof input.roleId !== "undefined") payload.role_id = input.roleId;
     if (typeof input.storeId !== "undefined") payload.store_id = input.storeId;
     if (typeof input.name !== "undefined") payload.name = input.name.trim();
-    if (typeof input.email !== "undefined") payload.email = input.email.trim().toLowerCase();
-    if (typeof input.phone !== "undefined") payload.phone = input.phone.trim() || null;
-    if (typeof input.address !== "undefined") payload.address = input.address.trim() || null;
-    if (typeof input.imageUrl !== "undefined") payload.image_url = input.imageUrl.trim() || null;
+    if (typeof input.email !== "undefined")
+      payload.email = input.email.trim().toLowerCase();
+    if (typeof input.phone !== "undefined")
+      payload.phone = input.phone.trim() || null;
+    if (typeof input.address !== "undefined")
+      payload.address = input.address.trim() || null;
+    if (typeof input.imageUrl !== "undefined")
+      payload.image_url = input.imageUrl.trim() || null;
     if (typeof input.status !== "undefined") payload.status = input.status;
 
     const { data, error } = await this.supabase
       .from("users")
       .update(payload)
       .eq("user_id", input.userId)
-      .select(`
+      .select(
+        `
   user_id,
   role_id,
   store_id,
@@ -204,7 +223,8 @@ export class UserManagementRepository {
     is_employee,
     is_shipper
   )
-`)
+`,
+      )
       .maybeSingle();
 
     if (error) {

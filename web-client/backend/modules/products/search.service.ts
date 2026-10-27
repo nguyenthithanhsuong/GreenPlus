@@ -24,7 +24,10 @@ export class SearchService {
     ];
   }
 
-  async search(criteria: SearchCriteria): Promise<BrowseResult> {
+  async search(
+    criteria: SearchCriteria,
+    storeId: string,
+  ): Promise<BrowseResult> {
     const page = criteria.page ?? 1;
     const limit = criteria.limit ?? DEFAULT_LIMIT;
 
@@ -38,7 +41,12 @@ export class SearchService {
 
     const keywordProvided = criteria.keyword !== undefined;
     const keyword = criteria.keyword?.trim() ?? "";
-    const hasAnyFilter = Boolean(criteria.categoryId || criteria.certification || criteria.minPrice !== undefined || criteria.maxPrice !== undefined);
+    const hasAnyFilter = Boolean(
+      criteria.categoryId ||
+      criteria.certification ||
+      criteria.minPrice !== undefined ||
+      criteria.maxPrice !== undefined,
+    );
 
     if (keywordProvided && keyword.length === 0 && !hasAnyFilter) {
       throw new AppError("Keyword must contain at least one character", 400);
@@ -51,7 +59,7 @@ export class SearchService {
       limit,
     };
 
-    let items = await this.productService.getActiveBrowseItems();
+    let items = await this.productService.getActiveBrowseItems(storeId);
 
     this.filterStrategies.forEach((strategy) => {
       items = strategy.apply(items, normalizedCriteria);

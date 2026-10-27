@@ -23,7 +23,9 @@ const BACKEND_TEST_USER_STORAGE_KEY = "backend-testing-user-id";
 
 export default function BackendOrdersTestPage() {
   const [activeUserId, setActiveUserId] = useState("");
-  const [deliveryAddress, setDeliveryAddress] = useState("123 Demo Street, HCM City");
+  const [deliveryAddress, setDeliveryAddress] = useState(
+    "123 Demo Street, HCM City",
+  );
   const [deliveryFee, setDeliveryFee] = useState("0");
   const [orderNote, setOrderNote] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState("");
@@ -31,18 +33,23 @@ export default function BackendOrdersTestPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [ordersResult, setOrdersResult] = useState<OrderListResponse | null>(null);
+  const [ordersResult, setOrdersResult] = useState<OrderListResponse | null>(
+    null,
+  );
   const [detailResult, setDetailResult] = useState<unknown>(null);
   const [mutationResult, setMutationResult] = useState<unknown>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const saved =
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
     setActiveUserId(saved);
   }, []);
 
   const requireUserId = (): string => {
     if (!activeUserId) {
-      throw new Error("Vui lòng thiết lập người dùng kiểm thử ở /backend/signin trước");
+      throw new Error(
+        "Vui lòng thiết lập người dùng kiểm thử ở /backend/signin trước",
+      );
     }
 
     return activeUserId;
@@ -54,15 +61,22 @@ export default function BackendOrdersTestPage() {
 
     try {
       const userId = requireUserId();
-      const response = await fetch(`/api/orders?userId=${encodeURIComponent(userId)}`);
-      const data = (await response.json()) as OrderListResponse | { error: string };
+      const response = await fetch(
+        `/api/orders?userId=${encodeURIComponent(userId)}`,
+      );
+      const data = (await response.json()) as
+        OrderListResponse | { error: string };
       if (!response.ok) {
         throw new Error("error" in data ? data.error : "Failed to load orders");
       }
 
       setOrdersResult(data as OrderListResponse);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -79,7 +93,7 @@ export default function BackendOrdersTestPage() {
       }
 
       const response = await fetch(
-        `/api/orders/${encodeURIComponent(selectedOrderId.trim())}?userId=${encodeURIComponent(userId)}`
+        `/api/orders/${encodeURIComponent(selectedOrderId.trim())}?userId=${encodeURIComponent(userId)}`,
       );
       const data = (await response.json()) as unknown;
       if (!response.ok) {
@@ -93,7 +107,11 @@ export default function BackendOrdersTestPage() {
       setDetailResult(data);
     } catch (requestError) {
       setDetailResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -129,7 +147,11 @@ export default function BackendOrdersTestPage() {
       await listOrders();
     } catch (requestError) {
       setMutationResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -145,11 +167,14 @@ export default function BackendOrdersTestPage() {
         throw new Error("orderId is required");
       }
 
-      const response = await fetch(`/api/orders/${encodeURIComponent(selectedOrderId.trim())}/cancel`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, note: cancelNote }),
-      });
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(selectedOrderId.trim())}/cancel`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, note: cancelNote }),
+        },
+      );
 
       const data = (await response.json()) as unknown;
       if (!response.ok) {
@@ -164,7 +189,11 @@ export default function BackendOrdersTestPage() {
       await listOrders();
     } catch (requestError) {
       setMutationResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -176,15 +205,25 @@ export default function BackendOrdersTestPage() {
         <section className="rounded-xl border border-slate-300 bg-white p-5">
           <h1 className="text-2xl font-bold">Kiểm thử backend: Đơn hàng</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Dùng trang này để kiểm tra tạo đơn, theo dõi danh sách/chi tiết đơn và hủy đơn.
+            Dùng trang này để kiểm tra tạo đơn, theo dõi danh sách/chi tiết đơn
+            và hủy đơn.
           </p>
           <p className="mt-1 text-xs text-slate-500">Route: /backend/orders</p>
-          <p className="mt-1 text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Người dùng kiểm thử đang hoạt động:{" "}
+            {activeUserId || "chưa thiết lập"}
+          </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <Link href="/backend/products/cart" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/products/cart"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Kiểm thử giỏ hàng
             </Link>
-            <Link href="/backend/products" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/products"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Kiểm thử backend sản phẩm
             </Link>
           </div>
@@ -268,7 +307,9 @@ export default function BackendOrdersTestPage() {
 
         {ordersResult !== null && (
           <section className="rounded-xl border border-slate-300 bg-white p-5">
-            <h3 className="text-sm font-semibold text-slate-800">Order List Result</h3>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Order List Result
+            </h3>
             <pre className="mt-2 overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
               {JSON.stringify(ordersResult, null, 2)}
             </pre>
@@ -277,7 +318,9 @@ export default function BackendOrdersTestPage() {
 
         {detailResult !== null && (
           <section className="rounded-xl border border-slate-300 bg-white p-5">
-            <h3 className="text-sm font-semibold text-slate-800">Order Detail Result</h3>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Order Detail Result
+            </h3>
             <pre className="mt-2 overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
               {JSON.stringify(detailResult, null, 2)}
             </pre>
@@ -286,7 +329,9 @@ export default function BackendOrdersTestPage() {
 
         {mutationResult !== null && (
           <section className="rounded-xl border border-slate-300 bg-white p-5">
-            <h3 className="text-sm font-semibold text-slate-800">Mutation Result</h3>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Mutation Result
+            </h3>
             <pre className="mt-2 overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
               {JSON.stringify(mutationResult, null, 2)}
             </pre>

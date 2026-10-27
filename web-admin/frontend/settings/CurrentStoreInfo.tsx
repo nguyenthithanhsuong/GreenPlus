@@ -1,7 +1,15 @@
 "use client";
 
 import React from "react";
-import { Building2, Clock3, Mail, MapPin, Phone, Store, User } from "lucide-react";
+import {
+  Building2,
+  Clock3,
+  Mail,
+  MapPin,
+  Phone,
+  Store,
+  User,
+} from "lucide-react";
 import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
 import type { StoreRow } from "../../backend/modules/stores/stores-management.types";
 import type { UserSummary } from "../../backend/modules/users/user-management.types";
@@ -19,7 +27,10 @@ const formatCoordinate = (value: number | null): string => {
     return "-";
   }
 
-  return value.toFixed(6).replace(/\.0+$/, "").replace(/(\.\d*?[1-9])0+$/, "$1");
+  return value
+    .toFixed(6)
+    .replace(/\.0+$/, "")
+    .replace(/(\.\d*?[1-9])0+$/, "$1");
 };
 
 const CurrentStoreInfo = () => {
@@ -42,15 +53,25 @@ const CurrentStoreInfo = () => {
           fetch("/api/users", { cache: "no-store" }),
         ]);
 
-        const storesPayload = (await storesResponse.json()) as { items?: StoreRow[]; error?: string };
-        const usersPayload = (await usersResponse.json()) as { items?: UserSummary[]; error?: string };
+        const storesPayload = (await storesResponse.json()) as {
+          items?: StoreRow[];
+          error?: string;
+        };
+        const usersPayload = (await usersResponse.json()) as {
+          items?: UserSummary[];
+          error?: string;
+        };
 
         if (!storesResponse.ok) {
-          throw new Error(storesPayload.error ?? "Không thể tải danh sách cửa hàng");
+          throw new Error(
+            storesPayload.error ?? "Không thể tải danh sách cửa hàng",
+          );
         }
 
         if (!usersResponse.ok) {
-          throw new Error(usersPayload.error ?? "Không thể tải danh sách người dùng");
+          throw new Error(
+            usersPayload.error ?? "Không thể tải danh sách người dùng",
+          );
         }
 
         if (!active) {
@@ -61,7 +82,11 @@ const CurrentStoreInfo = () => {
         setUsers(usersPayload.items ?? []);
       } catch (loadError) {
         if (active) {
-          setError(loadError instanceof Error ? loadError.message : "Không thể tải thông tin cửa hàng");
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Không thể tải thông tin cửa hàng",
+          );
           setStores([]);
           setUsers([]);
         }
@@ -91,7 +116,9 @@ const CurrentStoreInfo = () => {
     return new Map(users.map((user) => [user.user_id, user.name]));
   }, [users]);
 
-  const managerName = currentStore ? managerNameById.get(currentStore.manager_id) ?? currentStore.manager_id : "-";
+  const managerName = currentStore
+    ? (managerNameById.get(currentStore.manager_id) ?? currentStore.manager_id)
+    : "-";
 
   const statusMeta = React.useMemo(() => {
     if (!currentStore) {
@@ -99,14 +126,23 @@ const CurrentStoreInfo = () => {
     }
 
     if (currentStore.status === "active") {
-      return { label: "Đang hoạt động", className: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+      return {
+        label: "Đang hoạt động",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      };
     }
 
     if (currentStore.status === "inactive") {
-      return { label: "Tạm ngưng", className: "bg-amber-50 text-amber-700 border-amber-200" };
+      return {
+        label: "Tạm ngưng",
+        className: "bg-amber-50 text-amber-700 border-amber-200",
+      };
     }
 
-    return { label: "Đã đóng", className: "bg-slate-50 text-slate-700 border-slate-200" };
+    return {
+      label: "Đã đóng",
+      className: "bg-slate-50 text-slate-700 border-slate-200",
+    };
   }, [currentStore]);
 
   if (!profile?.storeId) {
@@ -117,12 +153,17 @@ const CurrentStoreInfo = () => {
             <Store className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Cửa hàng của tôi</h2>
-            <p className="text-sm text-gray-500">Tài khoản hiện tại chưa được gán `store_id`.</p>
+            <h2 className="text-lg font-bold text-gray-900">
+              Cửa hàng của tôi
+            </h2>
+            <p className="text-sm text-gray-500">
+              Tài khoản hiện tại chưa được gán `store_id`.
+            </p>
           </div>
         </div>
         <p className="text-sm text-gray-600">
-          Khi gán cửa hàng cho user hiện tại, thông tin cửa hàng sẽ xuất hiện ở đây.
+          Khi gán cửa hàng cho user hiện tại, thông tin cửa hàng sẽ xuất hiện ở
+          đây.
         </p>
       </div>
     );
@@ -131,7 +172,9 @@ const CurrentStoreInfo = () => {
   if (loading) {
     return (
       <div className="flex-1 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-        <p className="text-sm text-gray-500">Đang tải thông tin cửa hàng hiện tại...</p>
+        <p className="text-sm text-gray-500">
+          Đang tải thông tin cửa hàng hiện tại...
+        </p>
       </div>
     );
   }
@@ -161,14 +204,22 @@ const CurrentStoreInfo = () => {
               <Building2 className="h-7 w-7" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Cửa hàng hiện tại</p>
-              <h2 className="mt-1 text-2xl font-bold text-gray-900">{currentStore.name}</h2>
-              <p className="mt-2 text-sm text-gray-500">Mã cửa hàng: {currentStore.store_id}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Cửa hàng hiện tại
+              </p>
+              <h2 className="mt-1 text-2xl font-bold text-gray-900">
+                {currentStore.name}
+              </h2>
+              <p className="mt-2 text-sm text-gray-500">
+                Mã cửa hàng: {currentStore.store_id}
+              </p>
             </div>
           </div>
 
           {statusMeta ? (
-            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold ${statusMeta.className}`}>
+            <span
+              className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold ${statusMeta.className}`}
+            >
               {statusMeta.label}
             </span>
           ) : null}
@@ -182,8 +233,12 @@ const CurrentStoreInfo = () => {
               <Store className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Trạng thái</p>
-              <p className="text-sm font-bold text-gray-900">{statusMeta?.label ?? '-'}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Trạng thái
+              </p>
+              <p className="text-sm font-bold text-gray-900">
+                {statusMeta?.label ?? "-"}
+              </p>
             </div>
           </div>
         </div>
@@ -194,7 +249,9 @@ const CurrentStoreInfo = () => {
               <User className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Quản lý</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Quản lý
+              </p>
               <p className="text-sm font-bold text-gray-900">{managerName}</p>
             </div>
           </div>
@@ -206,8 +263,12 @@ const CurrentStoreInfo = () => {
               <Clock3 className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Giờ mở cửa</p>
-              <p className="text-sm font-bold text-gray-900">{formatTime(currentStore.opening_time)}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Giờ mở cửa
+              </p>
+              <p className="text-sm font-bold text-gray-900">
+                {formatTime(currentStore.opening_time)}
+              </p>
             </div>
           </div>
         </div>
@@ -218,42 +279,69 @@ const CurrentStoreInfo = () => {
               <Clock3 className="h-5 w-5 rotate-90" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Giờ đóng cửa</p>
-              <p className="text-sm font-bold text-gray-900">{formatTime(currentStore.closing_time)}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Giờ đóng cửa
+              </p>
+              <p className="text-sm font-bold text-gray-900">
+                {formatTime(currentStore.closing_time)}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-bold text-gray-900">Thông tin chi tiết</h3>
+        <h3 className="mb-4 text-lg font-bold text-gray-900">
+          Thông tin chi tiết
+        </h3>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Địa chỉ</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Địa chỉ
+            </p>
             <p className="mt-2 text-sm text-gray-800">{currentStore.address}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Khu vực</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Khu vực
+            </p>
             <p className="mt-2 text-sm text-gray-800">
-              {[currentStore.ward, currentStore.district, currentStore.city].filter(Boolean).join(', ') || '-'}
+              {[currentStore.ward, currentStore.district, currentStore.city]
+                .filter(Boolean)
+                .join(", ") || "-"}
             </p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Số điện thoại</p>
-            <p className="mt-2 text-sm text-gray-800">{currentStore.phone ?? '-'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Email</p>
-            <p className="mt-2 text-sm text-gray-800">{currentStore.email ?? '-'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Mô tả</p>
-            <p className="mt-2 text-sm text-gray-800">{currentStore.description ?? '-'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Tọa độ</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Số điện thoại
+            </p>
             <p className="mt-2 text-sm text-gray-800">
-              {formatCoordinate(currentStore.latitude)}, {formatCoordinate(currentStore.longitude)}
+              {currentStore.phone ?? "-"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Email
+            </p>
+            <p className="mt-2 text-sm text-gray-800">
+              {currentStore.email ?? "-"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Mô tả
+            </p>
+            <p className="mt-2 text-sm text-gray-800">
+              {currentStore.description ?? "-"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Tọa độ
+            </p>
+            <p className="mt-2 text-sm text-gray-800">
+              {formatCoordinate(currentStore.latitude)},{" "}
+              {formatCoordinate(currentStore.longitude)}
             </p>
           </div>
         </div>
@@ -265,22 +353,34 @@ const CurrentStoreInfo = () => {
           <div className="flex items-center gap-3 rounded-lg border border-gray-100 p-4">
             <Phone className="h-5 w-5 text-gray-500" />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Hotline</p>
-              <p className="text-sm font-medium text-gray-900">{currentStore.phone ?? '-'}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Hotline
+              </p>
+              <p className="text-sm font-medium text-gray-900">
+                {currentStore.phone ?? "-"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-lg border border-gray-100 p-4">
             <Mail className="h-5 w-5 text-gray-500" />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Email</p>
-              <p className="text-sm font-medium text-gray-900">{currentStore.email ?? '-'}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Email
+              </p>
+              <p className="text-sm font-medium text-gray-900">
+                {currentStore.email ?? "-"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-lg border border-gray-100 p-4">
             <MapPin className="h-5 w-5 text-gray-500" />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Địa chỉ</p>
-              <p className="text-sm font-medium text-gray-900">{currentStore.address}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Địa chỉ
+              </p>
+              <p className="text-sm font-medium text-gray-900">
+                {currentStore.address}
+              </p>
             </div>
           </div>
         </div>

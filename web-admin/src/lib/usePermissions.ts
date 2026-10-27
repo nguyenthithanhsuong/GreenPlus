@@ -14,12 +14,19 @@ export function usePermissions() {
     setError(null);
     try {
       const headers: Record<string, string> = {};
-      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+      if (session?.access_token)
+        headers.Authorization = `Bearer ${session.access_token}`;
 
-      const res = await fetch("/api/permissions/me", { headers, cache: "no-store" });
+      const res = await fetch("/api/permissions/me", {
+        headers,
+        cache: "no-store",
+      });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error ?? "Failed to load permissions");
-      setPermissions(Array.isArray(payload.permissions) ? payload.permissions : []);
+      if (!res.ok)
+        throw new Error(payload.error ?? "Failed to load permissions");
+      setPermissions(
+        Array.isArray(payload.permissions) ? payload.permissions : [],
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPermissions([]);
@@ -35,11 +42,17 @@ export function usePermissions() {
   const hasPermission = useCallback(
     (key: string) => {
       if (!permissions) return false;
-      
+
       return permissions.includes(key);
     },
-    [permissions]
+    [permissions],
   );
 
-  return { permissions, loading, error, fetchPermissions, hasPermission } as const;
+  return {
+    permissions,
+    loading,
+    error,
+    fetchPermissions,
+    hasPermission,
+  } as const;
 }

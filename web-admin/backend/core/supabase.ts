@@ -1,4 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
+import { activeTenantScope } from "./tenant-store";
+import { guardPostgrestRequest } from "./tenant-postgrest.mjs";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -23,15 +25,22 @@ export function createAnonSupabaseClient(accessToken?: string) {
       persistSession: false,
     },
     global: {
-      headers: accessToken
-        ? { Authorization: `Bearer ${accessToken}` }
-        : {},
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
     },
   });
 }
 
-
 export const supabaseServer = createClient(supabaseUrl, serviceRoleKey, {
+  global: {
+    fetch: (url, init) => {
+      const guarded = guardPostgrestRequest(
+        String(url),
+        init ?? {},
+        activeTenantScope(),
+      );
+      return fetch(guarded.url, guarded.init);
+    },
+  },
   auth: {
     autoRefreshToken: false,
     persistSession: false,

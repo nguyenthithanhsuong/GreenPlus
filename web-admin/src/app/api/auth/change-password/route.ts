@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
 import { authFacade } from "../../../../../backend/modules/admin-auth/facades/auth.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 function readAccessToken(request: Request): string {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -11,7 +11,7 @@ function readAccessToken(request: Request): string {
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_portal_session=([^;]+)/);
+  const cookieMatch = cookieHeader.match(/(?:^|;\s*)gp_admin_auth=([^;]+)/);
   return cookieMatch ? decodeURIComponent(cookieMatch[1]).trim() : "";
 }
 

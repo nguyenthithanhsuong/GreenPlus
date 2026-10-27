@@ -1,4 +1,5 @@
-export type DeliveryStatus = "assigned" | "picked_up" | "delivering" | "delivered";
+export type DeliveryStatus =
+  "assigned" | "picked_up" | "delivering" | "delivered";
 
 export type DeliveryTrackingRow = {
   delivery_id: string;

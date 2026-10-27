@@ -1,5 +1,11 @@
 import React from "react";
-import { ArrowLeftRight, ChevronLeft, ChevronRight, Search, Trash2 } from "lucide-react";
+import {
+  ArrowLeftRight,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { usePermissions } from "@/lib/usePermissions";
 import type { InventoryRow } from "../../backend/modules/inventory/inventory-management.types";
 
@@ -15,7 +21,10 @@ type InventoryTableProps = {
 
 const PAGE_SIZE = 8;
 
-const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+const buildPageItems = (
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
@@ -25,10 +34,25 @@ const buildPageItems = (currentPage: number, totalPages: number): Array<number |
   }
 
   if (currentPage >= totalPages - 2) {
-    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [
+      1,
+      "ellipsis",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
   }
 
-  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    totalPages,
+  ];
 };
 
 const formatLastUpdated = (value: string | null) => {
@@ -94,8 +118,12 @@ const InventoryTable = ({
   }, [currentPage, items]);
 
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
-  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const endItem =
+    totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(
+    () => buildPageItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   const { hasPermission } = usePermissions();
   const canUpdateGlobal = hasPermission("inventory.update");
@@ -147,13 +175,19 @@ const InventoryTable = ({
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={7}>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={7}
+                >
                   Đang tải dữ liệu tồn kho...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={7}>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={7}
+                >
                   {searchQuery.trim()
                     ? "Không tìm thấy dữ liệu tồn kho phù hợp."
                     : "Chưa có dữ liệu tồn kho."}
@@ -167,22 +201,28 @@ const InventoryTable = ({
                 >
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-semibold text-gray-900">{item.inventory_id}</span>
+                      <span className="font-semibold text-gray-900">
+                        {item.inventory_id}
+                      </span>
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 text-gray-600 font-medium">{item.batch_id ?? "-"}</td>
+                  <td className="px-6 py-4 text-gray-600 font-medium">
+                    {item.batch_id ?? "-"}
+                  </td>
 
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-semibold text-gray-900">{item.product_name ?? "-"}</span>
+                      <span className="font-semibold text-gray-900">
+                        {item.product_name ?? "-"}
+                      </span>
                     </div>
                   </td>
 
                   <td className="px-6 py-4 text-center">
                     <span
                       className={`inline-flex items-center justify-center px-4 py-1.5 rounded font-bold border ${quantityClassName(
-                        item.quantity_available
+                        item.quantity_available,
                       )}`}
                     >
                       {item.quantity_available}
@@ -236,10 +276,11 @@ const InventoryTable = ({
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span className="text-sm text-gray-500">
           Hiển thị{" "}
-          <span className="font-bold text-gray-900">{startItem} - {endItem}</span>{" "}
+          <span className="font-bold text-gray-900">
+            {startItem} - {endItem}
+          </span>{" "}
           trong tổng số{" "}
-          <span className="font-bold text-gray-900">{totalItems}</span>{" "}
-          tồn kho
+          <span className="font-bold text-gray-900">{totalItems}</span> tồn kho
         </span>
 
         <div className="flex items-center gap-1">
@@ -283,7 +324,9 @@ const InventoryTable = ({
           <button
             type="button"
             className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             aria-label="Trang sau"
           >

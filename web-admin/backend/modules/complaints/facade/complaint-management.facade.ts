@@ -10,9 +10,17 @@ export class ComplaintManagementFacade {
     return this.service.listComplaints();
   }
 
-  async updateStatus(complaintId: string, status: ComplaintStatus, rejectReason?: string): Promise<ComplaintRow> {
+  async updateStatus(
+    complaintId: string,
+    status: ComplaintStatus,
+    rejectReason?: string,
+  ): Promise<ComplaintRow> {
     const nextStatus = this.service.normalizeStatus(status);
-    return this.service.updateStatus({ complaintId, status: nextStatus, rejectReason });
+    return this.service.updateStatus({
+      complaintId,
+      status: nextStatus,
+      rejectReason,
+    });
   }
 }
 

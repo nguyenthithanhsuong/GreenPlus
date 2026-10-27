@@ -20,7 +20,9 @@ export class AuthRepository {
   async findUserByEmail(email: string): Promise<UserRow | null> {
     const { data, error } = await supabaseServer
       .from("users")
-      .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
+      .select(
+        "user_id,role_id,name,email,password,phone,address,image_url,status,created_at",
+      )
       .ilike("email", email)
       .limit(1);
 
@@ -53,7 +55,9 @@ export class AuthRepository {
   async findUserById(userId: string): Promise<UserRow | null> {
     const { data, error } = await supabaseServer
       .from("users")
-      .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
+      .select(
+        "user_id,role_id,name,email,password,phone,address,image_url,status,created_at",
+      )
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -93,7 +97,9 @@ export class AuthRepository {
         password: input.passwordHash,
         status: "active",
       })
-      .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
+      .select(
+        "user_id,role_id,name,email,password,phone,address,image_url,status,created_at",
+      )
       .single();
 
     if (error) {
@@ -121,7 +127,9 @@ export class AuthRepository {
         image_url: input.imageUrl,
       })
       .eq("user_id", input.userId)
-      .select("user_id,role_id,name,email,password,phone,address,image_url,status,created_at")
+      .select(
+        "user_id,role_id,name,email,password,phone,address,image_url,status,created_at",
+      )
       .single();
 
     if (error) {
@@ -155,7 +163,9 @@ export class AuthRepository {
   }
 
   getProfileImagePublicUrl(path: string): string {
-    const { data } = supabaseServer.storage.from(PROFILE_IMAGE_BUCKET).getPublicUrl(path);
+    const { data } = supabaseServer.storage
+      .from(PROFILE_IMAGE_BUCKET)
+      .getPublicUrl(path);
     return data.publicUrl;
   }
 }

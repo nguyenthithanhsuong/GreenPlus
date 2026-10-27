@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { createHmac, randomUUID } from "crypto";
 import { AppError } from "../../../core/errors";
 import { AuthAuditObserver, AuthSubject } from "../observers/auth.observer";
 import { AuthRepository, type UserRow } from "../auth.repository";
@@ -23,6 +23,7 @@ import { createProfileImageStorageStrategy } from "../strategies/profile-image.s
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{9,15}$/;
+const CUSTOMER_TOKEN_PREFIX = "gpc1";
 
 export class AuthFacade {
   private readonly repository: AuthRepository;
@@ -37,6 +38,36 @@ export class AuthFacade {
     this.authSubject.attach(new AuthAuditObserver());
   }
 
+  private getSessionSecret(): string {
+    const secret =
+      process.env.AUTH_HANDOFF_SECRET || process.env.AUTH_SESSION_SECRET;
+
+    if (!secret) {
+      throw new AppError("Session secret is not configured", 500);
+    }
+
+    return secret;
+  }
+
+  private createAccessToken(input: {
+    userId: string;
+    email: string;
+    sessionId: string;
+    loginTime: string;
+  }): string {
+    const payload = Buffer.from(
+      JSON.stringify({
+        ...input,
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+      }),
+    ).toString("base64url");
+    const signature = createHmac("sha256", this.getSessionSecret())
+      .update(payload)
+      .digest("base64url");
+
+    return `${CUSTOMER_TOKEN_PREFIX}.${payload}.${signature}`;
+  }
+
   private ensureActiveStatus(status: UserStatus): void {
     const accountState = createAccountState(status);
     if (!accountState.canSignIn()) {
@@ -48,7 +79,9 @@ export class AuthFacade {
     return value.startsWith("pbkdf2$");
   }
 
-  private async resolveUserForCredentials(input: SignInInput): Promise<UserRow> {
+  private async resolveUserForCredentials(
+    input: SignInInput,
+  ): Promise<UserRow> {
     const email = input.email.trim().toLowerCase();
 
     if (email.length === 0) {
@@ -67,12 +100,14 @@ export class AuthFacade {
     if (!user) {
       throw new AppError("Account not found", 404);
     }
-    
 
     let isValidPassword = false;
 
     if (this.isPbkdf2Hash(user.password)) {
-      isValidPassword = await this.hasher.compare(input.password, user.password);
+      isValidPassword = await this.hasher.compare(
+        input.password,
+        user.password,
+      );
     } else {
       isValidPassword = input.password === user.password;
       if (isValidPassword) {
@@ -109,7 +144,9 @@ export class AuthFacade {
       throw new AppError("Invalid email format", 400);
     }
 
-    const existing = await this.repository.findUserByEmail(input.email.trim().toLowerCase());
+    const existing = await this.repository.findUserByEmail(
+      input.email.trim().toLowerCase(),
+    );
     if (existing) {
       throw new AppError("Email already exists", 400);
     }
@@ -139,7 +176,11 @@ export class AuthFacade {
     };
   }
 
-  async signIn(input: SignInInput): Promise<{ session: SessionInfo; user: Record<string, unknown>; role_name: string | null }> {
+  async signIn(input: SignInInput): Promise<{
+    session: SessionInfo;
+    user: Record<string, unknown>;
+    role_name: string | null;
+  }> {
     const user = await this.resolveUserForCredentials(input);
 
     this.ensureActiveStatus(user.status);
@@ -149,6 +190,13 @@ export class AuthFacade {
       user_id: user.user_id,
       login_time: new Date().toISOString(),
     };
+
+    session.access_token = this.createAccessToken({
+      userId: user.user_id,
+      email: user.email,
+      sessionId: session.session_id,
+      loginTime: session.login_time,
+    });
 
     const roleName = await this.repository.findRoleNameById(user.role_id);
 
@@ -190,7 +238,9 @@ export class AuthFacade {
     return { unlocked: true };
   }
 
-  async updateAccountStatus(input: UpdateAccountStatusInput): Promise<{ updated: true; status: UserStatus }> {
+  async updateAccountStatus(
+    input: UpdateAccountStatusInput,
+  ): Promise<{ updated: true; status: UserStatus }> {
     if (input.userId.trim().length === 0) {
       throw new AppError("userId is required", 400);
     }
@@ -199,7 +249,10 @@ export class AuthFacade {
       throw new AppError("status is required", 400);
     }
 
-    const updated = await this.repository.updateStatus(input.userId, input.status);
+    const updated = await this.repository.updateStatus(
+      input.userId,
+      input.status,
+    );
 
     await this.authSubject.notify({
       type: "profile_updated",
@@ -328,7 +381,9 @@ export class AuthFacade {
     return { updated: true };
   }
 
-  async uploadProfileImage(input: UploadProfileImageInput): Promise<UploadProfileImageResult> {
+  async uploadProfileImage(
+    input: UploadProfileImageInput,
+  ): Promise<UploadProfileImageResult> {
     const userId = input.userId.trim();
 
     if (!userId) {
@@ -354,12 +409,20 @@ export class AuthFacade {
       throw new AppError("User not found", 404);
     }
 
-    const path = this.profileImageStrategy.buildObjectPath(userId, file.name || "profile-image.jpg");
+    const path = this.profileImageStrategy.buildObjectPath(
+      userId,
+      file.name || "profile-image.jpg",
+    );
 
     try {
       await this.repository.uploadProfileImage(path, file);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to upload profile image", 400);
+      throw new AppError(
+        error instanceof Error
+          ? error.message
+          : "Failed to upload profile image",
+        400,
+      );
     }
 
     return {

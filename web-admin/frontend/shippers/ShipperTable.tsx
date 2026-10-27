@@ -1,6 +1,9 @@
 import React from "react";
 import { CheckCircle2, Eye, Search, Truck, XCircle } from "lucide-react";
-import type { DeliveryStatus, DeliveryTrackingRow } from "../../backend/modules/delivery-tracking/delivery-tracking.types";
+import type {
+  DeliveryStatus,
+  DeliveryTrackingRow,
+} from "../../backend/modules/delivery-tracking/delivery-tracking.types";
 
 type StatusFilter = "all" | DeliveryStatus;
 
@@ -20,12 +23,25 @@ type ShipperTableProps = {
   onOpenDetail: (orderId: string) => void;
 };
 
-const statusMeta: Record<DeliveryStatus, { label: string; className: string }> = {
-  assigned: { label: "Đã phân công", className: "bg-blue-50 text-blue-600 border-blue-200" },
-  picked_up: { label: "Đã lấy hàng", className: "bg-amber-50 text-amber-600 border-amber-200" },
-  delivering: { label: "Đang giao", className: "bg-purple-50 text-purple-600 border-purple-200" },
-  delivered: { label: "Đã giao", className: "bg-emerald-50 text-emerald-600 border-emerald-200" },
-};
+const statusMeta: Record<DeliveryStatus, { label: string; className: string }> =
+  {
+    assigned: {
+      label: "Đã phân công",
+      className: "bg-blue-50 text-blue-600 border-blue-200",
+    },
+    picked_up: {
+      label: "Đã lấy hàng",
+      className: "bg-amber-50 text-amber-600 border-amber-200",
+    },
+    delivering: {
+      label: "Đang giao",
+      className: "bg-purple-50 text-purple-600 border-purple-200",
+    },
+    delivered: {
+      label: "Đã giao",
+      className: "bg-emerald-50 text-emerald-600 border-emerald-200",
+    },
+  };
 
 const formatCurrency = (value: number): string => {
   return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(value)} đ`;
@@ -41,7 +57,10 @@ const formatDateTime = (value: string | null): string => {
     return value;
   }
 
-  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
 };
 
 const ShipperTable = ({
@@ -63,16 +82,32 @@ const ShipperTable = ({
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="flex flex-col xl:flex-row xl:items-center justify-between p-5 border-b border-gray-50 gap-4">
         <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg overflow-x-auto">
-          <button type="button" onClick={() => onStatusFilterChange("all")} className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "all" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange("all")}
+            className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "all" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}
+          >
             Tất cả ({counts.all})
           </button>
-          <button type="button" onClick={() => onStatusFilterChange("assigned")} className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "assigned" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange("assigned")}
+            className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "assigned" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}
+          >
             Đã phân công ({counts.assigned})
           </button>
-          <button type="button" onClick={() => onStatusFilterChange("delivering")} className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "delivering" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange("delivering")}
+            className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "delivering" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}
+          >
             Đang giao ({counts.delivering})
           </button>
-          <button type="button" onClick={() => onStatusFilterChange("delivered")} className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "delivered" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}>
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange("delivered")}
+            className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap ${statusFilter === "delivered" ? "font-bold bg-white shadow-sm text-gray-900" : "font-medium text-gray-500 hover:text-gray-700"}`}
+          >
             Đã giao ({counts.delivered})
           </button>
         </div>
@@ -119,38 +154,75 @@ const ShipperTable = ({
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>Đang tải dữ liệu giao hàng...</td>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={6}
+                >
+                  Đang tải dữ liệu giao hàng...
+                </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>Không tìm thấy đơn giao hàng phù hợp.</td>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={6}
+                >
+                  Không tìm thấy đơn giao hàng phù hợp.
+                </td>
               </tr>
             ) : (
               items.map((item) => {
                 const meta = statusMeta[item.status];
 
                 return (
-                  <tr key={item.order_id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                  <tr
+                    key={item.order_id}
+                    className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                  >
                     <td className="px-6 py-4 align-top">
-                      <p className="font-bold text-[#059669] mb-1">{item.order_id}</p>
-                      <p className="text-[11px] text-gray-400">{formatDateTime(item.delivery_time || item.pickup_time || item.order_date)}</p>
-                    </td>
-                    <td className="px-6 py-4 align-top">
-                      <p className="font-bold text-gray-900 mb-1">{item.customer_name ?? "Khách chưa xác định"}</p>
-                      <p className="text-[11px] font-medium text-gray-500">{item.customer_phone ?? "-"}</p>
-                    </td>
-                    <td className="px-6 py-4 align-top">
-                      <p className="text-gray-800 leading-relaxed">{item.delivery_address}</p>
-                      <p className="text-[11px] text-gray-500 mt-1">
-                        {item.shipper_name ? `Shipper: ${item.shipper_name}` : "Chưa phân công shipper"}
+                      <p className="font-bold text-[#059669] mb-1">
+                        {item.order_id}
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        {formatDateTime(
+                          item.delivery_time ||
+                            item.pickup_time ||
+                            item.order_date,
+                        )}
                       </p>
                     </td>
-                    <td className="px-6 py-4 text-center font-bold text-gray-900">{formatCurrency(item.total_amount)}</td>
+                    <td className="px-6 py-4 align-top">
+                      <p className="font-bold text-gray-900 mb-1">
+                        {item.customer_name ?? "Khách chưa xác định"}
+                      </p>
+                      <p className="text-[11px] font-medium text-gray-500">
+                        {item.customer_phone ?? "-"}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4 align-top">
+                      <p className="text-gray-800 leading-relaxed">
+                        {item.delivery_address}
+                      </p>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        {item.shipper_name
+                          ? `Shipper: ${item.shipper_name}`
+                          : "Chưa phân công shipper"}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold text-gray-900">
+                      {formatCurrency(item.total_amount)}
+                    </td>
                     <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-[11px] font-bold border ${meta.className}`}>
+                      <span
+                        className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-[11px] font-bold border ${meta.className}`}
+                      >
                         {meta.label}
                       </span>
-                      {item.note ? <p className="mt-1 text-[10px] text-gray-400">{item.note}</p> : null}
+                      {item.note ? (
+                        <p className="mt-1 text-[10px] text-gray-400">
+                          {item.note}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
@@ -172,10 +244,18 @@ const ShipperTable = ({
 
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span className="text-sm text-gray-500">
-          Hiển thị <span className="font-bold text-gray-900">{items.length === 0 ? 0 : 1} - {items.length}</span> trong tổng số <span className="font-bold text-gray-900">{items.length}</span> đơn giao hàng
+          Hiển thị{" "}
+          <span className="font-bold text-gray-900">
+            {items.length === 0 ? 0 : 1} - {items.length}
+          </span>{" "}
+          trong tổng số{" "}
+          <span className="font-bold text-gray-900">{items.length}</span> đơn
+          giao hàng
         </span>
         <div className="flex items-center gap-1">
-          <button className="w-8 h-8 flex items-center justify-center border border-[#059669] bg-[#059669] text-white rounded-lg text-sm font-medium">1</button>
+          <button className="w-8 h-8 flex items-center justify-center border border-[#059669] bg-[#059669] text-white rounded-lg text-sm font-medium">
+            1
+          </button>
         </div>
       </div>
     </div>

@@ -2,8 +2,20 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calendar, Check, CreditCard, MapPin, Package, Phone, Truck, X } from "lucide-react";
-import type { OrderDetailRow, OrderStatus } from "../../backend/modules/orders/order-tracking.types";
+import {
+  Calendar,
+  Check,
+  CreditCard,
+  MapPin,
+  Package,
+  Phone,
+  Truck,
+  X,
+} from "lucide-react";
+import type {
+  OrderDetailRow,
+  OrderStatus,
+} from "../../backend/modules/orders/order-tracking.types";
 
 type OrderDetailPanelProps = {
   isOpen: boolean;
@@ -16,7 +28,13 @@ type OrderDetailPanelProps = {
   onViewDelivery: (orderId: string) => void;
 };
 
-const statusOrder: OrderStatus[] = ["pending", "confirmed", "preparing", "delivering", "completed"];
+const statusOrder: OrderStatus[] = [
+  "pending",
+  "confirmed",
+  "preparing",
+  "delivering",
+  "completed",
+];
 
 const getDefaultNextStatus = (status: OrderStatus): OrderStatus => {
   switch (status) {
@@ -70,17 +88,26 @@ const statusLabel = (status: OrderStatus): string => {
   return dictionary[status];
 };
 
-const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUpdateStatus, onViewDelivery }: OrderDetailPanelProps) => {
+const OrderDetailPanel = ({
+  isOpen,
+  loading,
+  saving,
+  error,
+  order,
+  onClose,
+  onUpdateStatus,
+  onViewDelivery,
+}: OrderDetailPanelProps) => {
   const [nextStatus, setNextStatus] = useState<OrderStatus | null>(null);
   const [note, setNote] = useState("");
 
   const defaultNextStatus = useMemo<OrderStatus>(() => {
-  if (!order) {
-    return "confirmed";
-  }
+    if (!order) {
+      return "confirmed";
+    }
 
-  return getDefaultNextStatus(order.status);
-}, [order]);
+    return getDefaultNextStatus(order.status);
+  }, [order]);
 
   const subtotal = useMemo(() => {
     return (order?.items ?? []).reduce((sum, item) => sum + item.line_total, 0);
@@ -92,12 +119,17 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
 
   return createPortal(
     <>
-      <div className="fixed inset-0 bg-gray-900/20 z-40 transition-opacity" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-gray-900/20 z-40 transition-opacity"
+        onClick={onClose}
+      />
 
       <div className="fixed inset-y-0 right-0 w-full max-w-3xl bg-gray-50 z-50 flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100 shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Chi tiết đơn hàng: {order?.order_id ?? "-"}</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Chi tiết đơn hàng: {order?.order_id ?? "-"}
+            </h2>
             <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
               <Calendar className="w-4 h-4" />
               <span>{formatDateTime(order?.order_date ?? null)}</span>
@@ -126,27 +158,38 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col">
                   <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#059669]" /> Thông tin nhận hàng
+                    <MapPin className="w-4 h-4 text-[#059669]" /> Thông tin nhận
+                    hàng
                   </h3>
                   <div className="space-y-3 text-sm flex-1">
-                    <p className="font-bold text-gray-900 text-base">{order.customer_name ?? "Khách chưa xác định"}</p>
-                    <p className="text-gray-600 flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-gray-400" /> {order.customer_phone ?? "-"}
+                    <p className="font-bold text-gray-900 text-base">
+                      {order.customer_name ?? "Khách chưa xác định"}
                     </p>
-                    <p className="text-gray-600 leading-relaxed">{order.delivery_address}</p>
+                    <p className="text-gray-600 flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-gray-400" />{" "}
+                      {order.customer_phone ?? "-"}
+                    </p>
+                    <p className="text-gray-600 leading-relaxed">
+                      {order.delivery_address}
+                    </p>
                   </div>
 
                   {order.note ? (
                     <div className="mt-4 p-3 bg-yellow-50/50 border border-yellow-100 rounded-lg">
-                      <p className="text-xs font-bold text-yellow-700 mb-1">Ghi chú:</p>
-                      <p className="text-sm text-gray-700 italic">{order.note}</p>
+                      <p className="text-xs font-bold text-yellow-700 mb-1">
+                        Ghi chú:
+                      </p>
+                      <p className="text-sm text-gray-700 italic">
+                        {order.note}
+                      </p>
                     </div>
                   ) : null}
                 </div>
 
                 <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                   <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <Package className="w-4 h-4 text-[#059669]" /> Tracking trạng thái
+                    <Package className="w-4 h-4 text-[#059669]" /> Tracking
+                    trạng thái
                   </h3>
 
                   <div className="relative pl-3 space-y-5 before:absolute before:inset-y-2 before:left-[15px] before:w-0.5 before:bg-gray-100">
@@ -156,16 +199,24 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
 
                       return (
                         <div key={status} className="relative pl-6">
-                          <div className={`absolute left-[-5px] top-1 w-3 h-3 rounded-full ${active || passed ? "bg-[#059669] ring-4 ring-emerald-50" : "bg-gray-200"}`} />
-                          <p className={`text-sm ${active ? "font-bold text-gray-900" : "font-medium text-gray-400"}`}>
+                          <div
+                            className={`absolute left-[-5px] top-1 w-3 h-3 rounded-full ${active || passed ? "bg-[#059669] ring-4 ring-emerald-50" : "bg-gray-200"}`}
+                          />
+                          <p
+                            className={`text-sm ${active ? "font-bold text-gray-900" : "font-medium text-gray-400"}`}
+                          >
                             {statusLabel(status)}
                           </p>
                         </div>
                       );
                     })}
                     <div className="relative pl-6">
-                      <div className={`absolute left-[-5px] top-1 w-3 h-3 rounded-full ${order.status === "cancelled" ? "bg-red-500 ring-4 ring-red-50" : "bg-gray-200"}`} />
-                      <p className={`text-sm ${order.status === "cancelled" ? "font-bold text-red-600" : "font-medium text-gray-400"}`}>
+                      <div
+                        className={`absolute left-[-5px] top-1 w-3 h-3 rounded-full ${order.status === "cancelled" ? "bg-red-500 ring-4 ring-red-50" : "bg-gray-200"}`}
+                      />
+                      <p
+                        className={`text-sm ${order.status === "cancelled" ? "font-bold text-red-600" : "font-medium text-gray-400"}`}
+                      >
                         Đã hủy
                       </p>
                     </div>
@@ -176,7 +227,8 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="p-5 border-b border-gray-50">
                   <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                    <Package className="w-4 h-4 text-[#059669]" /> Danh sách sản phẩm
+                    <Package className="w-4 h-4 text-[#059669]" /> Danh sách sản
+                    phẩm
                   </h3>
                 </div>
                 <table className="w-full text-sm text-left">
@@ -184,24 +236,45 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
                     <tr>
                       <th className="px-5 py-3 font-medium">Sản phẩm</th>
                       <th className="px-5 py-3 font-medium text-center">SL</th>
-                      <th className="px-5 py-3 font-medium text-right">Đơn giá</th>
-                      <th className="px-5 py-3 font-medium text-right">Thành tiền</th>
-                      <th className="px-5 py-3 font-medium text-right">Ghi chú</th>
+                      <th className="px-5 py-3 font-medium text-right">
+                        Đơn giá
+                      </th>
+                      <th className="px-5 py-3 font-medium text-right">
+                        Thành tiền
+                      </th>
+                      <th className="px-5 py-3 font-medium text-right">
+                        Ghi chú
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {order.items.map((item) => (
-                      <tr key={item.order_item_id} className="border-b border-gray-50">
+                      <tr
+                        key={item.order_item_id}
+                        className="border-b border-gray-50"
+                      >
                         <td className="px-5 py-3">
                           <div>
-                            <p className="font-bold text-gray-900">{item.product_name ?? "Sản phẩm"}</p>
-                            <p className="text-xs text-gray-500">Batch: {item.batch_id ?? "-"}</p>
+                            <p className="font-bold text-gray-900">
+                              {item.product_name ?? "Sản phẩm"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Batch: {item.batch_id ?? "-"}
+                            </p>
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-center font-bold text-gray-900">{item.quantity}</td>
-                        <td className="px-5 py-3 text-right text-gray-600">{formatCurrency(item.price)}</td>
-                        <td className="px-5 py-3 text-right font-bold text-gray-900">{formatCurrency(item.line_total)}</td>
-                        <td className="px-5 py-3 text-right text-gray-600">{item.note || "-"}</td>
+                        <td className="px-5 py-3 text-center font-bold text-gray-900">
+                          {item.quantity}
+                        </td>
+                        <td className="px-5 py-3 text-right text-gray-600">
+                          {formatCurrency(item.price)}
+                        </td>
+                        <td className="px-5 py-3 text-right font-bold text-gray-900">
+                          {formatCurrency(item.line_total)}
+                        </td>
+                        <td className="px-5 py-3 text-right text-gray-600">
+                          {item.note || "-"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -210,24 +283,37 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
                 <div className="p-5 bg-gray-50/50 flex flex-col md:flex-row justify-between gap-6 text-sm">
                   <div>
                     <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-[#059669]" /> Thanh toán
+                      <CreditCard className="w-4 h-4 text-[#059669]" /> Thanh
+                      toán
                     </h3>
-                    <p className="text-gray-600">Phương thức: {order.payment_method ?? "-"}</p>
-                    <p className="text-gray-600">Trạng thái: {order.payment_status ?? "pending"}</p>
+                    <p className="text-gray-600">
+                      Phương thức: {order.payment_method ?? "-"}
+                    </p>
+                    <p className="text-gray-600">
+                      Trạng thái: {order.payment_status ?? "pending"}
+                    </p>
                   </div>
 
                   <div className="space-y-1 min-w-[250px]">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Tạm tính:</span>
-                      <span className="text-gray-900">{formatCurrency(subtotal)}</span>
+                      <span className="text-gray-900">
+                        {formatCurrency(subtotal)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Phí giao hàng:</span>
-                      <span className="text-gray-900">{formatCurrency(order.delivery_fee)}</span>
+                      <span className="text-gray-900">
+                        {formatCurrency(order.delivery_fee)}
+                      </span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-gray-200 mt-2">
-                      <span className="font-bold text-gray-900">Tổng cộng:</span>
-                      <span className="font-bold text-[#059669]">{formatCurrency(order.total_amount)}</span>
+                      <span className="font-bold text-gray-900">
+                        Tổng cộng:
+                      </span>
+                      <span className="font-bold text-[#059669]">
+                        {formatCurrency(order.total_amount)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -240,7 +326,9 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
           <div className="flex items-center gap-2">
             <select
               value={nextStatus ?? defaultNextStatus}
-              onChange={(event) => setNextStatus(event.target.value as OrderStatus)}
+              onChange={(event) =>
+                setNextStatus(event.target.value as OrderStatus)
+              }
               className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               disabled={saving || !order}
             >
@@ -260,7 +348,8 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
           </div>
 
           <div className="flex items-center gap-3">
-            {(order?.status === "delivering" || order?.status === "completed") && (
+            {(order?.status === "delivering" ||
+              order?.status === "completed") && (
               <button
                 type="button"
                 onClick={() => onViewDelivery(order.order_id)}
@@ -279,25 +368,23 @@ const OrderDetailPanel = ({ isOpen, loading, saving, error, order, onClose, onUp
             <button
               type="button"
               onClick={() =>
-  onUpdateStatus(
-    nextStatus ?? defaultNextStatus,
-    note
-  )
-}
+                onUpdateStatus(nextStatus ?? defaultNextStatus, note)
+              }
               disabled={
-  saving ||
-  !order ||
-  order.status === (nextStatus ?? defaultNextStatus)
-}
+                saving ||
+                !order ||
+                order.status === (nextStatus ?? defaultNextStatus)
+              }
               className="flex items-center gap-2 px-6 py-2.5 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
             >
-              {saving ? "Đang cập nhật..." : "Cập nhật trạng thái"} <Check className="w-4 h-4" strokeWidth={3} />
+              {saving ? "Đang cập nhật..." : "Cập nhật trạng thái"}{" "}
+              <Check className="w-4 h-4" strokeWidth={3} />
             </button>
           </div>
         </div>
       </div>
     </>,
-    document.body
+    document.body,
   );
 };
 

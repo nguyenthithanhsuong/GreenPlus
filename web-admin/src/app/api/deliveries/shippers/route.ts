@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 
 import { deliveryTrackingFacade } from "../../../../../backend/modules/delivery-tracking/facades/delivery-tracking.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const GET = withSentry(async () => {
   logger.info("List shippers attempt");
@@ -16,8 +16,5 @@ export const GET = withSentry(async () => {
     duration_ms: Date.now() - start,
   });
 
-  return NextResponse.json(
-    { items, total: items.length },
-    { status: 200 },
-  );
+  return NextResponse.json({ items, total: items.length }, { status: 200 });
 });

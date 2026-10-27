@@ -18,7 +18,9 @@ const VALID_COMPLAINT_TYPES = new Set<ComplaintType>([
 export class ComplaintService {
   private readonly repository = new ComplaintRepository();
 
-  async createComplaint(input: CreateComplaintInput): Promise<ComplaintCreatedResult> {
+  async createComplaint(
+    input: CreateComplaintInput,
+  ): Promise<ComplaintCreatedResult> {
     const userId = input.userId.trim();
     const orderId = input.orderId.trim();
     const description = input.description.trim();
@@ -40,7 +42,10 @@ export class ComplaintService {
     try {
       ownedOrder = await this.repository.findOrderByIdAndUser(orderId, userId);
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to verify order", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to verify order",
+        500,
+      );
     }
 
     if (!ownedOrder) {
@@ -67,7 +72,10 @@ export class ComplaintService {
         description,
       });
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to create complaint", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to create complaint",
+        500,
+      );
     }
 
     return {
@@ -83,7 +91,9 @@ export class ComplaintService {
     };
   }
 
-  async listComplaintsByUser(userId: string): Promise<ComplaintCreatedResult[]> {
+  async listComplaintsByUser(
+    userId: string,
+  ): Promise<ComplaintCreatedResult[]> {
     if (!userId || !userId.trim()) {
       throw new AppError("userId is required", 400);
     }
@@ -92,7 +102,10 @@ export class ComplaintService {
     try {
       rows = await this.repository.listComplaintsByUser(userId.trim());
     } catch (error) {
-      throw new AppError(error instanceof Error ? error.message : "Failed to list complaints", 500);
+      throw new AppError(
+        error instanceof Error ? error.message : "Failed to list complaints",
+        500,
+      );
     }
 
     return (rows ?? []).map((r) => ({

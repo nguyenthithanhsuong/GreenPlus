@@ -2,9 +2,14 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../../backend/core/errors";
 import { communityPostFacade } from "../../../../../../backend/modules/community-posts/facades/community-post.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../../backend/core/request-auth";
 
 export const POST = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
   let postId = "";
 
@@ -25,7 +30,10 @@ export const POST = withSentry(async (request: Request) => {
       ? [singleFile]
       : [];
 
-  userId = typeof userIdRaw === "string" ? userIdRaw.trim() : "";
+  userId = assertCustomerId(
+    typeof userIdRaw === "string" ? userIdRaw : undefined,
+    identity.userId,
+  );
   postId = typeof postIdRaw === "string" ? postIdRaw.trim() : "";
 
   logger.info("Upload community post attachments attempt", {
@@ -50,18 +58,12 @@ export const POST = withSentry(async (request: Request) => {
   }
 
   if (!files.length) {
-    logger.error(
-      "Upload community post attachments failed - missing files",
-      {
-        userId,
-        postId,
-      },
-    );
+    logger.error("Upload community post attachments failed - missing files", {
+      userId,
+      postId,
+    });
 
-    return NextResponse.json(
-      { error: "files are required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "files are required" }, { status: 400 });
   }
 
   const start = Date.now();

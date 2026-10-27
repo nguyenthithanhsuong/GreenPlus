@@ -109,7 +109,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   updateUser: (patch) => {
     const current = get();
-    if (!current.session || !current.user || !current.token || !current.expiresAt) {
+    if (
+      !current.session ||
+      !current.user ||
+      !current.token ||
+      !current.expiresAt
+    ) {
       return;
     }
 

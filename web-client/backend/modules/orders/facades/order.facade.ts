@@ -25,19 +25,31 @@ export class OrderFacade {
     this.notifier.attach(new OrderNotificationObserver());
   }
 
-  async trackMyOrders(userId: string): Promise<OrderSummary[]> {
-    return this.service.listMyOrders(userId);
+  async trackMyOrders(
+    userId: string,
+    storeId: string,
+  ): Promise<OrderSummary[]> {
+    return this.service.listMyOrders(userId, storeId);
   }
 
-  async trackMyPaymentHistory(userId: string): Promise<PaymentHistoryItem[]> {
-    return this.service.listMyPaymentHistory(userId);
+  async trackMyPaymentHistory(
+    userId: string,
+    storeId: string,
+  ): Promise<PaymentHistoryItem[]> {
+    return this.service.listMyPaymentHistory(userId, storeId);
   }
 
-  async getOrderDetail(userId: string, orderId: string): Promise<OrderDetail> {
-    return this.service.getOrderDetail(userId, orderId);
+  async getOrderDetail(
+    userId: string,
+    storeId: string,
+    orderId: string,
+  ): Promise<OrderDetail> {
+    return this.service.getOrderDetail(userId, storeId, orderId);
   }
 
-  async createOrderFromCart(input: CreateOrderInput): Promise<{ order_id: string; status: "pending"; total_amount: number }> {
+  async createOrderFromCart(
+    input: CreateOrderInput,
+  ): Promise<{ order_id: string; status: "pending"; total_amount: number }> {
     const created = await this.service.createOrder(input);
 
     this.notifier.notify({
@@ -49,7 +61,12 @@ export class OrderFacade {
     return created;
   }
 
-  async cancelOrder(input: CancelOrderInput): Promise<{ order_id: string; status: "cancelled"; payment_status: "cancelled"; message: string }> {
+  async cancelOrder(input: CancelOrderInput): Promise<{
+    order_id: string;
+    status: "cancelled";
+    payment_status: "cancelled";
+    message: string;
+  }> {
     const result = await this.service.cancelOrder(input);
 
     this.notifier.notify({
@@ -61,9 +78,12 @@ export class OrderFacade {
     return result;
   }
 
-  async confirmPayment(
-    input: ConfirmPaymentInput
-  ): Promise<{ order_id: string; status: import("../order.types").OrderStatus; payment_status: "paid"; message: string }> {
+  async confirmPayment(input: ConfirmPaymentInput): Promise<{
+    order_id: string;
+    status: import("../order.types").OrderStatus;
+    payment_status: "paid";
+    message: string;
+  }> {
     const result = await this.service.confirmPayment(input);
 
     this.notifier.notify({
@@ -75,7 +95,9 @@ export class OrderFacade {
     return result;
   }
 
-  async updateOrder(input: UpdateOrderInput): Promise<{ order_id: string; message: string }> {
+  async updateOrder(
+    input: UpdateOrderInput,
+  ): Promise<{ order_id: string; message: string }> {
     const result = await this.service.updateOrder(input);
 
     this.notifier.notify({

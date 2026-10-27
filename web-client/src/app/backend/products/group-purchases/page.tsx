@@ -27,7 +27,8 @@ export default function GroupPurchaseTestPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const saved =
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
     setActiveUserId(saved);
 
     const loadOptions = async () => {
@@ -37,15 +38,16 @@ export default function GroupPurchaseTestPage() {
           return;
         }
 
-        const payload = (await response.json()) as { products?: ProductOption[] };
+        const payload = (await response.json()) as {
+          products?: ProductOption[];
+        };
         const products = payload.products ?? [];
         setProductOptions(products);
 
         if (products.length > 0) {
           setProductId((current) => current || products[0].product_id);
         }
-      } catch {
-      }
+      } catch {}
     };
 
     void loadOptions();
@@ -75,7 +77,14 @@ export default function GroupPurchaseTestPage() {
     }
 
     const now = new Date();
-    const daysToAdd = deadlinePreset === "1d" ? 1 : deadlinePreset === "2d" ? 2 : deadlinePreset === "3d" ? 3 : 7;
+    const daysToAdd =
+      deadlinePreset === "1d"
+        ? 1
+        : deadlinePreset === "2d"
+          ? 2
+          : deadlinePreset === "3d"
+            ? 3
+            : 7;
     now.setDate(now.getDate() + daysToAdd);
     return now.toISOString();
   };
@@ -98,7 +107,11 @@ export default function GroupPurchaseTestPage() {
       setResult(data);
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -131,7 +144,11 @@ export default function GroupPurchaseTestPage() {
       setResult(data);
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -153,7 +170,9 @@ export default function GroupPurchaseTestPage() {
           productId,
           targetQuantity: Number(targetQuantity),
           minQuantity: Number(minQuantity),
-          discountPrice: discountPrice.trim() ? Number(discountPrice) : undefined,
+          discountPrice: discountPrice.trim()
+            ? Number(discountPrice)
+            : undefined,
           deadline: resolvedDeadline,
         }),
       });
@@ -171,7 +190,11 @@ export default function GroupPurchaseTestPage() {
       await loadGroups();
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -180,14 +203,24 @@ export default function GroupPurchaseTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Mua chung</h1>
-        <p className="text-sm text-slate-600">Kiểm tra các route tạo/tham gia/danh sách qua /api/group-purchases.</p>
-        <p className="text-xs text-slate-500">Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}</p>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Kiểm thử backend: Mua chung
+        </h1>
+        <p className="text-sm text-slate-600">
+          Kiểm tra các route tạo/tham gia/danh sách qua /api/group-purchases.
+        </p>
+        <p className="text-xs text-slate-500">
+          Người dùng kiểm thử đang hoạt động: {activeUserId || "chưa thiết lập"}
+        </p>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <h2 className="text-sm font-semibold text-slate-900">Tạo nhóm</h2>
           <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
-            <select value={productId} onChange={(e) => setProductId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
+            <select
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            >
               <option value="">Chọn product_id</option>
               {productOptions.map((product) => (
                 <option key={product.product_id} value={product.product_id}>
@@ -195,10 +228,31 @@ export default function GroupPurchaseTestPage() {
                 </option>
               ))}
             </select>
-            <input value={targetQuantity} onChange={(e) => setTargetQuantity(e.target.value)} placeholder="target quantity" className="rounded border border-slate-300 px-3 py-2 text-sm" />
-            <input value={minQuantity} onChange={(e) => setMinQuantity(e.target.value)} placeholder="min quantity" className="rounded border border-slate-300 px-3 py-2 text-sm" />
-            <input value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} placeholder="discount price (optional)" className="rounded border border-slate-300 px-3 py-2 text-sm" />
-            <select value={deadlinePreset} onChange={(e) => setDeadlinePreset(e.target.value as DeadlinePreset)} className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+            <input
+              value={targetQuantity}
+              onChange={(e) => setTargetQuantity(e.target.value)}
+              placeholder="target quantity"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              value={minQuantity}
+              onChange={(e) => setMinQuantity(e.target.value)}
+              placeholder="min quantity"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              value={discountPrice}
+              onChange={(e) => setDiscountPrice(e.target.value)}
+              placeholder="discount price (optional)"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            <select
+              value={deadlinePreset}
+              onChange={(e) =>
+                setDeadlinePreset(e.target.value as DeadlinePreset)
+              }
+              className="rounded border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+            >
               <option value="1d">In 1 day</option>
               <option value="2d">In 2 days</option>
               <option value="3d">In 3 days</option>
@@ -214,23 +268,55 @@ export default function GroupPurchaseTestPage() {
               />
             )}
           </div>
-          <button onClick={() => void createGroup()} disabled={loading} className="mt-3 rounded bg-indigo-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">Create Group</button>
+          <button
+            onClick={() => void createGroup()}
+            disabled={loading}
+            className="mt-3 rounded bg-indigo-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+          >
+            Create Group
+          </button>
         </section>
 
         <section className="rounded border border-slate-300 bg-white p-4">
           <h2 className="text-sm font-semibold text-slate-900">Join Group</h2>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            <input value={groupId} onChange={(e) => setGroupId(e.target.value)} placeholder="groupId" className="rounded border border-slate-300 px-3 py-2 text-sm" />
-            <input value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="quantity" className="rounded border border-slate-300 px-3 py-2 text-sm" />
+            <input
+              value={groupId}
+              onChange={(e) => setGroupId(e.target.value)}
+              placeholder="groupId"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="quantity"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => void loadGroups()} disabled={loading} className="rounded bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">Load Active Groups</button>
-            <button onClick={() => void joinGroup()} disabled={loading} className="rounded bg-emerald-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">Join Group</button>
+            <button
+              onClick={() => void loadGroups()}
+              disabled={loading}
+              className="rounded bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            >
+              Load Active Groups
+            </button>
+            <button
+              onClick={() => void joinGroup()}
+              disabled={loading}
+              className="rounded bg-emerald-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            >
+              Join Group
+            </button>
           </div>
         </section>
 
         {error && <p className="text-sm text-rose-700">{error}</p>}
-        {result !== null && <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">{JSON.stringify(result, null, 2)}</pre>}
+        {result !== null && (
+          <pre className="overflow-x-auto rounded bg-slate-900 p-4 text-xs text-slate-100">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        )}
       </div>
     </main>
   );

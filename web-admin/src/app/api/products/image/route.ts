@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createServiceRoleSupabaseClient } from "../../../../../backend/core/supabase";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 const BUCKET = "Product-Image";
 
@@ -34,17 +34,13 @@ export const POST = withSentry(async (request: Request) => {
   if (!(file instanceof File)) {
     logger.error("Product image upload failed - missing file");
 
-    return NextResponse.json(
-      { error: "file is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "file is required" }, { status: 400 });
   }
 
   if (!ALLOWED_MIME.has(file.type)) {
-    logger.error(
-      "Product image upload failed - invalid mime type",
-      { mimeType: file.type },
-    );
+    logger.error("Product image upload failed - invalid mime type", {
+      mimeType: file.type,
+    });
 
     return NextResponse.json(
       { error: "Only jpeg/png/webp/gif are allowed" },
@@ -67,15 +63,11 @@ export const POST = withSentry(async (request: Request) => {
     });
 
   if (uploadError) {
-    logger.error(
-      "Product image upload failed - storage error",
-      { error: uploadError.message },
-    );
+    logger.error("Product image upload failed - storage error", {
+      error: uploadError.message,
+    });
 
-    return NextResponse.json(
-      { error: uploadError.message },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: uploadError.message }, { status: 400 });
   }
 
   const { data: publicUrlData } = client.storage

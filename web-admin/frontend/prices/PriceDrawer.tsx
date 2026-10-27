@@ -14,7 +14,7 @@ export type PriceFormValues = {
   batchId: string;
   price: string;
   date: string;
-  status: PriceRow["status"] | ""; 
+  status: PriceRow["status"] | "";
 };
 
 export type PriceDrawerMode = "create" | "edit" | "delete";
@@ -79,11 +79,18 @@ const PriceDrawer = ({
   }
 
   const batchListId = "price-batch-options";
-  const selectedBatch = batchOptions.find((batch) => batch.batchId === form.batchId) ?? null;
+  const selectedBatch =
+    batchOptions.find((batch) => batch.batchId === form.batchId) ?? null;
   const salePrice = Number(form.price);
   const importPrice = selectedBatch?.importPrice ?? null;
-  const profit = importPrice !== null && Number.isFinite(salePrice) ? salePrice - importPrice : null;
-  const marginPercent = importPrice !== null && profit !== null && importPrice > 0 ? (profit / importPrice) * 100 : null;
+  const profit =
+    importPrice !== null && Number.isFinite(salePrice)
+      ? salePrice - importPrice
+      : null;
+  const marginPercent =
+    importPrice !== null && profit !== null && importPrice > 0
+      ? (profit / importPrice) * 100
+      : null;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -97,7 +104,9 @@ const PriceDrawer = ({
       <aside className="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-2xl">
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-gray-100 p-6">
-            <h2 className="text-2xl font-bold text-gray-900">{titleByMode[mode]}</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {titleByMode[mode]}
+            </h2>
             <button
               type="button"
               onClick={onClose}
@@ -117,18 +126,41 @@ const PriceDrawer = ({
             {mode === "delete" ? (
               <div className="space-y-4">
                 <div className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">
-                  Hành động này sẽ xóa mức giá khỏi hệ thống. Chỉ nên xóa khi bản ghi là giá tương lai và không còn sử dụng.
+                  Hành động này sẽ xóa mức giá khỏi hệ thống. Chỉ nên xóa khi
+                  bản ghi là giá tương lai và không còn sử dụng.
                 </div>
 
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Thông tin bản ghi</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Thông tin bản ghi
+                  </p>
                   <div className="mt-3 space-y-2 text-sm text-gray-700">
-                    <p><span className="font-semibold">Mã giá:</span> {selectedPrice?.price_id ?? "-"}</p>
-                    <p><span className="font-semibold">Batch:</span> {selectedPrice?.batch_id ?? "Áp dụng chung"}</p>
-                    <p><span className="font-semibold">Sản phẩm:</span> {selectedPrice?.product_name ?? "Chưa gán sản phẩm"}</p>
-                    <p><span className="font-semibold">Giá:</span> {selectedPrice ? formatCurrency(selectedPrice.price) : "-"}</p>
-                    <p><span className="font-semibold">Ngày áp dụng:</span> {selectedPrice?.date ?? "-"}</p>
-                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice?.status ?? "-"}</p> 
+                    <p>
+                      <span className="font-semibold">Mã giá:</span>{" "}
+                      {selectedPrice?.price_id ?? "-"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Batch:</span>{" "}
+                      {selectedPrice?.batch_id ?? "Áp dụng chung"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Sản phẩm:</span>{" "}
+                      {selectedPrice?.product_name ?? "Chưa gán sản phẩm"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Giá:</span>{" "}
+                      {selectedPrice
+                        ? formatCurrency(selectedPrice.price)
+                        : "-"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Ngày áp dụng:</span>{" "}
+                      {selectedPrice?.date ?? "-"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Trạng thái:</span>{" "}
+                      {selectedPrice?.status ?? "-"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -141,12 +173,16 @@ const PriceDrawer = ({
                 }}
               >
                 <div>
-                  <label className="mb-1.5 block text-sm font-bold text-gray-800">Mã batch (tùy chọn)</label>
+                  <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                    Mã batch (tùy chọn)
+                  </label>
                   <div className="relative">
                     <Package className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       value={form.batchId}
-                      onChange={(event) => onChange({ batchId: event.target.value })}
+                      onChange={(event) =>
+                        onChange({ batchId: event.target.value })
+                      }
                       list={batchListId}
                       type="text"
                       placeholder="Nhập batch_id hoặc chọn từ danh sách"
@@ -154,12 +190,17 @@ const PriceDrawer = ({
                     />
                   </div>
                   <p className="mt-1.5 text-xs text-gray-500">
-                    Bạn có thể gõ batch_id hoặc chọn nhanh từ danh sách gợi ý theo batch và tên sản phẩm.
+                    Bạn có thể gõ batch_id hoặc chọn nhanh từ danh sách gợi ý
+                    theo batch và tên sản phẩm.
                   </p>
                   <datalist id={batchListId}>
                     <option value="">Áp dụng chung cho toàn bộ bảng giá</option>
                     {batchOptions.map((batch) => (
-                      <option key={batch.batchId} value={batch.batchId} label={`${batch.batchId}${batch.productName ? ` - ${batch.productName}` : ""}`}>
+                      <option
+                        key={batch.batchId}
+                        value={batch.batchId}
+                        label={`${batch.batchId}${batch.productName ? ` - ${batch.productName}` : ""}`}
+                      >
                         {batch.batchId}
                         {batch.productName ? ` - ${batch.productName}` : ""}
                       </option>
@@ -170,18 +211,28 @@ const PriceDrawer = ({
                 {mode === "create" ? (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Giá nhập lô hàng</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Giá nhập lô hàng
+                      </p>
                       <p className="mt-2 text-2xl font-bold text-gray-900">
-                        {selectedBatch ? formatCompactCurrency(selectedBatch.importPrice) : "-"}
+                        {selectedBatch
+                          ? formatCompactCurrency(selectedBatch.importPrice)
+                          : "-"}
                       </p>
                       <p className="mt-1 text-xs text-gray-500">
-                        {selectedBatch ? `Batch ${selectedBatch.batchId}${selectedBatch.productName ? ` - ${selectedBatch.productName}` : ""}` : "Chọn batch để xem giá nhập hiện tại."}
+                        {selectedBatch
+                          ? `Batch ${selectedBatch.batchId}${selectedBatch.productName ? ` - ${selectedBatch.productName}` : ""}`
+                          : "Chọn batch để xem giá nhập hiện tại."}
                       </p>
                     </div>
 
                     <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Lợi nhuận dự kiến</p>
-                      <p className={`mt-2 text-2xl font-bold ${profit === null ? "text-gray-900" : profit >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                        Lợi nhuận dự kiến
+                      </p>
+                      <p
+                        className={`mt-2 text-2xl font-bold ${profit === null ? "text-gray-900" : profit >= 0 ? "text-emerald-700" : "text-rose-700"}`}
+                      >
                         {profit === null ? "-" : formatCompactCurrency(profit)}
                       </p>
                       <p className="mt-1 text-xs text-emerald-700/80">
@@ -203,7 +254,9 @@ const PriceDrawer = ({
                     <Tag className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       value={form.price}
-                      onChange={(event) => onChange({ price: event.target.value })}
+                      onChange={(event) =>
+                        onChange({ price: event.target.value })
+                      }
                       type="number"
                       min="0"
                       step="1"
@@ -221,7 +274,9 @@ const PriceDrawer = ({
                     <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       value={form.date}
-                      onChange={(event) => onChange({ date: event.target.value })}
+                      onChange={(event) =>
+                        onChange({ date: event.target.value })
+                      }
                       type="date"
                       className="w-full rounded-md border border-gray-300 px-10 py-2.5 text-sm text-gray-800 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                     />
@@ -252,11 +307,25 @@ const PriceDrawer = ({
 
                 {selectedPrice ? (
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Thông tin hiện tại</p>
-                    <p><span className="font-semibold">Mã giá:</span> {selectedPrice.price_id}</p>
-                    <p><span className="font-semibold">Sản phẩm:</span> {selectedPrice.product_name ?? "Chưa gán sản phẩm"}</p>
-                    <p><span className="font-semibold">Supplier:</span> {selectedPrice.supplier_name ?? "-"}</p>
-                    <p><span className="font-semibold">Trạng thái:</span> {selectedPrice.status ?? "-"}</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Thông tin hiện tại
+                    </p>
+                    <p>
+                      <span className="font-semibold">Mã giá:</span>{" "}
+                      {selectedPrice.price_id}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Sản phẩm:</span>{" "}
+                      {selectedPrice.product_name ?? "Chưa gán sản phẩm"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Supplier:</span>{" "}
+                      {selectedPrice.supplier_name ?? "-"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Trạng thái:</span>{" "}
+                      {selectedPrice.status ?? "-"}
+                    </p>
                   </div>
                 ) : null}
               </form>
@@ -276,11 +345,21 @@ const PriceDrawer = ({
               type="button"
               onClick={onSubmit}
               className={`rounded-md px-6 py-2.5 text-sm font-bold text-white transition-colors disabled:opacity-60 ${
-                mode === "delete" ? "bg-rose-600 hover:bg-rose-700" : "bg-[#1da453] hover:bg-[#168a44]"
+                mode === "delete"
+                  ? "bg-rose-600 hover:bg-rose-700"
+                  : "bg-[#1da453] hover:bg-[#168a44]"
               }`}
               disabled={saving}
             >
-              {saving ? "Đang xử lý..." : mode === "delete" ? <span className="inline-flex items-center gap-2"><Trash2 className="h-4 w-4" /> {actionByMode[mode]}</span> : actionByMode[mode]}
+              {saving ? (
+                "Đang xử lý..."
+              ) : mode === "delete" ? (
+                <span className="inline-flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" /> {actionByMode[mode]}
+                </span>
+              ) : (
+                actionByMode[mode]
+              )}
             </button>
           </div>
         </div>

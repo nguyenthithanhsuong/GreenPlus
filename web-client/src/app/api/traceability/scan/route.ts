@@ -21,7 +21,10 @@ export const POST = withSentry(async (request: Request) => {
     if (!qrCode) {
       logger.error("Traceability scan failed - missing qrCode", { qrCode });
 
-      return NextResponse.json({ error: "qrCode is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "qrCode is required" },
+        { status: 400 },
+      );
     }
 
     const result = await traceabilityFacade.scanProductOrigin(qrCode);
@@ -43,7 +46,7 @@ export const POST = withSentry(async (request: Request) => {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 

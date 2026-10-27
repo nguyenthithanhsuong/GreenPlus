@@ -1,8 +1,12 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError } from "../../../../backend/core/errors";
 import { cartFacade } from "../../../../backend/modules/cart/facades/cart.facade";
-import { logger } from "@/lib/logger"; 
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../backend/core/request-auth";
+import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../backend/core/store-context";
 
 type CartMutationBody = {
   userId?: string;
@@ -10,30 +14,33 @@ type CartMutationBody = {
   productId?: string;
   product_id?: string;
   quantity?: number;
+  storeId?: string;
 };
 
 export const GET = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const { searchParams } = new URL(request.url);
+  const store = await resolveStoreContext(
+    searchParams.get("storeId"),
+    identity,
+  );
 
-  const userId =
-    searchParams.get("userId")?.trim() ??
-    searchParams.get("user_id")?.trim() ??
-    "";
+  const userId = assertCustomerId(
+    searchParams.get("userId") ?? searchParams.get("user_id") ?? undefined,
+    identity.userId,
+  );
 
   logger.info("Get cart attempt", { userId });
 
   if (!userId) {
     logger.error("Get cart failed - missing userId", { userId });
 
-    return NextResponse.json(
-      { error: "userId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
 
   const start = Date.now();
 
-  const cart = await cartFacade.getCart(userId);
+  const cart = await cartFacade.getCart(userId, store.storeId);
 
   logger.info("Get cart success", {
     userId,
@@ -44,13 +51,13 @@ export const GET = withSentry(async (request: Request) => {
 });
 
 export const POST = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as CartMutationBody;
+  const store = await resolveStoreContext(body.storeId, identity);
 
-  const userId =
-    body.userId?.trim() ?? body.user_id?.trim() ?? "";
+  const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
-  const productId =
-    body.productId?.trim() ?? body.product_id?.trim() ?? "";
+  const productId = body.productId?.trim() ?? body.product_id?.trim() ?? "";
 
   const quantity = Number(body.quantity);
 
@@ -81,6 +88,7 @@ export const POST = withSentry(async (request: Request) => {
     userId,
     productId,
     quantity,
+    store.storeId,
   );
 
   logger.info("Add cart item success", {
@@ -94,13 +102,13 @@ export const POST = withSentry(async (request: Request) => {
 });
 
 export const PUT = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as CartMutationBody;
+  const store = await resolveStoreContext(body.storeId, identity);
 
-  const userId =
-    body.userId?.trim() ?? body.user_id?.trim() ?? "";
+  const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
-  const productId =
-    body.productId?.trim() ?? body.product_id?.trim() ?? "";
+  const productId = body.productId?.trim() ?? body.product_id?.trim() ?? "";
 
   const quantity = Number(body.quantity);
 
@@ -131,6 +139,7 @@ export const PUT = withSentry(async (request: Request) => {
     userId,
     productId,
     quantity,
+    store.storeId,
   );
 
   logger.info("Update cart item success", {
@@ -144,13 +153,13 @@ export const PUT = withSentry(async (request: Request) => {
 });
 
 export const DELETE = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as CartMutationBody;
+  const store = await resolveStoreContext(body.storeId, identity);
 
-  const userId =
-    body.userId?.trim() ?? body.user_id?.trim() ?? "";
+  const userId = assertCustomerId(body.userId ?? body.user_id, identity.userId);
 
-  const productId =
-    body.productId?.trim() ?? body.product_id?.trim() ?? "";
+  const productId = body.productId?.trim() ?? body.product_id?.trim() ?? "";
 
   logger.info("Remove cart item attempt", {
     userId,
@@ -171,10 +180,7 @@ export const DELETE = withSentry(async (request: Request) => {
 
   const start = Date.now();
 
-  const cart = await cartFacade.removeItem(
-    userId,
-    productId,
-  );
+  const cart = await cartFacade.removeItem(userId, productId, store.storeId);
 
   logger.info("Remove cart item success", {
     userId,

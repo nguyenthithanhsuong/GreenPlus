@@ -1,5 +1,9 @@
 import { AppError } from "../../core/errors";
-import { ProductBatchRow, ProductRepository, getRelationValue } from "./product.repository";
+import {
+  ProductBatchRow,
+  ProductRepository,
+  getRelationValue,
+} from "./product.repository";
 import { createBatchState } from "./states/batch.state";
 import { createProductState } from "./states/product.state";
 import { ProductDetail } from "./product.types";
@@ -21,7 +25,9 @@ function toInventoryRows(input: ProductBatchRow["inventory"]): InventoryRow[] {
   return [input as InventoryRow];
 }
 
-function normalizeBatchStatus(status: ProductBatchRow["status"]): "available" | "expired" | "sold_out" {
+function normalizeBatchStatus(
+  status: ProductBatchRow["status"],
+): "available" | "expired" | "sold_out" {
   if (status === "available" || status === "expired" || status === "sold_out") {
     return status;
   }
@@ -32,12 +38,12 @@ function normalizeBatchStatus(status: ProductBatchRow["status"]): "available" | 
 export class ProductDetailService {
   constructor(private readonly repository: ProductRepository) {}
 
-  async getDetail(productId: string): Promise<ProductDetail> {
+  async getDetail(productId: string, storeId: string): Promise<ProductDetail> {
     if (!productId) {
       throw new AppError("productId is required");
     }
 
-    const product = await this.repository.getProductById(productId);
+    const product = await this.repository.getProductById(productId, storeId);
 
     if (!product) {
       throw new AppError("Product not found", 404);
@@ -49,9 +55,9 @@ export class ProductDetailService {
     }
 
     const [latestPrice, batches, supplierMap] = await Promise.all([
-      this.repository.getLatestPriceForProduct(productId),
-      this.repository.getBatchesWithInventoryByProduct(productId),
-      this.repository.getProductSupplierMap([productId]),
+      this.repository.getLatestPriceForProduct(productId, storeId),
+      this.repository.getBatchesWithInventoryByProduct(productId, storeId),
+      this.repository.getProductSupplierMap([productId], storeId),
     ]);
 
     let totalAvailable = 0;
@@ -64,15 +70,24 @@ export class ProductDetailService {
     batches.forEach((batch) => {
       const inventoryRows = toInventoryRows(batch.inventory);
       const resolvedStatus = normalizeBatchStatus(batch.status);
-      const availableInBatch = inventoryRows.reduce((sum, row) => sum + Number(row.quantity_available ?? 0), 0);
-      const reservedInBatch = inventoryRows.reduce((sum, row) => sum + Number(row.quantity_reserved ?? 0), 0);
+      const availableInBatch = inventoryRows.reduce(
+        (sum, row) => sum + Number(row.quantity_available ?? 0),
+        0,
+      );
+      const reservedInBatch = inventoryRows.reduce(
+        (sum, row) => sum + Number(row.quantity_reserved ?? 0),
+        0,
+      );
       const quantityInBatch = Number(batch.quantity ?? 0);
 
       totalAvailable += availableInBatch;
       totalReserved += reservedInBatch;
       totalQuantity += quantityInBatch;
 
-      const isSellable = createBatchState(resolvedStatus).isSellable(availableInBatch, batch.expire_date);
+      const isSellable = createBatchState(resolvedStatus).isSellable(
+        availableInBatch,
+        batch.expire_date,
+      );
       if (isSellable) {
         hasSellableBatch = true;
       }
@@ -92,7 +107,11 @@ export class ProductDetailService {
       }
     });
 
-    const inventoryStatus = hasSellableBatch ? "in_stock" : hasAnyExpiredBatch ? "expired" : "out_of_stock";
+    const inventoryStatus = hasSellableBatch
+      ? "in_stock"
+      : hasAnyExpiredBatch
+        ? "expired"
+        : "out_of_stock";
 
     return {
       productId: product.product_id,
@@ -115,7 +134,8 @@ export class ProductDetailService {
       batches: batchDetails,
       supplier: {
         id: supplierMap.get(product.product_id)?.supplierId ?? null,
-        certification: supplierMap.get(product.product_id)?.certification ?? null,
+        certification:
+          supplierMap.get(product.product_id)?.certification ?? null,
       },
     };
   }

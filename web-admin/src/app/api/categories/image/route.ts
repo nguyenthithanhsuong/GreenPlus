@@ -2,10 +2,15 @@ import { withSentry } from "@/lib/with-sentry";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createServiceRoleSupabaseClient } from "../../../../../backend/core/supabase";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 const BUCKET = "Category-Image";
-const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const ALLOWED_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
 
 function extensionFromMime(mime: string): string {
   if (mime === "image/jpeg") return "jpg";
@@ -19,9 +24,9 @@ export const POST = withSentry(async (request: Request) => {
   const formData = await request.formData();
   const file = formData.get("file");
 
-  logger.info("Category image upload attempt", { 
+  logger.info("Category image upload attempt", {
     hasFile: file instanceof File,
-    mimeType: file instanceof File ? file.type : "none" 
+    mimeType: file instanceof File ? file.type : "none",
   });
 
   if (!(file instanceof File)) {
@@ -30,8 +35,13 @@ export const POST = withSentry(async (request: Request) => {
   }
 
   if (!ALLOWED_MIME.has(file.type)) {
-    logger.error("Category image upload failed - invalid mime type", { mimeType: file.type });
-    return NextResponse.json({ error: "Only jpeg/png/webp/gif are allowed" }, { status: 400 });
+    logger.error("Category image upload failed - invalid mime type", {
+      mimeType: file.type,
+    });
+    return NextResponse.json(
+      { error: "Only jpeg/png/webp/gif are allowed" },
+      { status: 400 },
+    );
   }
 
   const start = Date.now();
@@ -44,15 +54,19 @@ export const POST = withSentry(async (request: Request) => {
     .upload(objectPath, file, { contentType: file.type, upsert: false });
 
   if (uploadError) {
-    logger.error("Category image upload failed - storage error", { error: uploadError.message });
+    logger.error("Category image upload failed - storage error", {
+      error: uploadError.message,
+    });
     return NextResponse.json({ error: uploadError.message }, { status: 400 });
   }
 
-  const { data: publicUrlData } = client.storage.from(BUCKET).getPublicUrl(objectPath);
+  const { data: publicUrlData } = client.storage
+    .from(BUCKET)
+    .getPublicUrl(objectPath);
 
-  logger.info("Category image upload success", { 
-    path: objectPath, 
-    duration_ms: Date.now() - start 
+  logger.info("Category image upload success", {
+    path: objectPath,
+    duration_ms: Date.now() - start,
   });
 
   return NextResponse.json(

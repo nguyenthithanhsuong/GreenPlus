@@ -52,4 +52,5 @@ export type SessionInfo = {
   session_id: string;
   user_id: string;
   login_time: string;
+  access_token?: string;
 };

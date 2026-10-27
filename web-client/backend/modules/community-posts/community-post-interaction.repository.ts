@@ -1,5 +1,8 @@
 import { supabaseServer } from "../../core/supabase";
-import { CommunityPostInteraction, CommunityPostInteractionType } from "./community-post.types";
+import {
+  CommunityPostInteraction,
+  CommunityPostInteractionType,
+} from "./community-post.types";
 
 type PostInteractionRow = {
   interaction_id: string;
@@ -26,7 +29,11 @@ export class CommunityPostInteractionRepository {
     return (data ?? []) as PostInteractionRow[];
   }
 
-  async findByType(postId: string, userId: string, type: Extract<CommunityPostInteractionType, "like" | "bookmark">): Promise<PostInteractionRow | null> {
+  async findByType(
+    postId: string,
+    userId: string,
+    type: Extract<CommunityPostInteractionType, "like" | "bookmark">,
+  ): Promise<PostInteractionRow | null> {
     const { data, error } = await supabaseServer
       .from("post_interactions")
       .select("interaction_id,post_id,user_id,type,comment,created_at,status")
@@ -42,7 +49,9 @@ export class CommunityPostInteractionRepository {
     return (data as PostInteractionRow | null) ?? null;
   }
 
-  async findCommentById(interactionId: string): Promise<PostInteractionRow | null> {
+  async findCommentById(
+    interactionId: string,
+  ): Promise<PostInteractionRow | null> {
     const { data, error } = await supabaseServer
       .from("post_interactions")
       .select("interaction_id,post_id,user_id,type,comment,created_at,status")
@@ -82,7 +91,11 @@ export class CommunityPostInteractionRepository {
     return data as PostInteractionRow;
   }
 
-  async updateComment(input: { interactionId: string; userId: string; comment: string }): Promise<PostInteractionRow | null> {
+  async updateComment(input: {
+    interactionId: string;
+    userId: string;
+    comment: string;
+  }): Promise<PostInteractionRow | null> {
     const { data, error } = await supabaseServer
       .from("post_interactions")
       .update({ comment: input.comment, status: "edited" })
@@ -99,7 +112,10 @@ export class CommunityPostInteractionRepository {
     return (data as PostInteractionRow | null) ?? null;
   }
 
-  async markCommentDeleted(input: { interactionId: string; userId: string }): Promise<PostInteractionRow | null> {
+  async markCommentDeleted(input: {
+    interactionId: string;
+    userId: string;
+  }): Promise<PostInteractionRow | null> {
     const { data, error } = await supabaseServer
       .from("post_interactions")
       .update({ status: "deleted" })
@@ -120,7 +136,11 @@ export class CommunityPostInteractionRepository {
     return this.deleteByType({ ...input, type: "like" });
   }
 
-  async deleteByType(input: { postId: string; userId: string; type: Extract<CommunityPostInteractionType, "like" | "bookmark"> }): Promise<number> {
+  async deleteByType(input: {
+    postId: string;
+    userId: string;
+    type: Extract<CommunityPostInteractionType, "like" | "bookmark">;
+  }): Promise<number> {
     const { data, error } = await supabaseServer
       .from("post_interactions")
       .delete()
@@ -137,7 +157,9 @@ export class CommunityPostInteractionRepository {
   }
 }
 
-export function toCommunityPostInteractionSummary(row: PostInteractionRow): CommunityPostInteraction {
+export function toCommunityPostInteractionSummary(
+  row: PostInteractionRow,
+): CommunityPostInteraction {
   return {
     interaction_id: String(row.interaction_id),
     post_id: String(row.post_id),

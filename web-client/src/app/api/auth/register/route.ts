@@ -1,7 +1,7 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const POST = withSentry(async (request: Request) => {
   const body = (await request.json()) as {

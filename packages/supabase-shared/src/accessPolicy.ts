@@ -20,13 +20,15 @@ export const APP_USE_CASES: Record<AppSurface, AppUseCase[]> = {
     {
       key: "user-governance",
       title: "User and Role Governance",
-      description: "Manage users, roles, supplier approval, and account status.",
+      description:
+        "Manage users, roles, supplier approval, and account status.",
       tables: ["roles", "users", "suppliers"],
     },
     {
       key: "catalog-and-supply",
       title: "Catalog and Supply Management",
-      description: "Manage categories, products, batches, prices, and inventory lifecycle.",
+      description:
+        "Manage categories, products, batches, prices, and inventory lifecycle.",
       tables: [
         "categories",
         "products",
@@ -39,20 +41,22 @@ export const APP_USE_CASES: Record<AppSurface, AppUseCase[]> = {
     {
       key: "operations",
       title: "Order and Fulfillment Operations",
-      description: "Monitor and process orders, payments, deliveries, and complaints.",
-      tables: [
-        "orders",
-        "order_items",
-        "payments",
-        "deliveries",
-        "complaints",
-      ],
+      description:
+        "Monitor and process orders, payments, deliveries, and complaints.",
+      tables: ["orders", "order_items", "payments", "deliveries", "complaints"],
     },
     {
       key: "content-and-analytics",
       title: "Content Moderation and Reporting",
-      description: "Moderate posts and reviews; review platform-level business metrics.",
-      tables: ["posts", "reviews", "group_buys", "group_buy_members", "subscriptions"],
+      description:
+        "Moderate posts and reviews; review platform-level business metrics.",
+      tables: [
+        "posts",
+        "reviews",
+        "group_buys",
+        "group_buy_members",
+        "subscriptions",
+      ],
     },
   ],
   "web-client": [
@@ -65,14 +69,29 @@ export const APP_USE_CASES: Record<AppSurface, AppUseCase[]> = {
     {
       key: "shopping",
       title: "Shopping and Checkout",
-      description: "Manage own cart and place own orders with payment tracking.",
-      tables: ["carts", "cart_items", "orders", "order_items", "payments", "deliveries"],
+      description:
+        "Manage own cart and place own orders with payment tracking.",
+      tables: [
+        "carts",
+        "cart_items",
+        "orders",
+        "order_items",
+        "payments",
+        "deliveries",
+      ],
     },
     {
       key: "engagement",
       title: "Community and Loyalty",
-      description: "Post reviews, join group buys, subscribe, and read community posts.",
-      tables: ["reviews", "group_buys", "group_buy_members", "subscriptions", "posts"],
+      description:
+        "Post reviews, join group buys, subscribe, and read community posts.",
+      tables: [
+        "reviews",
+        "group_buys",
+        "group_buy_members",
+        "subscriptions",
+        "posts",
+      ],
     },
     {
       key: "self-service",
@@ -86,7 +105,8 @@ export const APP_USE_CASES: Record<AppSurface, AppUseCase[]> = {
 export const ROLE_POLICIES: RolePolicy[] = [
   {
     role: "admin",
-    description: "Full platform access across users, catalog, orders, and supplier operations.",
+    description:
+      "Full platform access across users, catalog, orders, and supplier operations.",
     tableAccess: {
       select: ["*"],
       insert: ["*"],
@@ -96,7 +116,8 @@ export const ROLE_POLICIES: RolePolicy[] = [
   },
   {
     role: "manager",
-    description: "Inventory and order operations access; no full user governance.",
+    description:
+      "Inventory and order operations access; no full user governance.",
     tableAccess: {
       select: [
         "orders",
@@ -112,12 +133,21 @@ export const ROLE_POLICIES: RolePolicy[] = [
         "categories",
       ],
       insert: ["batches", "inventory_transactions", "prices"],
-      update: ["products", "batches", "inventory", "prices", "orders", "deliveries", "complaints"],
+      update: [
+        "products",
+        "batches",
+        "inventory",
+        "prices",
+        "orders",
+        "deliveries",
+        "complaints",
+      ],
     },
   },
   {
     role: "employee",
-    description: "Delivery staff can view and update only assigned deliveries and related order progress.",
+    description:
+      "Delivery staff can view and update only assigned deliveries and related order progress.",
     tableAccess: {
       select: ["deliveries", "orders"],
       update: ["deliveries", "orders"],
@@ -125,7 +155,8 @@ export const ROLE_POLICIES: RolePolicy[] = [
   },
   {
     role: "customer",
-    description: "Customers can access active catalog and manage only their own profile, cart, orders, and reviews.",
+    description:
+      "Customers can access active catalog and manage only their own profile, cart, orders, and reviews.",
     tableAccess: {
       select: [
         "users",
@@ -144,7 +175,13 @@ export const ROLE_POLICIES: RolePolicy[] = [
         "subscriptions",
         "posts",
       ],
-      insert: ["orders", "cart_items", "reviews", "group_buy_members", "subscriptions"],
+      insert: [
+        "orders",
+        "cart_items",
+        "reviews",
+        "group_buy_members",
+        "subscriptions",
+      ],
       update: ["users", "carts", "cart_items", "reviews", "subscriptions"],
       delete: ["cart_items", "subscriptions"],
     },
@@ -203,11 +240,17 @@ export const ADMIN_CORE_TABLES = [
   "cart_items",
 ];
 
-export function getPolicyForRole(role: RolePolicy["role"]): RolePolicy | undefined {
+export function getPolicyForRole(
+  role: RolePolicy["role"],
+): RolePolicy | undefined {
   return ROLE_POLICIES.find((policy) => policy.role === role);
 }
 
-export function canRoleAccessTable(role: RolePolicy["role"], action: AccessAction, table: string): boolean {
+export function canRoleAccessTable(
+  role: RolePolicy["role"],
+  action: AccessAction,
+  table: string,
+): boolean {
   const policy = getPolicyForRole(role);
   if (!policy) return false;
 

@@ -1,9 +1,14 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
-import { logger } from "@/lib/logger"; 
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../../backend/core/request-auth";
+import { logger } from "@/lib/logger";
 
 export const PUT = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   const body = (await request.json()) as {
     userId?: string;
     currentPassword?: string;
@@ -11,7 +16,7 @@ export const PUT = withSentry(async (request: Request) => {
     confirmPassword?: string;
   };
 
-  const userId = body.userId ?? "";
+  const userId = assertCustomerId(body.userId, identity.userId);
 
   logger.info("Change password attempt", { userId });
 

@@ -1,6 +1,12 @@
+import { createServiceRoleSupabaseClient } from "../../core/supabase";
 import { AppError } from "../../core/errors";
 import { StoresManagementRepository } from "./stores-management.repository";
-import { CreateStoreInput, StoreRow, StoreStatus, UpdateStoreInput } from "./stores-management.types";
+import {
+  CreateStoreInput,
+  StoreRow,
+  StoreStatus,
+  UpdateStoreInput,
+} from "./stores-management.types";
 
 function trimToNull(value: string | null | undefined): string | null {
   if (typeof value === "undefined" || value === null) {
@@ -20,7 +26,9 @@ function trimToUndefined(value: string | null | undefined): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function normalizeOptionalNumber(value: number | string | null | undefined): number | null | undefined {
+function normalizeOptionalNumber(
+  value: number | string | null | undefined,
+): number | null | undefined {
   if (typeof value === "undefined") {
     return undefined;
   }
@@ -37,7 +45,10 @@ function normalizeOptionalNumber(value: number | string | null | undefined): num
   return parsed;
 }
 
-function normalizeOptionalTime(value: string | null | undefined, fieldName: string): string | null | undefined {
+function normalizeOptionalTime(
+  value: string | null | undefined,
+  fieldName: string,
+): string | null | undefined {
   if (typeof value === "undefined") {
     return undefined;
   }
@@ -69,7 +80,11 @@ export class StoresManagementService {
     return this.repository.listStores();
   }
 
-  private ensureRequiredFields(input: { name?: string; address?: string; managerId?: string }): asserts input is {
+  private ensureRequiredFields(input: {
+    name?: string;
+    address?: string;
+    managerId?: string;
+  }): asserts input is {
     name: string;
     address: string;
     managerId: string;
@@ -106,9 +121,36 @@ export class StoresManagementService {
     };
   }
 
+  private async verifyManager(managerId: string): Promise<void> {
+    const { data, error } = await createServiceRoleSupabaseClient()
+      .from("users")
+      .select("user_id,status,roles!inner(is_manager,is_admin,is_shipper)")
+      .eq("user_id", managerId)
+      .eq("roles.is_manager", true)
+      .maybeSingle();
+    if (error) throw new AppError("Không kiểm tra được tài khoản Manager", 503);
+    const flags = data?.roles as unknown as {
+      is_manager?: boolean;
+      is_admin?: boolean;
+      is_shipper?: boolean;
+    } | null;
+    if (
+      !data ||
+      data.status !== "active" ||
+      !flags?.is_manager ||
+      flags.is_admin ||
+      flags.is_shipper
+    )
+      throw new AppError(
+        "Chỉ có thể gán tài khoản đang hoạt động với vai trò Manager",
+        400,
+      );
+  }
+
   async createStore(input: CreateStoreInput): Promise<StoreRow> {
     const normalized = this.normalizeInput(input);
     this.ensureRequiredFields(normalized);
+    await this.verifyManager(normalized.managerId.trim());
 
     return this.repository.createStore({
       name: normalized.name.trim(),
@@ -138,15 +180,22 @@ export class StoresManagementService {
       throw new AppError("Store name cannot be empty", 400);
     }
 
-    if (typeof input.address !== "undefined" && input.address.trim().length === 0) {
+    if (
+      typeof input.address !== "undefined" &&
+      input.address.trim().length === 0
+    ) {
       throw new AppError("Store address cannot be empty", 400);
     }
 
-    if (typeof input.managerId !== "undefined" && input.managerId.trim().length === 0) {
+    if (
+      typeof input.managerId !== "undefined" &&
+      input.managerId.trim().length === 0
+    ) {
       throw new AppError("Manager cannot be empty", 400);
     }
 
     const normalized = this.normalizeInput(input);
+    if (normalized.managerId) await this.verifyManager(normalized.managerId);
 
     const updated = await this.repository.updateStore({
       storeId: input.storeId,

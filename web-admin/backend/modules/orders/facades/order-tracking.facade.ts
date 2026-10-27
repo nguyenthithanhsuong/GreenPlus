@@ -35,7 +35,9 @@ export class OrderTrackingFacade {
     return detail;
   }
 
-  async updateOrderStatus(input: UpdateOrderStatusInput): Promise<OrderDetailRow> {
+  async updateOrderStatus(
+    input: UpdateOrderStatusInput,
+  ): Promise<OrderDetailRow> {
     const previous = await this.service.getOrderDetail(input.orderId);
     const updated = await this.service.updateOrderStatus(input);
 

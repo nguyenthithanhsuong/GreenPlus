@@ -8,7 +8,13 @@ type Props = {
   onConfirm: (reason: string) => void;
 };
 
-export default function RejectReasonDialog({ open, loading = false, initial = "", onCancel, onConfirm }: Props) {
+export default function RejectReasonDialog({
+  open,
+  loading = false,
+  initial = "",
+  onCancel,
+  onConfirm,
+}: Props) {
   const [value, setValue] = React.useState(initial);
 
   React.useEffect(() => {
@@ -27,8 +33,12 @@ export default function RejectReasonDialog({ open, loading = false, initial = ""
       />
 
       <div className="relative w-full max-w-lg rounded-xl border border-gray-100 bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-bold text-gray-900">Lý do từ chối khiếu nại</h3>
-        <p className="mt-2 text-sm leading-6 text-gray-600">Vui lòng nhập lý do từ chối để ghi vào hồ sơ.</p>
+        <h3 className="text-lg font-bold text-gray-900">
+          Lý do từ chối khiếu nại
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-gray-600">
+          Vui lòng nhập lý do từ chối để ghi vào hồ sơ.
+        </p>
 
         <textarea
           value={value}

@@ -36,7 +36,10 @@ export function useCurrentUserProfile() {
         return;
       }
 
-      const accessToken = typeof session?.access_token === "string" ? session.access_token.trim() : "";
+      const accessToken =
+        typeof session?.access_token === "string"
+          ? session.access_token.trim()
+          : "";
 
       if (!accessToken) {
         setDbUser((previous) => (previous === null ? previous : null));
@@ -52,9 +55,14 @@ export function useCurrentUserProfile() {
           cache: "no-store",
           headers,
         });
-        const payload = (await response.json()) as { item?: UserSummary; error?: string };
+        const payload = (await response.json()) as {
+          item?: UserSummary;
+          error?: string;
+        };
         if (!response.ok) {
-          throw new Error(payload.error ?? "Không thể tải danh sách người dùng");
+          throw new Error(
+            payload.error ?? "Không thể tải danh sách người dùng",
+          );
         }
 
         if (!active) {
@@ -111,14 +119,9 @@ export function useCurrentUserProfile() {
       (storedUser?.email ? storedUser.email.split("@")[0] : "Người dùng");
 
     const imageUrl =
-      dbUser?.image_url ||
-      storedUser?.image_url ||
-      FALLBACK_AVATAR;
+      dbUser?.image_url || storedUser?.image_url || FALLBACK_AVATAR;
 
-    const roleName =
-      dbUser?.role_name ||
-      storedUser?.role_name ||
-      "Admin";
+    const roleName = dbUser?.role_name || storedUser?.role_name || "Admin";
 
     return {
       userId: dbUser?.user_id ?? storedUser?.user_id ?? "",

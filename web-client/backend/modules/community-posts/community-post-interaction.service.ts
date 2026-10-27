@@ -5,12 +5,17 @@ import {
   CommunityPostInteractionSummary,
   UpdateCommunityPostInteractionInput,
 } from "./community-post.types";
-import { CommunityPostInteractionRepository, toCommunityPostInteractionSummary } from "./community-post-interaction.repository";
+import {
+  CommunityPostInteractionRepository,
+  toCommunityPostInteractionSummary,
+} from "./community-post-interaction.repository";
 
 export class CommunityPostInteractionService {
   private readonly repository = new CommunityPostInteractionRepository();
 
-  async listByPostId(postId: string): Promise<CommunityPostInteractionSummary[]> {
+  async listByPostId(
+    postId: string,
+  ): Promise<CommunityPostInteractionSummary[]> {
     if (!postId.trim()) {
       throw new AppError("postId is required", 400);
     }
@@ -19,7 +24,9 @@ export class CommunityPostInteractionService {
     return rows.map(toCommunityPostInteractionSummary);
   }
 
-  async addInteraction(input: CreateCommunityPostInteractionInput): Promise<CommunityPostInteractionSummary | null> {
+  async addInteraction(
+    input: CreateCommunityPostInteractionInput,
+  ): Promise<CommunityPostInteractionSummary | null> {
     const postId = input.postId.trim();
     const userId = input.userId.trim();
 
@@ -28,7 +35,11 @@ export class CommunityPostInteractionService {
     }
 
     if (input.type === "like" || input.type === "bookmark") {
-      const existing = await this.repository.findByType(postId, userId, input.type);
+      const existing = await this.repository.findByType(
+        postId,
+        userId,
+        input.type,
+      );
       if (existing) {
         return toCommunityPostInteractionSummary(existing);
       }
@@ -59,7 +70,9 @@ export class CommunityPostInteractionService {
     return toCommunityPostInteractionSummary(created);
   }
 
-  async editComment(input: UpdateCommunityPostInteractionInput): Promise<CommunityPostInteractionSummary> {
+  async editComment(
+    input: UpdateCommunityPostInteractionInput,
+  ): Promise<CommunityPostInteractionSummary> {
     if (!input.interactionId.trim() || !input.userId.trim()) {
       throw new AppError("interactionId and userId are required", 400);
     }
@@ -82,7 +95,9 @@ export class CommunityPostInteractionService {
     return toCommunityPostInteractionSummary(updated);
   }
 
-  async deleteInteraction(input: DeleteCommunityPostInteractionInput): Promise<{ success: true }> {
+  async deleteInteraction(
+    input: DeleteCommunityPostInteractionInput,
+  ): Promise<{ success: true }> {
     const userId = input.userId.trim();
     if (!userId) {
       throw new AppError("userId is required", 400);
@@ -93,7 +108,11 @@ export class CommunityPostInteractionService {
         throw new AppError("postId is required", 400);
       }
 
-      await this.repository.deleteByType({ postId: input.postId.trim(), userId, type: input.type });
+      await this.repository.deleteByType({
+        postId: input.postId.trim(),
+        userId,
+        type: input.type,
+      });
       return { success: true };
     }
 
@@ -114,4 +133,5 @@ export class CommunityPostInteractionService {
   }
 }
 
-export const communityPostInteractionService = new CommunityPostInteractionService();
+export const communityPostInteractionService =
+  new CommunityPostInteractionService();

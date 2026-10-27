@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useCurrentUserProfile } from '../shared/useCurrentUserProfile';
-import { useAuthStore } from '../../src/lib/stores/authStore';
+import React from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
+import { useAuthStore } from "../../src/lib/stores/authStore";
 
 const UserDebugPanel = () => {
   const [isExpanded, setIsExpanded] = React.useState(false);

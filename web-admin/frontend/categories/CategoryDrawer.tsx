@@ -42,7 +42,9 @@ const CategoryDrawer = ({
   }
 
   return (
-    <div className={`fixed inset-0 z-50 ${isOpen ? "" : "pointer-events-none"}`}>
+    <div
+      className={`fixed inset-0 z-50 ${isOpen ? "" : "pointer-events-none"}`}
+    >
       <button
         type="button"
         className={`absolute inset-0 bg-black/35 transition-opacity ${isOpen ? "opacity-100" : "opacity-0"}`}
@@ -86,12 +88,18 @@ const CategoryDrawer = ({
               <div className="mb-4 flex flex-col items-center">
                 <div className="mb-3 flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
                   {form.imageUrl ? (
-                    <img src={form.imageUrl} alt={form.name || "category"} className="h-full w-full object-cover" />
+                    <img
+                      src={form.imageUrl}
+                      alt={form.name || "category"}
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <span className="text-xs text-gray-400">Ảnh danh mục</span>
                   )}
                 </div>
-                <span className="text-sm font-medium text-[#1da453]">Tải ảnh danh mục lên</span>
+                <span className="text-sm font-medium text-[#1da453]">
+                  Tải ảnh danh mục lên
+                </span>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -131,16 +139,19 @@ const CategoryDrawer = ({
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-gray-800">Mô tả</label>
+                <label className="mb-1.5 block text-sm font-bold text-gray-800">
+                  Mô tả
+                </label>
                 <textarea
                   value={form.description}
-                  onChange={(event) => onChange({ description: event.target.value })}
+                  onChange={(event) =>
+                    onChange({ description: event.target.value })
+                  }
                   placeholder="Mô tả ngắn cho danh mục"
                   rows={5}
                   className="w-full resize-none rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-[#1da453] focus:outline-none focus:ring-1 focus:ring-[#1da453]"
                 />
               </div>
-
             </form>
           </div>
 
@@ -159,7 +170,11 @@ const CategoryDrawer = ({
               className="rounded-md bg-[#1da453] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#168a44] disabled:opacity-60"
               disabled={saving}
             >
-              {saving ? "Đang lưu..." : selectedCategory ? "Cập nhật" : "Tạo danh mục"}
+              {saving
+                ? "Đang lưu..."
+                : selectedCategory
+                  ? "Cập nhật"
+                  : "Tạo danh mục"}
             </button>
           </div>
         </div>

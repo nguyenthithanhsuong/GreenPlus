@@ -1,7 +1,10 @@
 import React, { useDeferredValue } from "react";
 import { usePermissions } from "@/lib/usePermissions";
 import { ChevronLeft, ChevronRight, Edit, Info, Search, X } from "lucide-react";
-import type { SupplierRow, SupplierStatus } from "../../backend/modules/suppliers/supplier-management.types";
+import type {
+  SupplierRow,
+  SupplierStatus,
+} from "../../backend/modules/suppliers/supplier-management.types";
 import { supplierSearchStrategy } from "../shared/searchStrategies";
 
 type SupplierTableProps = {
@@ -18,7 +21,10 @@ type SupplierTab = "all" | SupplierStatus;
 
 const PAGE_SIZE = 10;
 
-const buildPageItems = (currentPage: number, totalPages: number): Array<number | "ellipsis"> => {
+const buildPageItems = (
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> => {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
@@ -28,10 +34,25 @@ const buildPageItems = (currentPage: number, totalPages: number): Array<number |
   }
 
   if (currentPage >= totalPages - 2) {
-    return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [
+      1,
+      "ellipsis",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
   }
 
-  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    totalPages,
+  ];
 };
 
 function formatDate(value: string): string {
@@ -67,25 +88,40 @@ function getStatusStyles(status: SupplierStatus) {
   };
 }
 
-const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove, onReject }: SupplierTableProps) => {
+const SupplierTable = ({
+  suppliers,
+  loading,
+  saving,
+  onEdit,
+  onDelete,
+  onApprove,
+  onReject,
+}: SupplierTableProps) => {
   const [activeTab, setActiveTab] = React.useState<SupplierTab>("all");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [reviewingSupplier, setReviewingSupplier] = React.useState<SupplierRow | null>(null);
-  const [deletingSupplier, setDeletingSupplier] = React.useState<SupplierRow | null>(null);
+  const [reviewingSupplier, setReviewingSupplier] =
+    React.useState<SupplierRow | null>(null);
+  const [deletingSupplier, setDeletingSupplier] =
+    React.useState<SupplierRow | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const statusCounts = React.useMemo(
     () => ({
-      approved: suppliers.filter((supplier) => supplier.status === "approved").length,
-      pending: suppliers.filter((supplier) => supplier.status === "pending").length,
-      rejected: suppliers.filter((supplier) => supplier.status === "rejected").length,
+      approved: suppliers.filter((supplier) => supplier.status === "approved")
+        .length,
+      pending: suppliers.filter((supplier) => supplier.status === "pending")
+        .length,
+      rejected: suppliers.filter((supplier) => supplier.status === "rejected")
+        .length,
     }),
-    [suppliers]
+    [suppliers],
   );
 
   const filteredSuppliers = React.useMemo(() => {
-    const scopedSuppliers = suppliers.filter((supplier) => activeTab === "all" || supplier.status === activeTab);
+    const scopedSuppliers = suppliers.filter(
+      (supplier) => activeTab === "all" || supplier.status === activeTab,
+    );
 
     return supplierSearchStrategy.filter(scopedSuppliers, deferredSearchQuery);
   }, [activeTab, deferredSearchQuery, suppliers]);
@@ -117,8 +153,12 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
   }, [currentPage, filteredSuppliers]);
 
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
-  const pageItems = React.useMemo(() => buildPageItems(currentPage, totalPages), [currentPage, totalPages]);
+  const endItem =
+    totalItems === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, totalItems);
+  const pageItems = React.useMemo(
+    () => buildPageItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   const closeReviewModal = React.useCallback(() => {
     setReviewingSupplier(null);
@@ -128,19 +168,22 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
     setDeletingSupplier(null);
   }, []);
 
-  const handleReviewSupplier = React.useCallback((nextStatus: "approved" | "rejected") => {
-    if (!reviewingSupplier) {
-      return;
-    }
+  const handleReviewSupplier = React.useCallback(
+    (nextStatus: "approved" | "rejected") => {
+      if (!reviewingSupplier) {
+        return;
+      }
 
-    if (nextStatus === "approved") {
-      onApprove(reviewingSupplier);
-    } else {
-      onReject(reviewingSupplier);
-    }
+      if (nextStatus === "approved") {
+        onApprove(reviewingSupplier);
+      } else {
+        onReject(reviewingSupplier);
+      }
 
-    closeReviewModal();
-  }, [closeReviewModal, onApprove, onReject, reviewingSupplier]);
+      closeReviewModal();
+    },
+    [closeReviewModal, onApprove, onReject, reviewingSupplier],
+  );
 
   const handleDeleteSupplier = React.useCallback(() => {
     if (!deletingSupplier) {
@@ -152,65 +195,72 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
   }, [closeDeleteModal, deletingSupplier, onDelete]);
 
   const { hasPermission } = usePermissions();
-  const canUpdateGlobal = hasPermission('suppliers.update');
-  const canDeleteGlobal = hasPermission('suppliers.delete');
-  const canApproveGlobal = hasPermission('suppliers.approve');
+  const canUpdateGlobal = hasPermission("suppliers.update");
+  const canDeleteGlobal = hasPermission("suppliers.delete");
+  const canApproveGlobal = hasPermission("suppliers.approve");
   const anyActions = canUpdateGlobal || canDeleteGlobal || canApproveGlobal;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      
       <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-50 gap-4">
         <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg overflow-x-auto">
-  <button
-    type="button"
-    onClick={() => setActiveTab("all")}
-    className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap ${
-      activeTab === "all" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-    }`}
-  >
-    Tất cả
-  </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap ${
+              activeTab === "all"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Tất cả
+          </button>
 
-  <button
-    type="button"
-    onClick={() => setActiveTab("approved")}
-    className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${
-      activeTab === "approved" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-    }`}
-  >
-    <span>Đang hoạt động</span>
-    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">
-      {statusCounts.approved}
-    </span>
-  </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("approved")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === "approved"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <span>Đang hoạt động</span>
+            <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">
+              {statusCounts.approved}
+            </span>
+          </button>
 
-  <button
-    type="button"
-    onClick={() => setActiveTab("pending")}
-    className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${
-      activeTab === "pending" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-    }`}
-  >
-    <span>Chờ duyệt</span>
-    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full">
-      {statusCounts.pending}
-    </span>
-  </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("pending")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === "pending"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <span>Chờ duyệt</span>
+            <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full">
+              {statusCounts.pending}
+            </span>
+          </button>
 
-  <button
-    type="button"
-    onClick={() => setActiveTab("rejected")}
-    className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${
-      activeTab === "rejected" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-    }`}
-  >
-    <span>Đã từ chối/Khóa</span>
-    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-red-100 text-red-700 text-[10px] font-bold rounded-full">
-      {statusCounts.rejected}
-    </span>
-  </button>
-</div>
+          <button
+            type="button"
+            onClick={() => setActiveTab("rejected")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === "rejected"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <span>Đã từ chối/Khóa</span>
+            <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-red-100 text-red-700 text-[10px] font-bold rounded-full">
+              {statusCounts.rejected}
+            </span>
+          </button>
+        </div>
 
         <div className="flex items-center gap-2">
           <div className="relative hidden sm:block">
@@ -228,27 +278,37 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-              <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
+          <thead className="text-xs text-gray-500 bg-gray-50/50 border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 font-medium">Nhà cung cấp</th>
               <th className="px-6 py-4 font-medium">Địa chỉ</th>
               <th className="px-6 py-4 font-medium">Certificate</th>
               <th className="px-6 py-4 font-medium">Ngày tạo</th>
               <th className="px-6 py-4 font-medium">Trạng thái</th>
-                  {anyActions && <th className="px-6 py-4 font-medium text-right">Thao tác</th>}
+              {anyActions && (
+                <th className="px-6 py-4 font-medium text-right">Thao tác</th>
+              )}
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={6}
+                >
                   Đang tải danh sách supplier...
                 </td>
               </tr>
             ) : filteredSuppliers.length === 0 ? (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={6}>
-                  {searchQuery.trim() ? "Không tìm thấy supplier phù hợp." : "Chưa có supplier nào."}
+                <td
+                  className="px-6 py-10 text-center text-gray-500"
+                  colSpan={6}
+                >
+                  {searchQuery.trim()
+                    ? "Không tìm thấy supplier phù hợp."
+                    : "Chưa có supplier nào."}
                 </td>
               </tr>
             ) : (
@@ -256,27 +316,43 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
                 const statusStyles = getStatusStyles(supplier.status);
 
                 return (
-                  <tr key={supplier.supplier_id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                  <tr
+                    key={supplier.supplier_id}
+                    className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
-                        <p className="font-semibold text-gray-900">{supplier.name}</p>
-                        <p className="text-xs text-gray-500 line-clamp-2">{supplier.description || "Chưa có mô tả"}</p>
+                        <p className="font-semibold text-gray-900">
+                          {supplier.name}
+                        </p>
+                        <p className="text-xs text-gray-500 line-clamp-2">
+                          {supplier.description || "Chưa có mô tả"}
+                        </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-700">{supplier.address}</td>
+                    <td className="px-6 py-4 text-gray-700">
+                      {supplier.address}
+                    </td>
                     <td className="px-6 py-4">
                       {supplier.certificate ? (
-                        <span className="inline-flex max-w-[14rem] rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700" title={supplier.certificate}>
+                        <span
+                          className="inline-flex max-w-[14rem] rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700"
+                          title={supplier.certificate}
+                        >
                           {supplier.certificate}
                         </span>
                       ) : (
                         <span className="text-gray-400 text-xs">Không có</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-gray-600">{formatDate(supplier.created_at)}</td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {formatDate(supplier.created_at)}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${statusStyles.dot}`}></span>
+                        <span
+                          className={`w-2 h-2 rounded-full ${statusStyles.dot}`}
+                        ></span>
                         <span className={`font-medium ${statusStyles.text}`}>
                           {statusStyles.label}
                         </span>
@@ -285,30 +361,48 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
                     {anyActions ? (
                       <td className="px-6 py-4 text-right align-middle">
                         <div className="flex items-center justify-end gap-3">
-                          {supplier.status === "pending" && canApproveGlobal && (
-                            <button
-                              onClick={() => setReviewingSupplier(supplier)}
-                              className="px-3 py-1.5 bg-[#059669] hover:bg-[#047857] text-white rounded-md text-xs font-semibold transition-colors shadow-sm disabled:opacity-60"
-                              disabled={saving}
-                            >
-                              Xử lý
-                            </button>
-                          )}
+                          {supplier.status === "pending" &&
+                            canApproveGlobal && (
+                              <button
+                                onClick={() => setReviewingSupplier(supplier)}
+                                className="px-3 py-1.5 bg-[#059669] hover:bg-[#047857] text-white rounded-md text-xs font-semibold transition-colors shadow-sm disabled:opacity-60"
+                                disabled={saving}
+                              >
+                                Xử lý
+                              </button>
+                            )}
 
-                          {supplier.status === "approved" && canUpdateGlobal && (
-                            <button onClick={() => onEdit(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Sửa" disabled={saving}>
-                              <Edit className="w-4 h-4" />
-                            </button>
-                          )}
+                          {supplier.status === "approved" &&
+                            canUpdateGlobal && (
+                              <button
+                                onClick={() => onEdit(supplier)}
+                                className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60"
+                                title="Sửa"
+                                disabled={saving}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            )}
 
-                          {supplier.status === "rejected" && canUpdateGlobal && (
-                            <button onClick={() => onEdit(supplier)} className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60" title="Xem / Sửa" disabled={saving}>
-                              <Info className="w-4 h-4" />
-                            </button>
-                          )}
+                          {supplier.status === "rejected" &&
+                            canUpdateGlobal && (
+                              <button
+                                onClick={() => onEdit(supplier)}
+                                className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-60"
+                                title="Xem / Sửa"
+                                disabled={saving}
+                              >
+                                <Info className="w-4 h-4" />
+                              </button>
+                            )}
 
                           {canDeleteGlobal && (
-                            <button onClick={() => setDeletingSupplier(supplier)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200 disabled:opacity-60" title="Xóa" disabled={saving}>
+                            <button
+                              onClick={() => setDeletingSupplier(supplier)}
+                              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors border border-gray-200 disabled:opacity-60"
+                              title="Xóa"
+                              disabled={saving}
+                            >
                               <X className="w-3.5 h-3.5" />
                             </button>
                           )}
@@ -322,18 +416,26 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
           </tbody>
         </table>
       </div>
-      
+
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
         <span className="text-sm text-gray-500">
-          Hiển thị <span className="font-bold text-gray-900"> {startItem} - {endItem}</span> trong tổng số <span className="font-bold text-gray-900">{totalItems} </span> nhà cung cấp
-          
+          Hiển thị{" "}
+          <span className="font-bold text-gray-900">
+            {" "}
+            {startItem} - {endItem}
+          </span>{" "}
+          trong tổng số{" "}
+          <span className="font-bold text-gray-900">{totalItems} </span> nhà
+          cung cấp
         </span>
-        
+
         <div className="flex items-center gap-1">
           <button
             type="button"
             className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+            onClick={() =>
+              setCurrentPage((previous) => Math.max(1, previous - 1))
+            }
             disabled={currentPage === 1}
             aria-label="Trang trước"
           >
@@ -342,7 +444,11 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
 
           {pageItems.map((item, index) => {
             if (item === "ellipsis") {
-              return <span key={`ellipsis-${index}`} className="px-1 text-gray-400">...</span>;
+              return (
+                <span key={`ellipsis-${index}`} className="px-1 text-gray-400">
+                  ...
+                </span>
+              );
             }
 
             const isActive = item === currentPage;
@@ -362,7 +468,9 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
           <button
             type="button"
             className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))}
+            onClick={() =>
+              setCurrentPage((previous) => Math.min(totalPages, previous + 1))
+            }
             disabled={currentPage === totalPages}
             aria-label="Trang sau"
           >
@@ -382,9 +490,15 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
           />
 
           <div className="relative w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-900">Xử lý yêu cầu nhà cung cấp</h3>
+            <h3 className="text-lg font-bold text-gray-900">
+              Xử lý yêu cầu nhà cung cấp
+            </h3>
             <p className="mt-2 text-sm leading-relaxed text-gray-600">
-              Chọn trạng thái mới cho <span className="font-semibold text-gray-900">{reviewingSupplier.name}</span>.
+              Chọn trạng thái mới cho{" "}
+              <span className="font-semibold text-gray-900">
+                {reviewingSupplier.name}
+              </span>
+              .
             </p>
 
             <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -434,9 +548,15 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
             <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-600">
               <X className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Xác nhận xóa nhà cung cấp</h3>
+            <h3 className="text-lg font-bold text-gray-900">
+              Xác nhận xóa nhà cung cấp
+            </h3>
             <p className="mt-2 text-sm leading-relaxed text-gray-600">
-              Bạn có chắc muốn xóa <span className="font-semibold text-gray-900">{deletingSupplier.name}</span>? Hành động này không thể hoàn tác.
+              Bạn có chắc muốn xóa{" "}
+              <span className="font-semibold text-gray-900">
+                {deletingSupplier.name}
+              </span>
+              ? Hành động này không thể hoàn tác.
             </p>
 
             <div className="mt-6 flex items-center justify-end gap-2">
@@ -460,7 +580,6 @@ const SupplierTable = ({ suppliers, loading, saving, onEdit, onDelete, onApprove
           </div>
         </div>
       )}
-
     </div>
   );
 };

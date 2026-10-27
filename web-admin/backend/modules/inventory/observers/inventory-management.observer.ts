@@ -26,8 +26,7 @@ export interface InventoryManagementObserver {
 }
 
 export class InventoryManagementSubject {
-  private readonly observers =
-    new Set<InventoryManagementObserver>();
+  private readonly observers = new Set<InventoryManagementObserver>();
 
   attach(observer: InventoryManagementObserver): void {
     this.observers.add(observer);
@@ -37,39 +36,31 @@ export class InventoryManagementSubject {
     this.observers.delete(observer);
   }
 
-  async notify(
-    event: InventoryManagementEvent
-  ): Promise<void> {
+  async notify(event: InventoryManagementEvent): Promise<void> {
     await Promise.all(
-      Array.from(this.observers).map((observer) =>
-        observer.update(event)
-      )
+      Array.from(this.observers).map((observer) => observer.update(event)),
     );
   }
 }
 
-export class InventoryManagementAuditObserver
-  implements InventoryManagementObserver
-{
-  async update(
-    event: InventoryManagementEvent
-  ): Promise<void> {
+export class InventoryManagementAuditObserver implements InventoryManagementObserver {
+  async update(event: InventoryManagementEvent): Promise<void> {
     switch (event.type) {
       case "inventory_updated":
         console.info(
-          `[Inventory Updated] inventoryId=${event.inventoryId} actor=${event.actor}`
+          `[Inventory Updated] inventoryId=${event.inventoryId} actor=${event.actor}`,
         );
         break;
 
       case "inventory_deleted":
         console.info(
-          `[Inventory Deleted] inventoryId=${event.inventoryId} actor=${event.actor}`
+          `[Inventory Deleted] inventoryId=${event.inventoryId} actor=${event.actor}`,
         );
         break;
 
       case "inventory_transaction_created":
         console.info(
-          `[Inventory Transaction] inventoryId=${event.inventoryId} batchId=${event.batchId} type=${event.transactionType} quantity=${event.quantity} actor=${event.actor}${event.note ? ` note=${event.note}` : ""}`
+          `[Inventory Transaction] inventoryId=${event.inventoryId} batchId=${event.batchId} type=${event.transactionType} quantity=${event.quantity} actor=${event.actor}${event.note ? ` note=${event.note}` : ""}`,
         );
         break;
 

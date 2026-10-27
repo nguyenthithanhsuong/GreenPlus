@@ -13,6 +13,7 @@ export type OrderRow = {
   delivery_fee: number;
   note: string | null;
   created_at: string;
+  store_id: string;
 };
 
 export type OrderItemRow = {
@@ -44,11 +45,52 @@ export type PaymentHistoryRow = {
 };
 
 export class OrderRepository {
-  async listOrdersByUser(userId: string): Promise<OrderRow[]> {
+  async checkoutCart(input: {
+    userId: string;
+    storeId: string;
+    idempotencyKey: string;
+    deliveryAddress: string;
+    deliveryFee: number;
+    note: string | null;
+    paymentMethod: PaymentMethod;
+  }): Promise<{ order_id: string; status: "pending"; total_amount: number }> {
+    const { data, error } = await supabaseServer.rpc("checkout_cart", {
+      p_user_id: input.userId,
+      p_store_id: input.storeId,
+      p_idempotency_key: input.idempotencyKey,
+      p_delivery_address: input.deliveryAddress,
+      p_delivery_fee: input.deliveryFee,
+      p_note: input.note,
+      p_payment_method: input.paymentMethod,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const result = data as {
+      order_id?: string;
+      status?: "pending";
+      total_amount?: number;
+    } | null;
+    if (!result?.order_id || result.status !== "pending") {
+      throw new Error("Checkout RPC returned an invalid result");
+    }
+    return {
+      order_id: result.order_id,
+      status: "pending",
+      total_amount: Number(result.total_amount ?? 0),
+    };
+  }
+
+  async listOrdersByUser(userId: string, storeId: string): Promise<OrderRow[]> {
     const { data, error } = await supabaseServer
       .from("orders")
-      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at")
+      .select(
+        "order_id,user_id,store_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at",
+      )
       .eq("user_id", userId)
+      .eq("store_id", storeId)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -58,23 +100,34 @@ export class OrderRepository {
     return (data ?? []) as OrderRow[];
   }
 
-  async listPaymentHistoryByUser(userId: string): Promise<PaymentHistoryRow[]> {
+  async listPaymentHistoryByUser(
+    userId: string,
+    storeId: string,
+  ): Promise<PaymentHistoryRow[]> {
     const { data: orders, error: ordersError } = await supabaseServer
       .from("orders")
       .select("order_id,order_date,status")
       .eq("user_id", userId)
+      .eq("store_id", storeId)
       .order("created_at", { ascending: false });
 
     if (ordersError) {
       throw new Error(ordersError.message);
     }
 
-    const orderRows = (orders ?? []) as Array<{ order_id: string; order_date: string; status: OrderStatus }>;
+    const orderRows = (orders ?? []) as Array<{
+      order_id: string;
+      order_date: string;
+      status: OrderStatus;
+    }>;
     if (orderRows.length === 0) {
       return [];
     }
 
-    const orderMap = new Map<string, { order_date: string; order_status: OrderStatus }>();
+    const orderMap = new Map<
+      string,
+      { order_date: string; order_status: OrderStatus }
+    >();
     const orderIds: string[] = [];
     orderRows.forEach((row) => {
       const orderId = String(row.order_id);
@@ -87,7 +140,9 @@ export class OrderRepository {
 
     const { data: payments, error: paymentsError } = await supabaseServer
       .from("payments")
-      .select("payment_id,order_id,method,status,amount,transaction_id,payment_date")
+      .select(
+        "payment_id,order_id,method,status,amount,transaction_id,payment_date",
+      )
       .in("order_id", orderIds)
       .order("payment_date", { ascending: false, nullsFirst: false });
 
@@ -111,11 +166,17 @@ export class OrderRepository {
     });
   }
 
-  async findOrderById(orderId: string): Promise<OrderRow | null> {
+  async findOrderById(
+    orderId: string,
+    storeId: string,
+  ): Promise<OrderRow | null> {
     const { data, error } = await supabaseServer
       .from("orders")
-      .select("order_id,user_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at")
+      .select(
+        "order_id,user_id,store_id,order_date,status,total_amount,delivery_address,delivery_fee,note,created_at",
+      )
       .eq("order_id", orderId)
+      .eq("store_id", storeId)
       .maybeSingle();
 
     if (error) {
@@ -125,11 +186,17 @@ export class OrderRepository {
     return (data as OrderRow | null) ?? null;
   }
 
-  async listOrderItems(orderId: string): Promise<OrderItemRow[]> {
+  async listOrderItems(
+    orderId: string,
+    storeId: string,
+  ): Promise<OrderItemRow[]> {
     const { data, error } = await supabaseServer
       .from("order_items")
-      .select("order_item_id,order_id,product_id,batch_id,quantity,price,products(name,image_url),note")
-      .eq("order_id", orderId);
+      .select(
+        "order_item_id,order_id,store_id,product_id,batch_id,quantity,price,products(name,image_url),note",
+      )
+      .eq("order_id", orderId)
+      .eq("store_id", storeId);
 
     if (error) {
       throw new Error(error.message);
@@ -138,7 +205,10 @@ export class OrderRepository {
     return (data ?? []) as OrderItemRow[];
   }
 
-  async listOrderItemImages(orderIds: string[]): Promise<OrderItemImageRow[]> {
+  async listOrderItemImages(
+    orderIds: string[],
+    storeId: string,
+  ): Promise<OrderItemImageRow[]> {
     if (orderIds.length === 0) {
       return [];
     }
@@ -146,7 +216,8 @@ export class OrderRepository {
     const { data, error } = await supabaseServer
       .from("order_items")
       .select("order_id,products(image_url)")
-      .in("order_id", orderIds);
+      .in("order_id", orderIds)
+      .eq("store_id", storeId);
 
     if (error) {
       throw new Error(error.message);
@@ -173,11 +244,15 @@ export class OrderRepository {
     return String(data.status);
   }
 
-  async findPaymentInfo(orderId: string): Promise<{ status: string | null; method: string | null }> {
+  async findPaymentInfo(
+    orderId: string,
+    storeId: string,
+  ): Promise<{ status: string | null; method: string | null }> {
     const { data, error } = await supabaseServer
       .from("payments")
       .select("status,method")
       .eq("order_id", orderId)
+      .eq("store_id", storeId)
       .maybeSingle();
 
     if (error) {
@@ -190,11 +265,15 @@ export class OrderRepository {
     };
   }
 
-  async findDeliveryStatus(orderId: string): Promise<string | null> {
+  async findDeliveryStatus(
+    orderId: string,
+    storeId: string,
+  ): Promise<string | null> {
     const { data, error } = await supabaseServer
       .from("deliveries")
       .select("status")
       .eq("order_id", orderId)
+      .eq("store_id", storeId)
       .maybeSingle();
 
     if (error) {
@@ -208,39 +287,67 @@ export class OrderRepository {
     return String(data.status);
   }
 
-  async findCartByUserId(userId: string): Promise<{ cart_id: string; user_id: string } | null> {
+  async findCartByUserId(
+    userId: string,
+    storeId: string,
+  ): Promise<{ cart_id: string; user_id: string; store_id: string } | null> {
     const { data, error } = await supabaseServer
       .from("carts")
-      .select("cart_id,user_id")
+      .select("cart_id,user_id,store_id")
       .eq("user_id", userId)
+      .eq("store_id", storeId)
       .maybeSingle();
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return (data as { cart_id: string; user_id: string } | null) ?? null;
+    return (
+      (data as { cart_id: string; user_id: string; store_id: string } | null) ??
+      null
+    );
   }
 
-  async listCartItems(cartId: string): Promise<Array<{ cart_item_id: string; product_id: string; quantity: number; note: string | null }>> {
-  const { data, error } = await supabaseServer
-    .from("cart_items")
-    .select("cart_item_id,product_id,quantity,note") 
-    .eq("cart_id", cartId);
+  async listCartItems(
+    cartId: string,
+    storeId: string,
+  ): Promise<
+    Array<{
+      cart_item_id: string;
+      product_id: string;
+      quantity: number;
+      note: string | null;
+    }>
+  > {
+    const { data, error } = await supabaseServer
+      .from("cart_items")
+      .select("cart_item_id,product_id,quantity,note")
+      .eq("cart_id", cartId)
+      .eq("store_id", storeId);
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (
+      (data ?? []) as Array<{
+        cart_item_id: string;
+        product_id: string;
+        quantity: number;
+        note: string | null;
+      }>
+    ).map((row) => ({
+      cart_item_id: String(row.cart_item_id),
+      product_id: String(row.product_id),
+      quantity: Number(row.quantity),
+      note: row.note ?? null,
+    }));
   }
 
-  return ((data ?? []) as Array<{ cart_item_id: string; product_id: string; quantity: number; note: string | null }>).map((row) => ({
-    cart_item_id: String(row.cart_item_id),
-    product_id: String(row.product_id),
-    quantity: Number(row.quantity),
-    note: row.note ?? null, 
-  }));
-}
-
-  async listLatestPriceRows(productIds: string[]): Promise<Array<{ product_id: string; price: number }>> {
+  async listLatestPriceRows(
+    productIds: string[],
+    storeId: string,
+  ): Promise<Array<{ product_id: string; price: number }>> {
     if (productIds.length === 0) {
       return [];
     }
@@ -248,7 +355,8 @@ export class OrderRepository {
     const { data: batchData, error: batchError } = await supabaseServer
       .from("batches")
       .select("batch_id,product_id")
-      .in("product_id", productIds);
+      .in("product_id", productIds)
+      .eq("store_id", storeId);
 
     if (batchError) {
       throw new Error(batchError.message);
@@ -275,6 +383,7 @@ export class OrderRepository {
       .from("prices")
       .select("batch_id,price,date")
       .in("batch_id", batchIds)
+      .eq("store_id", storeId)
       .order("date", { ascending: false });
 
     if (error) {
@@ -298,29 +407,43 @@ export class OrderRepository {
     return Array.from(latestRows.values());
   }
 
-  async listBatchRows(productId: string): Promise<Array<{ batch_id: string; expire_date: string; status: string }>> {
+  async listBatchRows(
+    productId: string,
+    storeId: string,
+  ): Promise<Array<{ batch_id: string; expire_date: string; status: string }>> {
     const { data, error } = await supabaseServer
       .from("batches")
       .select("batch_id,expire_date,status")
       .eq("product_id", productId)
+      .eq("store_id", storeId)
       .order("expire_date", { ascending: true });
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as Array<{ batch_id: string; expire_date: string; status: string }>).map((row) => ({
+    return (
+      (data ?? []) as Array<{
+        batch_id: string;
+        expire_date: string;
+        status: string;
+      }>
+    ).map((row) => ({
       batch_id: String(row.batch_id),
       expire_date: String(row.expire_date),
       status: String(row.status),
     }));
   }
 
-  async getInventoryByBatchId(batchId: string): Promise<number> {
+  async getInventoryByBatchId(
+    batchId: string,
+    storeId: string,
+  ): Promise<number> {
     const { data, error } = await supabaseServer
       .from("inventory")
       .select("quantity_available")
       .eq("batch_id", batchId)
+      .eq("store_id", storeId)
       .maybeSingle();
 
     if (error) {
@@ -371,7 +494,7 @@ export class OrderRepository {
       batch_id: input.batchId,
       quantity: input.quantity,
       price: input.price,
-      note: input.note 
+      note: input.note,
     });
 
     if (error) {
@@ -402,15 +525,26 @@ export class OrderRepository {
   }
 
   async clearCart(cartId: string): Promise<void> {
-    const { error } = await supabaseServer.from("cart_items").delete().eq("cart_id", cartId);
+    const { error } = await supabaseServer
+      .from("cart_items")
+      .delete()
+      .eq("cart_id", cartId);
 
     if (error) {
       throw new Error(error.message);
     }
   }
 
-  async updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
-    const { error } = await supabaseServer.from("orders").update({ status }).eq("order_id", orderId);
+  async updateOrderStatus(
+    orderId: string,
+    storeId: string,
+    status: OrderStatus,
+  ): Promise<void> {
+    const { error } = await supabaseServer
+      .from("orders")
+      .update({ status })
+      .eq("order_id", orderId)
+      .eq("store_id", storeId);
 
     if (error) {
       throw new Error(error.message);
@@ -419,6 +553,7 @@ export class OrderRepository {
 
   async updatePaymentStatus(input: {
     orderId: string;
+    storeId: string;
     status: "pending" | "paid" | "failed" | "cancelled";
     transactionId?: string | null;
     paymentDate?: string | null;
@@ -435,7 +570,11 @@ export class OrderRepository {
       payload.payment_date = input.paymentDate;
     }
 
-    const { error } = await supabaseServer.from("payments").update(payload).eq("order_id", input.orderId);
+    const { error } = await supabaseServer
+      .from("payments")
+      .update(payload)
+      .eq("order_id", input.orderId)
+      .eq("store_id", input.storeId);
 
     if (error) {
       throw new Error(error.message);
@@ -444,6 +583,7 @@ export class OrderRepository {
 
   async updateOrderFields(input: {
     orderId: string;
+    storeId: string;
     deliveryAddress?: string;
     deliveryFee?: number;
     note?: string | null;
@@ -462,7 +602,11 @@ export class OrderRepository {
       payload.note = input.note;
     }
 
-    const { error } = await supabaseServer.from("orders").update(payload).eq("order_id", input.orderId);
+    const { error } = await supabaseServer
+      .from("orders")
+      .update(payload)
+      .eq("order_id", input.orderId)
+      .eq("store_id", input.storeId);
 
     if (error) {
       throw new Error(error.message);
@@ -470,7 +614,10 @@ export class OrderRepository {
   }
 }
 
-export function readRelationValue<T = string>(rel: RelObj, field: string): T | null {
+export function readRelationValue<T = string>(
+  rel: RelObj,
+  field: string,
+): T | null {
   if (!rel) {
     return null;
   }

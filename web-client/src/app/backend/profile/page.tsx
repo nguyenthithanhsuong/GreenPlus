@@ -22,7 +22,8 @@ export default function BackendProfileTestPage() {
     email: "jamie.green@example.com",
     phone: "+84 912 345 678",
     address: "42 Green Avenue, District 1, Ho Chi Minh City",
-    image_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
+    image_url:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
     status: "active",
   };
 
@@ -42,7 +43,8 @@ export default function BackendProfileTestPage() {
   const [result, setResult] = useState<unknown>(null);
 
   useEffect(() => {
-    const savedUserId = window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
+    const savedUserId =
+      window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
     setActiveUserId(savedUserId);
     setUserIdInput(savedUserId);
   }, []);
@@ -62,7 +64,9 @@ export default function BackendProfileTestPage() {
 
     try {
       const userId = resolveUserId();
-      const response = await fetch(`/api/account/profile?userId=${encodeURIComponent(userId)}`);
+      const response = await fetch(
+        `/api/account/profile?userId=${encodeURIComponent(userId)}`,
+      );
       const data = (await response.json()) as ProfileResult | { error: string };
 
       if (!response.ok) {
@@ -76,12 +80,19 @@ export default function BackendProfileTestPage() {
       setPhone(profile.phone ?? "");
       setAddress(profile.address ?? "");
       setImageUrl(profile.image_url ?? "");
-      window.localStorage.setItem(BACKEND_TEST_USER_STORAGE_KEY, profile.user_id);
+      window.localStorage.setItem(
+        BACKEND_TEST_USER_STORAGE_KEY,
+        profile.user_id,
+      );
       setActiveUserId(profile.user_id);
       setUserIdInput(profile.user_id);
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Đã xảy ra lỗi không mong muốn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -108,18 +119,27 @@ export default function BackendProfileTestPage() {
 
       const data = (await response.json()) as ProfileResult | { error: string };
       if (!response.ok) {
-        throw new Error("error" in data ? data.error : "Không thể cập nhật hồ sơ.");
+        throw new Error(
+          "error" in data ? data.error : "Không thể cập nhật hồ sơ.",
+        );
       }
 
       const profile = data as ProfileResult;
       setResult(profile);
       setImageUrl(profile.image_url ?? "");
-      window.localStorage.setItem(BACKEND_TEST_USER_STORAGE_KEY, profile.user_id);
+      window.localStorage.setItem(
+        BACKEND_TEST_USER_STORAGE_KEY,
+        profile.user_id,
+      );
       setActiveUserId(profile.user_id);
       setUserIdInput(profile.user_id);
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Đã xảy ra lỗi không mong muốn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -142,7 +162,10 @@ export default function BackendProfileTestPage() {
         }),
       });
 
-      const data = (await response.json()) as { updated?: boolean; error?: string };
+      const data = (await response.json()) as {
+        updated?: boolean;
+        error?: string;
+      };
       if (!response.ok) {
         throw new Error(data.error ?? "Không thể đổi mật khẩu.");
       }
@@ -153,7 +176,11 @@ export default function BackendProfileTestPage() {
       setConfirmPassword("");
     } catch (requestError) {
       setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Đã xảy ra lỗi không mong muốn.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Đã xảy ra lỗi không mong muốn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -169,7 +196,10 @@ export default function BackendProfileTestPage() {
     setImageUrl(fakeProfile.image_url ?? "");
   };
 
-  const previewImageSrc = imageUrl.trim() || fakeProfile.image_url || "https://placehold.co/160x160?text=No+Image";
+  const previewImageSrc =
+    imageUrl.trim() ||
+    fakeProfile.image_url ||
+    "https://placehold.co/160x160?text=No+Image";
   const previewName = name.trim() || fakeProfile.name;
   const previewEmail = email.trim() || fakeProfile.email;
   const previewAddress = address.trim() || fakeProfile.address || "No address";
@@ -180,17 +210,30 @@ export default function BackendProfileTestPage() {
       <div className="mx-auto max-w-3xl space-y-4">
         <section className="rounded-xl border border-slate-300 bg-white p-5">
           <h1 className="text-2xl font-bold">Kiểm thử backend: Hồ sơ</h1>
-          <p className="mt-2 text-sm text-slate-600">Dùng trang này để kiểm tra /api/account/profile (GET và PUT).</p>
+          <p className="mt-2 text-sm text-slate-600">
+            Dùng trang này để kiểm tra /api/account/profile (GET và PUT).
+          </p>
           <p className="mt-1 text-xs text-slate-500">Route: /backend/profile</p>
-          <p className="mt-1 text-xs text-slate-500">Người dùng kiểm thử hiện tại: {activeUserId || "chưa thiết lập"}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Người dùng kiểm thử hiện tại: {activeUserId || "chưa thiết lập"}
+          </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <Link href="/backend/register" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/register"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Đi tới kiểm thử đăng ký
             </Link>
-            <Link href="/backend/signin" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/signin"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Đi tới kiểm thử đăng nhập
             </Link>
-            <Link href="/backend/products" className="rounded bg-slate-200 px-2 py-1 text-slate-800">
+            <Link
+              href="/backend/products"
+              className="rounded bg-slate-200 px-2 py-1 text-slate-800"
+            >
               Kiểm thử backend sản phẩm
             </Link>
           </div>
@@ -264,7 +307,10 @@ export default function BackendProfileTestPage() {
 
         <section className="rounded-xl border border-slate-300 bg-white p-5">
           <h2 className="text-lg font-semibold">Xem trước hồ sơ</h2>
-          <p className="mt-1 text-xs text-slate-500">Phần xem trước dùng giá trị form và sẽ dùng hồ sơ demo nếu thiếu dữ liệu.</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Phần xem trước dùng giá trị form và sẽ dùng hồ sơ demo nếu thiếu dữ
+            liệu.
+          </p>
           <div className="mt-4 rounded-xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-sky-50 p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <img
@@ -272,11 +318,14 @@ export default function BackendProfileTestPage() {
                 alt="Xem trước hồ sơ"
                 className="h-24 w-24 rounded-full border border-slate-300 object-cover"
                 onError={(event) => {
-                  event.currentTarget.src = "https://placehold.co/160x160?text=Bad+URL";
+                  event.currentTarget.src =
+                    "https://placehold.co/160x160?text=Bad+URL";
                 }}
               />
               <div className="space-y-1">
-                <p className="text-xl font-bold text-slate-900">{previewName}</p>
+                <p className="text-xl font-bold text-slate-900">
+                  {previewName}
+                </p>
                 <p className="text-sm text-slate-600">{previewEmail}</p>
                 <p className="text-sm text-slate-600">{previewPhone}</p>
                 <p className="text-sm text-slate-600">{previewAddress}</p>

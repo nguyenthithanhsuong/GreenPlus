@@ -4,7 +4,11 @@ import {
   PriceManagementAuditObserver,
   PriceManagementSubject,
 } from "../observers/price-management.observer";
-import { CreatePriceInput, PriceRow, UpdatePriceInput } from "../price-management.types";
+import {
+  CreatePriceInput,
+  PriceRow,
+  UpdatePriceInput,
+} from "../price-management.types";
 
 export class PriceManagementFacade {
   private readonly repository = new PriceManagementRepository();

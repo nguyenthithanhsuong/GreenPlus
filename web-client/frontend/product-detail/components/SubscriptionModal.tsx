@@ -175,9 +175,21 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 const frequencyOptions = [
-  { value: "weekly", label: "Hàng tuần", description: "Giao 1 lần/tuần - Tiết kiệm 10%" },
-  { value: "biweekly", label: "Hai tuần một lần", description: "Giao 1 lần/2 tuần - Tiết kiệm 15%" },
-  { value: "monthly", label: "Hàng tháng", description: "Giao 1 lần/tháng - Tiết kiệm 20%" },
+  {
+    value: "weekly",
+    label: "Hàng tuần",
+    description: "Giao 1 lần/tuần - Tiết kiệm 10%",
+  },
+  {
+    value: "biweekly",
+    label: "Hai tuần một lần",
+    description: "Giao 1 lần/2 tuần - Tiết kiệm 15%",
+  },
+  {
+    value: "monthly",
+    label: "Hàng tháng",
+    description: "Giao 1 lần/tháng - Tiết kiệm 20%",
+  },
 ];
 
 const disabledSubmitButtonStyle: React.CSSProperties = {
@@ -185,7 +197,14 @@ const disabledSubmitButtonStyle: React.CSSProperties = {
   cursor: "not-allowed",
 };
 
-export default function SubscriptionModal({ isOpen, productId, productName, price, onClose, onSubmit }: SubscriptionModalProps) {
+export default function SubscriptionModal({
+  isOpen,
+  productId,
+  productName,
+  price,
+  onClose,
+  onSubmit,
+}: SubscriptionModalProps) {
   const [frequency, setFrequency] = useState("weekly");
   const [loading, setLoading] = useState(false);
 
@@ -219,7 +238,11 @@ export default function SubscriptionModal({ isOpen, productId, productName, pric
 
         <div style={styles.productInfo}>
           <p style={styles.productName}>{productName}</p>
-          {price !== null && <p style={styles.productPrice}>{new Intl.NumberFormat("vi-VN").format(price)} VND</p>}
+          {price !== null && (
+            <p style={styles.productPrice}>
+              {new Intl.NumberFormat("vi-VN").format(price)} VND
+            </p>
+          )}
         </div>
 
         <div>
@@ -230,7 +253,9 @@ export default function SubscriptionModal({ isOpen, productId, productName, pric
                 key={option.value}
                 style={{
                   ...styles.frequencyOption,
-                  ...(frequency === option.value ? styles.frequencyOptionActive : {}),
+                  ...(frequency === option.value
+                    ? styles.frequencyOptionActive
+                    : {}),
                 }}
               >
                 <input
@@ -243,7 +268,9 @@ export default function SubscriptionModal({ isOpen, productId, productName, pric
                 />
                 <div style={{ flex: 1 }}>
                   <p style={styles.frequencyLabel}>{option.label}</p>
-                  <p style={styles.frequencyDescription}>{option.description}</p>
+                  <p style={styles.frequencyDescription}>
+                    {option.description}
+                  </p>
                 </div>
               </label>
             ))}
@@ -251,12 +278,17 @@ export default function SubscriptionModal({ isOpen, productId, productName, pric
         </div>
 
         <p style={styles.infoText}>
-          💡 Bạn có thể hủy lịch mua định kì bất kỳ lúc nào trong phần Quản lý đơn hàng. Giá sản phẩm sẽ được cập nhật theo mục tiêu bộ theo
-          lịch.
+          💡 Bạn có thể hủy lịch mua định kì bất kỳ lúc nào trong phần Quản lý
+          đơn hàng. Giá sản phẩm sẽ được cập nhật theo mục tiêu bộ theo lịch.
         </p>
 
         <div style={styles.buttonGroup}>
-          <button type="button" style={styles.cancelButton} onClick={onClose} disabled={loading}>
+          <button
+            type="button"
+            style={styles.cancelButton}
+            onClick={onClose}
+            disabled={loading}
+          >
             Hủy
           </button>
           <button

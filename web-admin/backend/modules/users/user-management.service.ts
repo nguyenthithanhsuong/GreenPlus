@@ -2,7 +2,11 @@ import { AppError } from "../../core/errors";
 import { UserManagementRepository } from "./user-management.repository";
 import { createUserAccountState } from "./states/user-account.state";
 import { createUserPasswordStrategy } from "./strategies/user-password.strategy";
-import { CreateUserInput, UpdateUserInput, UserSummary } from "./user-management.types";
+import {
+  CreateUserInput,
+  UpdateUserInput,
+  UserSummary,
+} from "./user-management.types";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -44,7 +48,10 @@ export class UserManagementService {
     return users.map((user) => this.toSummary(user));
   }
 
-  async findCurrentUser(input: { userId?: string; email?: string | null }): Promise<UserSummary | null> {
+  async findCurrentUser(input: {
+    userId?: string;
+    email?: string | null;
+  }): Promise<UserSummary | null> {
     const userId = input.userId?.trim();
     const email = input.email?.trim().toLowerCase();
 
@@ -115,7 +122,10 @@ export class UserManagementService {
 
       const currentState = createUserAccountState(existing.status);
       if (!currentState.canTransitionTo(input.status)) {
-        throw new AppError(`Cannot change status from ${currentState.name} to ${input.status}`, 400);
+        throw new AppError(
+          `Cannot change status from ${currentState.name} to ${input.status}`,
+          400,
+        );
       }
     }
 
@@ -141,7 +151,10 @@ export class UserManagementService {
 
     const currentState = createUserAccountState(existing.status);
     if (!currentState.canDisable()) {
-      throw new AppError(`Cannot disable user with status ${currentState.name}`, 400);
+      throw new AppError(
+        `Cannot disable user with status ${currentState.name}`,
+        400,
+      );
     }
 
     const updated = await this.repository.updateUser({

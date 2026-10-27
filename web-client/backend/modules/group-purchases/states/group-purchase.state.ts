@@ -16,7 +16,9 @@ class ClosedGroupPurchaseState implements GroupPurchaseState {
   }
 }
 
-export function createGroupPurchaseState(status: GroupPurchaseStatus): GroupPurchaseState {
+export function createGroupPurchaseState(
+  status: GroupPurchaseStatus,
+): GroupPurchaseState {
   if (status === "open") {
     return new OpenGroupPurchaseState();
   }

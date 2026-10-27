@@ -7,7 +7,10 @@ type Handler<TRequest extends Request, TContext> = (
   context: TContext,
 ) => Promise<Response>;
 
-export function withSentry<TRequest extends Request, TContext = { params: Promise<Record<string, string>> }>(handler: Handler<TRequest, TContext>): Handler<TRequest, TContext> {
+export function withSentry<
+  TRequest extends Request,
+  TContext = { params: Promise<Record<string, string>> },
+>(handler: Handler<TRequest, TContext>): Handler<TRequest, TContext> {
   return async (request: TRequest, context: TContext): Promise<Response> => {
     try {
       return await handler(request, context);
@@ -15,11 +18,6 @@ export function withSentry<TRequest extends Request, TContext = { params: Promis
       console.error("[Unhandled API error]:", error);
 
       Sentry.captureException(error);
-      const flushed = await Sentry.flush(2000);
-
-      if (!flushed) {
-        console.error("[Sentry unavailable] Exception not delivered:", error);
-      }
 
       if (error instanceof AppError) {
         return NextResponse.json(

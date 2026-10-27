@@ -21,7 +21,9 @@ export class CommunityPostFacade {
     this.subject.attach(new CommunityPostAuditObserver());
   }
 
-  async createPost(input: CreateCommunityPostInput): Promise<CommunityPostCreatedResult> {
+  async createPost(
+    input: CreateCommunityPostInput,
+  ): Promise<CommunityPostCreatedResult> {
     const result = await this.service.createPost(input);
 
     this.subject.notify({
@@ -41,7 +43,9 @@ export class CommunityPostFacade {
     return this.service.listAllPosts();
   }
 
-  async updatePost(input: UpdateCommunityPostInput): Promise<CommunityPostSummary> {
+  async updatePost(
+    input: UpdateCommunityPostInput,
+  ): Promise<CommunityPostSummary> {
     const result = await this.service.updatePost(input);
 
     this.subject.notify({
@@ -63,7 +67,9 @@ export class CommunityPostFacade {
     });
   }
 
-  async uploadAttachment(input: UploadCommunityAttachmentInput): Promise<UploadCommunityAttachmentResult> {
+  async uploadAttachment(
+    input: UploadCommunityAttachmentInput,
+  ): Promise<UploadCommunityAttachmentResult> {
     return this.service.uploadAttachment(input);
   }
 }

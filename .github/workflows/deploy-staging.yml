@@ -83,6 +83,53 @@ jobs:
             SENTRY_PROJECT_ADMIN=${{ env.SENTRY_PROJECT_ADMIN }}
             SENTRY_PROJECT_CLIENT=${{ env.SENTRY_PROJECT_CLIENT }}
 
+      - name: Extract Docker metadata for web-client
+        id: meta-client
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}/web-client
+          tags: |
+            type=ref,event=branch
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push web-client image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: web-client/Dockerfile
+          push: true
+          tags: ${{ steps.meta-client.outputs.tags }}
+          labels: ${{ steps.meta-client.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
+            NEXT_PUBLIC_SENTRY_DSN_CLIENT=${{ env.NEXT_PUBLIC_SENTRY_DSN_CLIENT }}
+            SENTRY_DSN_CLIENT=${{ env.SENTRY_DSN_CLIENT }}
+            SENTRY_AUTH_TOKEN=${{ env.SENTRY_AUTH_TOKEN }}
+            SENTRY_ORG=${{ env.SENTRY_ORG }}
+            SENTRY_PROJECT_CLIENT=${{ env.SENTRY_PROJECT_CLIENT }}
+
+      - name: Extract Docker metadata for web-shipper
+        id: meta-shipper
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}/web-shipper
+          tags: |
+            type=ref,event=branch
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push web-shipper image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: web-shipper/Dockerfile
+          push: true
+          tags: ${{ steps.meta-shipper.outputs.tags }}
+          labels: ${{ steps.meta-shipper.outputs.labels }}
+
       - name: Deploy to staging environment
         run: |
           echo "Deploying to staging..."

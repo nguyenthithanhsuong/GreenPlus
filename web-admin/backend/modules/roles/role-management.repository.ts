@@ -1,5 +1,9 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import { CreateRoleInput, RoleRow, UpdateRoleInput } from "./role-management.types";
+import {
+  CreateRoleInput,
+  RoleRow,
+  UpdateRoleInput,
+} from "./role-management.types";
 import { isSystemRoleRow } from "./states/role-state";
 
 type RoleDbRow = {
@@ -23,7 +27,9 @@ export class RoleManagementRepository {
   async listRoles(): Promise<RoleRow[]> {
     const { data: roleRows, error: roleError } = await this.supabase
       .from("roles")
-      .select("role_id,role_name,description,is_customer,is_admin,is_manager,is_employee,is_shipper")
+      .select(
+        "role_id,role_name,description,is_customer,is_admin,is_manager,is_employee,is_shipper",
+      )
       .order("role_name", { ascending: true });
 
     if (roleError) {
@@ -68,7 +74,11 @@ export class RoleManagementRepository {
   async findByName(roleName: string): Promise<RoleRow | null> {
     const normalized = roleName.trim().toLowerCase();
     const roles = await this.listRoles();
-    return roles.find((role) => role.role_name.trim().toLowerCase() === normalized) ?? null;
+    return (
+      roles.find(
+        (role) => role.role_name.trim().toLowerCase() === normalized,
+      ) ?? null
+    );
   }
 
   async createRole(input: CreateRoleInput): Promise<RoleRow> {
@@ -83,7 +93,9 @@ export class RoleManagementRepository {
         is_employee: input.isEmployee ?? false,
         is_shipper: input.isShipper ?? false,
       })
-      .select("role_id,role_name,description,is_customer,is_admin,is_manager,is_employee,is_shipper")
+      .select(
+        "role_id,role_name,description,is_customer,is_admin,is_manager,is_employee,is_shipper",
+      )
       .single();
 
     if (error) {
@@ -106,19 +118,27 @@ export class RoleManagementRepository {
   async updateRole(input: UpdateRoleInput): Promise<RoleRow | null> {
     const payload: Record<string, string | boolean | null> = {};
 
-    if (typeof input.roleName !== "undefined") payload.role_name = input.roleName;
-    if (typeof input.description !== "undefined") payload.description = input.description?.trim() || null;
-    if (typeof input.isCustomer !== "undefined") payload.is_customer = input.isCustomer;
+    if (typeof input.roleName !== "undefined")
+      payload.role_name = input.roleName;
+    if (typeof input.description !== "undefined")
+      payload.description = input.description?.trim() || null;
+    if (typeof input.isCustomer !== "undefined")
+      payload.is_customer = input.isCustomer;
     if (typeof input.isAdmin !== "undefined") payload.is_admin = input.isAdmin;
-    if (typeof input.isManager !== "undefined") payload.is_manager = input.isManager;
-    if (typeof input.isEmployee !== "undefined") payload.is_employee = input.isEmployee;
-    if (typeof input.isShipper !== "undefined") payload.is_shipper = input.isShipper;
+    if (typeof input.isManager !== "undefined")
+      payload.is_manager = input.isManager;
+    if (typeof input.isEmployee !== "undefined")
+      payload.is_employee = input.isEmployee;
+    if (typeof input.isShipper !== "undefined")
+      payload.is_shipper = input.isShipper;
 
     const { data, error } = await this.supabase
       .from("roles")
       .update(payload)
       .eq("role_id", input.roleId)
-      .select("role_id,role_name,description,is_customer,is_admin,is_manager,is_employee,is_shipper")
+      .select(
+        "role_id,role_name,description,is_customer,is_admin,is_manager,is_employee,is_shipper",
+      )
       .maybeSingle();
 
     if (error) {

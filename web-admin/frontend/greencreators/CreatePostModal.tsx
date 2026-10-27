@@ -9,7 +9,12 @@ type CreatePostModalProps = {
   open: boolean;
   loading: boolean;
   onClose: () => void;
-  onSubmit: (input: { title: string; content: string; type: GreenPostType; files: File[] }) => Promise<void>;
+  onSubmit: (input: {
+    title: string;
+    content: string;
+    type: GreenPostType;
+    files: File[];
+  }) => Promise<void>;
 };
 
 const inferTypeFromFiles = (files: File[]): GreenPostType => {
@@ -24,7 +29,12 @@ const inferTypeFromFiles = (files: File[]): GreenPostType => {
   return "community";
 };
 
-const CreatePostModal = ({ open, loading, onClose, onSubmit }: CreatePostModalProps) => {
+const CreatePostModal = ({
+  open,
+  loading,
+  onClose,
+  onSubmit,
+}: CreatePostModalProps) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -48,8 +58,12 @@ const CreatePostModal = ({ open, loading, onClose, onSubmit }: CreatePostModalPr
       return;
     }
 
-    const imageCount = selected.filter((item) => item.type.startsWith("image/")).length;
-    const videoCount = selected.filter((item) => item.type.startsWith("video/")).length;
+    const imageCount = selected.filter((item) =>
+      item.type.startsWith("image/"),
+    ).length;
+    const videoCount = selected.filter((item) =>
+      item.type.startsWith("video/"),
+    ).length;
     const unknownCount = selected.length - imageCount - videoCount;
 
     if (unknownCount > 0) {
@@ -77,34 +91,34 @@ const CreatePostModal = ({ open, loading, onClose, onSubmit }: CreatePostModalPr
       return;
     }
 
-     setError(null);
+    setError(null);
 
-  await onSubmit({
-    title: title.trim(),
-    content: content.trim(),
-    type: inferredType,
-    files,
-  });
+    await onSubmit({
+      title: title.trim(),
+      content: content.trim(),
+      type: inferredType,
+      files,
+    });
 
-  resetForm();
+    resetForm();
   };
 
   const previewUrls = useMemo(
-  () =>
-    files.map((file) => ({
-      file,
-      url: URL.createObjectURL(file),
-    })),
-  [files]
-);
+    () =>
+      files.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+      })),
+    [files],
+  );
 
-useEffect(() => {
-  return () => {
-    previewUrls.forEach(({ url }) => URL.revokeObjectURL(url));
-  };
-}, [previewUrls]);
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(({ url }) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
 
-if (!open) {
+  if (!open) {
     return null;
   }
 
@@ -115,23 +129,27 @@ if (!open) {
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
         aria-label="Đóng modal tạo bài"
         onClick={() => {
-  resetForm();
-  onClose();
-}}
+          resetForm();
+          onClose();
+        }}
       />
 
       <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Tạo bài Green Creator mới</h3>
-            <p className="text-sm text-gray-500">Bài mới sẽ ở trạng thái pending sau khi đăng.</p>
+            <h3 className="text-lg font-bold text-gray-900">
+              Tạo bài Green Creator mới
+            </h3>
+            <p className="text-sm text-gray-500">
+              Bài mới sẽ ở trạng thái pending sau khi đăng.
+            </p>
           </div>
           <button
             type="button"
             onClick={() => {
-  resetForm();
-  onClose();
-}}
+              resetForm();
+              onClose();
+            }}
             className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
             disabled={loading}
           >
@@ -141,7 +159,10 @@ if (!open) {
 
         <div className="space-y-4 px-6 py-5">
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-gray-700" htmlFor="gc-title">
+            <label
+              className="mb-1.5 block text-sm font-semibold text-gray-700"
+              htmlFor="gc-title"
+            >
               Tiêu đề
             </label>
             <input
@@ -157,7 +178,10 @@ if (!open) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-gray-700" htmlFor="gc-content">
+            <label
+              className="mb-1.5 block text-sm font-semibold text-gray-700"
+              htmlFor="gc-content"
+            >
               Nội dung
             </label>
             <textarea
@@ -170,11 +194,16 @@ if (!open) {
               placeholder="Nhập nội dung bài viết"
               disabled={loading}
             />
-            <p className="mt-1 text-xs text-gray-500">{content.length}/1000 ký tự</p>
+            <p className="mt-1 text-xs text-gray-500">
+              {content.length}/1000 ký tự
+            </p>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-gray-700" htmlFor="gc-files">
+            <label
+              className="mb-1.5 block text-sm font-semibold text-gray-700"
+              htmlFor="gc-files"
+            >
               Tệp đính kèm (tùy chọn)
             </label>
             <input
@@ -187,13 +216,16 @@ if (!open) {
               disabled={loading}
             />
             <p className="mt-1 text-xs text-gray-500">
-              {files.length ? `Đã chọn ${files.length} tệp` : "Chưa chọn tệp"} • Loại tự động: {inferredType}
+              {files.length ? `Đã chọn ${files.length} tệp` : "Chưa chọn tệp"} •
+              Loại tự động: {inferredType}
             </p>
           </div>
 
           {previewUrls.length ? (
             <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-              <p className="mb-2 text-sm font-semibold text-gray-700">Xem trước</p>
+              <p className="mb-2 text-sm font-semibold text-gray-700">
+                Xem trước
+              </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {previewUrls.map(({ file, url }, index) => {
                   const currentFile = file;
@@ -202,13 +234,28 @@ if (!open) {
                   }
 
                   return (
-                    <div key={`${currentFile.name}-${index}`} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                    <div
+                      key={`${currentFile.name}-${index}`}
+                      className="overflow-hidden rounded-lg border border-gray-200 bg-white"
+                    >
                       {currentFile.type.startsWith("image/") ? (
-                        <img src={url} alt={currentFile.name} className="h-40 w-full object-cover" />
+                        <img
+                          src={url}
+                          alt={currentFile.name}
+                          className="h-40 w-full object-cover"
+                        />
                       ) : currentFile.type.startsWith("video/") ? (
-                        <video src={url} controls playsInline preload="metadata" className="h-40 w-full object-cover" />
+                        <video
+                          src={url}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="h-40 w-full object-cover"
+                        />
                       ) : (
-                        <div className="flex h-40 items-center justify-center text-gray-400">Không hỗ trợ xem trước</div>
+                        <div className="flex h-40 items-center justify-center text-gray-400">
+                          Không hỗ trợ xem trước
+                        </div>
                       )}
                     </div>
                   );
@@ -217,20 +264,28 @@ if (!open) {
             </div>
           ) : null}
 
-          {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+          {error ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            {inferredType === "video" ? <PlaySquare className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
+            {inferredType === "video" ? (
+              <PlaySquare className="h-4 w-4" />
+            ) : (
+              <ImageIcon className="h-4 w-4" />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => {
-  resetForm();
-  onClose();
-}}
+                resetForm();
+                onClose();
+              }}
               className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               disabled={loading}
             >

@@ -17,11 +17,17 @@ export class DeliveryTrackingService {
 
   constructor(private readonly repository: DeliveryTrackingRepository) {}
 
-  async listDeliveries(filters: DeliveryTrackingFilterInput = {}): Promise<DeliveryTrackingRow[]> {
+  async listDeliveries(
+    filters: DeliveryTrackingFilterInput = {},
+  ): Promise<DeliveryTrackingRow[]> {
     const normalizedFromDate = this.normalizeDate(filters.fromDate);
     const normalizedToDate = this.normalizeDate(filters.toDate);
 
-    if (normalizedFromDate && normalizedToDate && normalizedFromDate > normalizedToDate) {
+    if (
+      normalizedFromDate &&
+      normalizedToDate &&
+      normalizedFromDate > normalizedToDate
+    ) {
       throw new AppError("fromDate must be before or equal to toDate", 400);
     }
 
@@ -38,7 +44,8 @@ export class DeliveryTrackingService {
       throw new AppError("orderId is required", 400);
     }
 
-    const delivery = await this.repository.getDeliveryByOrderId(normalizedOrderId);
+    const delivery =
+      await this.repository.getDeliveryByOrderId(normalizedOrderId);
     if (!delivery) {
       throw new AppError("delivery not found", 404);
     }
@@ -50,7 +57,9 @@ export class DeliveryTrackingService {
     return this.repository.listShippers();
   }
 
-  async assignShipper(input: AssignShipperInput): Promise<DeliveryTrackingDetailRow> {
+  async assignShipper(
+    input: AssignShipperInput,
+  ): Promise<DeliveryTrackingDetailRow> {
     const orderId = input.orderId.trim();
     if (!orderId) {
       throw new AppError("orderId is required", 400);
@@ -62,6 +71,9 @@ export class DeliveryTrackingService {
     }
 
     await this.requireShipper(employeeId);
+    // Ownership must be checked on the parent order too, not just on the delivery row.
+    if (!(await this.repository.orderExistsInScope(orderId)))
+      throw new AppError("Order not found in the authorized store", 404);
 
     const existing = await this.repository.getDeliveryByOrderId(orderId);
     if (existing) {
@@ -84,7 +96,9 @@ export class DeliveryTrackingService {
     return this.getDeliveryDetail(orderId);
   }
 
-  async updateDeliveryStatus(input: UpdateDeliveryStatusInput): Promise<DeliveryTrackingDetailRow> {
+  async updateDeliveryStatus(
+    input: UpdateDeliveryStatusInput,
+  ): Promise<DeliveryTrackingDetailRow> {
     const orderId = input.orderId.trim();
     if (!orderId) {
       throw new AppError("orderId is required", 400);
@@ -105,7 +119,10 @@ export class DeliveryTrackingService {
 
     const state = createDeliveryStatusState(currentStatus);
     if (!state.canTransitionTo(nextStatus)) {
-      throw new AppError(`Cannot transition delivery from ${currentStatus} to ${nextStatus}`, 400);
+      throw new AppError(
+        `Cannot transition delivery from ${currentStatus} to ${nextStatus}`,
+        400,
+      );
     }
 
     await this.repository.updateDeliveryStatus({

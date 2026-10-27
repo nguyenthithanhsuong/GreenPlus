@@ -10,7 +10,7 @@ const getHandler = async () => {
       items,
       total: items.length,
     },
-    { status: 200 }
+    { status: 200 },
   );
 };
 

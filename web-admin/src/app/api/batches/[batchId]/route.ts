@@ -2,7 +2,7 @@ import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
 import { batchManagementFacade } from "../../../../../backend/modules/batches/facades/batch-management.facade";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 type Context = {
   params: Promise<{
@@ -57,7 +57,10 @@ export const PUT = withSentry(async (request: Request, context: unknown) => {
         duration_ms: Date.now() - start,
       });
 
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;
@@ -80,7 +83,10 @@ export const PATCH = withSentry(async (request: Request, context: unknown) => {
   }
 
   try {
-    const updated = await batchManagementFacade.changeStatus(batchId, body.status);
+    const updated = await batchManagementFacade.changeStatus(
+      batchId,
+      body.status,
+    );
 
     logger.info("Change batch status success", {
       batchId,
@@ -98,7 +104,10 @@ export const PATCH = withSentry(async (request: Request, context: unknown) => {
         duration_ms: Date.now() - start,
       });
 
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;
@@ -133,7 +142,10 @@ export const DELETE = withSentry(async (request: Request, context: unknown) => {
         duration_ms: Date.now() - start,
       });
 
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     throw error;

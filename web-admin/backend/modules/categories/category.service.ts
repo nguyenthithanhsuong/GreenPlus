@@ -1,1 +1,4 @@
-export { CategoryManagementFacade as CategoryService, categoryManagementFacade } from "./facades/category-management.facade";
+export {
+  CategoryManagementFacade as CategoryService,
+  categoryManagementFacade,
+} from "./facades/category-management.facade";

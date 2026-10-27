@@ -54,22 +54,26 @@ export default function ProductQrTestPage() {
         if (products.length > 0) {
           setProductId(products[0].product_id);
         }
-      } catch {
-      }
+      } catch {}
     };
 
     void loadOptions();
   }, []);
 
   const filteredBatches = useMemo(
-    () => batchOptions.filter((batch) => !productId || batch.product_id === productId),
-    [batchOptions, productId]
+    () =>
+      batchOptions.filter(
+        (batch) => !productId || batch.product_id === productId,
+      ),
+    [batchOptions, productId],
   );
 
   useEffect(() => {
     if (filteredBatches.length > 0) {
       setBatchId((current) => {
-        const stillExists = filteredBatches.some((batch) => batch.batch_id === current);
+        const stillExists = filteredBatches.some(
+          (batch) => batch.batch_id === current,
+        );
         return stillExists ? current : filteredBatches[0].batch_id;
       });
     } else {
@@ -101,7 +105,9 @@ export default function ProductQrTestPage() {
       setResult(data as QrResult);
     } catch (scanError) {
       setResult(null);
-      setError(scanError instanceof Error ? scanError.message : "Unexpected error");
+      setError(
+        scanError instanceof Error ? scanError.message : "Unexpected error",
+      );
     } finally {
       setLoading(false);
     }
@@ -110,12 +116,23 @@ export default function ProductQrTestPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-3xl space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Kiểm thử backend: Quét QR nguồn gốc sản phẩm</h1>
-        <p className="text-sm text-slate-600">Kiểm tra route cho use case 26 qua /api/traceability/scan.</p>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Kiểm thử backend: Quét QR nguồn gốc sản phẩm
+        </h1>
+        <p className="text-sm text-slate-600">
+          Kiểm tra route cho use case 26 qua /api/traceability/scan.
+        </p>
 
-        <form onSubmit={submit} className="rounded border border-slate-300 bg-white p-4">
+        <form
+          onSubmit={submit}
+          className="rounded border border-slate-300 bg-white p-4"
+        >
           <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-2">
-            <select value={productId} onChange={(e) => setProductId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
+            <select
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            >
               <option value="">Chọn product_id</option>
               {productOptions.map((product) => (
                 <option key={product.product_id} value={product.product_id}>
@@ -124,7 +141,11 @@ export default function ProductQrTestPage() {
               ))}
             </select>
 
-            <select value={batchId} onChange={(e) => setBatchId(e.target.value)} className="rounded border border-slate-300 px-3 py-2 text-sm">
+            <select
+              value={batchId}
+              onChange={(e) => setBatchId(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            >
               <option value="">Chọn batch_id</option>
               {filteredBatches.map((batch) => (
                 <option key={batch.batch_id} value={batch.batch_id}>
@@ -134,7 +155,9 @@ export default function ProductQrTestPage() {
             </select>
           </div>
 
-          <label className="mb-2 block text-sm font-medium text-slate-800">Dữ liệu QR</label>
+          <label className="mb-2 block text-sm font-medium text-slate-800">
+            Dữ liệu QR
+          </label>
           <input
             value={qrCode}
             onChange={(e) => setQrCode(e.target.value)}

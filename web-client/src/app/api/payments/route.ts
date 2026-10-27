@@ -1,19 +1,29 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../backend/core/errors";
+import { AppError } from "../../../../backend/core/errors";
 import { orderFacade } from "../../../../backend/modules/orders/facades/order.facade";
+import {
+  assertCustomerId,
+  requireCustomerIdentity,
+} from "../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
+import { resolveStoreContext } from "../../../../backend/core/store-context";
 
 export const GET = withSentry(async (request: Request) => {
+  const identity = requireCustomerIdentity(request);
   let userId = "";
 
   try {
     const { searchParams } = new URL(request.url);
+    const store = await resolveStoreContext(
+      searchParams.get("storeId"),
+      identity,
+    );
 
-    userId =
-      searchParams.get("userId")?.trim() ??
-      searchParams.get("user_id")?.trim() ??
-      "";
+    userId = assertCustomerId(
+      searchParams.get("userId") ?? searchParams.get("user_id") ?? undefined,
+      identity.userId,
+    );
 
     logger.info("Track payment history attempt", { userId });
 
@@ -24,13 +34,16 @@ export const GET = withSentry(async (request: Request) => {
 
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const start = Date.now();
 
-    const items = await orderFacade.trackMyPaymentHistory(userId);
+    const items = await orderFacade.trackMyPaymentHistory(
+      userId,
+      store.storeId,
+    );
 
     logger.info("Track payment history success", {
       userId,
@@ -49,7 +62,7 @@ export const GET = withSentry(async (request: Request) => {
 
       return NextResponse.json(
         { error: error.message },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
 

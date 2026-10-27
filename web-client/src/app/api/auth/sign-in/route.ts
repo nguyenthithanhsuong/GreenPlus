@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
 import { AuthRepository } from "../../../../../backend/modules/customer-auth/auth.repository";
-import { logger } from "@/lib/logger"; 
+import { logger } from "@/lib/logger";
 
 export const POST = withSentry(async (request: Request) => {
   const body = (await request.json()) as {
@@ -28,7 +28,19 @@ export const POST = withSentry(async (request: Request) => {
       duration_ms: Date.now() - start,
     });
 
-    return NextResponse.json(data, { status: 200 });
+    const response = NextResponse.json(data, { status: 200 });
+
+    if (data.session.access_token) {
+      response.cookies.set("gp_customer_auth", data.session.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
+
+    return response;
   } catch (error) {
     if (!(error instanceof AppError)) {
       throw error;
@@ -41,16 +53,11 @@ export const POST = withSentry(async (request: Request) => {
       error: error.message,
     };
 
-    if (
-      error.message.includes("account is not active") &&
-      email
-    ) {
+    if (error.message.includes("account is not active") && email) {
       try {
         const repo = new AuthRepository();
 
-        const user = await repo.findUserByEmail(
-          email.trim().toLowerCase(),
-        );
+        const user = await repo.findUserByEmail(email.trim().toLowerCase());
 
         if (user) {
           errorResponse.status = user.status;
@@ -60,13 +67,10 @@ export const POST = withSentry(async (request: Request) => {
               email,
             });
           } else {
-            logger.warn(
-              "Login blocked: account inactive/suspended",
-              {
-                email,
-                status: user.status,
-              },
-            );
+            logger.warn("Login blocked: account inactive/suspended", {
+              email,
+              status: user.status,
+            });
           }
         }
       } catch {}
@@ -78,9 +82,6 @@ export const POST = withSentry(async (request: Request) => {
       });
     }
 
-    return NextResponse.json(
-      errorResponse,
-      { status: error.statusCode },
-    );
+    return NextResponse.json(errorResponse, { status: error.statusCode });
   }
 });

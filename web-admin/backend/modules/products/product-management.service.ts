@@ -1,7 +1,12 @@
 import { AppError } from "../../core/errors";
 import { CategoryManagementRepository } from "../categories/category-management.repository";
 import { ProductManagementRepository } from "./product-management.repository";
-import { CreateProductInput, ProductRow, ProductStatus, UpdateProductInput } from "./product-management.types";
+import {
+  CreateProductInput,
+  ProductRow,
+  ProductStatus,
+  UpdateProductInput,
+} from "./product-management.types";
 import { DefaultProductStatusStrategy } from "./strategies/product-status.strategy";
 
 export class ProductManagementService {
@@ -9,7 +14,7 @@ export class ProductManagementService {
 
   constructor(
     private readonly repository: ProductManagementRepository,
-    private readonly categoryRepository: CategoryManagementRepository
+    private readonly categoryRepository: CategoryManagementRepository,
   ) {}
 
   async listProducts(): Promise<ProductRow[]> {
@@ -79,18 +84,27 @@ export class ProductManagementService {
       ...input,
       name: input.name?.trim(),
       unit: input.unit?.trim(),
-      status: typeof input.status !== "undefined" ? this.statusStrategy.normalize(input.status) : undefined,
+      status:
+        typeof input.status !== "undefined"
+          ? this.statusStrategy.normalize(input.status)
+          : undefined,
     }) as Promise<ProductRow>;
   }
 
-  async changeStatus(productId: string, status: ProductStatus): Promise<ProductRow> {
+  async changeStatus(
+    productId: string,
+    status: ProductStatus,
+  ): Promise<ProductRow> {
     const existing = await this.repository.findById(productId);
     if (!existing) {
       throw new AppError("Product not found", 404);
     }
 
     const nextStatus = this.statusStrategy.normalize(status);
-    const allowedStatus = this.statusStrategy.transition(existing.status, nextStatus);
+    const allowedStatus = this.statusStrategy.transition(
+      existing.status,
+      nextStatus,
+    );
 
     const updated = await this.repository.updateProduct({
       productId,
@@ -115,7 +129,8 @@ export class ProductManagementService {
     }
 
     if (!force) {
-      const dependencies = await this.repository.countBlockingDependencies(productId);
+      const dependencies =
+        await this.repository.countBlockingDependencies(productId);
       if (dependencies.total > 0) {
         throw new AppError(
           "Sản phẩm này đang có dữ liệu liên quan trong giỏ hàng, đơn hàng hoặc đăng ký định kỳ. Hãy dùng force delete để xóa toàn bộ dữ liệu liên quan.",
