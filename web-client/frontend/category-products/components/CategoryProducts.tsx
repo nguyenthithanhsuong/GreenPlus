@@ -487,7 +487,9 @@ export default function CategoryProducts({
           <div style={{ width: "24px", height: "24px" }} />
         </header>
 
-        <div className="px-4 pb-2"><StoreSelector /></div>
+        <div className="px-4 pb-2">
+          <StoreSelector />
+        </div>
         <main style={styles.mainContent}>
           <div style={styles.searchSection}>
             <div style={styles.searchBox}>
@@ -590,7 +592,11 @@ export default function CategoryProducts({
                           {product.categoryName ?? "Sản phẩm"}
                         </p>
                         <p style={styles.statusText}>
-                          {product.isAvailable ? (product.canPurchase ? `Còn ${product.availableQuantity}` : `Còn ${product.availableQuantity} · Chưa có giá`) : "Tạm hết hàng"}
+                          {product.isAvailable
+                            ? product.canPurchase
+                              ? `Còn ${product.availableQuantity}`
+                              : `Còn ${product.availableQuantity} · Chưa có giá`
+                            : "Tạm hết hàng"}
                         </p>
                         <div style={styles.priceRow}>
                           <p
@@ -609,7 +615,11 @@ export default function CategoryProducts({
                   <button
                     type="button"
                     aria-label={`Thêm ${product.name}`}
-                    title={product.isAvailable && !product.canPurchase ? "Sản phẩm có tồn kho nhưng chưa có giá bán" : undefined}
+                    title={
+                      product.isAvailable && !product.canPurchase
+                        ? "Sản phẩm có tồn kho nhưng chưa có giá bán"
+                        : undefined
+                    }
                     disabled={!product.canPurchase || cartActionLoading}
                     style={{
                       ...styles.addButton,

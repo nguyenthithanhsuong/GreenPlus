@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
 
 const sentryDebug = process.env.SENTRY_DEBUG === "true";
 
-
 export default async function config(): Promise<NextConfig> {
   if (process.env.NODE_ENV === "development") {
     return nextConfig;
@@ -31,4 +30,3 @@ export default async function config(): Promise<NextConfig> {
       : undefined,
   });
 }
-

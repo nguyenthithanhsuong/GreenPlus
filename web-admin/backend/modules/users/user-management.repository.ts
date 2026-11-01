@@ -28,8 +28,8 @@ export class UserManagementRepository {
       const from = page * 500;
       const { data, error } = await this.supabase
         .from("users")
-      .select(
-        `
+        .select(
+          `
   user_id,
   role_id,
   store_id,
@@ -50,15 +50,17 @@ export class UserManagementRepository {
     is_shipper
   )
 `,
-      )
-      .order("created_at", { ascending: false })
-      .order("user_id", { ascending: true })
-      .range(from, from + 499);
+        )
+        .order("created_at", { ascending: false })
+        .order("user_id", { ascending: true })
+        .range(from, from + 499);
       if (error) throw new Error(error.message);
       items.push(...((data ?? []) as UserRow[]));
       if ((data ?? []).length < 500) return items;
     }
-    throw new Error("Too many users to enumerate safely; switch to server pagination");
+    throw new Error(
+      "Too many users to enumerate safely; switch to server pagination",
+    );
   }
 
   async findById(userId: string): Promise<UserRow | null> {
@@ -200,8 +202,10 @@ export class UserManagementRepository {
       payload.phone = input.phone.trim() || null;
     if (typeof input.address !== "undefined")
       payload.address = input.address.trim() || null;
-    if (typeof input.latitude !== "undefined") payload.latitude = input.latitude;
-    if (typeof input.longitude !== "undefined") payload.longitude = input.longitude;
+    if (typeof input.latitude !== "undefined")
+      payload.latitude = input.latitude;
+    if (typeof input.longitude !== "undefined")
+      payload.longitude = input.longitude;
     if (typeof input.imageUrl !== "undefined")
       payload.image_url = input.imageUrl.trim() || null;
     if (typeof input.status !== "undefined") payload.status = input.status;

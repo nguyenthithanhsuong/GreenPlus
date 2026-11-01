@@ -1,4 +1,7 @@
-import { resolveDeliveryAddress, LocationError } from "../../../../../packages/location/index.mjs";
+import {
+  resolveDeliveryAddress,
+  LocationError,
+} from "../../../../../packages/location/index.mjs";
 import {
   portalActor,
   managerStoreIds,
@@ -67,9 +70,21 @@ export async function POST(request: Request) {
 
     let location;
     try {
-      location = await resolveDeliveryAddress([body.address, body.ward, body.district, body.city].filter(Boolean).join(", "));
-    } catch(error) {
-      return NextResponse.json({error: error instanceof Error ? error.message : "Địa chỉ cửa hàng không xác thực được"}, {status: error instanceof LocationError ? error.status : 422});
+      location = await resolveDeliveryAddress(
+        [body.address, body.ward, body.district, body.city]
+          .filter(Boolean)
+          .join(", "),
+      );
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Địa chỉ cửa hàng không xác thực được",
+        },
+        { status: error instanceof LocationError ? error.status : 422 },
+      );
     }
     logger.info("Create store attempt", { name: body.name });
 

@@ -99,12 +99,17 @@ export class ProductRepository {
           if (!productId) continue;
           const entries = Array.isArray(batch.inventory)
             ? batch.inventory
-            : batch.inventory ? [batch.inventory] : [];
+            : batch.inventory
+              ? [batch.inventory]
+              : [];
           const available = entries.reduce((total: number, row) => {
             const quantity = Number(row.quantity_available ?? 0);
-            return total + (Number.isFinite(quantity) ? Math.max(0, quantity) : 0);
+            return (
+              total + (Number.isFinite(quantity) ? Math.max(0, quantity) : 0)
+            );
           }, 0);
-          if (!isSellableBatch(batch.status, batch.expire_date, available)) continue;
+          if (!isSellableBatch(batch.status, batch.expire_date, available))
+            continue;
           result.set(productId, (result.get(productId) ?? 0) + available);
         }
         if (batches.length < 1000) break;

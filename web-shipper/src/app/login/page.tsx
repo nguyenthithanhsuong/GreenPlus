@@ -35,7 +35,8 @@ export default function ShipperLogin() {
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Đăng nhập không thành công");
+      if (!response.ok)
+        throw new Error(data.error || "Đăng nhập không thành công");
       router.replace("/");
       router.refresh();
     } catch (e) {
@@ -50,22 +51,33 @@ export default function ShipperLogin() {
       <div className={styles.surface}>
         <header className={styles.header}>
           <div className={styles.brand}>
-            <span className={styles.brandMark}><Leaf size={19} aria-hidden="true" /></span>
-            <span className={styles.brandText}><strong>GreenPlus</strong><small>SHIPPER</small></span>
+            <span className={styles.brandMark}>
+              <Leaf size={19} aria-hidden="true" />
+            </span>
+            <span className={styles.brandText}>
+              <strong>GreenPlus</strong>
+              <small>SHIPPER</small>
+            </span>
           </div>
           <Truck className={styles.headerTruck} size={22} aria-hidden="true" />
         </header>
 
         <div className={styles.content}>
           <div className={styles.welcome}>
-            <span className={styles.welcomeMark}><Truck size={27} aria-hidden="true" /></span>
+            <span className={styles.welcomeMark}>
+              <Truck size={27} aria-hidden="true" />
+            </span>
             <h1 className={styles.title}>Chào mừng Shipper!</h1>
-            <p className={styles.subtitle}>Đăng nhập để quản lý những đơn giao hàng của bạn.</p>
+            <p className={styles.subtitle}>
+              Đăng nhập để quản lý những đơn giao hàng của bạn.
+            </p>
           </div>
 
           <section className={styles.card} aria-label="Đăng nhập Shipper">
             <div className={styles.cardHeader}>
-              <span className={styles.cardMark}><LockKeyhole size={20} aria-hidden="true" /></span>
+              <span className={styles.cardMark}>
+                <LockKeyhole size={20} aria-hidden="true" />
+              </span>
               <div className={styles.cardHeading}>
                 <p className={styles.kicker}>GREENPLUS SHIPPER</p>
                 <h2 className={styles.cardTitle}>Đăng nhập</h2>
@@ -74,9 +86,15 @@ export default function ShipperLogin() {
 
             <form className={styles.form} onSubmit={submit}>
               <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="email">Email tài khoản</label>
+                <label className={styles.label} htmlFor="email">
+                  Email tài khoản
+                </label>
                 <div className={styles.field}>
-                  <Mail className={styles.fieldIcon} size={19} aria-hidden="true" />
+                  <Mail
+                    className={styles.fieldIcon}
+                    size={19}
+                    aria-hidden="true"
+                  />
                   <input
                     id="email"
                     className={styles.input}
@@ -90,9 +108,15 @@ export default function ShipperLogin() {
                 </div>
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="password">Mật khẩu</label>
+                <label className={styles.label} htmlFor="password">
+                  Mật khẩu
+                </label>
                 <div className={styles.field}>
-                  <LockKeyhole className={styles.fieldIcon} size={19} aria-hidden="true" />
+                  <LockKeyhole
+                    className={styles.fieldIcon}
+                    size={19}
+                    aria-hidden="true"
+                  />
                   <input
                     id="password"
                     className={styles.input}
@@ -109,7 +133,11 @@ export default function ShipperLogin() {
                     aria-label={visible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                     aria-pressed={visible}
                   >
-                    {visible ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}
+                    {visible ? (
+                      <EyeOff size={20} aria-hidden="true" />
+                    ) : (
+                      <Eye size={20} aria-hidden="true" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -120,14 +148,24 @@ export default function ShipperLogin() {
                 </p>
               )}
               <button className={styles.submit} type="submit" disabled={busy}>
-                {busy ? <LoaderCircle className={styles.spinner} size={18} aria-hidden="true" /> : <LockKeyhole size={18} aria-hidden="true" />}
+                {busy ? (
+                  <LoaderCircle
+                    className={styles.spinner}
+                    size={18}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <LockKeyhole size={18} aria-hidden="true" />
+                )}
                 <span>{busy ? "Đang xác thực..." : "Đăng nhập"}</span>
               </button>
             </form>
           </section>
           <p className={styles.footnote}>
             <ShieldCheck size={17} aria-hidden="true" />
-            <span>Chỉ dành cho nhân viên giao hàng GreenPlus đã được cấp quyền.</span>
+            <span>
+              Chỉ dành cho nhân viên giao hàng GreenPlus đã được cấp quyền.
+            </span>
           </p>
         </div>
       </div>

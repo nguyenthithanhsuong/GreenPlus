@@ -2,7 +2,11 @@
  * One key is generated per (user, store, cart, cart content + checkout settings).
  * Do not reset on timeouts/5xx: the server may have already committed an order.
  */
-export type CheckoutItem = { cart_item_id: string; quantity: number; note?: string | null };
+export type CheckoutItem = {
+  cart_item_id: string;
+  quantity: number;
+  note?: string | null;
+};
 export type CheckoutContext = {
   userId: string;
   storeId: string;
@@ -38,10 +42,16 @@ function fingerprint(context: CheckoutContext): string {
 }
 
 function generateKey(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
-  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.getRandomValues === "function"
+  ) {
     const values = new Uint8Array(16);
     crypto.getRandomValues(values);
     return `gp-${Array.from(values, (n) => n.toString(16).padStart(2, "0")).join("")}`;
@@ -57,22 +67,32 @@ export function getCheckoutIdempotencyKey(context: CheckoutContext): string {
     const raw = sessionStorage.getItem(key);
     if (raw) {
       const stored = JSON.parse(raw) as { signature?: string; value?: string };
-      if (stored.signature === signature &&
-          typeof stored.value === "string" &&
-          /^[A-Za-z0-9._:-]{8,128}$/.test(stored.value)) {
+      if (
+        stored.signature === signature &&
+        typeof stored.value === "string" &&
+        /^[A-Za-z0-9._:-]{8,128}$/.test(stored.value)
+      ) {
         return stored.value;
       }
     }
-  } catch { /* storage blocked or stale entry: create a new key */ }
+  } catch {
+    /* storage blocked or stale entry: create a new key */
+  }
 
   const value = generateKey();
-  try { sessionStorage.setItem(key, JSON.stringify({ signature, value })); }
-  catch { /* private browsing may block storage */ }
+  try {
+    sessionStorage.setItem(key, JSON.stringify({ signature, value }));
+  } catch {
+    /* private browsing may block storage */
+  }
   return value;
 }
 
 /** Clear only after receiving a successful checkout response from the server. */
 export function clearCheckoutIdempotencyKey(context: CheckoutContext): void {
-  try { sessionStorage.removeItem(storageKey(context)); }
-  catch { /* storage may be unavailable */ }
+  try {
+    sessionStorage.removeItem(storageKey(context));
+  } catch {
+    /* storage may be unavailable */
+  }
 }

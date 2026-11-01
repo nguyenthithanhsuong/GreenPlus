@@ -870,9 +870,12 @@ export default function ProductDetail({
 
     const isExpired =
       product.inventory.status === "expired" || allBatchesExpired;
-    const hasValidPrice = product.availablePrice !== null &&
-      Number.isFinite(product.availablePrice) && product.availablePrice > 0;
-    const canPurchase = !isExpired && hasSellableUnexpiredBatch && hasValidPrice;
+    const hasValidPrice =
+      product.availablePrice !== null &&
+      Number.isFinite(product.availablePrice) &&
+      product.availablePrice > 0;
+    const canPurchase =
+      !isExpired && hasSellableUnexpiredBatch && hasValidPrice;
 
     let warning: string | null = null;
     if (isExpired) {
@@ -1162,7 +1165,9 @@ export default function ProductDetail({
           <div style={{ width: "24px", height: "24px" }} />
         </header>
 
-        <div className="px-4 pb-2"><StoreSelector /></div>
+        <div className="px-4 pb-2">
+          <StoreSelector />
+        </div>
         {heroImage ? (
           <img
             src={heroImage}
@@ -1234,10 +1239,15 @@ export default function ProductDetail({
                   style={styles.quantityButton}
                   onClick={() =>
                     setQuantity((value) =>
-                      Math.min(value + 1, Math.max(1, product?.inventory.totalAvailable ?? 1)),
+                      Math.min(
+                        value + 1,
+                        Math.max(1, product?.inventory.totalAvailable ?? 1),
+                      ),
                     )
                   }
-                  disabled={!product || quantity >= product.inventory.totalAvailable}
+                  disabled={
+                    !product || quantity >= product.inventory.totalAvailable
+                  }
                   aria-label="Tăng số lượng"
                 >
                   +

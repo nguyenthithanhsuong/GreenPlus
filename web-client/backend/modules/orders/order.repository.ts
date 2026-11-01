@@ -80,10 +80,20 @@ export class OrderRepository {
     }
     // checkout_cart is legacy RPC without coordinate arguments. Scope the follow-up
     // update to the exact user/store/order and retain idempotent checkout semantics.
-    const { error: geoError } = await supabaseServer.from("orders")
-      .update({ delivery_latitude: input.deliveryLatitude, delivery_longitude: input.deliveryLongitude })
-      .eq("order_id", result.order_id).eq("user_id", input.userId).eq("store_id", input.storeId);
-    if (geoError) throw new Error("Order was created, but could not save delivery coordinates: " + geoError.message);
+    const { error: geoError } = await supabaseServer
+      .from("orders")
+      .update({
+        delivery_latitude: input.deliveryLatitude,
+        delivery_longitude: input.deliveryLongitude,
+      })
+      .eq("order_id", result.order_id)
+      .eq("user_id", input.userId)
+      .eq("store_id", input.storeId);
+    if (geoError)
+      throw new Error(
+        "Order was created, but could not save delivery coordinates: " +
+          geoError.message,
+      );
     return {
       order_id: result.order_id,
       status: "pending",

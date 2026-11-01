@@ -33,11 +33,11 @@ test('map routes authorize the assigned shipper, not the supplied store_id',()=>
     assert.match(source,/getShipperMapDetails/);
     assert.doesNotMatch(source,/localhost:3001|GREENPLUS_SHIPPER_API_BASE_URL/);
   }
-  assert.match(service,/\.eq\('employee_id', user\.user_id\)/);
+  assert.match(service,/\.eq\((['"])employee_id\1,\s*user\.user_id\)/);
   assert.match(service,/stores\.has\(row\.store_id!\)/);
   assert.match(service,/scoped\(row\)/);
-  assert.match(demo,/process\.env\.NODE_ENV !== 'development'/);
-  assert.match(demo,/get\('origin'\)/);
+  assert.match(demo,/process\.env\.NODE_ENV\s*!==\s*(['"])development\1/);
+  assert.match(demo,/get\((['"])origin\1\)/);
 });
 test('Web dashboard opens map inside Shipper, not external Google Maps',()=>{
   const src=readFileSync(new URL('../src/frontend/dashboard/Dashboard.tsx',import.meta.url),'utf8');
@@ -62,9 +62,9 @@ test('map fetch reads actual order coordinates and never draws a fake straight-l
   const map = read('../src/frontend/map/MapCanvas.tsx');
   const panel = read('../src/frontend/map/DeliveryMapPanel.tsx');
   assert.match(service, /orders\(delivery_address,delivery_latitude,delivery_longitude,total_amount,store_id,users\(name\)\)/);
-  assert.match(service, /const dropoff = databasePoint\(row\.orders\?\.delivery_latitude, row\.orders\?\.delivery_longitude\)/);
-  assert.match(service, /\.eq\('employee_id', user\.user_id\)/);
-  assert.match(map, /road && road\.length > 1 && <Polyline/);
+  assert.match(service, /const\s+dropoff\s*=\s*databasePoint\(\s*row\.orders\?\.delivery_latitude\s*,\s*row\.orders\?\.delivery_longitude\s*,?\s*\)/);
+  assert.match(service, /\.eq\((['"])employee_id\1,\s*user\.user_id\)/);
+  assert.match(map, /\{\s*road\s*&&\s*road\.length\s*>\s*1\s*&&\s*(?:\(\s*)?<Polyline\b/);
   assert.doesNotMatch(map, /:pickup&&dropoff\?<Polyline/);
   assert.match(panel, /setDropoff\(validPoint\(body\.dropoff\)/);
   assert.match(panel, /Chưa tính tuyến đường/);

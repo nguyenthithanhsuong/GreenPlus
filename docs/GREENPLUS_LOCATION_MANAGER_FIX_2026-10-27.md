@@ -5,7 +5,7 @@
 - Manager: giao diện chỉ có tab `Nhân viên & Quản trị`; ẩn `Tất cả`/`Khách hàng`. Endpoint `GET /api/users` không trả Customer khi Actor là Manager, đồng thời bỏ các truy vấn quan hệ Orders/Default Customer không cần thiết. Admin vẫn có 3 tab.
 - Admin tạo/sửa user: form vị trí có khu vực riêng, nút tra cứu, danh sách các ghim để chọn, map OSM xem trước, thông báo lỗi sát trường dữ liệu. Server tái tra cứu và chỉ chấp nhận `locationHint` khi trùng tọa độ của kết quả geocoder; không tin lat/lng thẳng từ client.
 - Client hồ sơ: UI chọn kết quả và preview ghim cùng cách xác minh; sửa tên/email/điện thoại **không tra cứu lại địa chỉ** nếu địa chỉ không đổi và giữ nguyên tọa độ DB.
-- Geocoder chung: Photon trước; nếu lỗi (gồm HTTP 429), timeout hoặc không tìm thấy kết quả đủ chi tiết thì thử Nominatim. Khoảng cách giữa các lượt gọi ngoài tối thiểu 1,2 giây *trong từng process*, giới hạn hàng đợi, de-duplicate yêu cầu cùng địa chỉ, cache thành công 24 giờ. Chỉ gọi khi người dùng bấm tìm hoặc lưu địa chỉ mới.
+- Geocoder chung: Photon trước; nếu lỗi (gồm HTTP 429), timeout hoặc không tìm thấy kết quả đủ chi tiết thì thử Nominatim. Khoảng cách giữa các lượt gọi ngoài tối thiểu 1,2 giây _trong từng process_, giới hạn hàng đợi, de-duplicate yêu cầu cùng địa chỉ, cache thành công 24 giờ. Chỉ gọi khi người dùng bấm tìm hoặc lưu địa chỉ mới.
 - Không cần migrations hoặc dependencies mới so với bản đã có Migration 0012.
 
 ## Cảnh báo vận hành

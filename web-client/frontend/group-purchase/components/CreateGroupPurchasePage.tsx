@@ -1,7 +1,10 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
-import { useSelectedStoreId, useResetOnStoreChange } from "@/lib/stores/use-selected-store";
+import {
+  useSelectedStoreId,
+  useResetOnStoreChange,
+} from "@/lib/stores/use-selected-store";
 import CommerceStorePicker from "../../stores/CommerceStorePicker";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -205,7 +208,8 @@ export default function CreateGroupPurchasePage() {
         if (productList.length > 0) {
           setProductId((current) =>
             productList.some((item) => item.product_id === current)
-              ? current : productList[0].product_id,
+              ? current
+              : productList[0].product_id,
           );
         }
       } catch {

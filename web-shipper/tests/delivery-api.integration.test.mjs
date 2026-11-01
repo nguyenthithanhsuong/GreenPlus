@@ -25,11 +25,11 @@ test('Shipper database uses server-side service role and explicit row ownership'
   assert.match(db, /process\.env\.SUPABASE_SERVICE_ROLE_KEY/);
   assert.doesNotMatch(db, /NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(auth, /roles!inner\(is_shipper\)/);
-  assert.match(auth, /\.eq\('roles\.is_shipper', true\)/);
-  assert.match(delivery, /\.eq\('employee_id', user\.user_id\)/);
+  assert.match(auth, /\.eq\((['"])roles\.is_shipper\1,\s*true\)/);
+  assert.match(delivery, /\.eq\((['"])employee_id\1,\s*user\.user_id\)/);
   assert.match(delivery, /row\.orders\.store_id === row\.store_id/);
-  assert.match(delivery, /\.from\('store_members'\)/);
-  assert.match(delivery, /\.eq\('status', 'active'\)/);
-  assert.match(delivery, /\.eq\('status', currentStatus\)/);
+  assert.match(delivery, /\.from\((['"])store_members\1\)/);
+  assert.match(delivery, /\.eq\((['"])status\1,\s*(['"])active\2\)/);
+  assert.match(delivery, /\.eq\((['"])status\1,\s*currentStatus\)/);
   assert.match(auth, /verifyShipperSession/);
 });

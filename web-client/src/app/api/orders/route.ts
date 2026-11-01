@@ -1,4 +1,7 @@
-import { resolveDeliveryAddress, LocationError } from "../../../../../packages/location/index.mjs";
+import {
+  resolveDeliveryAddress,
+  LocationError,
+} from "../../../../../packages/location/index.mjs";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../backend/core/errors";
@@ -94,14 +97,21 @@ export const POST = withSentry(async (request: Request) => {
     const bodyKey = body.idempotencyKey?.trim();
     if (headerKey && bodyKey && headerKey !== bodyKey) {
       return NextResponse.json(
-        { error: "Mã xác nhận đơn hàng không khớp.", code: "IDEMPOTENCY_KEY_MISMATCH" },
+        {
+          error: "Mã xác nhận đơn hàng không khớp.",
+          code: "IDEMPOTENCY_KEY_MISMATCH",
+        },
         { status: 400 },
       );
     }
     const idempotencyKey = headerKey || bodyKey || "";
     if (!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey)) {
       return NextResponse.json(
-        { error: "Không thể xác nhận yêu cầu đặt hàng. Vui lòng tải lại trang và thử lại.", code: "INVALID_IDEMPOTENCY_KEY" },
+        {
+          error:
+            "Không thể xác nhận yêu cầu đặt hàng. Vui lòng tải lại trang và thử lại.",
+          code: "INVALID_IDEMPOTENCY_KEY",
+        },
         { status: 400 },
       );
     }
@@ -112,8 +122,19 @@ export const POST = withSentry(async (request: Request) => {
       body.deliveryAddress?.trim() ?? body.delivery_address?.trim() ?? "";
 
     let location;
-    try { location = await resolveDeliveryAddress(deliveryAddress); }
-    catch(error) { return NextResponse.json({error:error instanceof Error?error.message:"Địa chỉ giao không hợp lệ"}, {status:error instanceof LocationError?error.status:422}); }
+    try {
+      location = await resolveDeliveryAddress(deliveryAddress);
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Địa chỉ giao không hợp lệ",
+        },
+        { status: error instanceof LocationError ? error.status : 422 },
+      );
+    }
     const deliveryFee = Number(body.deliveryFee ?? body.delivery_fee ?? 0);
 
     const note = body.note ?? "";

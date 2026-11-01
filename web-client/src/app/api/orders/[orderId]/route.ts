@@ -1,4 +1,7 @@
-import { resolveDeliveryAddress, LocationError } from "../../../../../../packages/location/index.mjs";
+import {
+  resolveDeliveryAddress,
+  LocationError,
+} from "../../../../../../packages/location/index.mjs";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
@@ -110,8 +113,19 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
 
     let location;
     if (deliveryAddress !== undefined) {
-      try { location = await resolveDeliveryAddress(deliveryAddress); }
-      catch(error) { return NextResponse.json({error:error instanceof Error?error.message:"Địa chỉ giao không hợp lệ"},{status:error instanceof LocationError?error.status:422}); }
+      try {
+        location = await resolveDeliveryAddress(deliveryAddress);
+      } catch (error) {
+        return NextResponse.json(
+          {
+            error:
+              error instanceof Error
+                ? error.message
+                : "Địa chỉ giao không hợp lệ",
+          },
+          { status: error instanceof LocationError ? error.status : 422 },
+        );
+      }
     }
     const deliveryFeeRaw = body.deliveryFee ?? body.delivery_fee;
 

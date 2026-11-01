@@ -1,7 +1,10 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
-import { useSelectedStoreId, useResetOnStoreChange } from "@/lib/stores/use-selected-store";
+import {
+  useSelectedStoreId,
+  useResetOnStoreChange,
+} from "@/lib/stores/use-selected-store";
 import CommerceStorePicker from "../../../../frontend/stores/CommerceStorePicker";
 
 import Link from "next/link";

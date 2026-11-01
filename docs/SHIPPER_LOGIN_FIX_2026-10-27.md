@@ -38,6 +38,7 @@ node scripts/check-shipper-auth.mjs
 ```
 
 Expected:
+
 - `Health: HTTP 200 | JSON: true`
 - `Shipper login route: HTTP 400 | JSON: true`
 - `OK: Web Admin Shipper login endpoint is running and validates input.`

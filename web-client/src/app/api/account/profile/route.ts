@@ -1,4 +1,7 @@
-import { resolveDeliveryAddress, LocationError } from "../../../../../../packages/location/index.mjs";
+import {
+  resolveDeliveryAddress,
+  LocationError,
+} from "../../../../../../packages/location/index.mjs";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
@@ -44,7 +47,7 @@ export const PUT = withSentry(async (request: Request) => {
     email?: string;
     phone?: string;
     address?: string;
-    locationHint?: {latitude:number;longitude:number};
+    locationHint?: { latitude: number; longitude: number };
     imageUrl?: string;
   };
 
@@ -61,11 +64,18 @@ export const PUT = withSentry(async (request: Request) => {
   let location;
   try {
     if (body.address !== undefined) {
-      if (!body.address.trim()) throw new LocationError('Địa chỉ giao hàng không được để trống.');
+      if (!body.address.trim())
+        throw new LocationError("Địa chỉ giao hàng không được để trống.");
       location = await resolveDeliveryAddress(body.address, body.locationHint);
     }
   } catch (error) {
-    return NextResponse.json({error:error instanceof Error ? error.message : "Địa chỉ chưa được xác thực"}, {status:error instanceof LocationError ? error.status : 422});
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Địa chỉ chưa được xác thực",
+      },
+      { status: error instanceof LocationError ? error.status : 422 },
+    );
   }
   const start = Date.now();
 

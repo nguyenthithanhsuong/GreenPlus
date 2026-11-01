@@ -53,7 +53,11 @@ export default function ProductCartTestPage() {
         }
 
         const payload = (await response.json()) as {
-          items?: Array<{ productId: string; name: string; isAvailable: boolean }>;
+          items?: Array<{
+            productId: string;
+            name: string;
+            isAvailable: boolean;
+          }>;
         };
         const products = (payload.items ?? [])
           .filter((item) => item.isAvailable)

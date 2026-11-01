@@ -63,46 +63,52 @@ const ShipperManagement = () => {
     }
   }, []);
 
-  const loadDeliveries = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError(null);
+  const loadDeliveries = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
 
-    try {
-      const params = new URLSearchParams();
-      if (fromDate) params.set("fromDate", fromDate);
-      if (toDate) params.set("toDate", toDate);
+      try {
+        const params = new URLSearchParams();
+        if (fromDate) params.set("fromDate", fromDate);
+        if (toDate) params.set("toDate", toDate);
 
-      const response = await fetch(
-        `/api/deliveries${params.toString() ? `?${params.toString()}` : ""}`,
-        { cache: "no-store" },
-      );
-      const data = (await response.json()) as {
-        items?: DeliveryTrackingRow[];
-        error?: string;
-      };
+        const response = await fetch(
+          `/api/deliveries${params.toString() ? `?${params.toString()}` : ""}`,
+          { cache: "no-store" },
+        );
+        const data = (await response.json()) as {
+          items?: DeliveryTrackingRow[];
+          error?: string;
+        };
 
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể tải dữ liệu giao hàng");
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể tải dữ liệu giao hàng");
+        }
+
+        setItems(Array.isArray(data.items) ? data.items : []);
+      } catch (requestError) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải dữ liệu giao hàng",
+        );
+        setItems([]);
+      } finally {
+        if (!silent) setLoading(false);
       }
-
-      setItems(Array.isArray(data.items) ? data.items : []);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Không thể tải dữ liệu giao hàng",
-      );
-      setItems([]);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [fromDate, toDate]);
+    },
+    [fromDate, toDate],
+  );
 
   useEffect(() => {
     void loadDeliveries();
   }, [loadDeliveries]);
 
-  const reloadDeliveriesQuietly = useCallback(() => loadDeliveries(true), [loadDeliveries]);
+  const reloadDeliveriesQuietly = useCallback(
+    () => loadDeliveries(true),
+    [loadDeliveries],
+  );
   useAutoReload(reloadDeliveriesQuietly, 10000);
 
   useEffect(() => {

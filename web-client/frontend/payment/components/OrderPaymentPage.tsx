@@ -1,7 +1,10 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
-import { useSelectedStoreId, useResetOnStoreChange } from "@/lib/stores/use-selected-store";
+import {
+  useSelectedStoreId,
+  useResetOnStoreChange,
+} from "@/lib/stores/use-selected-store";
 import CommerceStorePicker from "../../stores/CommerceStorePicker";
 
 import Link from "next/link";
@@ -209,7 +212,6 @@ export default function OrderPaymentPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
 
-
   useResetOnStoreChange(() => {
     setDetail(null);
     setLoading(false);
@@ -281,7 +283,14 @@ export default function OrderPaymentPage() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, params?.orderId, router, user?.user_id, storeId]);
+  }, [
+    initialized,
+    isAuthenticated,
+    params?.orderId,
+    router,
+    user?.user_id,
+    storeId,
+  ]);
 
   const canPay = useMemo(() => {
     if (!detail) {

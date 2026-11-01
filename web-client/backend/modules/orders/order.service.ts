@@ -736,8 +736,12 @@ export class OrderService {
         deliveryAddress: hasDeliveryAddress
           ? input.deliveryAddress?.trim()
           : undefined,
-        deliveryLatitude: hasDeliveryAddress ? input.deliveryLatitude : undefined,
-        deliveryLongitude: hasDeliveryAddress ? input.deliveryLongitude : undefined,
+        deliveryLatitude: hasDeliveryAddress
+          ? input.deliveryLatitude
+          : undefined,
+        deliveryLongitude: hasDeliveryAddress
+          ? input.deliveryLongitude
+          : undefined,
         deliveryFee: normalizedDeliveryFee,
         note: hasNote ? (input.note ?? "").trim() || null : undefined,
       });

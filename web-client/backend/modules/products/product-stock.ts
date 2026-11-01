@@ -8,7 +8,11 @@ export function isSellableBatch(
   quantityAvailable: number,
   now: Date = new Date(),
 ): boolean {
-  if (status !== "available" || !Number.isFinite(quantityAvailable) || quantityAvailable <= 0) {
+  if (
+    status !== "available" ||
+    !Number.isFinite(quantityAvailable) ||
+    quantityAvailable <= 0
+  ) {
     return false;
   }
   const expiryDay = expireDate?.slice(0, 10);

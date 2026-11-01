@@ -5,7 +5,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   applicationName: "GreenPlus Shipper",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "GreenPlus Shipper" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "GreenPlus Shipper",
+  },
   icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
   title: "GreenPlus - Web Shipper",
   description: "Shipper mobile dashboard for GreenPlus",
@@ -18,7 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body><PwaRegister />{children}</body>
+      <body>
+        <PwaRegister />
+        {children}
+      </body>
     </html>
   );
 }

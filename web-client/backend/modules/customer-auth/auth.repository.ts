@@ -146,9 +146,11 @@ export class AuthRepository {
         name: input.name,
         email: input.email,
         phone: input.phone,
-        ...(input.address !== undefined ? {address:input.address} : {}),
-        ...(input.latitude !== undefined ? {latitude:input.latitude} : {}),
-        ...(input.longitude !== undefined ? {longitude:input.longitude} : {}),
+        ...(input.address !== undefined ? { address: input.address } : {}),
+        ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
+        ...(input.longitude !== undefined
+          ? { longitude: input.longitude }
+          : {}),
         image_url: input.imageUrl,
       })
       .eq("user_id", input.userId)

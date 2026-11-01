@@ -1,7 +1,10 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
-import { getCheckoutIdempotencyKey, clearCheckoutIdempotencyKey } from "@/lib/orders/checkout-idempotency";
+import {
+  getCheckoutIdempotencyKey,
+  clearCheckoutIdempotencyKey,
+} from "@/lib/orders/checkout-idempotency";
 import { useSelectedStoreId } from "@/lib/stores/use-selected-store";
 import CommerceStorePicker from "../../stores/CommerceStorePicker";
 import Link from "next/link";

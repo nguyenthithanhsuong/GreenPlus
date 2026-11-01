@@ -887,7 +887,11 @@ const Dashboard = () => {
                         <div style={styles.ratingRow}>
                           <span aria-hidden="true">★</span>
                           <span>
-                            {product.isAvailable ? (product.canPurchase ? `Còn ${product.availableQuantity}` : `Còn ${product.availableQuantity} · Chưa có giá`) : "Tạm hết"}
+                            {product.isAvailable
+                              ? product.canPurchase
+                                ? `Còn ${product.availableQuantity}`
+                                : `Còn ${product.availableQuantity} · Chưa có giá`
+                              : "Tạm hết"}
                           </span>
                         </div>
                         <div style={styles.priceRow}>
@@ -909,7 +913,11 @@ const Dashboard = () => {
                       zIndex: 10,
                     }}
                     aria-label={`Thêm ${product.name}`}
-                    title={product.isAvailable && !product.canPurchase ? "Sản phẩm có tồn kho nhưng chưa có giá bán" : undefined}
+                    title={
+                      product.isAvailable && !product.canPurchase
+                        ? "Sản phẩm có tồn kho nhưng chưa có giá bán"
+                        : undefined
+                    }
                     disabled={!product.canPurchase || cartActionLoading}
                     onClick={() => void handleAddToCart(product.productId)}
                   >
@@ -993,7 +1001,11 @@ const Dashboard = () => {
                       zIndex: 10,
                     }}
                     aria-label={`Thêm ${product.name}`}
-                    title={product.isAvailable && !product.canPurchase ? "Sản phẩm có tồn kho nhưng chưa có giá bán" : undefined}
+                    title={
+                      product.isAvailable && !product.canPurchase
+                        ? "Sản phẩm có tồn kho nhưng chưa có giá bán"
+                        : undefined
+                    }
                     disabled={!product.canPurchase || cartActionLoading}
                     onClick={() => void handleAddToCart(product.productId)}
                   >

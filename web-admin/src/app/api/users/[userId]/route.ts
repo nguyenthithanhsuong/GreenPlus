@@ -8,7 +8,10 @@ import {
 } from "../../../../../backend/core/manager-scope";
 import { AppError } from "../../../../../backend/core/errors";
 import { verifiedUserAddress } from "../../../../../backend/core/user-address.mjs";
-import { resolveDeliveryAddress, LocationError } from "../../../../../../packages/location/index.mjs";
+import {
+  resolveDeliveryAddress,
+  LocationError,
+} from "../../../../../../packages/location/index.mjs";
 
 type Context = {
   params: Promise<{
@@ -29,7 +32,7 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
     email?: string;
     phone?: string;
     address?: string;
-    locationHint?: {latitude:number;longitude:number};
+    locationHint?: { latitude: number; longitude: number };
     imageUrl?: string;
     status?: "active" | "inactive" | "banned";
   };
@@ -51,8 +54,18 @@ export const PUT = withSentry(async (request: Request, context: Context) => {
   if (body.address !== undefined) {
     // Existing profiles can be edited without replacing the address. Re-geocode
     // only when supplied; updates with an address must always be validated.
-    try { verified = await verifiedUserAddress(body.address, resolveDeliveryAddress, body.locationHint); }
-    catch (error) { throw new AppError(error instanceof Error ? error.message : "Invalid address", error instanceof LocationError ? error.status : 422); }
+    try {
+      verified = await verifiedUserAddress(
+        body.address,
+        resolveDeliveryAddress,
+        body.locationHint,
+      );
+    } catch (error) {
+      throw new AppError(
+        error instanceof Error ? error.message : "Invalid address",
+        error instanceof LocationError ? error.status : 422,
+      );
+    }
   }
 
   const updated = await userManagementFacade.updateUser({

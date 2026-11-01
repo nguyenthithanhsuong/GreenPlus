@@ -294,8 +294,8 @@ export default function StoreSelector() {
               {authUser?.address?.trim() && addressDraft?.userId !== authUserId
                 ? "Đã điền địa chỉ từ hồ sơ. Bạn có thể sửa và bấm Tìm địa chỉ để nhận gợi ý cửa hàng gần nhất. "
                 : "Không cần bật GPS: nhập địa chỉ chi tiết hoặc tọa độ để nhận gợi ý cửa hàng. "}
-              Bạn vẫn tự chọn cửa hàng bên dưới. Khoảng cách gợi ý là đường
-              chim bay, không phải phí ship.
+              Bạn vẫn tự chọn cửa hàng bên dưới. Khoảng cách gợi ý là đường chim
+              bay, không phải phí ship.
             </p>
             {resolvedAddress && (
               <p className="mt-2 text-sm text-emerald-700">

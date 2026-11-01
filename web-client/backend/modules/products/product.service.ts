@@ -24,7 +24,8 @@ export class ProductService {
         const availableQuantity = sellableStockMap.get(product.product_id) ?? 0;
         const price = latestPriceMap.get(product.product_id) ?? null;
         const isAvailable = availableQuantity > 0;
-        const canPurchase = isAvailable && price !== null && Number.isFinite(price) && price > 0;
+        const canPurchase =
+          isAvailable && price !== null && Number.isFinite(price) && price > 0;
 
         return {
           productId: product.product_id,
@@ -32,7 +33,8 @@ export class ProductService {
           imageUrl: product.image_url,
           categoryId: product.category_id,
           categoryName: getRelationValue<string>(product.categories, "name"),
-          certification: supplierMap.get(product.product_id)?.certification ?? null,
+          certification:
+            supplierMap.get(product.product_id)?.certification ?? null,
           price,
           availableQuantity,
           // Stock and pricing are different facts. Never label stocked items "Tạm hết" just because pricing is missing.

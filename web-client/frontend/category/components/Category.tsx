@@ -323,7 +323,9 @@ const Category = () => {
           <div style={{ width: "24px" }}></div>
         </header>
 
-        <div className="px-4 pb-2"><StoreSelector /></div>
+        <div className="px-4 pb-2">
+          <StoreSelector />
+        </div>
         <main style={styles.mainContent}>
           <div style={styles.sectionFrame}>
             <div style={styles.searchSection}>

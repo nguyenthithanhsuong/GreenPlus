@@ -15,10 +15,10 @@ function loadTs(rel, injected = {}) {
     fileName: rel,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   });
-  const module = { exports: {} };
+  const testModule  = { exports: {} };
   vm.runInNewContext(`(function(module, exports, require, window, fetch, URL, CustomEvent) { ${outputText}\n })`,
     {}, { filename: rel })(
-    module, module.exports,
+    testModule, testModule.exports,
     (name) => {
       if (Object.hasOwn(injected, name)) return injected[name];
       throw new Error(`Unexpected import: ${name}`);
@@ -28,7 +28,7 @@ function loadTs(rel, injected = {}) {
     URL,
     globalThis.CustomEvent,
   );
-  return module.exports;
+  return testModule.exports;
 }
 
 function init() {
