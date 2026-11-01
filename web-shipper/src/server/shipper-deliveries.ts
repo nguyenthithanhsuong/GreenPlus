@@ -2,6 +2,7 @@
 import { shipperDb } from './shipper-db';
 import { ShipperError, type ShipperUser } from './shipper-auth';
 import { allowedTransition, normalizeDelivery, safeOrderId } from '../lib/delivery-contract.mjs';
+import { databasePoint } from '../lib/map-helpers.mjs';
 
 const columns = 'delivery_id,order_id,employee_id,store_id,status,pickup_time,delivery_time,orders(delivery_address,delivery_latitude,delivery_longitude,total_amount,store_id,users(name))';
 
@@ -72,6 +73,9 @@ export async function updateShipperDelivery(user: ShipperUser, orderId: string, 
   const {data: changed, error: updateError} = await db.from('deliveries').update(patch)
     .eq('delivery_id', row.delivery_id).eq('employee_id', user.user_id)
     .eq('store_id', row.store_id!).eq('status', currentStatus).select(columns).maybeSingle();
+  if (updateError?.code === '23514' || updateError?.code === '23503') {
+    throw new ShipperError('Đơn hàng chưa ở trạng thái Đang giao hoặc không khớp cửa hàng. Hãy báo quản lý kiểm tra trạng thái đơn trước khi xác nhận.', 409, 'ORDER_NOT_DELIVERING');
+  }
   if (updateError) throw new ShipperError('Không cập nhật được đơn giao hàng', 503, 'DELIVERY_UPDATE_FAILED');
   const updated = changed as unknown as DeliveryRow | null;
   if (!updated) throw new ShipperError('Đơn đã thay đổi, vui lòng thử lại', 409, 'DELIVERY_CONFLICT');
@@ -97,16 +101,9 @@ export async function getShipperMapDetails(user: ShipperUser, orderId: string) {
     .eq('store_id', row.store_id!).maybeSingle();
   if (storeError) throw new ShipperError('Không tải được vị trí cửa hàng', 503, 'STORE_READ_FAILED');
   if (!store) throw new ShipperError('Cửa hàng không còn tồn tại', 404, 'STORE_NOT_FOUND');
-  // Numeric(10,...) columns may arrive as strings; null is NOT zero.
-  const latitude = store.latitude == null ? null : Number(store.latitude);
-  const longitude = store.longitude == null ? null : Number(store.longitude);
-  const pickup = latitude != null && longitude != null && Number.isFinite(latitude) &&
-    Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180
-    ? { lat: latitude, lng: longitude } : null;
-  const dlat = row.orders?.delivery_latitude == null ? NaN : Number(row.orders.delivery_latitude);
-  const dlng = row.orders?.delivery_longitude == null ? NaN : Number(row.orders.delivery_longitude);
-  const dropoff = Number.isFinite(dlat) && Number.isFinite(dlng) &&
-    Math.abs(dlat)<=90 && Math.abs(dlng)<=180 ? {lat:dlat,lng:dlng} : null;
+  // Numeric columns from Supabase can be strings. Do not guess absent or invalid pins.
+  const pickup = databasePoint(store.latitude, store.longitude);
+  const dropoff = databasePoint(row.orders?.delivery_latitude, row.orders?.delivery_longitude);
   return {
     orderId: row.order_id,
     pickup,

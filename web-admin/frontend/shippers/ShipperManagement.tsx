@@ -63,8 +63,8 @@ const ShipperManagement = () => {
     }
   }, []);
 
-  const loadDeliveries = useCallback(async () => {
-    setLoading(true);
+  const loadDeliveries = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
 
     try {
@@ -94,7 +94,7 @@ const ShipperManagement = () => {
       );
       setItems([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [fromDate, toDate]);
 
@@ -102,7 +102,8 @@ const ShipperManagement = () => {
     void loadDeliveries();
   }, [loadDeliveries]);
 
-  useAutoReload(loadDeliveries);
+  const reloadDeliveriesQuietly = useCallback(() => loadDeliveries(true), [loadDeliveries]);
+  useAutoReload(reloadDeliveriesQuietly, 10000);
 
   useEffect(() => {
     void loadShippers();

@@ -76,13 +76,18 @@ export class DeliveryTrackingFacade {
       to: updated.status,
     });
 
-    // Khi delivery chuyển sang "delivered" → đồng bộ order sang "completed"
+    // DB trigger (0014) atomically completes the order when delivery succeeds.
+    // This fallback keeps older deployments working during a rolling upgrade,
+    // but avoids the duplicate completed -> completed transition after 0014.
     if (updated.status === "delivered" && previous?.status !== "delivered") {
-      await orderTrackingFacade.updateOrderStatus({
-        orderId: updated.order_id,
-        status: "completed",
-        note: input.note ?? "Giao hàng thành công, tự động hoàn tất đơn",
-      });
+      const order = await orderTrackingFacade.getOrderDetail(updated.order_id);
+      if (order.status === "delivering") {
+        await orderTrackingFacade.updateOrderStatus({
+          orderId: updated.order_id,
+          status: "completed",
+          note: input.note ?? "Giao hàng thành công, tự động hoàn tất đơn",
+        });
+      }
     }
 
     return updated;

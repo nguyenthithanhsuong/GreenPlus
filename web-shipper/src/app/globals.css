@@ -96,3 +96,95 @@ a { text-decoration: none; }
   .gp-modal-wide { width: 100%; }
   .gp-content { padding-inline: 14px; }
 }
+
+.gp-login-frame { display: flex; flex-direction: column; min-height: 100dvh; }
+.gp-login-layout {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 28px 20px;
+}
+.gp-login-welcome { margin-bottom: 20px; text-align: center; }
+.gp-login-welcome-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto;
+  border-radius: 20px;
+  background: #e4f7eb;
+  color: #159553;
+}
+.gp-login-welcome-title {
+  margin: 13px 0 0;
+  color: #184a33;
+  font-size: clamp(21px, 5.6vw, 25px);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -.5px;
+}
+.gp-login-welcome-desc { max-width: 320px; margin: 6px auto 0; }
+.gp-login-card { width: 100%; min-width: 0; padding: 20px; }
+.gp-login-heading { display: flex; align-items: center; gap: 10px; }
+.gp-login-section-title { color: #184a33; font-size: 19px; font-weight: 800; line-height: 1.3; }
+.gp-login-form { display: grid; gap: 15px; margin-top: 20px; }
+.gp-login-input-wrap { position: relative; min-width: 0; }
+.gp-login-field-icon {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  color: #047857;
+  pointer-events: none;
+}
+.gp-input.gp-login-input {
+  min-height: 48px;
+  padding: 12px 14px 12px 48px;
+  font-size: 16px;
+  line-height: 22px;
+}
+.gp-input.gp-login-password { padding-right: 50px; }
+.gp-login-visibility-button {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #64748b;
+}
+.gp-login-visibility-button:hover { background: #ecfdf5; }
+.gp-login-submit { width: 100%; min-height: 48px; }
+.gp-login-footnote {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  margin: 18px auto 0;
+  text-align: center;
+}
+.gp-login-footnote svg { flex-shrink: 0; margin-top: 2px; color: #047857; }
+.gp-login-footer { padding: 0 16px 20px; color: #94a3b8; text-align: center; font-size: 11px; }
+@media (max-width: 540px) {
+  .gp-login-layout { justify-content: flex-start; padding: 20px 14px 24px; }
+  .gp-login-card { padding: 17px; }
+  .gp-login-welcome { margin-bottom: 17px; }
+  .gp-login-form { margin-top: 17px; gap: 13px; }
+}
+@media (max-height: 650px) {
+  .gp-login-layout { justify-content: flex-start; padding-top: 14px; padding-bottom: 14px; }
+  .gp-login-welcome-icon { width: 48px; height: 48px; border-radius: 16px; }
+  .gp-login-welcome { margin-bottom: 13px; }
+  .gp-login-welcome-title { margin-top: 9px; }
+  .gp-login-card { padding: 14px; }
+  .gp-login-form { margin-top: 14px; gap: 12px; }
+  .gp-login-footnote { margin-top: 12px; }
+}

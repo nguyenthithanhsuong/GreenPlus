@@ -46,8 +46,8 @@ const OrderManagement = () => {
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
   const [deliveryDialogOrderId, setDeliveryDialogOrderId] = useState("");
 
-  const loadOrders = useCallback(async () => {
-    setLoading(true);
+  const loadOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
 
     try {
@@ -81,7 +81,7 @@ const OrderManagement = () => {
       );
       setOrders([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [fromDate, toDate]);
 
@@ -89,7 +89,9 @@ const OrderManagement = () => {
     void loadOrders();
   }, [loadOrders]);
 
-  useAutoReload(loadOrders);
+  // Delivery status changes from Web Shipper are reflected without a page refresh.
+  const reloadOrdersQuietly = useCallback(() => loadOrders(true), [loadOrders]);
+  useAutoReload(reloadOrdersQuietly, 10000);
 
   const statusFilteredOrders = useMemo(() => {
     if (statusFilter === "all") {
