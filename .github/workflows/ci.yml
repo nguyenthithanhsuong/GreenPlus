@@ -69,6 +69,9 @@ jobs:
         run: npm test -w web-shipper
       - name: Shipper browser E2E tests
         if: matrix.app == 'shipper'
+        env:
+          # Ephemeral CI-only session signing key; never a production credential.
+          SHIPPER_SESSION_SECRET: ci-only-shipper-session-key-not-for-production-2026
         run: |
           npx playwright install --with-deps chromium
           npm run test:e2e -w web-shipper

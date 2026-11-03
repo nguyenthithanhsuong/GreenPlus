@@ -2,15 +2,36 @@
 -- This suite is additive; do not use on a different schema without review.
 
 BEGIN;
--- The supplied dump has exactly one store (GreenPlus UIT).
--- For any environment with 0 or >1 stores, abort rather than guess which tenant owns old rows.
+-- Fresh CI databases intentionally have no stores and no legacy rows.
+-- Existing installations must still have exactly one store to backfill safely.
+-- Never assign historical records to an arbitrary tenant.
 DO $$
-DECLARE n bigint;
+DECLARE
+  n bigint;
+  table_name text;
+  has_legacy_rows boolean;
 BEGIN
- SELECT count(*) INTO n FROM public.stores;
- IF n <> 1 THEN
-   RAISE EXCEPTION 'Safe backfill requires exactly one existing store; found %. Write a verified row-to-store mapping first.',n;
- END IF;
+  SELECT count(*) INTO n FROM public.stores;
+  IF n = 1 THEN
+    RETURN;
+  END IF;
+  IF n > 1 THEN
+    RAISE EXCEPTION 'Safe backfill requires exactly one existing store; found %. Write a verified row-to-store mapping first.', n;
+  END IF;
+  -- No store is safe ONLY for a truly empty, newly initialized database.
+  FOREACH table_name IN ARRAY ARRAY[
+    'suppliers','categories','products','batches','inventory',
+    'inventory_transactions','prices','carts','cart_items','orders',
+    'order_items','payments','deliveries','reviews','complaints',
+    'subscriptions','posts','post_interactions','post_medias',
+    'group_buys','group_buy_members','users'
+  ] LOOP
+    EXECUTE format('SELECT EXISTS (SELECT 1 FROM public.%I)', table_name)
+      INTO has_legacy_rows;
+    IF has_legacy_rows THEN
+      RAISE EXCEPTION 'Safe backfill requires a verified store mapping: % contains legacy rows but stores is empty.', table_name;
+    END IF;
+  END LOOP;
 END $$;
 
 -- Backfill only unassigned historical rows; existing assignment is preserved.
