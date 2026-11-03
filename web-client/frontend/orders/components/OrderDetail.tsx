@@ -1,6 +1,11 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
+import {
+  useSelectedStoreId,
+  useResetOnStoreChange,
+} from "@/lib/stores/use-selected-store";
+import CommerceStorePicker from "../../stores/CommerceStorePicker";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -681,6 +686,7 @@ export default function OrderDetail() {
   const initialized = useAuthStore((state) => state.initialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const storeId = useSelectedStoreId();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -701,6 +707,12 @@ export default function OrderDetail() {
     Record<string, boolean>
   >({});
 
+  useResetOnStoreChange(() => {
+    setDetail(null);
+    setLoading(false);
+    setError(null);
+    setMessage(null);
+  });
   useEffect(() => {
     if (!initialized) {
       return;
@@ -710,6 +722,8 @@ export default function OrderDetail() {
       router.replace("/login");
       return;
     }
+
+    if (!storeId) return;
 
     const orderId = String(params?.orderId ?? "").trim();
     if (!orderId) {
@@ -725,7 +739,7 @@ export default function OrderDetail() {
       setError(null);
 
       try {
-        const response = await fetch(
+        const response = await storeFetch(
           `/api/orders/${encodeURIComponent(orderId)}?userId=${encodeURIComponent(user.user_id)}`,
           {
             signal: controller.signal,
@@ -769,6 +783,7 @@ export default function OrderDetail() {
     isAuthenticated,
     params?.orderId,
     refreshToken,
+    storeId,
     router,
     user?.user_id,
   ]);
@@ -837,7 +852,7 @@ export default function OrderDetail() {
     setMessage(null);
 
     try {
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders/${encodeURIComponent(detail.order_id)}/cancel`,
         {
           method: "PUT",
@@ -1020,6 +1035,8 @@ export default function OrderDetail() {
 
           <div style={{ width: "24px" }} />
         </header>
+
+        <CommerceStorePicker />
 
         <main style={styles.mainContent}>
           {loading && (

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, {
   useCallback,
   useDeferredValue,
@@ -122,6 +123,9 @@ const StoreManagement = () => {
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [verifiedAddress, setVerifiedAddress] = useState("");
+  const [verifiedInput, setVerifiedInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -244,12 +248,20 @@ const StoreManagement = () => {
   const openCreateForm = () => {
     setEditingStore(null);
     setForm(emptyForm());
+    setVerifiedAddress("");
+    setVerifiedInput("");
     setFormOpen(true);
     setSuccessMessage(null);
   };
 
   const openEditForm = (store: StoreRow) => {
     setEditingStore(store);
+    setVerifiedAddress(store.address);
+    setVerifiedInput(
+      [store.address, store.ward, store.district, store.city]
+        .filter(Boolean)
+        .join(", "),
+    );
     setForm({
       name: store.name,
       description: store.description ?? "",
@@ -276,8 +288,56 @@ const StoreManagement = () => {
     setForm(emptyForm());
   };
 
+  const checkStoreAddress = async () => {
+    setLocating(true);
+    setError(null);
+    try {
+      const query = [form.address, form.ward, form.district, form.city]
+        .filter(Boolean)
+        .join(", ");
+      const response = await fetch(
+        `/api/location?q=${encodeURIComponent(query)}`,
+      );
+      const payload = (await response.json()) as {
+        items?: Array<{ latitude: number; longitude: number; address: string }>;
+        error?: string;
+      };
+      if (!response.ok || !payload.items?.length)
+        throw new Error(payload.error || "Không xác định được tọa độ địa chỉ");
+      const geo = payload.items[0];
+      setForm((current) => ({
+        ...current,
+        latitude: String(geo.latitude),
+        longitude: String(geo.longitude),
+      }));
+      setVerifiedAddress(geo.address);
+      setVerifiedInput(query);
+    } catch (error) {
+      setVerifiedAddress("");
+      setError(
+        error instanceof Error ? error.message : "Không xác minh được địa chỉ",
+      );
+    } finally {
+      setLocating(false);
+    }
+  };
+
   const submitForm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (
+      !verifiedAddress ||
+      verifiedInput !==
+        [form.address, form.ward, form.district, form.city]
+          .filter(Boolean)
+          .join(", ") ||
+      !form.latitude ||
+      !form.longitude
+    ) {
+      setError(
+        "Hãy xác minh địa chỉ cửa hàng để tự động lấy tọa độ trước khi lưu.",
+      );
+      return;
+    }
     const manager = users.find((user) => user.user_id === form.managerId);
     const differentOwnedStore = stores.find(
       (store) =>
@@ -397,6 +457,14 @@ const StoreManagement = () => {
             <RefreshCw className="h-4 w-4" />
             Tải lại
           </button>
+          {process.env.NEXT_PUBLIC_GREENPLUS_TENANCY_DEMO === "true" && (
+            <Link
+              href="/settings/tenant-demo"
+              className="inline-flex items-center rounded-xl border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-800"
+            >
+              Docker 3-tier demo
+            </Link>
+          )}
           {!permLoading && hasPermission("stores.create") && (
             <button
               type="button"
@@ -780,6 +848,8 @@ const StoreManagement = () => {
                           setForm((current) => ({
                             ...current,
                             address: event.target.value,
+                            latitude: "",
+                            longitude: "",
                           }))
                         }
                         type="text"
@@ -829,6 +899,8 @@ const StoreManagement = () => {
                           setForm((current) => ({
                             ...current,
                             ward: event.target.value,
+                            latitude: "",
+                            longitude: "",
                           }))
                         }
                         type="text"
@@ -846,6 +918,8 @@ const StoreManagement = () => {
                           setForm((current) => ({
                             ...current,
                             district: event.target.value,
+                            latitude: "",
+                            longitude: "",
                           }))
                         }
                         type="text"
@@ -863,6 +937,8 @@ const StoreManagement = () => {
                           setForm((current) => ({
                             ...current,
                             city: event.target.value,
+                            latitude: "",
+                            longitude: "",
                           }))
                         }
                         type="text"
@@ -909,6 +985,31 @@ const StoreManagement = () => {
                     </div>
                   </div>
 
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                    <button
+                      type="button"
+                      disabled={locating || !form.address.trim()}
+                      onClick={() => void checkStoreAddress()}
+                      className="rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white disabled:opacity-50"
+                    >
+                      {locating
+                        ? "Đang xác minh..."
+                        : "Xác minh địa chỉ và lấy tọa độ"}
+                    </button>
+                    <p className="mt-2">
+                      {verifiedAddress &&
+                      verifiedInput ===
+                        [form.address, form.ward, form.district, form.city]
+                          .filter(Boolean)
+                          .join(", ")
+                        ? `Vị trí đã xác minh: ${verifiedAddress}`
+                        : "Nhập địa chỉ rõ số nhà/đường, phường và thành phố rồi xác minh trước khi lưu."}
+                    </p>
+                    <p className="mt-1 text-xs">
+                      Khi tra cứu, địa chỉ được gửi tới Photon (dịch vụ demo từ
+                      OpenStreetMap).
+                    </p>
+                  </div>
                   <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                     <div>
                       <label className="mb-1.5 block text-sm font-bold text-gray-800">
@@ -916,6 +1017,7 @@ const StoreManagement = () => {
                       </label>
                       <input
                         value={form.latitude}
+                        readOnly
                         onChange={(event) =>
                           setForm((current) => ({
                             ...current,
@@ -934,6 +1036,7 @@ const StoreManagement = () => {
                       </label>
                       <input
                         value={form.longitude}
+                        readOnly
                         onChange={(event) =>
                           setForm((current) => ({
                             ...current,

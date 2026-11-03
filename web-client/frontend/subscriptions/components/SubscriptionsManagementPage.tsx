@@ -1,6 +1,8 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
+import { useSelectedStoreId } from "@/lib/stores/use-selected-store";
+import CommerceStorePicker from "../../stores/CommerceStorePicker";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -483,6 +485,7 @@ export default function SubscriptionsManagementPage() {
   const initialized = useAuthStore((state) => state.initialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const storeId = useSelectedStoreId();
 
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
@@ -522,7 +525,11 @@ export default function SubscriptionsManagementPage() {
 
   const loadData = useCallback(
     async (signal?: AbortSignal) => {
-      if (!user?.user_id) {
+      if (!user?.user_id || !storeId) {
+        setProducts([]);
+        setSubscriptions([]);
+        setProductId("");
+        setLoading(false);
         return;
       }
 
@@ -569,7 +576,11 @@ export default function SubscriptionsManagementPage() {
         setProducts(nextProducts);
 
         if (nextProducts.length > 0) {
-          setProductId((current) => current || nextProducts[0].productId);
+          setProductId((current) =>
+            nextProducts.some((item) => item.productId === current)
+              ? current
+              : nextProducts[0].productId,
+          );
         }
 
         setSubscriptions(
@@ -594,7 +605,7 @@ export default function SubscriptionsManagementPage() {
         setLoading(false);
       }
     },
-    [user?.user_id],
+    [user?.user_id, storeId],
   );
 
   useEffect(() => {
@@ -801,6 +812,8 @@ export default function SubscriptionsManagementPage() {
           <h1 style={styles.title}>Quản lý đơn đặt định kỳ</h1>
           <div style={{ width: "24px" }} />
         </header>
+
+        <CommerceStorePicker />
 
         <main style={styles.mainContent}>
           <section style={styles.banner}>

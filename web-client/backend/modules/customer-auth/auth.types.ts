@@ -18,6 +18,8 @@ export type UpdateProfileInput = {
   email: string;
   phone: string;
   address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   imageUrl?: string;
 };
 

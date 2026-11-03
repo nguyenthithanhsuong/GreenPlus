@@ -320,7 +320,9 @@ export class AuthFacade {
       name: input.name.trim(),
       email: normalizedEmail,
       phone: input.phone.trim(),
-      address: (input.address ?? "").trim(),
+      address: input.address === undefined ? undefined : input.address.trim(),
+      latitude: input.latitude,
+      longitude: input.longitude,
       imageUrl: (input.imageUrl ?? "").trim(),
     });
 

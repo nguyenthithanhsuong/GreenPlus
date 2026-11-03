@@ -1,3 +1,7 @@
+import {
+  resolveDeliveryAddress,
+  LocationError,
+} from "../../../../../../packages/location/index.mjs";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { authFacade } from "../../../../../backend/modules/customer-auth/facades/auth.facade";
@@ -43,6 +47,7 @@ export const PUT = withSentry(async (request: Request) => {
     email?: string;
     phone?: string;
     address?: string;
+    locationHint?: { latitude: number; longitude: number };
     imageUrl?: string;
   };
 
@@ -56,6 +61,22 @@ export const PUT = withSentry(async (request: Request) => {
     return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
 
+  let location;
+  try {
+    if (body.address !== undefined) {
+      if (!body.address.trim())
+        throw new LocationError("Địa chỉ giao hàng không được để trống.");
+      location = await resolveDeliveryAddress(body.address, body.locationHint);
+    }
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Địa chỉ chưa được xác thực",
+      },
+      { status: error instanceof LocationError ? error.status : 422 },
+    );
+  }
   const start = Date.now();
 
   const data = await authFacade.updateProfile({
@@ -64,6 +85,8 @@ export const PUT = withSentry(async (request: Request) => {
     email: body.email ?? "",
     phone: body.phone ?? "",
     address: body.address,
+    latitude: location?.latitude,
+    longitude: location?.longitude,
     imageUrl: body.imageUrl,
   });
 

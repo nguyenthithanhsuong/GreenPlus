@@ -3,6 +3,24 @@ export function validPoint(value) {
   if (!value || typeof value !== 'object' || typeof value.lat !== 'number' || typeof value.lng !== 'number') return false;
   return Number.isFinite(value.lat) && Number.isFinite(value.lng) && Math.abs(value.lat) <= 90 && Math.abs(value.lng) <= 180;
 }
+/** DB numeric columns may be serialized as strings. Missing coordinates are never guessed. */
+export function databasePoint(latitude, longitude) {
+  if (latitude == null || longitude == null || latitude === '' || longitude === '') return null;
+  const point = {lat: Number(latitude), lng: Number(longitude)};
+  return validPoint(point) ? point : null;
+}
+
+/** Opens an external navigational app only after the user clicks. No Google API key. */
+export function googleMapsNavigationUrl(destination) {
+  if (!validPoint(destination)) return null;
+  const url = new URL('https://www.google.com/maps/dir/');
+  url.searchParams.set('api', '1');
+  url.searchParams.set('destination', `${destination.lat},${destination.lng}`);
+  url.searchParams.set('travelmode', 'driving');
+  url.searchParams.set('dir_action', 'navigate');
+  return url.toString();
+}
+
 export function haversineKm(a, b) {
   if (!validPoint(a) || !validPoint(b)) return null;
   const r = Math.PI / 180;

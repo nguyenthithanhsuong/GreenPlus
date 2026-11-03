@@ -1,3 +1,4 @@
+import { isSellableBatch } from "../product-stock";
 import { BatchStatus } from "../product.types";
 
 export interface BatchState {
@@ -6,8 +7,7 @@ export interface BatchState {
 
 class AvailableBatchState implements BatchState {
   isSellable(quantityAvailable: number, expireDate: string): boolean {
-    const isExpired = new Date(expireDate).getTime() < Date.now();
-    return !isExpired && quantityAvailable > 0;
+    return isSellableBatch("available", expireDate, quantityAvailable);
   }
 }
 

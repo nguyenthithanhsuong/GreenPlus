@@ -1,4 +1,3 @@
-
 "use client";
 
 type DeliveryMapProps = {
@@ -10,8 +9,7 @@ export default function DeliveryMap({
   pickupAddress,
   deliveryAddress,
 }: DeliveryMapProps) {
-  const apiKey =
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
 
   if (!apiKey) {
     return <p>Chưa cấu hình Google Maps API Key.</p>;
@@ -28,8 +26,7 @@ export default function DeliveryMap({
     mode: "driving",
   });
 
-  const mapUrl =
-    `https://www.google.com/maps/embed/v1/directions?${params}`;
+  const mapUrl = `https://www.google.com/maps/embed/v1/directions?${params}`;
 
   return (
     <div className="overflow-hidden rounded-2xl border">

@@ -1,157 +1,66 @@
-name: Deploy to Production
-
+# This is a post-CI verification of publish artifacts, NOT a fake production deploy.
+# Actual Coolify/Vercel rollout must be configured independently with a deployment mechanism.
+name: Production Verify
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-  NEXT_PUBLIC_SENTRY_DSN_CLIENT: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN_CLIENT }}
-  SENTRY_DSN_CLIENT: ${{ secrets.SENTRY_DSN_CLIENT }}
-  NEXT_PUBLIC_SENTRY_DSN_ADMIN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN_ADMIN }}
-  SENTRY_DSN_ADMIN: ${{ secrets.SENTRY_DSN_ADMIN }}
-  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-  SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-  SENTRY_PROJECT_ADMIN: ${{ secrets.SENTRY_PROJECT_ADMIN }}
-  SENTRY_PROJECT_CLIENT: ${{ secrets.SENTRY_PROJECT_CLIENT }}
-
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+  packages: read
 jobs:
-  deploy-production:
+  verify-production-images:
+    name: Production Verify
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     environment: environment
-    permissions:
-      contents: write # Upgraded to 'write' to allow creating GitHub Releases
-      packages: write
+    timeout-minutes: 18
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Lowercase repository name
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Ensure the verified commit is still main HEAD
+        shell: bash
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          echo "IMAGE_NAME_LC=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      - name: Log in to Container Registry
+          set -euo pipefail
+          latest="$(git rev-parse HEAD)"
+          test "$VERIFIED_SHA" = "$latest" || { echo 'CI passed for an outdated commit; not promoting it.'; exit 1; }
+      - name: Authenticate to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Generates tags, INCLUDING the custom ref_name-sha tag needed for your Release step
-      # Appends '/web-admin' to the image name to match your release notes
-      - name: Extract Docker metadata for web-admin
-        id: meta-admin
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}/web-admin
-          tags: |
-            type=ref,event=branch
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ github.ref_name }}-${{ github.sha }}
-
-      - name: Build and push web-admin image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: web-admin/Dockerfile
-          push: true
-          tags: ${{ steps.meta-admin.outputs.tags }}
-          labels: ${{ steps.meta-admin.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-            SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
-            NEXT_PUBLIC_SENTRY_DSN_CLIENT=${{ env.NEXT_PUBLIC_SENTRY_DSN_CLIENT }}
-            SENTRY_DSN_CLIENT=${{ env.SENTRY_DSN_CLIENT }}
-            NEXT_PUBLIC_SENTRY_DSN_ADMIN=${{ env.NEXT_PUBLIC_SENTRY_DSN_ADMIN }}
-            SENTRY_DSN_ADMIN=${{ env.SENTRY_DSN_ADMIN }}
-            SENTRY_AUTH_TOKEN=${{ env.SENTRY_AUTH_TOKEN }}
-            SENTRY_ORG=${{ env.SENTRY_ORG }}
-            SENTRY_PROJECT_ADMIN=${{ env.SENTRY_PROJECT_ADMIN }}
-            SENTRY_PROJECT_CLIENT=${{ env.SENTRY_PROJECT_CLIENT }}
-
-      - name: Extract Docker metadata for web-client
-        id: meta-client
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}/web-client
-          tags: |
-            type=ref,event=branch
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ github.ref_name }}-${{ github.sha }}
-
-      - name: Build and push web-client image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: web-client/Dockerfile
-          push: true
-          tags: ${{ steps.meta-client.outputs.tags }}
-          labels: ${{ steps.meta-client.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-            SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
-            NEXT_PUBLIC_SENTRY_DSN_CLIENT=${{ env.NEXT_PUBLIC_SENTRY_DSN_CLIENT }}
-            SENTRY_DSN_CLIENT=${{ env.SENTRY_DSN_CLIENT }}
-            SENTRY_AUTH_TOKEN=${{ env.SENTRY_AUTH_TOKEN }}
-            SENTRY_ORG=${{ env.SENTRY_ORG }}
-            SENTRY_PROJECT_CLIENT=${{ env.SENTRY_PROJECT_CLIENT }}
-
-      - name: Extract Docker metadata for web-shipper
-        id: meta-shipper
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}/web-shipper
-          tags: |
-            type=ref,event=branch
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ github.ref_name }}-${{ github.sha }}
-
-      - name: Build and push web-shipper image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: web-shipper/Dockerfile
-          push: true
-          tags: ${{ steps.meta-shipper.outputs.tags }}
-          labels: ${{ steps.meta-shipper.outputs.labels }}
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}-${{ github.sha }}
-          body: |
-            Production deployment
-            - web-client: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}/web-client:${{ github.ref_name }}-${{ github.sha }}
-            - web-admin: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}/web-admin:${{ github.ref_name }}-${{ github.sha }}
-            - web-shipper: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}/web-shipper:${{ github.ref_name }}-${{ github.sha }}
-
-      - name: Deploy to production environment
+      - name: Confirm ALL three images exist for CI-verified SHA
+        shell: bash
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          echo "Deploying to production..."
-          # TODO: Add your deployment commands here
-
-      - name: Run smoke tests
+          set -euo pipefail
+          repo="${GITHUB_REPOSITORY,,}"
+          tag="sha-${VERIFIED_SHA:0:7}"
+          for app in admin client shipper; do
+            docker manifest inspect "ghcr.io/${repo}/web-${app}:${tag}" >/dev/null
+            echo "PASS web-${app}:${tag} exists"
+          done
+          echo 'Artifacts verified. This workflow does NOT claim Vercel/Coolify rollout is complete.'
+      - name: Verify actual Vercel production deployments of same CI commit
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ADMIN: ${{ vars.VERCEL_PROJECT_ADMIN }}
+          VERCEL_PROJECT_CLIENT: ${{ vars.VERCEL_PROJECT_CLIENT }}
+          VERCEL_PROJECT_SHIPPER: ${{ vars.VERCEL_PROJECT_SHIPPER }}
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/ci/check-vercel-deployments.mjs
+      - name: Probe deployed Client and Shipper PWA assets on HTTPS
+        env:
+          VERCEL_CLIENT_URL: ${{ vars.VERCEL_CLIENT_URL }}
+          VERCEL_SHIPPER_URL: ${{ vars.VERCEL_SHIPPER_URL }}
         run: |
-          echo "Running smoke tests..."
-          # TODO: Add health checks and smoke tests
-
-      - name: Notify deployment
-        if: always()
-        run: |
-          echo "Production deployment complete"
+          test -n "$VERCEL_CLIENT_URL" && test -n "$VERCEL_SHIPPER_URL" || { echo 'Configure public VERCEL_CLIENT_URL and VERCEL_SHIPPER_URL repository variables.'; exit 1; }
+          node scripts/check-pwa-deployment.mjs "$VERCEL_CLIENT_URL" "$VERCEL_SHIPPER_URL"

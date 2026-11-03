@@ -1,5 +1,7 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
+
 import { useState } from "react";
 
 type CategoryItem = {
@@ -27,7 +29,7 @@ export default function ProductCategoriesTestPage() {
     setError(null);
 
     try {
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/categories?sort=${encodeURIComponent(sort)}`,
       );
       const data = (await response.json()) as

@@ -141,3 +141,19 @@ vite.config.ts.timestamp-*
 
 # Turbo Caches
 .turbo
+# Generated native TWA build outputs / private signing artifacts
+mobile/*-twa/android/
+mobile/*-twa/.gradle/
+mobile/*-twa/*.keystore
+mobile/*-twa/*.jks
+mobile/*-twa/*-signed.apk
+mobile/*-twa/*.aab
+mobile/*-twa/assetlinks.generated.json
+
+# Docker three-tier demo secrets
+docker/three-tier/.env
+
+# Local database exports must not be committed.
+backup_data.sql
+backup_schema.sql
+backups/

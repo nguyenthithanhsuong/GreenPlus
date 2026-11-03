@@ -1,6 +1,11 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
+import {
+  useSelectedStoreId,
+  useResetOnStoreChange,
+} from "@/lib/stores/use-selected-store";
+import CommerceStorePicker from "../../stores/CommerceStorePicker";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -244,6 +249,7 @@ export default function Complaints() {
   const initialized = useAuthStore((state) => state.initialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const storeId = useSelectedStoreId();
 
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -260,6 +266,13 @@ export default function Complaints() {
   );
   const [createOpen, setCreateOpen] = useState<boolean>(false);
 
+  useResetOnStoreChange(() => {
+    setOrders([]);
+    setOrderId("");
+    setLoadingOrders(false);
+    setError(null);
+  });
+
   useEffect(() => {
     if (!initialized) {
       return;
@@ -270,6 +283,7 @@ export default function Complaints() {
       return;
     }
 
+    if (!storeId) return;
     const controller = new AbortController();
 
     const loadOrders = async () => {
@@ -277,7 +291,7 @@ export default function Complaints() {
       setError(null);
 
       try {
-        const response = await fetch(
+        const response = await storeFetch(
           `/api/orders?userId=${encodeURIComponent(user.user_id)}`,
           {
             signal: controller.signal,
@@ -335,7 +349,14 @@ export default function Complaints() {
     return () => {
       controller.abort();
     };
-  }, [initialized, isAuthenticated, router, searchParams, user?.user_id]);
+  }, [
+    initialized,
+    isAuthenticated,
+    router,
+    searchParams,
+    user?.user_id,
+    storeId,
+  ]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -474,6 +495,8 @@ export default function Complaints() {
 
           <div style={{ width: "24px" }} />
         </header>
+
+        <CommerceStorePicker />
 
         <main style={styles.mainContent}>
           <section style={styles.card}>

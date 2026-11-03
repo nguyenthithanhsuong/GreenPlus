@@ -12,3 +12,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .env*
+# Never copy local database exports into a public image.
+backup_data.sql
+backup_schema.sql
+backups/
+**/*.sql.bak

@@ -41,12 +41,13 @@ npx supabase migration list # đối chiếu local và remote
 # Install dependencies
 npm install
 
-# Start both apps with development server
+# Start all three web apps and the local three-tier Docker sandbox (interactive Turbo TUI)
 npm run dev
 
+# Or start only web apps: npm run dev:web
 # Or start individual apps
-npm run dev:client   # Port 3000
-npm run dev:admin    # Port 3001
+npm run dev:client   # Port 3001
+npm run dev:admin    # Port 3000
 npm run dev:shipper  # Port 3002
 
 # Check code quality
@@ -59,8 +60,8 @@ npm run build       # Full production build
 
 ```
 GreenPlus/
-├── web-client/          # Customer-facing app (Port 3000)
-├── web-admin/           # Admin dashboard (Port 3001)
+├── web-client/          # Customer-facing app (dev Port 3001)
+├── web-admin/           # Admin dashboard (dev Port 3000)
 ├── web-shipper/         # Shipper app (Port 3002)
 ├── packages/supabase-shared/ # Shared utilities
 ├── nginx/               # Gateway reverse proxy
@@ -73,7 +74,7 @@ GreenPlus/
 
 ```bash
 # Start all services with unified gateway
-docker-compose up -d
+docker compose up -d
 
 # Gateway runs on port 8080
 curl http://localhost:8080/health
@@ -92,8 +93,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=       # Admin app only — protected API routes
 SUPABASE_PASS=                   # DB direct connection / migrations
 AUTH_HANDOFF_SECRET=             # Cross-app auth between web-client and web-admin
-NEXT_PUBLIC_WEB_CLIENT_URL=http://localhost:3000
-NEXT_PUBLIC_WEB_ADMIN_URL=http://localhost:3001
+NEXT_PUBLIC_WEB_CLIENT_URL=http://localhost:3001
+NEXT_PUBLIC_WEB_ADMIN_URL=http://localhost:3000
 NEXT_PUBLIC_WEB_SHIPPER_URL=http://localhost:3002
 
 # Optional
@@ -130,9 +131,9 @@ Three GitHub Actions workflows:
 
 | Workflow             | Trigger                   | What It Does                               |
 | -------------------- | ------------------------- | ------------------------------------------ |
-| `ci.yml`             | Push to main/develop, PRs | Lint → TypeCheck → Build → Docker → Sentry |
-| `deploy-staging.yml` | Push to develop           | Build images → Deploy to staging           |
-| `deploy-prod.yml`    | Manual or main push       | Build images → Deploy to production        |
+| `ci.yml`             | Push and PRs             | 3-app frontend matrix + backend + Docker/Supabase DB + external checks → guarded GHCR publish |
+| `deploy-staging.yml` | Manual verification      | Verify SHA-pinned staging images (does **not** deploy) |
+| `deploy-prod.yml`    | Successful `main` CI     | Verify SHA-pinned GHCR + Vercel production + PWA (does **not** deploy) |
 
 Configure GitHub Secrets: Settings → Secrets → Add repository secrets
 
@@ -195,7 +196,7 @@ npm run build              # Production build
 
 # Docker
 docker-compose build       # Build images
-docker-compose up -d       # Start services
+docker compose up -d       # Start services
 docker-compose logs -f     # View logs
 docker-compose down        # Stop services
 ```
@@ -212,7 +213,7 @@ npm run dev
 
 ```bash
 docker-compose build
-docker-compose up -d
+docker compose up -d
 
 # Or push to develop branch to trigger GitHub Actions
 git push origin develop
@@ -226,7 +227,7 @@ git push origin main
 
 # Or manually deploy:
 docker-compose pull
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Performance
@@ -287,3 +288,13 @@ docker-compose build --no-cache
 4. GitHub Actions CI will run automatically
 5. Create Pull Request
 6. After approval, merge to develop (staging) or main (production)
+
+### Deployment notes (November 2026)
+
+- Development: Admin `http://localhost:3000`, Client `http://localhost:3001`, Shipper `http://localhost:3002`, three-tier gateway `http://127.0.0.1:4100`.
+- The **full** `docker-compose.yml` keeps **internal** client `3000`, admin `3001`, shipper `3002` for image compatibility, but maps default **host** Admin to `3000`, Client to `3001`. Never run it alongside the Next.js development servers on the same host ports.
+- `npm run dev` starts only the **three-tier database Docker stack**, not the full production web Docker Compose stack, before launching Turbo TUI.
+- To deploy to Vercel, configure three projects with Root Directories `web-admin`, `web-client`, and `web-shipper`. Configure their respective environment variables without exposing service-role/session secrets as `NEXT_PUBLIC_*`.
+- Client and Shipper are installable PWAs; Android TWA setup requires deployed HTTPS origins and signing certificate fingerprints. See `docs/VERCEL_MOBILE_RELEASE.md`.
+- Existing Flutter app skeletons in `mobile/customer_app` and `mobile/shipper_app` are **not** compiled production apps and must not be confused with the PWA/TWA path.
+- CI publishes GHCR images **after** all mandatory gates; it does not automatically deploy Coolify. `Production Verify` only verifies deployed images/Vercel state and should not be interpreted as a deployment action.

@@ -40,6 +40,8 @@ export type CreateUserInput = {
   phone?: string;
   address?: string;
   imageUrl?: string;
+  latitude?: number;
+  longitude?: number;
   status?: UserStatus;
 };
 
@@ -52,5 +54,7 @@ export type UpdateUserInput = {
   phone?: string;
   address?: string;
   imageUrl?: string;
+  latitude?: number;
+  longitude?: number;
   status?: UserStatus;
 };

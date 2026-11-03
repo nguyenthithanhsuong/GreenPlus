@@ -75,7 +75,7 @@ const SettingsNav = () => {
         </button>
       )}
       {}
-      {role === "admin" && (
+      {/* {role === "admin" && (
         <button
           type="button"
           onClick={() => goTo("/settings/stores")}
@@ -84,7 +84,7 @@ const SettingsNav = () => {
           <Building2 className="w-4 h-4" />
           Các cửa hàng
         </button>
-      )}
+      )} */}
 
       <div className="my-2 border-t border-gray-200"></div>
 

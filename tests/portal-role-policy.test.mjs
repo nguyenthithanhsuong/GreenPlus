@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {canAccessPage,canAccessApi} from '../web-admin/src/lib/portal-access.ts';
-const admin=['/dashboard','/users','/roles','/greencreators','/settings/stores'];
+const admin=['/dashboard','/users','/roles','/greencreators','/settings/stores','/settings/tenant-demo'];
 const manager=['/dashboard','/users','/suppliers','/products','/categories','/batches','/inventories','/prices','/orders','/shippers','/complaints','/customers','/greencreators','/reports'];
 const employee=['/dashboard','/suppliers','/products','/categories','/batches','/inventories','/prices','/orders','/complaints'];
 test('admin portal excludes store operations',()=>{
@@ -10,7 +10,7 @@ test('admin portal excludes store operations',()=>{
 });
 test('manager screens include assigned-store functions but exclude platform management',()=>{
  for(const path of manager)assert.ok(canAccessPage('manager',path),path);
- for(const path of ['/roles','/settings/stores'])assert.equal(canAccessPage('manager',path),false,path);
+ for(const path of ['/roles','/settings/stores','/settings/tenant-demo'])assert.equal(canAccessPage('manager',path),false,path);
 });
 test('employee menu is limited',()=>{
  for(const path of employee)assert.ok(canAccessPage('employee',path),path);

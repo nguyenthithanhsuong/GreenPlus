@@ -1,0 +1,94 @@
+name: greenplus-three-tier
+services:
+  shared-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: greenplus_demo
+    volumes:
+      - shared_data:/var/lib/postgresql/data
+      - ./sql/shared:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d greenplus_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  enterprise-a-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: enterprise_a
+    volumes:
+      - enterprise_a_data:/var/lib/postgresql/data
+      - ./sql/enterprise-a:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d enterprise_a"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  enterprise-b-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: enterprise_b
+    volumes:
+      - enterprise_b_data:/var/lib/postgresql/data
+      - ./sql/enterprise-b:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d enterprise_b"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  shared-rest:
+    image: postgrest/postgrest:v12.2.8
+    environment:
+      PGRST_DB_URI: postgresql://postgres:${DEMO_POSTGRES_PASSWORD}@shared-db:5432/greenplus_demo
+      PGRST_DB_SCHEMAS: public,pro_a,pro_b
+      PGRST_DB_ANON_ROLE: web_anon
+    depends_on:
+      shared-db: { condition: service_healthy }
+  enterprise-a-rest:
+    image: postgrest/postgrest:v12.2.8
+    environment:
+      PGRST_DB_URI: postgresql://postgres:${DEMO_POSTGRES_PASSWORD}@enterprise-a-db:5432/enterprise_a
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: web_anon
+    depends_on:
+      enterprise-a-db: { condition: service_healthy }
+  enterprise-b-rest:
+    image: postgrest/postgrest:v12.2.8
+    environment:
+      PGRST_DB_URI: postgresql://postgres:${DEMO_POSTGRES_PASSWORD}@enterprise-b-db:5432/enterprise_b
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: web_anon
+    depends_on:
+      enterprise-b-db: { condition: service_healthy }
+  gateway:
+    build:
+      context: ../..
+      dockerfile: docker/three-tier/gateway/Dockerfile
+    environment:
+      DEMO_GATEWAY_KEY: ${DEMO_GATEWAY_KEY:?Set DEMO_GATEWAY_KEY in .env}
+      DEMO_SHARED_REST_URL: http://shared-rest:3000
+      DEMO_ENTERPRISE_A_REST_URL: http://enterprise-a-rest:3000
+      DEMO_ENTERPRISE_B_REST_URL: http://enterprise-b-rest:3000
+    ports:
+      - 127.0.0.1:4100:4100
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4100/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+      start_period: 15s
+    depends_on:
+      - shared-rest
+      - enterprise-a-rest
+      - enterprise-b-rest
+    restart: unless-stopped
+volumes:
+  shared_data:
+  enterprise_a_data:
+  enterprise_b_data:

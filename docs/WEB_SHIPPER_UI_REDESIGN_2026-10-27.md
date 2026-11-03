@@ -23,7 +23,7 @@ Pure Web Shipper frontend update. No Supabase migrations, environment variables,
 
 ## Known limitations
 
-- Source was reconstructed from the latest available GreenPlus ZIP plus previously delivered Shipper patches. Changes made locally *after* those patches are not available here; review any overlapping local modifications when extracting.
+- Source was reconstructed from the latest available GreenPlus ZIP plus previously delivered Shipper patches. Changes made locally _after_ those patches are not available here; review any overlapping local modifications when extracting.
 - Node static/unit tests and TSX syntax parsing passed in the authoring environment; full Next.js compile, browser visual QA and Supabase login couldn't be performed there because dependencies/live services were not installed.
 - Profile values are read-only; adding account edit/password reset APIs is out of scope.
 - QR scanning requires a compatible browser and Camera permission. Manual lookup remains supported.

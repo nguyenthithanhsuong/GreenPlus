@@ -2,250 +2,262 @@ name: CI
 
 on:
   push:
-    branches:
-      - '**'
-
+    branches: ['**']
   pull_request:
-
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
-  NEXT_TELEMETRY_DISABLED: "1"
+  CI: 'true'
+  NEXT_TELEMETRY_DISABLED: '1'
   REGISTRY: ghcr.io
+  # No actual service-role, Sentry auth, or Better Stack tokens in builds.
+  NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+  SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-only
+  SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: '1'
 
 jobs:
-  frontend-ci:
+  pipeline-contracts:
+    name: CI Rules
     runs-on: ubuntu-latest
-    environment: environment
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL) || 'https://ci-placeholder.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY) || 'ci-placeholder-anon-key' }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY) || 'ci-placeholder-service-role-key' }}
-      SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_CLIENT || '' }}
-      NEXT_PUBLIC_SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_CLIENT || '' }}
-      SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_ADMIN || '' }}
-      NEXT_PUBLIC_SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_ADMIN || '' }}
-      SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: "1"
-      BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
+    timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '22'
+      - name: Lint GitHub Actions workflow YAML and shell
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
+      - name: Validate shell scripts
+        run: bash -n scripts/ci/smoke-images.sh
+      - name: Test CI rules and external-check error handling
+        run: node --test tests/ci-pipeline.test.mjs
+      - name: Check required files and Dockerfile safety
+        run: node scripts/ci/validate-ci.mjs
+
+  frontend-ci:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { app: admin, node: '20', label: 'Admin CI' }
+          - { app: client, node: '20', label: 'Client CI' }
+          - { app: shipper, node: '22', label: 'Shipper CI' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
           cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint web-client
-        run: npm run lint -w web-client
-
-      - name: Type check web-client
-        run: npm run typecheck -w web-client
-
-      - name: Build web-client
-        run: npm run build -w web-client
+      - run: npm ci
+      - name: Lint
+        run: npm run lint -w web-${{ matrix.app }}
+      - name: Typecheck
+        run: npm run typecheck -w web-${{ matrix.app }}
+      - name: Shipper unit + integration tests
+        if: matrix.app == 'shipper'
+        run: npm test -w web-shipper
+      - name: Build
+        run: npm run build -w web-${{ matrix.app }}
+      - name: Shipper browser E2E tests
+        if: matrix.app == 'shipper'
+        env:
+          # Ephemeral CI-only session signing key; never a production credential.
+          SHIPPER_SESSION_SECRET: ci-only-shipper-session-key-not-for-production-2026
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e -w web-shipper
+      - name: Upload Shipper E2E diagnostics
+        if: failure() && matrix.app == 'shipper'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shipper-e2e-diagnostics
+          path: |
+            web-shipper/test-results/
+            web-shipper/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
 
   backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: All root Node tests (including tenant, gateway, security, PWA, regression)
+        run: node --experimental-strip-types --test tests/*.test.mjs
+      - name: Check gateway and migration launcher syntax
+        run: |
+          node --check docker/three-tier/gateway/server.mjs
+          node --check scripts/three-tier-docker.mjs
+          node --check scripts/repair-three-tier-commerce.mjs
+          node --check scripts/test-three-tier-transactions.mjs
+          node --check scripts/test-three-tier-lifecycle.mjs
+
+  docker-db-ci:
+    name: Docker DB CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Start disposable three-tier PostgreSQL and PostgREST
+        run: npm run docker:three-tier:up
+      - name: Assert RPCs and API connectivity
+        run: npm run docker:three-tier:check
+      - name: Docker catalog SQL contract (ROLLBACK)
+        run: node scripts/test-three-tier-commerce.mjs
+      - name: Inventory and checkout transactions (ROLLBACK)
+        run: node scripts/test-three-tier-transactions.mjs
+      - name: Payment/delivery lifecycle transactions (ROLLBACK)
+        run: node scripts/test-three-tier-lifecycle.mjs
+      - name: Show logs on failure (redacted configs not included)
+        if: failure()
+        run: docker compose --project-directory docker/three-tier logs --tail=100 gateway shared-rest enterprise-a-rest enterprise-b-rest || true
+      - name: Remove disposable CI containers and volumes
+        if: always()
+        run: docker compose --project-directory docker/three-tier down --volumes --remove-orphans || true
+
+  supabase-db-ci:
+    name: Supabase DB CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OPENAI_API_KEY: ci-no-real-openai-key
+      SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN: ci-unused
+      SUPABASE_AUTH_EXTERNAL_APPLE_SECRET: ci-unused
+      S3_HOST: ci-unused.example.invalid
+      S3_REGION: test-region
+      S3_ACCESS_KEY: ci-unused
+      S3_SECRET_KEY: ci-unused
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start disposable local Supabase (never link remote)
+        run: supabase start
+      - name: Rebuild from all committed migrations
+        run: supabase db reset --local --no-seed
+      - name: Run pgTAP schema/isolation checks
+        run: supabase test db
+      - name: Shut down disposable local Supabase
+        if: always()
+        run: supabase stop --no-backup || true
+
+  external-services-ci:
+    name: Services CI
     runs-on: ubuntu-latest
     environment: environment
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL) || 'https://ci-placeholder.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY) || 'ci-placeholder-anon-key' }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY) || 'ci-placeholder-service-role-key' }}
-      SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_CLIENT || '' }}
-      NEXT_PUBLIC_SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_CLIENT || '' }}
-      SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_ADMIN || '' }}
-      NEXT_PUBLIC_SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_ADMIN || '' }}
-      SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: "1"
-      BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
+    timeout-minutes: 12
+    # PRs and feature branches run offline contract tests. MAIN must prove live connectivity.
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint web-admin
-        run: npm run lint -w web-admin
-
-      - name: Type check web-admin
-        run: npm run typecheck -w web-admin
-
-      - name: Build web-admin
-        run: npm run build -w web-admin
-
-  shipper-ci:
-    runs-on: ubuntu-latest
-    env:
-      NEXT_TELEMETRY_DISABLED: "1"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint web-shipper
-        run: npm run lint -w web-shipper
-
-      - name: Type check web-shipper
-        run: npm run typecheck -w web-shipper
-
-      - name: Build web-shipper
-        run: npm run build -w web-shipper
+          node-version: '22'
+      - name: Test service probes offline
+        run: node --test tests/ci-pipeline.test.mjs
+      - name: Verify live service credentials and connections on main (fail closed)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ADMIN: ${{ vars.VERCEL_PROJECT_ADMIN }}
+          VERCEL_PROJECT_CLIENT: ${{ vars.VERCEL_PROJECT_CLIENT }}
+          VERCEL_PROJECT_SHIPPER: ${{ vars.VERCEL_PROJECT_SHIPPER }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG || secrets.SENTRY_ORG }}
+          SENTRY_PROJECT_ADMIN: ${{ vars.SENTRY_PROJECT_ADMIN || secrets.SENTRY_PROJECT_ADMIN }}
+          SENTRY_PROJECT_CLIENT: ${{ vars.SENTRY_PROJECT_CLIENT || secrets.SENTRY_PROJECT_CLIENT }}
+          SENTRY_PROJECT_SHIPPER: ${{ vars.SENTRY_PROJECT_SHIPPER || secrets.SENTRY_PROJECT_SHIPPER }}
+          BETTER_STACK_SOURCE_TOKEN: ${{ secrets.BETTER_STACK_SOURCE_TOKEN }}
+          BETTER_STACK_URL: ${{ vars.BETTER_STACK_URL || secrets.BETTER_STACK_URL }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: node scripts/ci/check-external.mjs
 
   docker-build:
+    name: Docker Build
     environment: environment
-    needs:
-      - frontend-ci
-      - backend-ci
+    needs: [pipeline-contracts, frontend-ci, backend-ci, docker-db-ci, supabase-db-ci, external-services-ci]
     runs-on: ubuntu-latest
+    timeout-minutes: 50
     env:
-      GITHUB_SHA: ${{ github.sha }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL) || 'https://ci-placeholder.supabase.co' }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY) || 'ci-placeholder-anon-key' }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY) || 'ci-placeholder-service-role-key' }}
-      SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_CLIENT || '' }}
-      NEXT_PUBLIC_SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_CLIENT || '' }}
-      SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_ADMIN || '' }}
-      NEXT_PUBLIC_SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_ADMIN || '' }}
-      BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
+      NEXT_PUBLIC_SENTRY_DSN_ADMIN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN_ADMIN }}
+      NEXT_PUBLIC_SENTRY_DSN_CLIENT: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN_CLIENT }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG || secrets.SENTRY_ORG }}
+      SENTRY_PROJECT_ADMIN: ${{ vars.SENTRY_PROJECT_ADMIN || secrets.SENTRY_PROJECT_ADMIN }}
+      SENTRY_PROJECT_CLIENT: ${{ vars.SENTRY_PROJECT_CLIENT || secrets.SENTRY_PROJECT_CLIENT }}
     permissions:
       contents: read
       packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Lowercase the repo name
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
-
-      - name: Debug Sentry in build context
-        run: |
-          node -e "console.log('ORG', process.env.SENTRY_ORG)"
-          node -e "console.log('PROJECT CLIENT: ', process.env.SENTRY_PROJECT_CLIENT)"
-          node -e "console.log('PROJECT ADMIN: ', process.env.SENTRY_PROJECT_ADMIN)"
-          node -e "console.log('TOKEN', !!process.env.SENTRY_AUTH_TOKEN)"
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT_CLIENT: ${{ secrets.SENTRY_PROJECT_CLIENT }}
-          SENTRY_PROJECT_ADMIN: ${{ secrets.SENTRY_PROJECT_ADMIN }}
-
-      - name: Test Sentry Client connection
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: DSN ${{ secrets.SENTRY_AUTH_TOKEN }}" \
-            https://sentry.io/api/0/projects/${{ secrets.SENTRY_ORG }}/${{ secrets.SENTRY_PROJECT_CLIENT }}/)
-          echo "Sentry API status: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "WARNING: Sentry connection failed with status $STATUS"
-          fi
-        env:
-         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-
-      - name: Test Sentry Admin connection
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: DSN ${{ secrets.SENTRY_AUTH_TOKEN }}" \
-            https://sentry.io/api/0/projects/${{ secrets.SENTRY_ORG }}/${{ secrets.SENTRY_PROJECT_ADMIN }}/)
-          echo "Sentry API status: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "WARNING: Sentry connection failed with status $STATUS"
-          fi
-        env:
-         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
+      - uses: actions/checkout@v4
+      - name: Lowercase repository
+        shell: bash
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v3
+      - name: GHCR login only for guarded main publish
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata (web-client)
-        id: meta-client
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.REPO_LC }}/web-client
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=semver,pattern={{version}}
-
-      - name: Build and push web-client
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./web-client/Dockerfile
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          tags: ${{ steps.meta-client.outputs.tags }}
-          labels: ${{ steps.meta-client.outputs.labels }}
-          build-args: |
-            GITHUB_SHA=${{ github.sha }}
-            NEXT_PUBLIC_GITHUB_SHA=${{ github.sha }}
-            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-            SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
-            NEXT_PUBLIC_SENTRY_DSN_CLIENT=${{ env.NEXT_PUBLIC_SENTRY_DSN_CLIENT }}
-            SENTRY_DSN_CLIENT=${{ env.SENTRY_DSN_CLIENT }}
-            NEXT_PUBLIC_SENTRY_DSN_ADMIN=${{ env.NEXT_PUBLIC_SENTRY_DSN_ADMIN }}
-            SENTRY_DSN_ADMIN=${{ env.SENTRY_DSN_ADMIN }}
-            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
-            SENTRY_ORG=${{ secrets.SENTRY_ORG }}
-            SENTRY_PROJECT_CLIENT=${{ secrets.SENTRY_PROJECT_CLIENT }}
-            SENTRY_PROJECT_ADMIN=${{ secrets.SENTRY_PROJECT_ADMIN }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Extract metadata (web-admin)
-        id: meta-admin
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.REPO_LC }}/web-admin
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=semver,pattern={{version}}
-
-      - name: Build and push web-admin
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./web-admin/Dockerfile
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          tags: ${{ steps.meta-admin.outputs.tags }}
-          labels: ${{ steps.meta-admin.outputs.labels }}
-          build-args: |
-            GITHUB_SHA=${{ github.sha }}
-            NEXT_PUBLIC_GITHUB_SHA=${{ github.sha }}
-            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-            SUPABASE_SERVICE_ROLE_KEY=${{ env.SUPABASE_SERVICE_ROLE_KEY }}
-            NEXT_PUBLIC_SENTRY_DSN_CLIENT=${{ env.NEXT_PUBLIC_SENTRY_DSN_CLIENT }}
-            SENTRY_DSN_CLIENT=${{ env.SENTRY_DSN_CLIENT }}
-            NEXT_PUBLIC_SENTRY_DSN_ADMIN=${{ env.NEXT_PUBLIC_SENTRY_DSN_ADMIN }}
-            SENTRY_DSN_ADMIN=${{ env.SENTRY_DSN_ADMIN }}
-            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
-            SENTRY_ORG=${{ secrets.SENTRY_ORG }}
-            SENTRY_PROJECT_ADMIN=${{ secrets.SENTRY_PROJECT_ADMIN }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Build admin, client and shipper images (no production secrets)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for app in admin client shipper; do
+            docker build --file "web-${app}/Dockerfile" \
+              --build-arg NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
+              --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+              --build-arg NEXT_PUBLIC_SENTRY_DSN_ADMIN="$NEXT_PUBLIC_SENTRY_DSN_ADMIN" \
+              --build-arg NEXT_PUBLIC_SENTRY_DSN_CLIENT="$NEXT_PUBLIC_SENTRY_DSN_CLIENT" \
+              --build-arg SENTRY_ORG="$SENTRY_ORG" \
+              --build-arg SENTRY_PROJECT_ADMIN="$SENTRY_PROJECT_ADMIN" \
+              --build-arg SENTRY_PROJECT_CLIENT="$SENTRY_PROJECT_CLIENT" \
+              --build-arg GITHUB_SHA="$GITHUB_SHA" \
+              --build-arg NEXT_PUBLIC_GITHUB_SHA="$GITHUB_SHA" \
+              --tag "greenplus/web-${app}:ci" .
+          done
+      - name: Smoke all three images before any publish
+        shell: bash
+        run: bash scripts/ci/smoke-images.sh
+      - name: Publish SHA-pinned images after every gate passed
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_sha="${GITHUB_SHA:0:7}"
+          for app in admin client shipper; do
+            target="ghcr.io/${REPO_LC}/web-${app}"
+            docker tag "greenplus/web-${app}:ci" "${target}:sha-${short_sha}"
+            docker push "${target}:sha-${short_sha}"
+            for tag in main latest; do
+              docker tag "greenplus/web-${app}:ci" "${target}:${tag}"
+              docker push "${target}:${tag}"
+            done
+          done
+          echo "All three SHA-pinned images published; deployment is a separate operation."

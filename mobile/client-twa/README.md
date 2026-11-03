@@ -1,0 +1,1 @@
+This directory is created/updated by Bubblewrap when you run `npm run mobile:client:init -- https://...` or `npm run mobile:shipper:init -- https://...` from the GreenPlus root. It is **not** another frontend. It opens the deployed Next.js PWA in Android Trusted Web Activity. Read `docs/GREENPLUS_PWA_TWA_LOCATION_2026-10-27.md` first.

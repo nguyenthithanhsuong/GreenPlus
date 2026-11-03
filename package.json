@@ -9,8 +9,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo dev --ui=tui",
-    "dev-all": "concurrently -n SERVER,WARM \"turbo dev --ui=stream\" \"node scripts/prewarm-dev.mjs\"",
+    "dev": "node scripts/dev-with-docker.mjs",
+    "dev:all": "concurrently -n SERVER,WARM \"turbo dev --ui=stream\" \"node scripts/prewarm-dev.mjs\"",
     "dev:turbo": "turbo dev --ui=tui",
     "dev:admin": "turbo dev --filter=web-admin",
     "dev:client": "turbo dev --filter=web-client",
@@ -23,8 +23,24 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "clean": "rimraf .next .turbo out dist",
     "check-all": "npm run clean && npm run format && npm run lint-fix && npm run typecheck && npm run build",
+    "mobile:client:init": "node scripts/mobile-twa.mjs client init",
+    "mobile:shipper:init": "node scripts/mobile-twa.mjs shipper init",
+    "mobile:client:build": "node scripts/mobile-twa.mjs client build",
+    "mobile:shipper:build": "node scripts/mobile-twa.mjs shipper build",
     "test:shipper": "npm test -w web-shipper",
-    "test:migrations": "node --test tests/migration-static.test.mjs"
+    "test:release:static": "node --experimental-strip-types --test tests/*.test.mjs && npm test -w web-shipper && node scripts/ci/validate-ci.mjs",
+    "test:tenant-routing": "node --test tests/three-tier-routing.test.mjs tests/tenant-postgrest.test.mjs tests/tenant-registry.test.mjs tests/tenant-postgrest-adapter.test.mjs",
+    "test:migrations": "node --test tests/migration-static.test.mjs",
+    "test:three-tier-commerce": "node --test tests/three-tier-commerce-slice.test.mjs",
+    "test:three-tier-commerce:docker": "node scripts/test-three-tier-commerce.mjs",
+    "docker:three-tier:init": "node scripts/three-tier-docker.mjs init",
+    "docker:three-tier:up": "node scripts/three-tier-docker.mjs up",
+    "docker:three-tier:check": "node scripts/three-tier-docker.mjs check",
+    "docker:three-tier:ps": "node scripts/three-tier-docker.mjs ps",
+    "docker:three-tier:down": "node scripts/three-tier-docker.mjs down",
+    "test:three-tier-transactions:docker": "node scripts/test-three-tier-transactions.mjs",
+    "test:three-tier-lifecycle:docker": "node scripts/test-three-tier-lifecycle.mjs",
+    "dev:web": "npm run dev:all"
   },
   "devDependencies": {
     "@types/node": "^25.9.2",
@@ -40,9 +56,6 @@
     "@supabase/supabase-js": "^2.102.1"
   },
   "overrides": {
-    "next": "16.3.8",
-    "web-shipper": {
-      "next": "16.1.6"
-    }
+    "next": "16.3.8"
   }
 }

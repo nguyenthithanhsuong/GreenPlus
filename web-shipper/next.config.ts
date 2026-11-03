@@ -8,7 +8,10 @@ import type { NextConfig } from "next";
 loadEnv({ path: resolve(process.cwd(), "../.env") });
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  outputFileTracingRoot: resolve(process.cwd(), ".."),
   reactCompiler: true,
+  transpilePackages: ["@greenplus/supabase-shared"],
   images: {
     remotePatterns: [
       {
@@ -19,4 +22,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default async function config(): Promise<NextConfig> {
+  if (process.env.NODE_ENV === "development") return nextConfig;
+  const { withSentryConfig } = await import("@sentry/nextjs/config");
+  return withSentryConfig(nextConfig, {
+    silent: process.env.SENTRY_DEBUG !== "true",
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT_SHIPPER,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+  });
+}

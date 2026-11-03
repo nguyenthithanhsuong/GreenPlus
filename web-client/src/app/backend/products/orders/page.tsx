@@ -1,5 +1,7 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
+
 import { useEffect, useState } from "react";
 
 type OrderListItem = {
@@ -58,7 +60,7 @@ export default function ProductOrdersTestPage() {
 
     try {
       const userId = requireUserId();
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders?userId=${encodeURIComponent(userId)}`,
       );
       const data = (await response.json()) as
@@ -89,7 +91,7 @@ export default function ProductOrdersTestPage() {
         throw new Error("orderId is required");
       }
 
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders/${encodeURIComponent(selectedOrderId.trim())}?userId=${encodeURIComponent(userId)}`,
       );
       const data = (await response.json()) as unknown;
@@ -120,7 +122,7 @@ export default function ProductOrdersTestPage() {
 
     try {
       const userId = requireUserId();
-      const response = await fetch("/api/orders", {
+      const response = await storeFetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -164,7 +166,7 @@ export default function ProductOrdersTestPage() {
         throw new Error("orderId is required");
       }
 
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders/${encodeURIComponent(selectedOrderId.trim())}/cancel`,
         {
           method: "PUT",
@@ -206,7 +208,7 @@ export default function ProductOrdersTestPage() {
         throw new Error("orderId is required");
       }
 
-      const response = await fetch(
+      const response = await storeFetch(
         `/api/orders/${encodeURIComponent(selectedOrderId.trim())}`,
         {
           method: "PUT",

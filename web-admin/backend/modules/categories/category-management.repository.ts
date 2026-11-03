@@ -1,3 +1,6 @@
+import { activeTenantScope } from "../../core/tenant-store";
+import { tenantCategoryReadsEnabled, tenantDataForActiveStore } from "../../core/tenant-data";
+import { listTenantCollection } from "../../core/tenant-list-pages.mjs";
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
 import {
   CategoryRow,
@@ -21,6 +24,27 @@ export class CategoryManagementRepository {
   private readonly supabase = createServiceRoleSupabaseClient();
 
   async listCategories(): Promise<CategoryRow[]> {
+    if (tenantCategoryReadsEnabled() && activeTenantScope()) {
+      const adapter = await tenantDataForActiveStore();
+      const [categories, products] = await Promise.all([
+        listTenantCollection(adapter, "categories"),
+        listTenantCollection(adapter, "products"),
+      ]);
+      const counts = new Map<string, number>();
+      for (const product of products) {
+        const categoryId = product.category_id;
+        if (typeof categoryId === "string")
+          counts.set(categoryId, (counts.get(categoryId) ?? 0) + 1);
+      }
+      return (categories as unknown as CategoryDbRow[]).map((category) => ({
+        category_id: category.category_id,
+        name: category.name,
+        description: category.description,
+        image_url: category.image_url,
+        created_at: category.created_at,
+        product_count: counts.get(category.category_id) ?? 0,
+      }));
+    }
     const { data: categoryRows, error: categoryError } = await this.supabase
       .from("categories")
       .select("category_id,name,description,image_url,created_at")

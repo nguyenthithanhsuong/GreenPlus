@@ -1,5 +1,7 @@
 "use client";
 
+import { storeFetch } from "@/lib/stores/store-fetch";
+
 import { FormEvent, useMemo, useState } from "react";
 
 type ProductItem = {
@@ -137,7 +139,7 @@ export default function BackendProductsTestPage() {
 
     try {
       const query = buildQueryString(includeFilters);
-      const response = await fetch(`/api/products?${query}`);
+      const response = await storeFetch(`/api/products?${query}`);
       const data = (await response.json()) as
         BrowseResponse | { error: string };
 
@@ -166,7 +168,7 @@ export default function BackendProductsTestPage() {
     setDetailError(null);
 
     try {
-      const response = await fetch(`/api/products/${productId}`);
+      const response = await storeFetch(`/api/products/${productId}`);
       const data = (await response.json()) as ProductDetail | { error: string };
 
       if (!response.ok) {

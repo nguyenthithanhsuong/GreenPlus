@@ -19,6 +19,7 @@ export const ROLE_PAGES: Record<PortalRole, readonly string[]> = {
     "/greencreators",
     "/settings",
     "/settings/stores",
+    "/settings/tenant-demo",
   ],
   manager: [
     "/dashboard",
@@ -52,6 +53,7 @@ export const ROLE_PAGES: Record<PortalRole, readonly string[]> = {
   ],
 };
 const parentFor = (path: string) => {
+  if (path.startsWith("/settings/tenant-demo")) return "/settings/tenant-demo";
   if (path.startsWith("/settings/stores")) return "/settings/stores";
   if (path.startsWith("/settings/store")) return "/settings/store";
   if (path.startsWith("/settings")) return "/settings";
@@ -65,6 +67,7 @@ export function canAccessApi(role: PortalRole, path: string, method: string) {
   const domain = "/" + path.replace(/^\/api\//, "").split("/")[0];
   if (domain === "/permissions" || domain === "/health") return true;
   if (domain === "/shipper") return false;
+  if (domain === "/tenant-demo") return role === "admin";
   if (domain === "/roles" || domain === "/stores")
     return role === "admin" || (method === "GET" && role === "manager");
   if (domain === "/users") return role === "admin" || role === "manager";

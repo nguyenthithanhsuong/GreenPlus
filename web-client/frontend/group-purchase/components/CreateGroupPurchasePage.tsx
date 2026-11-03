@@ -1,6 +1,11 @@
 "use client";
 
 import { storeFetch } from "@/lib/stores/store-fetch";
+import {
+  useSelectedStoreId,
+  useResetOnStoreChange,
+} from "@/lib/stores/use-selected-store";
+import CommerceStorePicker from "../../stores/CommerceStorePicker";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -177,21 +182,35 @@ export default function CreateGroupPurchasePage() {
   const [discountPrice, setDiscountPrice] = useState("");
   const [deadline, setDeadline] = useState("");
   const authUser = useAuthStore((state) => state.user);
+  const storeId = useSelectedStoreId();
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
 
+  useResetOnStoreChange(() => {
+    setProducts([]);
+    setProductId("");
+    setLoadingProducts(false);
+    setMessage(null);
+  });
+
   useEffect(() => {
+    if (!storeId) return;
     const loadData = async () => {
+      setLoadingProducts(true);
       try {
         const response = await storeFetch("/api/products?limit=100");
         const data = (await response.json()) as { items?: Product[] };
         const productList = data.items ?? [];
         setProducts(productList);
         if (productList.length > 0) {
-          setProductId((current) => current || productList[0].product_id);
+          setProductId((current) =>
+            productList.some((item) => item.product_id === current)
+              ? current
+              : productList[0].product_id,
+          );
         }
       } catch {
         setMessage({
@@ -204,7 +223,7 @@ export default function CreateGroupPurchasePage() {
     };
 
     void loadData();
-  }, []);
+  }, [storeId]);
   useEffect(() => {
     if (!deadline) {
       const tomorrow = new Date();
@@ -309,6 +328,8 @@ export default function CreateGroupPurchasePage() {
           <h1 style={styles.title}>Tạo nhóm mua chung</h1>
           <div style={{ width: "24px" }} />
         </header>
+
+        <CommerceStorePicker />
 
         <main style={styles.mainContent}>
           {!authUser?.user_id ? (

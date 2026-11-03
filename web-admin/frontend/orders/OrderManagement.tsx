@@ -46,50 +46,55 @@ const OrderManagement = () => {
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
   const [deliveryDialogOrderId, setDeliveryDialogOrderId] = useState("");
 
-  const loadOrders = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadOrders = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
 
-    try {
-      const params = new URLSearchParams();
-      if (fromDate) {
-        params.set("fromDate", fromDate);
+      try {
+        const params = new URLSearchParams();
+        if (fromDate) {
+          params.set("fromDate", fromDate);
+        }
+        if (toDate) {
+          params.set("toDate", toDate);
+        }
+
+        const query = params.toString();
+        const response = await fetch(`/api/orders${query ? `?${query}` : ""}`, {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as {
+          items?: OrderListRow[];
+          error?: string;
+        };
+
+        if (!response.ok) {
+          throw new Error(data.error ?? "Không thể tải danh sách đơn hàng");
+        }
+
+        setOrders(Array.isArray(data.items) ? data.items : []);
+      } catch (requestError) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Không thể tải danh sách đơn hàng",
+        );
+        setOrders([]);
+      } finally {
+        if (!silent) setLoading(false);
       }
-      if (toDate) {
-        params.set("toDate", toDate);
-      }
-
-      const query = params.toString();
-      const response = await fetch(`/api/orders${query ? `?${query}` : ""}`, {
-        cache: "no-store",
-      });
-      const data = (await response.json()) as {
-        items?: OrderListRow[];
-        error?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Không thể tải danh sách đơn hàng");
-      }
-
-      setOrders(Array.isArray(data.items) ? data.items : []);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Không thể tải danh sách đơn hàng",
-      );
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [fromDate, toDate]);
+    },
+    [fromDate, toDate],
+  );
 
   useEffect(() => {
     void loadOrders();
   }, [loadOrders]);
 
-  useAutoReload(loadOrders);
+  // Delivery status changes from Web Shipper are reflected without a page refresh.
+  const reloadOrdersQuietly = useCallback(() => loadOrders(true), [loadOrders]);
+  useAutoReload(reloadOrdersQuietly, 10000);
 
   const statusFilteredOrders = useMemo(() => {
     if (statusFilter === "all") {
