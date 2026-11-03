@@ -27,8 +27,11 @@ test('Shipper E2E isolates UI error feedback but independently tests real guest 
   const spec = read('web-shipper/e2e/shipper.spec.ts');
   const config = read('web-shipper/playwright.config.ts');
   assert.match(spec, /getByLabel\("Mật khẩu",\s*\{ exact: true \}\)/);
-  assert.match(spec, /page\.route\("\*\*\/api\/auth\/sign-in"/);
-  assert.match(spec, /page\.waitForResponse/);
+  assert.match(spec, /page\.addInitScript/);
+  assert.match(spec, /new Response\(/);
+  assert.match(spec, /returnedStatus: 401/);
+  assert.match(spec, /__greenplusLoginFixture/);
+  assert.doesNotMatch(spec, /page\.route\("\*\*\/api\/auth\/sign-in"/);
   assert.match(spec, /getByRole\("alert"\)\)\.toContainText/);
   assert.match(spec, /request\.get\("\/api\/shipper\/deliveries"\)/);
   assert.match(spec, /expect\(response\.status\(\)\)\.toBe\(401\)/);
