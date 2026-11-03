@@ -13,9 +13,22 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  client-ci:
+  frontend-ci:
+    name: ${{ matrix.app }}-ci
     runs-on: ubuntu-latest
+    # Admin/Client previously used the environment's protected secrets.
+    # A matrix job shares this environment for all three applications.
     environment: environment
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: admin
+            node: 20
+          - app: client
+            node: 20
+          - app: shipper
+            node: 22
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL) || 'https://ci-placeholder.supabase.co' }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY) || 'ci-placeholder-anon-key' }}
@@ -33,91 +46,28 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint web-client
-        run: npm run lint -w web-client
+      - name: Lint web-${{ matrix.app }}
+        run: npm run lint -w web-${{ matrix.app }}
 
-      - name: Type check web-client
-        run: npm run typecheck -w web-client
-
-      - name: Build web-client
-        run: npm run build -w web-client
-
-  admin-ci:
-    runs-on: ubuntu-latest
-    environment: environment
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_URL) || 'https://ci-placeholder.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY) || 'ci-placeholder-anon-key' }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SUPABASE_SERVICE_ROLE_KEY) || 'ci-placeholder-service-role-key' }}
-      SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_CLIENT || '' }}
-      NEXT_PUBLIC_SENTRY_DSN_CLIENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_CLIENT || '' }}
-      SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_DSN_ADMIN || '' }}
-      NEXT_PUBLIC_SENTRY_DSN_ADMIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.NEXT_PUBLIC_SENTRY_DSN_ADMIN || '' }}
-      SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: "1"
-      BETTER_STACK_SOURCE_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.BETTER_STACK_SOURCE_TOKEN }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint web-admin
-        run: npm run lint -w web-admin
-
-      - name: Type check web-admin
-        run: npm run typecheck -w web-admin
-
-      - name: Build web-admin
-        run: npm run build -w web-admin
-
-  shipper-ci:
-    runs-on: ubuntu-latest
-    env:
-      NEXT_TELEMETRY_DISABLED: "1"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint web-shipper
-        run: npm run lint -w web-shipper
-
-      - name: Type check web-shipper
-        run: npm run typecheck -w web-shipper
+      - name: Type check web-${{ matrix.app }}
+        run: npm run typecheck -w web-${{ matrix.app }}
 
       - name: Test web-shipper
+        if: matrix.app == 'shipper'
         run: npm test -w web-shipper
 
-      - name: Build web-shipper
-        run: npm run build -w web-shipper
+      - name: Build web-${{ matrix.app }}
+        run: npm run build -w web-${{ matrix.app }}
 
   docker-build:
     environment: environment
-    needs:
-      - client-ci
-      - admin-ci
-      - shipper-ci
+    needs: [frontend-ci]
     runs-on: ubuntu-latest
     env:
       GITHUB_SHA: ${{ github.sha }}
