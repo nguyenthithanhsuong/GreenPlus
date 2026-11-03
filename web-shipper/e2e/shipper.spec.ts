@@ -9,6 +9,19 @@ test("login uses the GreenPlus brand and stable form layout", async ({
   await expect(page.getByLabel("Email tài khoản")).toBeVisible();
   await expect(page.getByLabel("Mật khẩu", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeVisible();
+  // Next.js can paint the server-rendered form before client hydration. Wait
+  // for a real React event handler to run before testing form submission.
+  await page.getByRole("button", { name: "Hiện mật khẩu" }).click();
+  await expect(page.getByRole("button", { name: "Ẩn mật khẩu" })).toBeVisible();
+  await expect(page.getByLabel("Mật khẩu", { exact: true })).toHaveAttribute(
+    "type",
+    "text",
+  );
+  await page.getByRole("button", { name: "Ẩn mật khẩu" }).click();
+  await expect(page.getByLabel("Mật khẩu", { exact: true })).toHaveAttribute(
+    "type",
+    "password",
+  );
   const form = page.locator("form");
   const originalBounds = await form.evaluate((el) => {
     const rect = el.getBoundingClientRect();
@@ -31,7 +44,12 @@ test("login uses the GreenPlus brand and stable form layout", async ({
   });
   await page.getByLabel("Email tài khoản").fill("invalid@example.com");
   await page.getByLabel("Mật khẩu", { exact: true }).fill("bad-credentials");
+  const signInResponse = page.waitForResponse((response) =>
+    response.url().endsWith("/api/auth/sign-in") &&
+    response.request().method() === "POST"
+  );
   await page.getByRole("button", { name: "Đăng nhập" }).click();
+  expect((await signInResponse).status()).toBe(401);
   await expect(page.getByRole("alert")).toContainText("Email hoặc mật khẩu không đúng");
   // An inline error naturally increases the form's height. The important
   // stability contract is that the form does not jump horizontally or resize.
