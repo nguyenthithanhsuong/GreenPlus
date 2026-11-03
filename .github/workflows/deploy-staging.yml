@@ -1,6 +1,6 @@
 # The original workflow only printed a success message without deploying anything.
 # Make this explicit and manual until a real staging provider/URL is configured.
-name: Staging Artifact Verification (manual)
+name: Staging Verify
 on:
   workflow_dispatch:
     inputs:
@@ -13,6 +13,7 @@ permissions:
   packages: read
 jobs:
   verify-staging-images:
+    name: Staging Verify
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

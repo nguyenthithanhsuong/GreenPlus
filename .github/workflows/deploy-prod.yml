@@ -1,6 +1,6 @@
 # This is a post-CI verification of publish artifacts, NOT a fake production deploy.
 # Actual Coolify/Vercel rollout must be configured independently with a deployment mechanism.
-name: Production Image Verification
+name: Production Verify
 on:
   workflow_run:
     workflows: [CI]
@@ -11,6 +11,7 @@ permissions:
   packages: read
 jobs:
   verify-production-images:
+    name: Production Verify
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     environment: environment

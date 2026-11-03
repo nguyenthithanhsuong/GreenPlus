@@ -9,18 +9,17 @@ test("login uses the GreenPlus brand and stable form layout", async ({
   await expect(page.getByLabel("Email tài khoản")).toBeVisible();
   await expect(page.getByLabel("Mật khẩu", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeVisible();
-  // Next.js can paint the server-rendered form before client hydration. Wait
-  // for a real React event handler to run before testing form submission.
-  await page.getByRole("button", { name: "Hiện mật khẩu" }).click();
-  await expect(page.getByRole("button", { name: "Ẩn mật khẩu" })).toBeVisible();
-  await expect(page.getByLabel("Mật khẩu", { exact: true })).toHaveAttribute(
-    "type",
-    "text",
-  );
+  // Even a production build can paint SSR HTML before event handlers attach.
+  // Retry a harmless, observable React state transition instead of trusting
+  // the first click or waiting a fixed amount of time.
+  await expect(async () => {
+    await page.getByRole("button", { name: "Hiện mật khẩu" }).click();
+    await expect(page.getByRole("button", { name: "Ẩn mật khẩu" })).toBeVisible({ timeout: 1200 });
+    await expect(page.getByLabel("Mật khẩu", { exact: true })).toHaveAttribute("type", "text");
+  }).toPass({ timeout: 20000, intervals: [250, 500, 1000] });
   await page.getByRole("button", { name: "Ẩn mật khẩu" }).click();
   await expect(page.getByLabel("Mật khẩu", { exact: true })).toHaveAttribute(
-    "type",
-    "password",
+    "type", "password",
   );
   const form = page.locator("form");
   const originalBounds = await form.evaluate((el) => {

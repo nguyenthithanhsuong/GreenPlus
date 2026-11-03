@@ -25,7 +25,7 @@ env:
 
 jobs:
   pipeline-contracts:
-    name: Pipeline contracts
+    name: CI Rules
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -43,16 +43,16 @@ jobs:
         run: node scripts/ci/validate-ci.mjs
 
   frontend-ci:
-    name: ${{ matrix.app }}-ci
+    name: ${{ matrix.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { app: admin, node: '20' }
-          - { app: client, node: '20' }
-          - { app: shipper, node: '22' }
+          - { app: admin, node: '20', label: 'Admin CI' }
+          - { app: client, node: '20', label: 'Client CI' }
+          - { app: shipper, node: '22', label: 'Shipper CI' }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,6 +67,8 @@ jobs:
       - name: Shipper unit + integration tests
         if: matrix.app == 'shipper'
         run: npm test -w web-shipper
+      - name: Build
+        run: npm run build -w web-${{ matrix.app }}
       - name: Shipper browser E2E tests
         if: matrix.app == 'shipper'
         env:
@@ -75,11 +77,19 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           npm run test:e2e -w web-shipper
-      - name: Build
-        run: npm run build -w web-${{ matrix.app }}
+      - name: Upload Shipper E2E diagnostics
+        if: failure() && matrix.app == 'shipper'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shipper-e2e-diagnostics
+          path: |
+            web-shipper/test-results/
+            web-shipper/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
 
   backend-ci:
-    name: Backend + shared regression tests
+    name: Backend CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -102,7 +112,7 @@ jobs:
           node --check scripts/test-three-tier-lifecycle.mjs
 
   docker-db-ci:
-    name: Docker DB + gateway integration (5 scopes)
+    name: Docker DB CI
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -128,7 +138,7 @@ jobs:
         run: docker compose --project-directory docker/three-tier down --volumes --remove-orphans || true
 
   supabase-db-ci:
-    name: Supabase local migrations + RLS
+    name: Supabase DB CI
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -155,7 +165,7 @@ jobs:
         run: supabase stop --no-backup || true
 
   external-services-ci:
-    name: Supabase Online + Vercel + Sentry + Better Stack
+    name: Services CI
     runs-on: ubuntu-latest
     environment: environment
     timeout-minutes: 12
@@ -188,7 +198,7 @@ jobs:
         run: node scripts/ci/check-external.mjs
 
   docker-build:
-    name: Build, smoke and publish 3 images
+    name: Docker Build
     environment: environment
     needs: [pipeline-contracts, frontend-ci, backend-ci, docker-db-ci, supabase-db-ci, external-services-ci]
     runs-on: ubuntu-latest
