@@ -33,6 +33,10 @@ test('gateway isolates RPC route via registered store and validates every field'
  assert.match(gate,/actionMatch/);
 });
 test('bootstrap upgrades volumes with 003 after 002',()=>{
- assert.ok(boot.indexOf('002_product_category_slice.sql')<boot.indexOf('003_inventory_orders.sql'));
+ assert.match(boot,/002_product_category_slice\.sql/);
+ assert.match(boot,/repair-three-tier-commerce\.mjs/);
+ assert.ok(boot.indexOf('002_product_category_slice.sql')<boot.indexOf('repair-three-tier-commerce.mjs'));
+ const repair=read('../scripts/repair-three-tier-commerce.mjs');
+ assert.match(repair,/003_inventory_orders\.sql/);
  assert.match(boot,/ON_ERROR_STOP=1/);
 });

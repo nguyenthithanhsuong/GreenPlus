@@ -34,7 +34,9 @@ test('Admin commerce writes are admin-only and require a selected Docker mode, s
  assert.match(admin,/"simulate-payment","assign-delivery","complete-delivery"/);
 });
 test('existing volumes execute 004 after 003 on all databases',()=>{
- assert.ok(bootstrap.indexOf("003_inventory_orders.sql") < bootstrap.indexOf("004_payment_delivery_simulation.sql"));
+ const repair=read("scripts/repair-three-tier-commerce.mjs");
+ assert.ok(repair.indexOf("003_inventory_orders.sql") < repair.indexOf("004_payment_delivery_simulation.sql"));
+ assert.match(bootstrap,/repair-three-tier-commerce\.mjs/);
  assert.match(bootstrap,/enterprise-b-db/);
 });
 test('Docker lifecycle integration test always ends in rollback',()=>{
@@ -52,8 +54,9 @@ for (const path of ['docker/three-tier/sql/shared/003_inventory_orders.sql','doc
 }
 
 test('bootstrap reloads PostgREST schema cache after database upgrades',()=>{
- assert.match(bootstrap,/NOTIFY pgrst, 'reload schema'/);
- assert.ok(bootstrap.indexOf('004_payment_delivery_simulation.sql') < bootstrap.indexOf('NOTIFY pgrst'));
+ const repair=read('scripts/repair-three-tier-commerce.mjs');
+ assert.match(repair,/NOTIFY pgrst, 'reload schema'/);
+ assert.ok(repair.indexOf('004_payment_delivery_simulation.sql') < repair.indexOf('NOTIFY pgrst'));
 });
 
 test('main Admin Orders and Inventory pages switch to Docker commerce workspace without routing Supabase screens',()=>{

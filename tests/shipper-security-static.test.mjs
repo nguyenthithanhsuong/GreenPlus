@@ -10,9 +10,9 @@ test('shipper identity comes only from authenticated server session',()=>{
 test('shipper reads and writes must be restricted to assigned employee',()=>{
   assert.match(source,/\.eq\("employee_id", employeeId\)/);
   assert.match(source,/\.eq\("status", current\.status\)/);
-  assert.match(source,/if \(!changed\) throw new ShipperDeliveryError/);
+  assert.match(source,/if \(!changed\)\s*throw new ShipperDeliveryError/);
 });
 test('shipper status updates are explicitly constrained',()=>{
-  assert.match(source,/assigned: "picked_up", picked_up: "delivering", delivering: "delivered", delivered: null/);
+  assert.match(source,/assigned: "picked_up",\s*picked_up: "delivering",\s*delivering: "delivered",\s*delivered: null/);
   assert.match(source,/next\[current\.status as Status\] !== target/);
 });

@@ -22,7 +22,9 @@ test('product browse availability uses actual per-store sellable stock', () => {
   assert.match(service, /getSellableStockMap\(productIds, storeId\)/);
   assert.match(service, /sellableStockMap\.get\(product\.product_id\)/);
   assert.doesNotMatch(service, /isAvailable: true/);
-  assert.match(repo, /\.from\("inventory"\)/);
+  assert.match(repo, /\.from\("batches"\)/);
+  assert.match(repo, /inventory\(quantity_available\)/);
+  assert.match(repo, /\.eq\("inventory\.store_id", storeId\)/);
   assert.match(repo, /\.eq\("store_id", storeId\)/);
 });
 

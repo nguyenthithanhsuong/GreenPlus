@@ -8,11 +8,11 @@ const read = file => readFileSync(new URL(file,root),'utf8');
 test('Manager UI hides All/Customer tabs and the server refuses customer records', () => {
   const table = read('web-admin/frontend/users/UserTable.tsx');
   const route = read('web-admin/src/app/api/users/route.ts');
-  assert.match(table, /portalRole !== "manager" && <button\s+onClick=\{\(\) => setActiveTab\("customer"\)\}/);
+  assert.match(table, /portalRole !== "manager" && \(\s*<button[\s\S]*?onClick=\{\(\) => setActiveTab\("customer"\)\}/);
   assert.match(table, /portalRole === "manager" \? "staff" : activeTab/);
   assert.match(table, /userSearchStrategy\.filter\(scopedUsers/);
   assert.match(route, /role\?\.is_customer === true \|\| !storeUserRoleAllowed\(role\)/);
-  assert.match(route, /actor\.role === "manager" \? Promise\.resolve\(\[\]\) : fetchRelationships\("orders"/);
+  assert.match(route, /actor\.role === "manager"\s*\? Promise\.resolve\(\[\]\)\s*:\s*fetchRelationships\(\s*"orders"/);
 });
 
 test('Fallback returns detailed Vietnamese street match after Photon rate limit; caches and validates selection', async () => {

@@ -32,7 +32,7 @@ test('manager user listing is store-associated, API retains server validation an
   assert.match(list,/managerStoreIds\(actor\.id\)/);
   assert.match(list,/storeUserRoleAllowed\(role\)/);
   assert.match(list,/fetchRelationships\("orders"/);
-  assert.match(list,/fetchRelationships\("deliveries"/);
+  assert.match(list,/fetchRelationships\(\s*"deliveries"/);
   assert.match(list,/verifiedUserAddress/);
   assert.match(read('../web-admin/src/app/api/users/[userId]/route.ts'),/verifiedUserAddress/);
   assert.match(read('../web-shipper/src/server/shipper-auth.ts'),/status,image_url/);

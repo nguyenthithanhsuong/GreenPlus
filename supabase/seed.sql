@@ -1,0 +1,1 @@
+-- No CI seed data: repeatability tests rely on committed migrations only.

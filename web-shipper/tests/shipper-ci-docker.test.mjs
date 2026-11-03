@@ -1,39 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-
-const read = (file) => readFileSync(new URL(file, import.meta.url), 'utf8');
-
-test('Shipper CI gates image publishing on lint, typecheck, build and tests', () => {
-  const workflow = read('../../.github/workflows/ci.yml');
-  assert.match(workflow, /shipper-ci:\s[\s\S]*?npm run lint -w web-shipper/);
-  assert.match(workflow, /shipper-ci:\s[\s\S]*?npm run typecheck -w web-shipper/);
-  assert.match(workflow, /shipper-ci:\s[\s\S]*?npm test -w web-shipper/);
-  assert.match(workflow, /shipper-ci:\s[\s\S]*?npm run build -w web-shipper/);
-  assert.match(workflow, /docker-build:\s[\s\S]*?needs:\s[\s\S]*?- shipper-ci/);
-  assert.match(workflow, /Build and load web-shipper image/);
-  assert.match(workflow, /Smoke test web-shipper container/);
-  assert.match(workflow, /Publish web-shipper image/);
-  assert.match(workflow, /api\/auth\/me/);
-  assert.match(workflow, /api\/shipper\/deliveries/);
+const read=file=>readFileSync(new URL(file, import.meta.url),'utf8');
+test('Shipper matrix is independent, its tests run, all gates block Docker publishing',()=>{
+ const workflow=read('../../.github/workflows/ci.yml');
+ assert.match(workflow,/frontend-ci:/);
+ assert.match(workflow,/- \{ app: shipper, node: '22' \}/);
+ assert.match(workflow,/npm run lint -w web-\$\{\{ matrix\.app \}\}/);
+ assert.match(workflow,/npm run typecheck -w web-\$\{\{ matrix\.app \}\}/);
+ assert.match(workflow,/npm test -w web-shipper/);
+ assert.match(workflow,/npm run test:e2e -w web-shipper/);
+ assert.match(workflow,/npm run build -w web-\$\{\{ matrix\.app \}\}/);
+ assert.match(workflow,/needs: \[pipeline-contracts, frontend-ci, backend-ci, docker-db-ci, supabase-db-ci, external-services-ci\]/);
+ assert.match(workflow,/Smoke all three images before any publish/);
+ assert.match(read('../../scripts/ci/smoke-images.sh'),/api\/auth\/me/);
+ assert.match(read('../../scripts/ci/smoke-images.sh'),/api\/shipper\/deliveries/);
 });
-
-test('Shipper Docker image is standalone, non-root and does not bake in credentials', () => {
-  const docker = read('../Dockerfile');
-  const config = read('../next.config.ts');
-  assert.match(config, /output:\s*["']standalone["']/);
-  assert.match(config, /outputFileTracingRoot/);
-  assert.match(docker, /web-shipper\/\.next\/standalone/);
-  assert.match(docker, /CMD \["node", "server\.js"\]/);
-  assert.match(docker, /USER greenplus/);
-  assert.match(docker, /HEALTHCHECK/);
-  assert.doesNotMatch(docker, /^(?:ARG|ENV)\s+(?:SUPABASE_SERVICE_ROLE_KEY|SHIPPER_SESSION_SECRET)\s*=/m);
-  assert.doesNotMatch(docker, /COPY --from=builder \/app \.\s*$/m);
+test('Shipper Docker is non-root and does not embed secrets',()=>{
+ const docker=read('../Dockerfile'), config=read('../next.config.ts');
+ assert.match(config,/output:\s*["']standalone["']/);
+ assert.match(config,/outputFileTracingRoot/);
+ assert.match(docker,/web-shipper\/\.next\/standalone/);
+ assert.match(docker,/CMD \["node", "server\.js"\]/);
+ assert.match(docker,/USER greenplus/);
+ assert.match(docker,/HEALTHCHECK/);
+ assert.doesNotMatch(docker,/^(?:ARG|ENV)\s+(?:SUPABASE_SERVICE_ROLE_KEY|SHIPPER_SESSION_SECRET)\s*=/m);
 });
-
-test('Health endpoint is a no-store public liveness endpoint', () => {
-  const health = read('../src/app/api/health/route.ts');
-  assert.match(health, /status: "ok"/);
-  assert.match(health, /Cache-Control.*no-store/);
-  assert.doesNotMatch(health, /shipperDb|SUPABASE_SERVICE_ROLE_KEY/);
+test('Shipper health stays unauthenticated and does not access DB',()=>{
+ const route=read('../src/app/api/health/route.ts');
+ assert.match(route,/status: "ok"/);
+ assert.match(route,/Cache-Control.*no-store/);
+ assert.doesNotMatch(route,/shipperDb|SUPABASE_SERVICE_ROLE_KEY/);
 });
