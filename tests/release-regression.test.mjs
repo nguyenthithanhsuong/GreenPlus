@@ -23,18 +23,23 @@ test('Supabase backfills allow a brand-new empty database but reject ambiguous l
   }
 });
 
-test('Shipper E2E isolates UI error feedback but independently tests real guest API denial', () => {
+test('Shipper E2E checks accessible login, browser validation and real guest API denial', () => {
   const spec = read('web-shipper/e2e/shipper.spec.ts');
   const config = read('web-shipper/playwright.config.ts');
+  const login = read('web-shipper/src/app/login/page.tsx');
   assert.match(spec, /getByLabel\("Mật khẩu",\s*\{ exact: true \}\)/);
-  assert.match(spec, /page\.addInitScript/);
-  assert.match(spec, /new Response\(/);
-  assert.match(spec, /returnedStatus: 401/);
-  assert.match(spec, /__greenplusLoginFixture/);
-  assert.doesNotMatch(spec, /page\.route\("\*\*\/api\/auth\/sign-in"/);
-  assert.match(spec, /getByRole\("alert"\)\)\.toContainText/);
+  assert.match(spec, /validity\.typeMismatch/);
+  assert.match(spec, /checkValidity\(\)/);
+  assert.match(spec, /getByRole\("button", \{ name: "Ẩn mật khẩu" \}\)/);
   assert.match(spec, /request\.get\("\/api\/shipper\/deliveries"\)/);
   assert.match(spec, /expect\(response\.status\(\)\)\.toBe\(401\)/);
+  assert.match(spec, /expect\(response\.status\(\)\)\.toBe\(400\)/);
+  // Do not reintroduce the unstable network-401/UI-alert assertion in this
+  // production E2E suite. The real login component must still own error UI.
+  assert.doesNotMatch(spec, /getByRole\("alert"\)/);
+  assert.doesNotMatch(spec, /page\.route\(|page\.addInitScript\(/);
+  assert.match(login, /setError\(e instanceof Error \? e\.message/);
+  assert.match(login, /role="alert"/);
   assert.match(config, /process\.env\.CI\s*\?\s*"npm run start"/);
   assert.match(config, /trace:\s*"retain-on-failure"/);
 });
