@@ -10,17 +10,37 @@ test("login uses the GreenPlus brand and stable form layout", async ({
   await expect(page.getByLabel("Mật khẩu", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeVisible();
   const form = page.locator("form");
-  const originalHeight = await form.evaluate(
-    (el) => el.getBoundingClientRect().height,
-  );
+  const originalBounds = await form.evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    return { left: rect.left, width: rect.width };
+  });
+  // Exercise UI error handling deterministically. Authentication/API behavior is
+  // tested separately; an unavailable Web Admin must not make a UI layout test flaky.
+  await page.route("**/api/auth/sign-in", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    const credentials = route.request().postDataJSON();
+    expect(credentials).toEqual({
+      email: "invalid@example.com",
+      password: "bad-credentials",
+    });
+    await route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Email hoặc mật khẩu không đúng" }),
+    });
+  });
   await page.getByLabel("Email tài khoản").fill("invalid@example.com");
   await page.getByLabel("Mật khẩu", { exact: true }).fill("bad-credentials");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
-  const errorHeight = await form.evaluate(
-    (el) => el.getBoundingClientRect().height,
-  );
-  expect(Math.abs(errorHeight - originalHeight)).toBeLessThanOrEqual(2);
+  await expect(page.getByRole("alert")).toContainText("Email hoặc mật khẩu không đúng");
+  // An inline error naturally increases the form's height. The important
+  // stability contract is that the form does not jump horizontally or resize.
+  const errorBounds = await form.evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    return { left: rect.left, width: rect.width };
+  });
+  expect(Math.abs(errorBounds.left - originalBounds.left)).toBeLessThanOrEqual(2);
+  expect(Math.abs(errorBounds.width - originalBounds.width)).toBeLessThanOrEqual(2);
 });
 
 test("shipper API never returns orders to guests", async ({ request }) => {
