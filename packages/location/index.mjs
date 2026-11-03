@@ -155,3 +155,14 @@ export async function resolveDeliveryAddress(address, hint) {
   if (!match) throw new LocationError('Vị trí đã chọn không khớp kết quả xác minh hiện tại. Hãy tìm lại địa chỉ.');
   return match;
 }
+
+/** Admin stores must persist the *selected* geocode candidate, never the first fuzzy match. */
+export async function resolveSelectedStoreAddress(address, chosen) {
+  if (chosen?.latitude === undefined || chosen?.latitude === null || chosen?.latitude === '' ||
+      chosen?.longitude === undefined || chosen?.longitude === null || chosen?.longitude === '')
+    throw new LocationError('Chọn và xác minh vị trí cửa hàng trước khi lưu.', 422);
+  const latitude = Number(chosen.latitude), longitude = Number(chosen.longitude);
+  if (!validCoordinates(latitude, longitude))
+    throw new LocationError('Tọa độ cửa hàng không hợp lệ tại Việt Nam.', 422);
+  return resolveDeliveryAddress(address, {latitude, longitude});
+}

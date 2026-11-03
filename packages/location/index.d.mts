@@ -12,3 +12,8 @@ export declare function validCoordinates(latitude: number, longitude: number): b
 export declare function validStreetAddress(value: unknown): boolean;
 export declare function geocodeAddress(value: unknown): Promise<GeoMatch[]>;
 export declare function resolveDeliveryAddress(value: unknown, hint?: {latitude:number;longitude:number}): Promise<GeoMatch>;
+
+export declare function resolveSelectedStoreAddress(
+  address: unknown,
+  chosen: {latitude: number | string | null | undefined; longitude: number | string | null | undefined},
+): Promise<GeoMatch>;

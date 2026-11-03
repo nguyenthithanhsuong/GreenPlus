@@ -30,10 +30,14 @@ export async function POST(
   try {
     const user = await requireShipper();
     const { orderId } = await ctx.params;
-    await getShipperMapDetails(user, orderId); // verify ownership and store each request
+    const map = await getShipperMapDetails(user, orderId); // verify ownership and store each request
     const payload = await request.json().catch(() => null);
-    const start = payload?.start,
-      end = payload?.end;
+    const origin = payload?.origin ?? "store";
+    if (!["store", "gps", "temporary"].includes(origin))
+      return NextResponse.json({ error: "Điểm bắt đầu không hợp lệ" }, { status: 400 });
+    // Never accept client-supplied coordinates when the origin is the store.
+    const start = origin === "store" ? map.pickup : payload?.start;
+    const end = payload?.end;
     if (!validPoint(start) || !validPoint(end))
       return NextResponse.json(
         { error: "Tọa độ không hợp lệ" },

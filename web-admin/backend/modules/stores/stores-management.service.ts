@@ -121,6 +121,59 @@ export class StoresManagementService {
     };
   }
 
+  /** A fuzzy geocoder must not assign one physical pin to two different store addresses. */
+  private async rejectConflictingStorePoint(
+    location: {
+      address: string;
+      ward?: string | null;
+      district?: string | null;
+      city?: string | null;
+      latitude?: number | null;
+      longitude?: number | null;
+    },
+    exceptStoreId?: string,
+  ): Promise<void> {
+    if (location.latitude == null || location.longitude == null) return;
+    if (
+      !Number.isFinite(location.latitude) ||
+      !Number.isFinite(location.longitude) ||
+      location.latitude < 8 ||
+      location.latitude > 24.5 ||
+      location.longitude < 102 ||
+      location.longitude > 110
+    ) {
+      throw new AppError("Tọa độ cửa hàng phải nằm trong Việt Nam", 422);
+    }
+    const addressKey = (row: {
+      address: string;
+      ward?: string | null;
+      district?: string | null;
+      city?: string | null;
+    }) =>
+      [row.address, row.ward, row.district, row.city]
+        .filter(Boolean)
+        .join(", ")
+        .trim()
+        .toLocaleLowerCase("vi")
+        .replace(/\s+/g, " ");
+    const key = addressKey(location);
+    const existingStores = await this.repository.listStores();
+    const otherStore = existingStores.find(
+      (store) =>
+        store.store_id !== exceptStoreId &&
+        store.latitude !== null &&
+        store.longitude !== null &&
+        Number(store.latitude) === location.latitude &&
+        Number(store.longitude) === location.longitude &&
+        addressKey(store) !== key,
+    );
+    if (otherStore)
+      throw new AppError(
+        `Tọa độ trùng với ${otherStore.name} ở một địa chỉ khác. Hãy kiểm tra lại ghim cửa hàng.`,
+        409,
+      );
+  }
+
   private async verifyManager(managerId: string): Promise<void> {
     const { data, error } = await createServiceRoleSupabaseClient()
       .from("users")
@@ -151,6 +204,14 @@ export class StoresManagementService {
     const normalized = this.normalizeInput(input);
     this.ensureRequiredFields(normalized);
     await this.verifyManager(normalized.managerId.trim());
+    await this.rejectConflictingStorePoint({
+      address: normalized.address,
+      ward: normalized.ward,
+      district: normalized.district,
+      city: normalized.city,
+      latitude: normalized.latitude,
+      longitude: normalized.longitude,
+    });
 
     return this.repository.createStore({
       name: normalized.name.trim(),
@@ -196,6 +257,19 @@ export class StoresManagementService {
 
     const normalized = this.normalizeInput(input);
     if (normalized.managerId) await this.verifyManager(normalized.managerId);
+    if (normalized.latitude !== undefined || normalized.longitude !== undefined) {
+      await this.rejectConflictingStorePoint(
+        {
+          address: normalized.address ?? existing.address,
+          ward: input.ward === undefined ? existing.ward : normalized.ward,
+          district: input.district === undefined ? existing.district : normalized.district,
+          city: input.city === undefined ? existing.city : normalized.city,
+          latitude: normalized.latitude ?? existing.latitude,
+          longitude: normalized.longitude ?? existing.longitude,
+        },
+        input.storeId,
+      );
+    }
 
     const updated = await this.repository.updateStore({
       storeId: input.storeId,

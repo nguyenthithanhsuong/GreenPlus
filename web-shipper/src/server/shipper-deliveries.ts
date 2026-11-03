@@ -6,7 +6,7 @@ import {
   normalizeDelivery,
   safeOrderId,
 } from "../lib/delivery-contract.mjs";
-import { databasePoint } from "../lib/map-helpers.mjs";
+import { databasePoint, checkedStorePickup } from "../lib/map-helpers.mjs";
 
 const columns =
   "delivery_id,order_id,employee_id,store_id,status,pickup_time,delivery_time,orders(delivery_address,delivery_latitude,delivery_longitude,total_amount,store_id,users(name))";
@@ -209,7 +209,7 @@ export async function getShipperMapDetails(user: ShipperUser, orderId: string) {
     );
   const { data: store, error: storeError } = await db
     .from("stores")
-    .select("store_id,name,address,latitude,longitude")
+    .select("store_id,name,address,ward,district,city,latitude,longitude")
     .eq("store_id", row.store_id!)
     .maybeSingle();
   if (storeError)
@@ -224,18 +224,39 @@ export async function getShipperMapDetails(user: ShipperUser, orderId: string) {
       404,
       "STORE_NOT_FOUND",
     );
-  // Numeric columns from Supabase can be strings. Do not guess absent or invalid pins.
-  const pickup = databasePoint(store.latitude, store.longitude);
+  // The order's store is authoritative, never a default/current-user store.
+  if (String(store.store_id) !== row.store_id)
+    throw new ShipperError("Cửa hàng của đơn không khớp", 409, "STORE_MISMATCH");
+
+  // Detect the common corrupted-data case: two different addresses sharing one pickup point.
+  // If the check cannot run, fail closed rather than silently show an unverified marker.
+  const rawPickup = databasePoint(store.latitude, store.longitude);
+  let coordinateConflicts: Array<{store_id: string; address: string | null; ward: string | null; district: string | null; city: string | null}> = [];
+  if (rawPickup) {
+    const { data: duplicates, error: duplicateError } = await db
+      .from("stores")
+      .select("store_id,address,ward,district,city")
+      .neq("store_id", row.store_id!)
+      .eq("latitude", rawPickup.lat)
+      .eq("longitude", rawPickup.lng)
+      .limit(10);
+    if (duplicateError)
+      throw new ShipperError("Không kiểm tra được tọa độ cửa hàng", 503, "STORE_LOCATION_CHECK_FAILED");
+    coordinateConflicts = duplicates ?? [];
+  }
+  const { pickup, warning: pickupWarning } = checkedStorePickup(store, coordinateConflicts);
   const dropoff = databasePoint(
     row.orders?.delivery_latitude,
     row.orders?.delivery_longitude,
   );
   return {
     orderId: row.order_id,
+    storeId: row.store_id,
     pickup,
+    pickupWarning,
     dropoff,
     storeName: String(store.name || "Cửa hàng GreenPlus"),
-    storeAddress: String(store.address || ""),
+    storeAddress: [store.address, store.ward, store.district, store.city].filter(Boolean).join(", "),
     deliveryAddress: String(row.orders?.delivery_address || ""),
   };
 }

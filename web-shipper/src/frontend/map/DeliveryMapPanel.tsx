@@ -31,6 +31,8 @@ const MapCanvas = dynamic(() => import("./MapCanvas"), {
 
 type MapDetails = {
   orderId: string;
+  storeId: string;
+  pickupWarning: string | null;
   pickup: GeoPoint | null;
   dropoff: GeoPoint | null;
   storeName: string;
@@ -72,6 +74,9 @@ export default function DeliveryMapPanel({
     setDetails(null);
     setError("");
     setRoad(null);
+    setPickup(null);
+    setDropoff(null);
+    setRouteOrigin("store");
     setTemporaryPickup(false);
     setTemporaryDropoff(false);
     async function load() {
@@ -109,6 +114,9 @@ export default function DeliveryMapPanel({
       watchRef.current = null;
     }
     setGpsActive(false);
+    setGps(null); // Never reuse a stale GPS fix for another route.
+    setRoad(null);
+    setRouteOrigin("store");
   }, []);
   useEffect(
     () => () => {
@@ -167,7 +175,8 @@ export default function DeliveryMapPanel({
     setError("");
   }
   async function tryDemoRoute() {
-    const start = gps ?? pickup;
+    // Route from the order's store by default; GPS is a separate explicit choice.
+    const start = routeOrigin === "gps" ? gps : pickup;
     if (!start || !dropoff || routeBusy) return;
     setRouteBusy(true);
     setError("");
@@ -177,7 +186,10 @@ export default function DeliveryMapPanel({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ start, end: dropoff }),
+          body: JSON.stringify({
+            origin: routeOrigin === "gps" ? "gps" : temporaryPickup ? "temporary" : "store",
+            start, end: dropoff,
+          }),
         },
       );
       const data = await response.json();
@@ -190,7 +202,7 @@ export default function DeliveryMapPanel({
       )
         throw new Error("Tuyến đường nhận về không hợp lệ");
       setRoad(data);
-      setRouteOrigin(gps ? "gps" : "store");
+      setRouteOrigin(routeOrigin);
     } catch (e) {
       setRoad(null);
       setError(e instanceof Error ? e.message : "Không định tuyến được");
@@ -223,6 +235,10 @@ export default function DeliveryMapPanel({
               <span>
                 <strong>Lấy hàng:</strong> {details.storeName}
                 {details.storeAddress ? ` — ${details.storeAddress}` : ""}
+                <span className="block text-xs text-slate-500">Cửa hàng của đơn: {details.storeId}</span>
+                {details.pickup && (
+                  <span className="block text-xs text-slate-500">Ghim DB: {details.pickup.lat.toFixed(6)}, {details.pickup.lng.toFixed(6)}</span>
+                )}
               </span>
             </p>
             <p className="flex items-start gap-2">
@@ -243,7 +259,12 @@ export default function DeliveryMapPanel({
               minh vị trí thực tế với khách hàng.
             </p>
           )}
-          {!pickup && (
+          {details.pickupWarning && !temporaryPickup && (
+            <p role="alert" className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+              {details.pickupWarning}
+            </p>
+          )}
+          {!pickup && !details.pickupWarning && (
             <p
               role="status"
               className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
@@ -260,6 +281,7 @@ export default function DeliveryMapPanel({
           )}
           <div className="relative overflow-hidden rounded-2xl border border-emerald-100">
             <MapCanvas
+              key={orderId}
               pickup={pickup}
               dropoff={dropoff}
               gps={gps}
@@ -341,7 +363,7 @@ export default function DeliveryMapPanel({
               <p>
                 <strong>
                   Tuyến đường bộ OSRM thử nghiệm (
-                  {routeOrigin === "gps" ? "từ GPS" : "từ cửa hàng"}):
+                  {routeOrigin === "gps" ? "từ GPS" : temporaryPickup ? "từ ghim tạm" : "từ cửa hàng"}):
                 </strong>{" "}
                 {(road.distanceMeters / 1000).toFixed(1)} km · Khoảng{" "}
                 {Math.round(road.durationSeconds / 60)} phút. Chỉ tham khảo,
@@ -355,10 +377,20 @@ export default function DeliveryMapPanel({
             )}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
+            {canTryRoad && gps && (
+              <div className="flex gap-2" role="group" aria-label="Điểm bắt đầu tuyến đường">
+                <button type="button" aria-pressed={routeOrigin === "store"}
+                  onClick={() => {setRouteOrigin("store"); setRoad(null);}}
+                  className="gp-secondary-button">Từ cửa hàng</button>
+                <button type="button" aria-pressed={routeOrigin === "gps"}
+                  onClick={() => {setRouteOrigin("gps"); setRoad(null);}}
+                  className="gp-secondary-button">Từ GPS</button>
+              </div>
+            )}
             {canTryRoad && (
               <button
                 type="button"
-                disabled={!(gps || pickup) || !dropoff || routeBusy}
+                disabled={!(routeOrigin === "gps" ? gps : pickup) || !dropoff || routeBusy}
                 onClick={() => void tryDemoRoute()}
                 className="gp-primary-button disabled:opacity-50"
               >
@@ -367,19 +399,19 @@ export default function DeliveryMapPanel({
                 ) : (
                   <Route size={16} />
                 )}
-                Thử tuyến đường bộ OSRM {gps ? "(từ GPS)" : "(từ cửa hàng)"}
+                Thử tuyến đường bộ OSRM {routeOrigin === "gps" ? "(từ GPS)" : temporaryPickup ? "(từ ghim tạm)" : "(từ cửa hàng)"}
               </button>
             )}
             {dropoff && (
               <a
-                href={googleMapsNavigationUrl(dropoff) ?? "#"}
+                href={googleMapsNavigationUrl(dropoff, pickup) ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="gp-secondary-button"
-                title="Mở hướng dẫn đường đi bằng Google Maps trên thiết bị"
+                title="Mở lộ trình từ cửa hàng đến điểm giao trong Google Maps (chỉ dùng vị trí GPS nếu thiếu ghim cửa hàng)"
               >
                 <MapPinned size={16} />
-                Mở dẫn đường thực tế (Google Maps)
+                {pickup ? "Google Maps: cửa hàng → khách" : "Google Maps: GPS → khách"}
               </a>
             )}
             {road && (

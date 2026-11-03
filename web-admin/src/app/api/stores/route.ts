@@ -1,5 +1,5 @@
 import {
-  resolveDeliveryAddress,
+  resolveSelectedStoreAddress,
   LocationError,
 } from "../../../../../packages/location/index.mjs";
 import {
@@ -70,10 +70,11 @@ export async function POST(request: Request) {
 
     let location;
     try {
-      location = await resolveDeliveryAddress(
+      location = await resolveSelectedStoreAddress(
         [body.address, body.ward, body.district, body.city]
           .filter(Boolean)
           .join(", "),
+        { latitude: body.latitude, longitude: body.longitude },
       );
     } catch (error) {
       return NextResponse.json(

@@ -11,11 +11,12 @@ export function databasePoint(latitude, longitude) {
 }
 
 /** Opens an external navigational app only after the user clicks. No Google API key. */
-export function googleMapsNavigationUrl(destination) {
+export function googleMapsNavigationUrl(destination, origin = null) {
   if (!validPoint(destination)) return null;
   const url = new URL('https://www.google.com/maps/dir/');
   url.searchParams.set('api', '1');
   url.searchParams.set('destination', `${destination.lat},${destination.lng}`);
+  if (validPoint(origin)) url.searchParams.set('origin', `${origin.lat},${origin.lng}`);
   url.searchParams.set('travelmode', 'driving');
   url.searchParams.set('dir_action', 'navigate');
   return url.toString();
@@ -36,4 +37,20 @@ export function convertOsrmResponse(raw) {
   const points = pts.map(p => Array.isArray(p) && p.length >= 2 ? {lat:p[1],lng:p[0]} : null);
   if (points.some(p => !validPoint(p))) return null;
   return {points, distanceMeters:route.distance, durationSeconds:route.duration};
+}
+
+/** Avoid advertising a store location as verified if another, differently-addressed store has exactly the same coordinates. */
+export function checkedStorePickup(store, otherStoresAtPoint = []) {
+  const pickup = databasePoint(store?.latitude, store?.longitude);
+  if (!pickup) return { pickup: null, warning: 'Cửa hàng chưa có tọa độ hợp lệ. Hãy xác minh lại trong Admin.' };
+  const normalizedAddress = row => [row?.address, row?.ward, row?.district, row?.city]
+    .filter(Boolean).join(', ').trim().toLocaleLowerCase('vi').replace(/\s+/g, ' ');
+  const ownAddress = normalizedAddress(store);
+  const conflict = otherStoresAtPoint.some(other => other.store_id !== store.store_id &&
+    normalizedAddress(other) !== ownAddress);
+  if (conflict) return {
+    pickup: null,
+    warning: 'Tọa độ cửa hàng đang trùng với cửa hàng khác có địa chỉ khác. Không dùng điểm này để tính đường. Hãy sửa tọa độ trong Admin.',
+  };
+  return {pickup, warning: null};
 }

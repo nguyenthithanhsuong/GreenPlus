@@ -1,5 +1,5 @@
 import {
-  resolveDeliveryAddress,
+  resolveSelectedStoreAddress,
   LocationError,
 } from "../../../../../../packages/location/index.mjs";
 import { portalActor } from "../../../../../backend/core/manager-scope";
@@ -39,13 +39,20 @@ export async function PUT(request: Request, context: Context) {
       closingTime?: string | null;
     };
 
+    if (typeof body.address !== "string" &&
+        (body.latitude !== undefined || body.longitude !== undefined))
+      return NextResponse.json(
+        { error: "Cần cung cấp địa chỉ cùng tọa độ khi cập nhật vị trí cửa hàng" },
+        { status: 422 },
+      );
     let location;
     if (typeof body.address === "string") {
       try {
-        location = await resolveDeliveryAddress(
+        location = await resolveSelectedStoreAddress(
           [body.address, body.ward, body.district, body.city]
             .filter(Boolean)
             .join(", "),
+          { latitude: body.latitude, longitude: body.longitude },
         );
       } catch (error) {
         return NextResponse.json(

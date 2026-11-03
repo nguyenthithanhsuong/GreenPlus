@@ -31,6 +31,8 @@ import type {
 } from "../../backend/modules/stores/stores-management.types";
 import type { UserSummary } from "../../backend/modules/users/user-management.types";
 
+type StoreGeoMatch = { address: string; latitude: number; longitude: number };
+
 type StoreFormState = {
   name: string;
   description: string;
@@ -126,6 +128,8 @@ const StoreManagement = () => {
   const [locating, setLocating] = useState(false);
   const [verifiedAddress, setVerifiedAddress] = useState("");
   const [verifiedInput, setVerifiedInput] = useState("");
+  const [locationCandidates, setLocationCandidates] = useState<StoreGeoMatch[]>([]);
+  const [lookupInput, setLookupInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -250,18 +254,20 @@ const StoreManagement = () => {
     setForm(emptyForm());
     setVerifiedAddress("");
     setVerifiedInput("");
+    setLocationCandidates([]);
+    setLookupInput("");
     setFormOpen(true);
     setSuccessMessage(null);
   };
 
   const openEditForm = (store: StoreRow) => {
     setEditingStore(store);
-    setVerifiedAddress(store.address);
-    setVerifiedInput(
-      [store.address, store.ward, store.district, store.city]
-        .filter(Boolean)
-        .join(", "),
-    );
+    // Stored coordinates may be stale or selected by an older fuzzy geocoder.
+    // Require an explicit re-selection before saving, even on edit.
+    setVerifiedAddress("");
+    setVerifiedInput("");
+    setLocationCandidates([]);
+    setLookupInput("");
     setForm({
       name: store.name,
       description: store.description ?? "",
@@ -288,13 +294,39 @@ const StoreManagement = () => {
     setForm(emptyForm());
   };
 
+  const locationInput = [form.address, form.ward, form.district, form.city]
+    .filter(Boolean)
+    .join(", ");
+
+  const chooseStoreLocation = (geo: StoreGeoMatch) => {
+    if (lookupInput !== locationInput) return; // Ignore results from a stale lookup.
+    const sameCoordinatesDifferentStore = stores.find((store) =>
+      store.store_id !== editingStore?.store_id &&
+      store.latitude !== null && store.longitude !== null &&
+      Number(store.latitude) === geo.latitude && Number(store.longitude) === geo.longitude &&
+      [store.address, store.ward, store.district, store.city].filter(Boolean).join(", ").toLocaleLowerCase("vi") !==
+        locationInput.toLocaleLowerCase("vi"),
+    );
+    if (sameCoordinatesDifferentStore) {
+      setError(`Vị trí này đã gắn với ${sameCoordinatesDifferentStore.name} ở địa chỉ khác. Hãy chọn đúng ghim cửa hàng.`);
+      return;
+    }
+    setForm((current) => ({...current, latitude: String(geo.latitude), longitude: String(geo.longitude)}));
+    setVerifiedAddress(geo.address);
+    setVerifiedInput(lookupInput);
+    setError(null);
+  };
+
   const checkStoreAddress = async () => {
     setLocating(true);
     setError(null);
+    setVerifiedAddress("");
+    setVerifiedInput("");
+    setLocationCandidates([]);
+    setLookupInput(locationInput);
+    setForm((current) => ({...current, latitude: "", longitude: ""}));
     try {
-      const query = [form.address, form.ward, form.district, form.city]
-        .filter(Boolean)
-        .join(", ");
+      const query = locationInput;
       const response = await fetch(
         `/api/location?q=${encodeURIComponent(query)}`,
       );
@@ -304,16 +336,13 @@ const StoreManagement = () => {
       };
       if (!response.ok || !payload.items?.length)
         throw new Error(payload.error || "Không xác định được tọa độ địa chỉ");
-      const geo = payload.items[0];
-      setForm((current) => ({
-        ...current,
-        latitude: String(geo.latitude),
-        longitude: String(geo.longitude),
-      }));
-      setVerifiedAddress(geo.address);
-      setVerifiedInput(query);
+      // Geocoding is fuzzy. Never assign the first candidate automatically.
+      setLocationCandidates(payload.items.filter((item) =>
+        Number.isFinite(item.latitude) && Number.isFinite(item.longitude),
+      ));
     } catch (error) {
       setVerifiedAddress("");
+      setLocationCandidates([]);
       setError(
         error instanceof Error ? error.message : "Không xác minh được địa chỉ",
       );
@@ -997,14 +1026,31 @@ const StoreManagement = () => {
                         : "Xác minh địa chỉ và lấy tọa độ"}
                     </button>
                     <p className="mt-2">
-                      {verifiedAddress &&
-                      verifiedInput ===
-                        [form.address, form.ward, form.district, form.city]
-                          .filter(Boolean)
-                          .join(", ")
-                        ? `Vị trí đã xác minh: ${verifiedAddress}`
-                        : "Nhập địa chỉ rõ số nhà/đường, phường và thành phố rồi xác minh trước khi lưu."}
+                      {verifiedAddress && verifiedInput === locationInput
+                        ? `Đã chọn vị trí: ${verifiedAddress}`
+                        : "Tra cứu rồi chọn đúng ghim trên bản đồ. Không tự chọn kết quả đầu tiên."}
                     </p>
+                    {locationCandidates.length > 0 && lookupInput === locationInput && (
+                      <div className="mt-3 space-y-2" role="group" aria-label="Các vị trí cửa hàng tìm được">
+                        {locationCandidates.map((geo, index) => (
+                          <div key={`${geo.latitude}-${geo.longitude}-${index}`} className="rounded-lg border border-emerald-200 bg-white p-2">
+                            <p className="text-xs text-gray-800">{geo.address}</p>
+                            <p className="text-xs text-gray-500">{geo.latitude.toFixed(6)}, {geo.longitude.toFixed(6)}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <a
+                                href={`https://www.openstreetmap.org/?mlat=${geo.latitude}&mlon=${geo.longitude}#map=18/${geo.latitude}/${geo.longitude}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="rounded-md border border-emerald-600 px-2 py-1 text-xs font-semibold text-emerald-800"
+                              >Xem ghim trên bản đồ</a>
+                              <button type="button" onClick={() => chooseStoreLocation(geo)}
+                                className="rounded-md bg-emerald-700 px-2 py-1 text-xs font-semibold text-white"
+                              >{verifiedAddress === geo.address && form.latitude === String(geo.latitude) && form.longitude === String(geo.longitude)
+                                ? "Đã chọn" : "Chọn vị trí này"}</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <p className="mt-1 text-xs">
                       Khi tra cứu, địa chỉ được gửi tới Photon (dịch vụ demo từ
                       OpenStreetMap).
@@ -1018,12 +1064,6 @@ const StoreManagement = () => {
                       <input
                         value={form.latitude}
                         readOnly
-                        onChange={(event) =>
-                          setForm((current) => ({
-                            ...current,
-                            latitude: event.target.value,
-                          }))
-                        }
                         type="number"
                         step="any"
                         placeholder="10.762622"
@@ -1037,12 +1077,6 @@ const StoreManagement = () => {
                       <input
                         value={form.longitude}
                         readOnly
-                        onChange={(event) =>
-                          setForm((current) => ({
-                            ...current,
-                            longitude: event.target.value,
-                          }))
-                        }
                         type="number"
                         step="any"
                         placeholder="106.660172"
