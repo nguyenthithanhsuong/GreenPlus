@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, {
   useCallback,
   useDeferredValue,
@@ -456,6 +457,14 @@ const StoreManagement = () => {
             <RefreshCw className="h-4 w-4" />
             Tải lại
           </button>
+          {process.env.NEXT_PUBLIC_GREENPLUS_TENANCY_DEMO === "true" && (
+            <Link
+              href="/settings/tenant-demo"
+              className="inline-flex items-center rounded-xl border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-800"
+            >
+              Docker 3-tier demo
+            </Link>
+          )}
           {!permLoading && hasPermission("stores.create") && (
             <button
               type="button"

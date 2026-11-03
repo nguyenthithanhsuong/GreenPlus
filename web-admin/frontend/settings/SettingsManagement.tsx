@@ -1,3 +1,4 @@
+import StorageModeSetting from "./StorageModeSetting";
 import ProfileForm from "./ProfileForm";
 import SettingsNav from "./SettingsNav";
 import AdminShell from "../shared/AdminShell";
@@ -15,6 +16,7 @@ const SettingsManagement = () => {
         <SettingsNav />
         <ProfileForm />
       </div>
+      <StorageModeSetting />
     </AdminShell>
   );
 };

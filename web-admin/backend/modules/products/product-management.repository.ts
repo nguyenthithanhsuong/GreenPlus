@@ -1,4 +1,10 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
+import { activeTenantScope } from "../../core/tenant-store";
+import { listTenantCollection } from "../../core/tenant-list-pages.mjs";
+import {
+  tenantDataForActiveStore,
+  tenantProductReadsEnabled,
+} from "../../core/tenant-data";
 import {
   CreateProductInput,
   ProductRow,
@@ -32,6 +38,11 @@ export class ProductManagementRepository {
   private readonly supabase = createServiceRoleSupabaseClient();
 
   async listProducts(): Promise<ProductRow[]> {
+    if (tenantProductReadsEnabled() && activeTenantScope()) {
+      const adapter = await tenantDataForActiveStore();
+      const rows = await listTenantCollection(adapter, "products");
+      return (rows as unknown as ProductDbRow[]).map((product) => this.toRow(product));
+    }
     const { data, error } = await this.supabase
       .from("products")
       .select(

@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+import { logger } from "../lib/logger";
 // Server-only: imported exclusively by Next.js route handlers.
 import { cookies } from "next/headers";
 import { shipperDb } from "./shipper-db";
@@ -150,6 +152,11 @@ export function shipperApiError(error: unknown): {
 } {
   if (error instanceof ShipperError)
     return { message: error.message, status: error.status, code: error.code };
+  Sentry.captureException(error);
+  logger.error("Unexpected Shipper API error", {
+    code: "SHIPPER_INTERNAL_ERROR",
+    type: error instanceof Error ? error.name : typeof error,
+  });
   console.error("[shipper/api]", {
     code: "SHIPPER_INTERNAL_ERROR",
     type: error instanceof Error ? error.name : typeof error,

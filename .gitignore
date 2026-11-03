@@ -149,3 +149,6 @@ mobile/*-twa/*.jks
 mobile/*-twa/*-signed.apk
 mobile/*-twa/*.aab
 mobile/*-twa/assetlinks.generated.json
+
+# Docker three-tier demo secrets
+docker/three-tier/.env

@@ -1,3 +1,4 @@
+import { logger } from "../../../../lib/logger";
 import { NextResponse } from "next/server";
 import {
   requireShipper,
@@ -15,6 +16,10 @@ export async function GET() {
     );
   } catch (error) {
     const result = shipperApiError(error);
+    logger.error("shipper deliveries GET failed", {
+      code: result.code,
+      status: result.status,
+    });
     return NextResponse.json(
       { error: result.message, code: result.code },
       { status: result.status, headers: { "Cache-Control": "no-store" } },

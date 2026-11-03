@@ -79,7 +79,9 @@ export const GET = withSentry(async (request: Request) => {
           const { data, error } = await query;
           if (error)
             throw new AppError("Failed to load store relationship data", 503);
-          rows.push(...((data ?? []) as unknown as Array<Record<string, string>>));
+          rows.push(
+            ...((data ?? []) as unknown as Array<Record<string, string>>),
+          );
           if ((data ?? []).length < 500) return rows;
         }
         throw new AppError(

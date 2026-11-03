@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  manifest: "/manifest.webmanifest",
   applicationName: "GreenPlus Shipper",
   appleWebApp: {
     capable: true,
