@@ -152,3 +152,8 @@ mobile/*-twa/assetlinks.generated.json
 
 # Docker three-tier demo secrets
 docker/three-tier/.env
+
+# Local database exports must not be committed.
+backup_data.sql
+backup_schema.sql
+backups/

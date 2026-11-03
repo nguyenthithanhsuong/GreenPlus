@@ -64,3 +64,16 @@ test('Vercel post-CI fails when the exact commit is rejected',async()=>{
  const mock=async()=>({status:200,json:async()=>({deployments:[{meta:{githubCommitSha:'1234567890'},readyState:'ERROR'}]})});
  await assert.rejects(verifyDeployments(env,mock,()=>{},()=>{}),/failed: ERROR/);
 });
+
+
+test('Vercel checks all three commit deployments concurrently without weakening SHA validation', async () => {
+ let active = 0, peak = 0;
+ const mock = async () => {
+  active++; peak = Math.max(peak, active);
+  await Promise.resolve();
+  active--;
+  return { status: 200, json: async () => ({ deployments: [{ meta: { githubCommitSha: env.GITHUB_SHA }, readyState: 'READY' }] }) };
+ };
+ await verifyDeployments(env, mock, () => {}, () => {});
+ assert.equal(peak, 3, 'one slow Vercel project must not block checks for the others');
+});

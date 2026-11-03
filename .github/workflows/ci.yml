@@ -101,8 +101,6 @@ jobs:
       - run: npm ci
       - name: All root Node tests (including tenant, gateway, security, PWA, regression)
         run: node --experimental-strip-types --test tests/*.test.mjs
-      - name: Shipper backend/API tests
-        run: npm test -w web-shipper
       - name: Check gateway and migration launcher syntax
         run: |
           node --check docker/three-tier/gateway/server.mjs

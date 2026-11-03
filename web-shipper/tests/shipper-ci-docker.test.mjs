@@ -5,7 +5,12 @@ const read=file=>readFileSync(new URL(file, import.meta.url),'utf8');
 test('Shipper matrix is independent, its tests run, all gates block Docker publishing',()=>{
  const workflow=read('../../.github/workflows/ci.yml');
  assert.match(workflow,/frontend-ci:/);
- assert.match(workflow,/- \{ app: shipper, node: '22' \}/);
+ const matrix = workflow.match(/(?:^|\n)  frontend-ci:[\s\S]*?(?=\n  backend-ci:)/)?.[0];
+ assert.ok(matrix, 'frontend matrix job must exist');
+ assert.match(matrix, /app:\s*shipper\b/);
+ assert.match(matrix, /node:\s*['"]22['"]/);
+ assert.match(matrix, /label:\s*['"]Shipper CI['"]/);
+ assert.match(matrix, /fail-fast:\s*false/);
  assert.match(workflow,/npm run lint -w web-\$\{\{ matrix\.app \}\}/);
  assert.match(workflow,/npm run typecheck -w web-\$\{\{ matrix\.app \}\}/);
  assert.match(workflow,/npm test -w web-shipper/);

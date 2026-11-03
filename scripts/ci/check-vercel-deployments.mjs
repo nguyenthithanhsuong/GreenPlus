@@ -4,7 +4,8 @@ export async function verifyDeployments(env, fetcher=fetch, pause=ms=>new Promis
  const needed=['VERCEL_TOKEN','VERCEL_PROJECT_ADMIN','VERCEL_PROJECT_CLIENT','VERCEL_PROJECT_SHIPPER','GITHUB_SHA'];
  const missing=needed.filter(k=>!env[k]?.trim());
  if(missing.length)throw Error(`Missing Vercel deployment verification configuration: ${missing.join(', ')}`);
- for(const app of ['ADMIN','CLIENT','SHIPPER']) {
+ // Poll three independent projects concurrently so this check does not spend 3 x the wait window.
+ await Promise.all(['ADMIN','CLIENT','SHIPPER'].map(async app => {
   const project=env[`VERCEL_PROJECT_${app}`];
   const params=new URLSearchParams({projectId:project,limit:'30',target:'production'});
   if(env.VERCEL_TEAM_ID)params.set('teamId',env.VERCEL_TEAM_ID);
@@ -26,7 +27,7 @@ export async function verifyDeployments(env, fetcher=fetch, pause=ms=>new Promis
   }
   if(!ready)throw Error(`Vercel ${app} has no READY production deployment for CI commit ${env.GITHUB_SHA.slice(0,8)}`);
   log(`PASS Vercel ${app}: exact CI commit is READY in production`);
- }
+ }));
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href){
  verifyDeployments(process.env).catch(e=>{console.error(`FAIL Vercel deployment: ${e.message}`);process.exitCode=1;});

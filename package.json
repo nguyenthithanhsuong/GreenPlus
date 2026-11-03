@@ -28,6 +28,7 @@
     "mobile:client:build": "node scripts/mobile-twa.mjs client build",
     "mobile:shipper:build": "node scripts/mobile-twa.mjs shipper build",
     "test:shipper": "npm test -w web-shipper",
+    "test:release:static": "node --experimental-strip-types --test tests/*.test.mjs && npm test -w web-shipper && node scripts/ci/validate-ci.mjs",
     "test:tenant-routing": "node --test tests/three-tier-routing.test.mjs tests/tenant-postgrest.test.mjs tests/tenant-registry.test.mjs tests/tenant-postgrest-adapter.test.mjs",
     "test:migrations": "node --test tests/migration-static.test.mjs",
     "test:three-tier-commerce": "node --test tests/three-tier-commerce-slice.test.mjs",
