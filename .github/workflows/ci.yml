@@ -152,9 +152,14 @@ jobs:
       S3_SECRET_KEY: ci-unused
     steps:
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/setup-node@v4
         with:
-          version: latest
+          node-version: '22'
+      # The v1 installer downloads GitHub releases directly (504 in CI #125).
+      # v3 setup installs from npm, and v2.stable avoids the CLI v3 migration.
+      - uses: supabase/setup-cli@v3
+        with:
+          version: v2.stable
       - name: Start disposable local Supabase (never link remote)
         run: supabase start
       - name: Rebuild from all committed migrations

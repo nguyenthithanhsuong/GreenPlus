@@ -1,8 +1,8 @@
 import { defineConfig } from "@playwright/test";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
-const workspace = dirname(fileURLToPath(import.meta.url));
+// Playwright can transpile .ts configs to CommonJS on Node 22.
+const workspace = __dirname;
 const diagnostics = resolve(workspace, "../artifacts/playwright/web-shipper");
 
 export default defineConfig({

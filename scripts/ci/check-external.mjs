@@ -9,6 +9,10 @@ const required = [
 ];
 export function missingConfig(env) { return required.filter(k => !env[k]?.trim()); }
 const slug = s => encodeURIComponent(s);
+// Legacy anon keys are JWTs. New sb_publishable_* keys are not JWTs and
+// must never be sent as an Authorization bearer token.
+const isLegacyJwt = key => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(key);
+
 
 async function request(url, {token,headers={},method='GET',body,fetcher=fetch,allowed=[200]}={}) {
   const u=new URL(url);
@@ -38,8 +42,20 @@ export async function checkProviders(env, fetcher=fetch, log=console.log) {
     fetcher,headers:{apikey:env.SUPABASE_ANON_KEY},allowed:[200],
   });
   log('PASS Supabase Online Auth health');
-  await request(new URL('/rest/v1/',origin).toString(),{fetcher,headers:{apikey:env.SUPABASE_ANON_KEY},allowed:[200]});
-  log('PASS Supabase Online REST API (read-only; migrations tested locally)');
+  // /rest/v1/ is an OpenAPI root, not an anonymous health endpoint. Public
+  // keys may be denied on it even when normal table access is functioning.
+  // stores is a committed GreenPlus table; limit=0 validates the actual REST
+  // route and public-key authentication without retrieving any store rows.
+  const anonKey=env.SUPABASE_ANON_KEY;
+  const restHeaders={
+    apikey:anonKey,
+    ...(isLegacyJwt(anonKey) ? {Authorization:`Bearer ${anonKey}`} : {}),
+  };
+  const stores=await request(new URL('/rest/v1/stores?select=store_id&limit=0',origin).toString(),{
+    fetcher,headers:restHeaders,allowed:[200],
+  });
+  if(!Array.isArray(stores))throw new Error('Supabase Online REST stores probe returned an invalid JSON array');
+  log('PASS Supabase Online REST stores route (public key, zero rows requested)');
 
   const team=env.VERCEL_TEAM_ID ? `?teamId=${slug(env.VERCEL_TEAM_ID)}` : '';
   for(const app of ['ADMIN','CLIENT','SHIPPER']) {
