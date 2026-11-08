@@ -44,7 +44,8 @@ npm install
 # Start all three web apps and the local three-tier Docker sandbox (interactive Turbo TUI)
 npm run dev
 
-# Or start only web apps: npm run dev:web
+# Or start only web apps with the interactive Turbo UI: npm run dev:all
+# For optional HTTP route prewarming, use a second terminal: node scripts/prewarm-dev.mjs
 # Or start individual apps
 npm run dev:client   # Port 3001
 npm run dev:admin    # Port 3000
@@ -303,13 +304,23 @@ docker-compose build --no-cache
 ```powershell
 npm run test:release:static
 # Replace each URL with the actual deployed production HTTPS origin
-npm run mobile:client:preflight -- https://YOUR-CLIENT-DOMAIN/
-npm run mobile:shipper:preflight -- https://YOUR-SHIPPER-DOMAIN/
+npm run mobile -- client preflight https://YOUR-CLIENT-DOMAIN/
+npm run mobile -- shipper preflight https://YOUR-SHIPPER-DOMAIN/
 # Only after Bubblewrap initialization + signing + public SHA256 configuration:
-npm run mobile:client:check -- https://YOUR-CLIENT-DOMAIN/
-npm run mobile:shipper:check -- https://YOUR-SHIPPER-DOMAIN/
+npm run mobile -- client check https://YOUR-CLIENT-DOMAIN/
+npm run mobile -- shipper check https://YOUR-SHIPPER-DOMAIN/
 ```
 
 The PWA includes a safe offline shell and user-controlled worker updates. Shipper supports camera/QR-photo decoding and manual order lookup. **Only actual device testing** can confirm WebAPK installability, Android TWA Digital Asset Links, camera/GPS permissions and login. The current Docker data-source switch affects supported Admin sandbox routes, **not** the production Client/Shipper data stores. See `mobile/README.md` and `docs/GREENPLUS_MOBILE_RELEASE_AND_ARCH_REVIEW_20261107.md`.
 
 - CI publishes GHCR images **after** all mandatory gates; it does not automatically deploy Coolify. `Production Verify` only verifies deployed images/Vercel state and should not be interpreted as a deployment action.
+
+
+### Repository maintenance / legacy cleanup (Nov 2026)
+
+Use `npm run maintain -- scan` (read-only source audit) and `npm run maintain -- clean` (dry run) before quarantining known-unused source.
+`npm run maintain -- all --apply --zip` runs lint, typecheck, root/Client/Shipper tests and full build, with automatic source restore on verification failure.
+To archive obsolete Flutter prototypes as well, add `--legacy-flutter`. Details: `docs/REPO_MAINTENANCE_20261108.md`.
+`npm run check-all` is now non-mutating for source; use `npm run fix:local` only when formatting/ESLint modifications are intended.
+
+See [the consolidated developer command reference](docs/PROJECT_COMMANDS_20261108.md) for Docker/PWA subcommands and maintenance recovery.

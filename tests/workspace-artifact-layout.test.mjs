@@ -58,12 +58,14 @@ test('source ZIP is created without env, backups, dependencies or generated arti
     mkdirSync(join(root,'web-admin','src'));writeFileSync(join(root,'web-admin','src','code.txt'),'tracked source');
     mkdirSync(join(root,'web-shipper','node_modules'));writeFileSync(join(root,'web-shipper','node_modules','private.txt'),'DEPENDENCY');
     mkdirSync(join(root,'web-admin','.next'));writeFileSync(join(root,'web-admin','.next','cache.txt'),'ARTIFACT');
+    mkdirSync(join(root,'supabase','.temp'), {recursive:true});
+    writeFileSync(join(root,'supabase','.temp','project-ref'),'PRIVATE_PROJECT_REFERENCE');
     execute(root,'package-source.mjs');
     const zipPath = join(root,'artifacts',`GreenPlus_Source_${new Date().toISOString().slice(0,10)}.zip`);
     assert.ok(existsSync(zipPath));
     const raw = readFileSync(zipPath);
     assert.ok(raw.includes(Buffer.from('web-admin/src/code.txt')));
-    for (const disallowed of ['.env.local','.env','backup_data.sql','private.txt','cache.txt']) {
+    for (const disallowed of ['.env.local','.env','backup_data.sql','private.txt','cache.txt','supabase/.temp/project-ref']) {
       assert.equal(raw.includes(Buffer.from(disallowed)),false,`should exclude ${disallowed}`);
     }
   } finally { rmSync(root,{recursive:true,force:true}); }

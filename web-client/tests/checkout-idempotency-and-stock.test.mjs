@@ -46,8 +46,8 @@ test('tampered cached identifier cannot be reused', () => {
   assert.notEqual(next,'bad key!');assert.match(next,/^[A-Za-z0-9._:-]{8,128}$/);
   assert.notEqual(next,original);
 });
-test('both customer checkout entrypoints send Idempotency-Key and idempotencyKey', () => {
-  for (const path of ['frontend/orders/components/Orders.tsx','frontend/payment/components/Payment.tsx']) {
+test('active customer checkout sends Idempotency-Key and idempotencyKey', () => {
+  for (const path of ['frontend/orders/components/Orders.tsx']) {
     const src=readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
     assert.match(src,/getCheckoutIdempotencyKey\(checkoutContext\)/);
     assert.match(src,/'?"Idempotency-Key"?: idempotencyKey/);
@@ -56,6 +56,14 @@ test('both customer checkout entrypoints send Idempotency-Key and idempotencyKey
     assert.match(src,/checkoutInFlight\.current/);
   }
 });
+test('payment page operates on an existing order instead of repeating checkout', () => {
+  const page = readFileSync(new URL('../src/app/orders/[orderId]/payment/page.tsx', import.meta.url), 'utf8');
+  const component = readFileSync(new URL('../frontend/payment/components/OrderPaymentPage.tsx', import.meta.url), 'utf8');
+  assert.match(page, /OrderPaymentPage/);
+  assert.match(component, /\/api\/orders\/\$\{encodeURIComponent\(detail\.order_id\)\}\/confirm-payment/);
+  assert.doesNotMatch(component, /getCheckoutIdempotencyKey\(/);
+});
+
 test('API rejects missing or mismatching keys before geocoding', () => {
   const src=readFileSync(new URL('../src/app/api/orders/route.ts',import.meta.url),'utf8');
   assert.ok(src.indexOf('INVALID_IDEMPOTENCY_KEY')<src.indexOf('resolveDeliveryAddress(deliveryAddress)'));
@@ -69,7 +77,7 @@ test('batch with 100 units of available stock is sellable', () => {
 test('product cards separate physical stock from missing price', () => {
   const src=readFileSync(new URL('../backend/modules/products/product.service.ts',import.meta.url),'utf8');
   assert.match(src,/const isAvailable = availableQuantity > 0/);
-  assert.match(src,/const canPurchase = isAvailable && price !== null/);
+  assert.match(src,/const canPurchase =\s*isAvailable && price !== null && Number\.isFinite\(price\) && price > 0/);
   const repo=readFileSync(new URL('../backend/modules/products/product.repository.ts',import.meta.url),'utf8');
   assert.match(repo,/inventory\(quantity_available\)/);
   assert.match(repo,/\.eq\("inventory.store_id", storeId\)/);

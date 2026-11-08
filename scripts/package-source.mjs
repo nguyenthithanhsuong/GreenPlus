@@ -11,7 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const excludedDirs = new Set([
   '.git', '.next', '.turbo', '.cache', 'node_modules', 'artifacts', '.vercel',
   'playwright-report', 'test-results', 'coverage', '.nyc_output', 'dist', 'out',
-  '.gradle', '.dart_tool', 'build', '__pycache__', '.pytest_cache', '.idea', '.vscode',
+  '.gradle', '.dart_tool', 'build', '__pycache__', '.pytest_cache', '.idea', '.vscode', '.temp',
 ]);
 const sensitiveNames = new Set(['backup_data.sql', 'backup_schema.sql', '.DS_Store']);
 function exclude(name, directory) {

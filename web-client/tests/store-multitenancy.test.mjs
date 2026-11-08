@@ -109,7 +109,7 @@ test('key screens use tenant-aware fetch and expose store switcher', () => {
   const files = [
     'frontend/orders/components/Orders.tsx',
     'frontend/orders/components/OrderDetail.tsx',
-    'frontend/payment/components/Payment.tsx',
+    'frontend/payment/components/OrderPaymentPage.tsx',
     'frontend/payment/components/OrderPaymentPage.tsx',
     'src/app/profile/transaction-history/page.tsx',
     'frontend/complaints/components/Complaints.tsx',

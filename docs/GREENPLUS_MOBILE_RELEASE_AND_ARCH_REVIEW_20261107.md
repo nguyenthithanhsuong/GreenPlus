@@ -38,11 +38,11 @@ npm run build
 When HTTPS deployments are ready:
 
 ```powershell
-npm run mobile:client:preflight -- https://YOUR-CLIENT-DOMAIN/
-npm run mobile:shipper:preflight -- https://YOUR-SHIPPER-DOMAIN/
+npm run mobile -- client preflight https://YOUR-CLIENT-DOMAIN/
+npm run mobile -- shipper preflight https://YOUR-SHIPPER-DOMAIN/
 # Initialize Bubblewrap (first time only), sign, set GREENPLUS_TWA_* SHA256 envs, redeploy
-npm run mobile:client:check -- https://YOUR-CLIENT-DOMAIN/
-npm run mobile:shipper:check -- https://YOUR-SHIPPER-DOMAIN/
+npm run mobile -- client check https://YOUR-CLIENT-DOMAIN/
+npm run mobile -- shipper check https://YOUR-SHIPPER-DOMAIN/
 ```
 
 `preflight` checks PWA HTTP assets but cannot claim a device install. `check` verifies Android Digital Asset Links (with a real signing fingerprint) after signing. Do not publish `GREENPLUS_TWA_*_SHA256` as a `NEXT_PUBLIC_*` setting; the fingerprint itself is public but the server configuration should remain consistent.

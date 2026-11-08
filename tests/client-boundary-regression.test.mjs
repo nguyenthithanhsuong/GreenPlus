@@ -14,7 +14,7 @@ const clientFiles = [
   'web-client/frontend/product-detail/components/ProductDetail.tsx',
   'web-client/frontend/subscriptions/components/SubscriptionsManagementPage.tsx',
   'web-client/frontend/complaints/components/Complaints.tsx',
-  'web-client/frontend/payment/components/Payment.tsx',
+  'web-client/frontend/payment/components/OrderPaymentPage.tsx',
   'web-client/frontend/orders/components/OrderDetail.tsx',
   'web-client/frontend/orders/components/Orders.tsx',
 ];

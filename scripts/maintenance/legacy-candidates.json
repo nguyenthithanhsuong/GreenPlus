@@ -1,0 +1,170 @@
+{
+  "baseline": "GreenPlus_Source_2026-11-08.zip",
+  "policy": "Allowlist is strictly checksum-verified and reference-checked. No dynamic routes or runtime entries are listed.",
+  "candidates": [
+    {
+      "path": "web-admin/backend/core/db.ts",
+      "sha256": "a5125554efb2cd2a6922303c453085a00d2fcbb20ea1320caa5dcedc469e506b"
+    },
+    {
+      "path": "web-admin/backend/core/event-bus.ts",
+      "sha256": "139c6c464bf97ade9d912a3e94ba4a795171f9d32db0fa4579c17950ee5d34f3"
+    },
+    {
+      "path": "web-admin/backend/modules/community/blog.service.ts",
+      "sha256": "17a17b8da8fcfd4e91b7ec5e1a4a5032b70d85580ae337c8cc5b471cd57bfd4a"
+    },
+    {
+      "path": "web-admin/backend/modules/inventory/batch.service.ts",
+      "sha256": "67d3be6e2d298e5bfecee982477d462a37b2c9d1d6804637b87ad32d18ec5856"
+    },
+    {
+      "path": "web-admin/backend/modules/auth/user.repository.ts",
+      "sha256": "3c824d001875a3e4a7c823653ce0ede8ef20c68b1419e360ac7051d7d55cf30b"
+    },
+    {
+      "path": "web-admin/backend/modules/orders/facades/order-checkout.facade.ts",
+      "sha256": "fa2ce98aabe86ebef1588518973ba80fdc697a7c527d76ddb6d6bbe9e3cb8b53"
+    },
+    {
+      "path": "web-admin/backend/modules/orders/states/pending.state.ts",
+      "sha256": "253ee91ad87f0db1e0db133365ca77485ac6a41cab85c6b0dbd0adf421f6d905"
+    },
+    {
+      "path": "web-admin/backend/modules/orders/states/delivering.state.ts",
+      "sha256": "e27973a4d40c2194c9def110231c612014d9c191f05bc9a3176a50c0d2cc9d79"
+    },
+    {
+      "path": "web-admin/backend/modules/orders/states/order.state.ts",
+      "sha256": "deffc5497ee30b8874c16eff2b7cff1fb57924fd52a4d72654758d9e5d52f091"
+    },
+    {
+      "path": "web-admin/frontend/reports/ReportCharts.tsx",
+      "sha256": "75db30ee441303a1add4dce7f0554467296a40eb30b4abe1d4d7a262e682cc43"
+    },
+    {
+      "path": "web-admin/frontend/reports/ReportStats.tsx",
+      "sha256": "a6a89304f6a16509c9a21fcc358a6ea59ccc0a6ad1c5ffcde7e2022085ab6811"
+    },
+    {
+      "path": "web-admin/frontend/settings/PageHeader.tsx",
+      "sha256": "7377c6fdf1f710a1ff5342b3c67c3459bfd316d4400fcacbcdfd0828e698bae8"
+    },
+    {
+      "path": "web-admin/frontend/settings/Header.tsx",
+      "sha256": "2c340aa49f9a8394317a048676f92b81b8affa086efa66af8e6d2ab52323d094"
+    },
+    {
+      "path": "web-admin/frontend/shippers/PageHeader.tsx",
+      "sha256": "b2d42a8dbd8aa1dcb19c7bcb68a1036f1559e12539be1dddcb9b6c1985cec162"
+    },
+    {
+      "path": "web-admin/frontend/shippers/Header.tsx",
+      "sha256": "9d5489d3f58735d4042a3bdbc793574bfb40b97c30a2d60fe1402d61963486a0"
+    },
+    {
+      "path": "web-client/frontend/payment/components/Payment.tsx",
+      "sha256": "753e20f278fa07a50d8a9084eced3fb3dafd1416c6087f5c8937b677a5bd5a24"
+    },
+    {
+      "path": "web-client/frontend/profile/components/Profile.tsx",
+      "sha256": "fa74da29f7f14b78f6376a5b72ffa5e097a5ebd19d7792a877b45003c6a29a44"
+    },
+    {
+      "path": "web-shipper/src/components/DeliveryMap.tsx",
+      "sha256": "fbbbf9b33cf964f5cc9696332df0174b628bea998e7137ee4124ce88c6925802"
+    },
+    {
+      "path": "web-shipper/src/frontend/shared/screen.styles.ts",
+      "sha256": "65308e6b5c23f10132b39b2aa186f28f5372451376982737a49499c6207a3bb8"
+    },
+    {
+      "path": "scripts/remove-legacy-sentry-configs.mjs",
+      "sha256": "5d32a7cdbdcbd755b0f9b145b0605caaf1b9454486e6f8bddad24320c4e60f4b"
+    }
+  ],
+  "optionalLegacyFlutter": [
+    {
+      "path": "mobile/customer_app",
+      "files": [
+        {
+          "path": "mobile/customer_app/.gitignore",
+          "sha256": "0581d23086f7283dc97d2d5bde4f60724f8115f67baa76949596790ab9800dd7"
+        },
+        {
+          "path": "mobile/customer_app/.metadata",
+          "sha256": "657ba6391b395ad5c9df1aca2358d675cd3d53b027293592936b68bf5d2cbf87"
+        },
+        {
+          "path": "mobile/customer_app/README.md",
+          "sha256": "e7d2ce4394b8554368e167df453396992cbacf710dd896050a739486de541910"
+        },
+        {
+          "path": "mobile/customer_app/analysis_options.yaml",
+          "sha256": "5ed95b15f3691d1363eb38408668a5126690898da0fe5afd00c9d1e8dbb50d2e"
+        },
+        {
+          "path": "mobile/customer_app/lib/main.dart",
+          "sha256": "0921ae44cbb66b09cb03746fc6f22d8f1fe9851fb524e1a0923a60e78631383d"
+        },
+        {
+          "path": "mobile/customer_app/pubspec.lock",
+          "sha256": "a90c7fd4dbee17a9d571d43bace78420fdbb29ce5da6dd6534650e42cb42128f"
+        },
+        {
+          "path": "mobile/customer_app/pubspec.yaml",
+          "sha256": "5cb5d341dc5aec4825d6a2c2930f7e4ccafb61b9d5348346985f3daa0feca08a"
+        },
+        {
+          "path": "mobile/customer_app/test/widget_test.dart",
+          "sha256": "d5990f201b8b7f5389fa636a46526bb7035705e0076ee6ce6bb48f8070351bdf"
+        },
+        {
+          "path": "mobile/customer_app/web/favicon.png",
+          "sha256": "7ab2525f4b86b65d3e4c70358a17e5a1aaf6f437f99cbcc046dad73d59bb9015"
+        },
+        {
+          "path": "mobile/customer_app/web/icons/Icon-192.png",
+          "sha256": "3dce99077602f70421c1c6b2a240bc9b83d64d86681d45f2154143310c980be3"
+        },
+        {
+          "path": "mobile/customer_app/web/icons/Icon-512.png",
+          "sha256": "baccb205ae45f0b421be1657259b4943ac40c95094ab877f3bcbe12cd544dcbe"
+        },
+        {
+          "path": "mobile/customer_app/web/icons/Icon-maskable-192.png",
+          "sha256": "d2c842e22a9f4ec9d996b23373a905c88d9a203b220c5c151885ad621f974b5c"
+        },
+        {
+          "path": "mobile/customer_app/web/icons/Icon-maskable-512.png",
+          "sha256": "6aee06cdcab6b2aef74b1734c4778f4421d2da100b0ff9e52b21b55240202929"
+        },
+        {
+          "path": "mobile/customer_app/web/index.html",
+          "sha256": "ca065c833e74de6ccfa2fe35887276ddeb7c167d30fc35ecbb3fe6f1ac5b08e2"
+        },
+        {
+          "path": "mobile/customer_app/web/manifest.json",
+          "sha256": "7e0206310d7eb3aab0577568a09bdf8e7d1564143a82547a7f65d1df6551e6b1"
+        }
+      ]
+    },
+    {
+      "path": "mobile/shipper_app",
+      "files": [
+        {
+          "path": "mobile/shipper_app/lib/main.dart",
+          "sha256": "d657a61c8554619dae16ae5512b317a5e0f1af2c5b71a12508f0612f219d952a"
+        },
+        {
+          "path": "mobile/shipper_app/pubspec.yaml",
+          "sha256": "abc3afa037ee0093c2fc62489733fe315c142ab57f3193f2367abc365f1b8b60"
+        },
+        {
+          "path": "mobile/shipper_app/test/widget_test.dart",
+          "sha256": "d5990f201b8b7f5389fa636a46526bb7035705e0076ee6ce6bb48f8070351bdf"
+        }
+      ]
+    }
+  ]
+}

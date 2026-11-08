@@ -40,8 +40,8 @@ Manually open each app on Android Chrome and use the browser install workflow, t
 Bubblewrap packages the deployed Client/Shipper web apps. It does **not** build the Flutter skeletons under `mobile/customer_app` or `mobile/shipper_app`.
 
 ```powershell
-npm run mobile:client:init -- https://YOUR-CLIENT-URL/
-npm run mobile:shipper:init -- https://YOUR-SHIPPER-URL/
+npm run mobile -- client init https://YOUR-CLIENT-URL/
+npm run mobile -- shipper init https://YOUR-SHIPPER-URL/
 ```
 
 After creating a signing key **outside Git**, obtain its certificate SHA-256 fingerprint and configure:
@@ -56,8 +56,8 @@ After redeploying, verify **both** `https://your-domain/.well-known/assetlinks.j
 ```powershell
 node scripts/mobile-twa.mjs client check https://YOUR-CLIENT-URL/
 node scripts/mobile-twa.mjs shipper check https://YOUR-SHIPPER-URL/
-npm run mobile:client:build
-npm run mobile:shipper:build
+npm run mobile -- client build
+npm run mobile -- shipper build
 ```
 
 Both mobile build commands require Bubblewrap/Android tooling on the host; they were **not** executed in the CI/source review environment. Testing a signed APK on a real device is still required to confirm Trusted Web Activity URL verification, credentials and correct browser fallback.
@@ -77,8 +77,8 @@ The static command uses only Node and validates root+Shipper tests and CI contra
 
 ```powershell
 npm run docker:three-tier:check
-npm run test:three-tier-transactions:docker
-npm run test:three-tier-lifecycle:docker
+npm run docker -- test:transactions
+npm run docker -- test:lifecycle
 ```
 
 CI independently runs the disposable Supabase stack, Docker commerce and API smoke checks. Never run `supabase db reset` against production or delete local Docker volumes as a troubleshooting shortcut.

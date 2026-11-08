@@ -51,7 +51,7 @@ jobs:
       matrix:
         include:
           - { app: admin, node: '20', label: 'Admin CI' }
-          - { app: client, node: '20', label: 'Client CI' }
+          - { app: client, node: '22', label: 'Client CI' }
           - { app: shipper, node: '22', label: 'Shipper CI' }
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +64,9 @@ jobs:
         run: npm run lint -w web-${{ matrix.app }}
       - name: Typecheck
         run: npm run typecheck -w web-${{ matrix.app }}
+      - name: Client checkout and multi-tenant tests
+        if: matrix.app == 'client'
+        run: npm run test:client
       - name: Shipper unit + integration tests
         if: matrix.app == 'shipper'
         run: npm test -w web-shipper
