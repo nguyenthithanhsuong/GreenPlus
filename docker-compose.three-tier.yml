@@ -1,0 +1,18 @@
+# Optional override: connect the containerized Admin to the existing three-tier
+# gateway over Docker's private network. NEVER publish DB/PostgREST ports.
+# Usage through: npm run docker:three-tier:apps:up
+services:
+  web-admin:
+    networks:
+      - default
+      - greenplus_tenancy
+    environment:
+      GREENPLUS_TENANCY_DEMO: "true"
+      GREENPLUS_DOCKER_INTERNAL_ENABLED: "true"
+      GREENPLUS_DOCKER_GATEWAY_URL: http://gateway:4100
+      # Provided by the orchestrator as an ephemeral process env var, NOT .env.
+      GREENPLUS_DOCKER_GATEWAY_KEY: ${GREENPLUS_DOCKER_GATEWAY_KEY:?Use docker:three-tier:apps:up}
+networks:
+  greenplus_tenancy:
+    name: greenplus-three-tier_default
+    external: true

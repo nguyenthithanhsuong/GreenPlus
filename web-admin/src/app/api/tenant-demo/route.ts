@@ -1,75 +1,41 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { portalActor } from "../../../../backend/core/manager-scope";
+import { fetchDockerGateway, DockerGatewayError } from "../../../../backend/core/docker-gateway.mjs";
 
 export const runtime = "nodejs";
 
 async function proxy(request: Request, method: "GET" | "POST") {
-  if (process.env.GREENPLUS_TENANCY_DEMO !== "true")
-    return NextResponse.json(
-      { error: "Docker demo is disabled" },
-      { status: 404 },
-    );
   try {
+    if (process.env.GREENPLUS_TENANCY_DEMO !== "true")
+      return NextResponse.json({ error: "Docker demo is disabled" }, { status: 404 });
+    const actor = await portalActor(request);
+    if (actor.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if ((await cookies()).get("greenplus_admin_storage_view")?.value !== "docker")
+      return NextResponse.json({ error: "Select Docker Local in Settings first" }, { status: 409 });
+    let body: unknown;
     if (method === "POST") {
       const origin = request.headers.get("origin");
       if (origin && origin !== new URL(request.url).origin)
-        return NextResponse.json(
-          { error: "Forbidden origin" },
-          { status: 403 },
-        );
-      if (
-        !(request.headers.get("content-type") ?? "").startsWith(
-          "application/json",
-        )
-      )
+        return NextResponse.json({ error: "Forbidden origin" }, { status: 403 });
+      if (!(request.headers.get("content-type") ?? "").startsWith("application/json"))
         return NextResponse.json({ error: "JSON required" }, { status: 415 });
+      if (Number(request.headers.get("content-length") || 0) > 8192)
+        return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+      body = await request.json();
+      if (!body || typeof body !== "object" || Array.isArray(body))
+        return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+      const fields = body as Record<string, unknown>;
+      if (Object.keys(fields).some((name) => !["name", "tier"].includes(name)) ||
+          typeof fields.name !== "string" || fields.name.trim().length < 2 || fields.name.length > 120 ||
+          !["regular", "pro", "enterprise"].includes(fields.tier as string))
+        return NextResponse.json({ error: "Invalid tenant provisioning request" }, { status: 400 });
     }
-    const actor = await portalActor(request);
-    if (actor.role !== "admin")
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    const endpoint = process.env.GREENPLUS_DOCKER_GATEWAY_URL;
-    const key = process.env.GREENPLUS_DOCKER_GATEWAY_KEY;
-    if (!endpoint || !key || key.length < 32)
-      return NextResponse.json(
-        { error: "Demo gateway is not configured" },
-        { status: 503 },
-      );
-    const base = new URL(endpoint);
-    if (
-      base.protocol !== "http:" ||
-      !["127.0.0.1", "localhost"].includes(base.hostname)
-    )
-      return NextResponse.json(
-        { error: "Only local Docker gateway is supported" },
-        { status: 503 },
-      );
-    const body = method === "POST" ? await request.json() : undefined;
-    const response = await fetch(new URL("/stores", base), {
-      method,
-      headers: {
-        "x-demo-gateway-key": key,
-        ...(body ? { "Content-Type": "application/json" } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(8000),
-      cache: "no-store",
-    });
-    const payload: unknown = await response.json();
-    return NextResponse.json(payload, {
-      status: response.status,
-      headers: { "Cache-Control": "no-store" },
-    });
-  } catch {
-    return NextResponse.json(
-      { error: "Cannot access Docker demo" },
-      { status: 503 },
-    );
+    const response = await fetchDockerGateway("/stores", { method, body, timeoutMs: 10000 });
+    return NextResponse.json(response.data, { status: response.status, headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof DockerGatewayError ? error.message : "Cannot access Docker demo" }, { status: 503 });
   }
 }
-
-export async function GET(request: Request) {
-  return proxy(request, "GET");
-}
-export async function POST(request: Request) {
-  return proxy(request, "POST");
-}
+export async function GET(request: Request) { return proxy(request, "GET"); }
+export async function POST(request: Request) { return proxy(request, "POST"); }

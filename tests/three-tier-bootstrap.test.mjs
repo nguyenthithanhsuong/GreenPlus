@@ -15,9 +15,11 @@ test('compose gateway readiness healthcheck remains loopback-only',()=>{
  assert.match(s,/fetch\('http:\/\/127\.0\.0\.1:4100\/ready'\)/);
 });
 test('bootstrap refuses to overwrite existing credentials and preserves volumes',()=>{
- const s=read('../scripts/three-tier-docker.mjs');
- assert.match(s,/if \(existsSync\(envFile\)\)/);
- assert.match(s,/flag:'wx'/);
- assert.match(s,/\['down'\]/);
- assert.doesNotMatch(s,/\['down',\s*'-v'\]/);
+ const wrapper=read('../scripts/three-tier-docker.mjs');
+ const credentials=read('../scripts/three-tier-secrets.mjs');
+ assert.match(wrapper,/ensureDockerSecrets\(envFile\)/);
+ assert.match(credentials,/if \(!existsSync\(file\)\)/);
+ assert.match(credentials,/flag: ["']wx["']/);
+ assert.match(wrapper,/\['down'\]/);
+ assert.doesNotMatch(wrapper,/\['down',\s*'-(?:v|\-volumes)'\]/);
 });

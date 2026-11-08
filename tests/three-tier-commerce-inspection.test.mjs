@@ -18,7 +18,8 @@ test('Admin commerce proxy reads and restricts privileged sandbox writes to admi
   assert.match(source, /export async function POST/);
   assert.match(source, /origin !== new URL\(request.url\).origin/);
   assert.doesNotMatch(source, /export async function DELETE|export async function PATCH/);
-  assert.match(source, /localhost/);
+  assert.match(source, /fetchDockerGateway/);
+  assert.match(read('../web-admin/backend/core/docker-gateway.mjs'), /localhost/);
 });
 test('non-destructive smoke checks exercise live inventory and orders', () => {
   const src = read('../scripts/three-tier-docker.mjs');

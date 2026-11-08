@@ -1,13 +1,14 @@
 /** Local-only Docker sandbox lifecycle. Never writes to Supabase or production. */
-import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../docker/three-tier');
 const envFile = resolve(root, '.env');
 const command = process.argv[2] ?? 'help';
-const token = () => randomBytes(36).toString('hex');
+import { ensureDockerSecrets } from './three-tier-secrets.mjs';
+import { connectLocalAdmin } from './three-tier-connect-admin.mjs';
+import { assertPostgrestBootstrapConfig, redactPostgrestDiagnostics, POSTGREST_AUTH_SERVICES } from './three-tier-compose-auth.mjs';
 function run(args, {capture = false} = {}) {
   // Docker Desktop on Windows/HDD hosts may exceed three minutes while building or waiting.
   const isStartup = args[0] === 'up';
@@ -27,15 +28,44 @@ function run(args, {capture = false} = {}) {
   return r.stdout ?? '';
 }
 function init() {
-  if (existsSync(envFile)) {
-    const content = readFileSync(envFile, 'utf8');
-    if (/replace-with-|^\s*(DEMO_POSTGRES_PASSWORD|DEMO_GATEWAY_KEY)\s*=\s*$/m.test(content)) throw new Error('Existing docker/three-tier/.env contains placeholder or empty secrets; replace them manually.');
-    console.log('Existing local Docker .env preserved.');
-    return;
-  }
-  writeFileSync(envFile, `# Generated for local Docker sandbox only. Do not commit.\nDEMO_POSTGRES_PASSWORD=${token()}\nDEMO_GATEWAY_KEY=${token()}\n`, {mode:0o600, flag:'wx'});
-  console.log('Created docker/three-tier/.env with random secrets (not printed).');
+  const { created, addedRestPassword } = ensureDockerSecrets(envFile);
+  if (created) console.log('Created local Docker .env with generated secrets (not printed).');
+  else if (addedRestPassword) console.log('Added separate PostgREST login secret to existing Docker .env; existing keys preserved.');
+  else console.log('Existing local Docker .env preserved.');
 }
+// Validate the *resolved* Compose argv, not just YAML syntax. This catches an
+// auth job whose `command: >-` gets split into separate arguments after sh -ec.
+function verifyPostgrestBootstrapCommand() {
+  const config = JSON.parse(run(['config', '--format', 'json'], {capture:true}));
+  assertPostgrestBootstrapConfig(config);
+}
+function reportAuthBootstrapFailure() {
+  try {
+    const logs = run(['logs', '--no-color', '--tail', '50', ...POSTGREST_AUTH_SERVICES], {capture:true});
+    const env = existsSync(envFile) ? readFileSync(envFile, 'utf8') : '';
+    const safeLogs = redactPostgrestDiagnostics(logs, env).trim();
+    if (safeLogs) console.error(`PostgREST bootstrap logs (secrets redacted):\n${safeLogs}`);
+    else console.error('PostgREST bootstrap produced no logs. Inspect Docker Desktop and compose service status.');
+  } catch (e) {
+    console.error(`Could not inspect PostgREST bootstrap containers: ${e.message}`);
+  }
+  console.error('No Docker volumes were removed. Re-run npm run docker:three-tier:up after correcting the cause.');
+}
+function verifyPostgrestRole() {
+  // Credential rotation happens in one-shot auth services BEFORE PostgREST starts.
+  // Checking the role on every run prevents a false-green Docker dashboard.
+  for (const [service, database] of [
+    ['shared-db', 'greenplus_demo'], ['enterprise-a-db', 'enterprise_a'], ['enterprise-b-db', 'enterprise_b'],
+  ]) {
+    const query = "SELECT rolname || '|' || rolsuper || '|' || rolcanlogin || '|' || rolinherit || '|' || rolbypassrls || '|' || pg_has_role('greenplus_postgrest','web_anon','MEMBER') FROM pg_roles WHERE rolname='greenplus_postgrest'";
+    const value = run(['exec','-T',service,'psql','-X','-At','-v','ON_ERROR_STOP=1','-U','postgres','-d',database,'-c',query], {capture:true}).trim();
+    if (value !== 'greenplus_postgrest|false|true|false|false|true' && value !== 'greenplus_postgrest|f|t|f|f|t') {
+      throw new Error(`PostgREST least-privilege role missing/incorrect in ${service}; check one-shot auth initialization. No volumes were touched.`);
+    }
+    console.log(`PASS ${service}: PostgREST login is non-superuser, NOINHERIT and member of web_anon`);
+  }
+}
+
 async function ready() {
   const abort = AbortSignal.timeout(5000);
   const health = await fetch('http://127.0.0.1:4100/ready', {signal:abort});
@@ -73,7 +103,13 @@ async function smoke() {
 try {
   if (command==='init') init();
   else if (command==='up') {
-    init(); run(['config','-q']); run(['up','-d','--build','--wait','--wait-timeout','150']);
+    init(); run(['config','-q']); verifyPostgrestBootstrapCommand();
+    try {
+      run(['up','-d','--build','--wait','--wait-timeout','150']);
+    } catch (error) {
+      reportAuthBootstrapFailure();
+      throw error;
+    }
     // SQL init scripts only run on first database creation: rerun idempotent compatibility SQL for existing volumes.
     for (const [svc,db] of [['shared-db','greenplus_demo'],['enterprise-a-db','enterprise_a'],['enterprise-b-db','enterprise_b']]) {
       run(['exec','-T',svc,'psql','-X','-v','ON_ERROR_STOP=1','-U','postgres','-d',db,'-f','/docker-entrypoint-initdb.d/002_product_category_slice.sql']);
@@ -84,15 +120,28 @@ try {
     });
     if (migration.error) throw new Error(`Commerce migration process failed: ${migration.error.message}`);
     if (migration.status !== 0) throw new Error('Commerce SQL migration/verification failed. See errors above; do not reset volumes.');
+    verifyPostgrestRole();
     await smoke();
+    // Prepare the NEXT workspace's actual env file; a root .env.local alone is
+    // not read by web-admin. Never overwrite an intentionally configured remote.
+    try {
+      const linked = await connectLocalAdmin();
+      console.log(linked.changed
+        ? 'Admin Docker Local settings written safely to web-admin/.env.local. Restart Admin to load them.'
+        : 'Admin Docker Local settings already match the authenticated gateway.');
+    } catch (error) {
+      console.warn(`Admin Docker switch is not linked: ${error.message}`);
+      console.warn('Run npm run docker:three-tier:link-admin after resolving this; the Docker database itself remains ready.');
+    }
     console.log('Docker sandbox ready. Admin gateway: http://127.0.0.1:4100 (local only).');
   }
   else if (command==='check') {
-    run(['config','-q']);
+    run(['config','-q']); verifyPostgrestBootstrapCommand();
     const verification = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), 'repair-three-tier-commerce.mjs'), '--check'], {
       cwd: resolve(root, '../..'), encoding:'utf8', stdio:'inherit', timeout: 180000,
     });
     if (verification.error || verification.status !== 0) throw new Error('Commerce RPC verification failed. Run node scripts/repair-three-tier-commerce.mjs to repair without deleting volumes.');
+    verifyPostgrestRole();
     await smoke();
   }
   else if (command==='down') run(['down']);

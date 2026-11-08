@@ -297,4 +297,19 @@ docker-compose build --no-cache
 - To deploy to Vercel, configure three projects with Root Directories `web-admin`, `web-client`, and `web-shipper`. Configure their respective environment variables without exposing service-role/session secrets as `NEXT_PUBLIC_*`.
 - Client and Shipper are installable PWAs; Android TWA setup requires deployed HTTPS origins and signing certificate fingerprints. See `docs/VERCEL_MOBILE_RELEASE.md`.
 - Existing Flutter app skeletons in `mobile/customer_app` and `mobile/shipper_app` are **not** compiled production apps and must not be confused with the PWA/TWA path.
+
+#### Mobile release verification (PWA/TWA is the chosen implementation)
+
+```powershell
+npm run test:release:static
+# Replace each URL with the actual deployed production HTTPS origin
+npm run mobile:client:preflight -- https://YOUR-CLIENT-DOMAIN/
+npm run mobile:shipper:preflight -- https://YOUR-SHIPPER-DOMAIN/
+# Only after Bubblewrap initialization + signing + public SHA256 configuration:
+npm run mobile:client:check -- https://YOUR-CLIENT-DOMAIN/
+npm run mobile:shipper:check -- https://YOUR-SHIPPER-DOMAIN/
+```
+
+The PWA includes a safe offline shell and user-controlled worker updates. Shipper supports camera/QR-photo decoding and manual order lookup. **Only actual device testing** can confirm WebAPK installability, Android TWA Digital Asset Links, camera/GPS permissions and login. The current Docker data-source switch affects supported Admin sandbox routes, **not** the production Client/Shipper data stores. See `mobile/README.md` and `docs/GREENPLUS_MOBILE_RELEASE_AND_ARCH_REVIEW_20261107.md`.
+
 - CI publishes GHCR images **after** all mandatory gates; it does not automatically deploy Coolify. `Production Verify` only verifies deployed images/Vercel state and should not be interpreted as a deployment action.

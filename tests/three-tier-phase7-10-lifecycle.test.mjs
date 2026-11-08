@@ -25,12 +25,12 @@ test('gateway restricts fulfillment to named store/order UUID routes',()=>{
  assert.match(gateway,/Object\.keys\(body\)\.length !== 0/);
  assert.match(gateway,/p_assignee:body\.assigned_to\.trim\(\)/);
 });
-test('Admin commerce writes are admin-only and require a selected Docker mode, same origin and local gateway',()=>{
+test('Admin commerce writes are admin-only and require a selected Docker mode, same origin and controlled gateway',()=>{
  assert.match(admin,/actor\.role !== "admin"/);
  assert.match(admin,/greenplus_admin_storage_view/);
  assert.match(admin,/origin !== new URL\(request\.url\)\.origin/);
- assert.match(admin,/GREENPLUS_DOCKER_GATEWAY_KEY/);
- assert.match(admin,/localhost","127\.0\.0\.1/);
+ assert.match(admin,/fetchDockerGateway/);
+ assert.match(read('web-admin/backend/core/docker-gateway.mjs'),/127\.0\.0\.1/);
  assert.match(admin,/"simulate-payment","assign-delivery","complete-delivery"/);
 });
 test('existing volumes execute 004 after 003 on all databases',()=>{

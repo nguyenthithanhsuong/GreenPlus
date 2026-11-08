@@ -63,8 +63,8 @@ test('Local dev ports and full Docker host ports match the user-selected mapping
   assert.match(getScript('web-client', 'dev:turbo'), /-p 3001$/);
   assert.match(getScript('web-shipper', 'dev'), /-p 3002$/);
   const compose = read('docker-compose.yml');
-  assert.match(compose, /WEB_ADMIN_PORT:-3000\}:3001/);
-  assert.match(compose, /WEB_CLIENT_PORT:-3001\}:3000/);
+  assert.match(compose, /WEB_ADMIN_PORT:-3000\}:3000/);
+  assert.match(compose, /WEB_CLIENT_PORT:-3001\}:3001/);
 });
 
 test('No database exports or server role build args reach Docker image context', () => {

@@ -157,3 +157,7 @@ docker/three-tier/.env
 backup_data.sql
 backup_schema.sql
 backups/
+
+# Root-managed diagnostics and incremental build artifacts
+artifacts/
+.cache/

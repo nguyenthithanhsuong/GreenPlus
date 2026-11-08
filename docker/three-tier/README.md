@@ -5,8 +5,8 @@ This is an **actual Docker/PostgreSQL data isolation experiment within the Green
 ## Local setup
 
 1. Install Docker Desktop, Node.js/npm and Git. Start Docker Desktop.
-2. In `docker/three-tier`, copy `.env.example` to `.env`. Set a strong local password using URL-safe characters and a randomly generated gateway key of at least 32 characters. The gateway publishes _only_ on `127.0.0.1:4100`, and PostgREST/PostgreSQL are internal to Docker.
-3. Run `docker compose config -q`, then `docker compose up -d --build` and `docker compose ps`.
+2. Run `npm run docker:three-tier:init` from the repository root. This creates `docker/three-tier/.env` on a fresh sandbox or adds **only** `DEMO_POSTGREST_PASSWORD` to an existing .env; it does not rotate pre-existing DB/gateway keys. The gateway publishes _only_ on `127.0.0.1:4100`, and PostgREST/PostgreSQL are internal to Docker.
+3. From the repository root, run `npm run docker:three-tier:up` followed by `npm run docker:three-tier:check`. The wrapper validates that Compose passes the full shell script as a **single** argument to each auth initializer before startup, then enforces low-privilege role checks and tenant smoke checks.
 4. Verify `curl http://127.0.0.1:4100/health` (PowerShell: `Invoke-RestMethod http://127.0.0.1:4100/health`).
 5. In the root of the actual GreenPlus checkout, configure **only the local Admin process**, e.g. `web-admin/.env.local`, with the values below. The existing root `.env` may still provide your regular Admin authentication; don't paste public/production Supabase keys into Docker files.
 
@@ -17,7 +17,21 @@ GREENPLUS_DOCKER_GATEWAY_URL=http://127.0.0.1:4100
 GREENPLUS_DOCKER_GATEWAY_KEY=<copy-secret-from-docker/three-tier/.env>
 ```
 
-6. Run `npm install` / `npm ci` from the root (after merging lockfile changes), `npm run dev:admin`, sign in as an existing **Admin**, then visit `http://localhost:3001/settings/stores` and select **Docker 3-tier demo**. You may also navigate to `/settings/tenant-demo`.
+6. Run `npm install` / `npm ci` from the root (after merging lockfile changes), `npm run dev:admin`, sign in as an existing **Admin**, then visit `http://localhost:3000/settings/stores` and select **Docker 3-tier demo**. You may also navigate to `/settings/tenant-demo`.
+
+## Repairing one-shot PostgREST auth (no volume deletion)
+
+If `shared-rest-auth`, `enterprise-a-rest-auth`, or `enterprise-b-rest-auth` exits with code 2, check the `command` block in `compose.yaml`: `entrypoint: ["/bin/sh", "-ec"]` requires a **single-item list command** containing the full `psql` command. Using a folded scalar instead allows Docker Compose to split the arguments; `sh -ec` then runs only `psql` without connection parameters. The wrapper validates the resolved Compose JSON and captures redacted auth logs on startup failure.
+
+```powershell
+# From root; keeps existing .env, database volumes and all tenant rows
+npm run docker:three-tier:up
+if ($LASTEXITCODE -ne 0) { throw "Docker bootstrap failed; read auth diagnostics above" }
+npm run docker:three-tier:check
+if ($LASTEXITCODE -ne 0) { throw "Docker verification failed" }
+```
+
+To inspect the one-shot logs manually (no credentials required in the command), run `docker compose --project-directory docker/three-tier logs --tail=50 shared-rest-auth enterprise-a-rest-auth enterprise-b-rest-auth`. **Do not upload unredacted logs if they contain credentials**. The Docker SQL commerce tests can pass even when these auth jobs fail, because the SQL tests connect directly as PostgreSQL admin; only `docker:three-tier:check` validates the full gateway/PostgREST startup.
 
 ## Isolation
 
@@ -38,7 +52,7 @@ Invoke-RestMethod 'http://127.0.0.1:4100/stores/<store-uuid>/products' -Headers 
 
 To stop without destroying named volumes: `docker compose down`. **Do not use `down -v` unless intentionally resetting the demo.** Changes to SQL initialization scripts are applied only to fresh databases and require explicit migration thereafter.
 
-**Caution:** This design's PostgREST backends use demonstration-only privileges and lack production-grade user identity, tenant-specific roles, provisioning transactions, read/write feature coverage and deployment topology. Do not publish the gateway on the public internet or point Vercel at a laptop. This is not a replacement for existing checkout/payment/order behavior.
+**Caution:** PostgREST now connects using a non-superuser role, but its `web_anon` grants are demonstration-only and lack production-grade user identity, tenant-specific roles, provisioning transactions, read/write feature coverage and deployment topology. Do not publish the gateway on the public internet or point Vercel at a laptop. This is not a replacement for existing checkout/payment/order behavior.
 
 ## Commerce-compatible Product/Category slice (SQL 002)
 

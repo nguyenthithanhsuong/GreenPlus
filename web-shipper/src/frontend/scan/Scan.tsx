@@ -21,6 +21,7 @@ import StatusBadge from "../shared/StatusBadge";
 import InfoRow from "../shared/InfoRow";
 import type { Delivery } from "../../lib/delivery-types";
 import dynamic from "next/dynamic";
+import jsQR from "jsqr";
 
 const DeliveryMapPanel = dynamic(() => import("../map/DeliveryMapPanel"), {
   ssr: false,
@@ -38,6 +39,7 @@ const money = (value: number) =>
 export default function ScanScreen() {
   const router = useRouter();
   const video = useRef<HTMLVideoElement>(null);
+  const imageCanvas = useRef<HTMLCanvasElement | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const scanningRef = useRef(false);
@@ -105,26 +107,55 @@ export default function ScanScreen() {
     }
   }
 
+  // Pure on-device image decoding: no camera frame or photo is uploaded.
+  function decodeQrFrame(source: CanvasImageSource, width: number, height: number): string {
+    if (!width || !height) return "";
+    const canvas = imageCanvas.current ?? document.createElement("canvas");
+    imageCanvas.current = canvas;
+    // Bounded image processing avoids unbounded memory use from large photos.
+    const scale = Math.min(1, 1280 / Math.max(width, height));
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return "";
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const image = context.getImageData(0, 0, canvas.width, canvas.height);
+    return jsQR(image.data, image.width, image.height)?.data?.trim() ?? "";
+  }
+
+  async function scanPhoto(file: File | undefined) {
+    if (!file) return;
+    setError("");
+    if (!file.type.startsWith("image/") || file.size > 8 * 1024 * 1024) {
+      setError("Vui lòng chọn ảnh mã QR hợp lệ, tối đa 8 MB.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const image = await createImageBitmap(file);
+      let decoded = "";
+      try { decoded = decodeQrFrame(image, image.width, image.height); }
+      finally { image.close(); }
+      if (!decoded) throw new Error("Không tìm thấy mã QR trong ảnh. Hãy thử ảnh rõ hơn hoặc nhập mã thủ công.");
+      setCode(decoded);
+      await lookup(decoded);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Không đọc được ảnh QR.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function start() {
+    if (active || stream.current) return;
     setError("");
     try {
-      const BarcodeDetector = (
-        window as unknown as {
-          BarcodeDetector?: new (options: { formats: string[] }) => Detector;
-        }
-      ).BarcodeDetector;
-      if (!BarcodeDetector) {
-        setError(
-          "Trình duyệt chưa hỗ trợ quét QR. Bạn vẫn có thể nhập mã đơn bên dưới.",
-        );
-        return;
-      }
       if (!navigator.mediaDevices?.getUserMedia) {
-        setError("Camera không khả dụng. Bạn có thể nhập mã đơn thủ công.");
+        setError("Camera không khả dụng. Hãy chọn ảnh QR hoặc nhập mã thủ công.");
         return;
       }
       const camera = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: { ideal: "environment" } },
         audio: false,
       });
       stream.current = camera;
@@ -133,29 +164,49 @@ export default function ScanScreen() {
         return;
       }
       video.current.srcObject = camera;
-      setActive(true);
       await video.current.play();
-      const detector = new BarcodeDetector({ formats: ["qr_code"] });
+      setActive(true);
+      const BarcodeDetector = (
+        window as unknown as {
+          BarcodeDetector?: new (options: { formats: string[] }) => Detector;
+        }
+      ).BarcodeDetector;
+      const nativeDetector = BarcodeDetector
+        ? new BarcodeDetector({ formats: ["qr_code"] })
+        : null;
       timer.current = setInterval(async () => {
         if (scanningRef.current || !video.current) return;
         scanningRef.current = true;
         try {
-          const rows = await detector.detect(video.current);
-          if (rows[0]?.rawValue) {
-            setCode(rows[0].rawValue);
-            void lookup(rows[0].rawValue);
+          let decoded = "";
+          if (nativeDetector) {
+            try {
+              const rows = await nativeDetector.detect(video.current);
+              decoded = rows[0]?.rawValue?.trim() ?? "";
+            } catch {
+              // Native detector may fail for a frame: use jsQR below.
+            }
+          }
+          if (!decoded) {
+            decoded = decodeQrFrame(
+              video.current,
+              video.current.videoWidth,
+              video.current.videoHeight,
+            );
+          }
+          if (decoded) {
+            setCode(decoded);
+            void lookup(decoded);
           }
         } catch {
-          /* A single invalid camera frame is not a permanent error. */
+          // A single unreadable video frame must not disable the camera.
         } finally {
           scanningRef.current = false;
         }
-      }, 450);
+      }, 550);
     } catch {
       stop();
-      setError(
-        "Không mở được camera. Hãy cấp quyền Camera hoặc nhập mã thủ công.",
-      );
+      setError("Không mở được camera. Hãy cấp quyền Camera, dùng ảnh hoặc nhập mã thủ công.");
     }
   }
 
@@ -210,8 +261,23 @@ export default function ScanScreen() {
             {active ? <CameraOff size={18} /> : <Camera size={18} />}
             {active ? "Tắt camera" : "Bật camera quét mã"}
           </button>
+          <label className="gp-secondary-button mt-3 flex w-full cursor-pointer items-center justify-center gap-2 text-center">
+            <ScanLine size={18} aria-hidden="true" /> Quét QR từ ảnh
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              disabled={busy}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                void scanPhoto(file);
+              }}
+            />
+          </label>
           <p className="gp-muted mt-3 text-center text-xs">
-            Camera yêu cầu quyền truy cập và kết nối HTTPS hoặc localhost.
+            Camera yêu cầu HTTPS hoặc localhost. Bạn cũng có thể chọn ảnh QR hoặc nhập mã thủ công.
+            Ảnh được xử lý ngay trên thiết bị, không tải lên máy chủ.
           </p>
         </section>
         <section className="gp-card p-4" aria-label="Tra cứu thủ công">

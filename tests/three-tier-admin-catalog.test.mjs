@@ -8,7 +8,8 @@ test('Admin Docker catalog proxy requires admin role and Docker cookie', () => {
   assert.match(source, /greenplus_admin_storage_view/);
   assert.match(source, /Select Docker Local/);
   assert.match(source, /Forbidden origin/);
-  assert.match(source, /localhost/);
+  assert.match(source, /fetchDockerGateway/);
+  assert.match(read('../web-admin/backend/core/docker-gateway.mjs'), /localhost/);
   assert.match(source, /uuid\.test\(storeId\)/);
   assert.doesNotMatch(source, /NEXT_PUBLIC_DOCKER_GATEWAY_KEY/);
 });
@@ -17,7 +18,7 @@ test('Admin catalog offers CRUD through local proxy, never direct Supabase', () 
   for (const method of ['POST','PATCH','DELETE']) assert.match(ui, new RegExp(`method: "${method}"`));
   assert.match(ui, /\/api\/tenant-demo\/catalog/);
   assert.doesNotMatch(ui, /supabase\.from/);
-  assert.match(read('../web-admin/src/app/settings/tenant-demo/page.tsx'), /<DockerCatalogManager/);
+  assert.match(read('../web-admin/frontend/settings/DockerTenantStoreManagement.tsx'), /<DockerCatalogManager/);
 });
 test('Storage preference remains a single accessible switch', () => {
   const ui = read('../web-admin/frontend/settings/StorageModeSetting.tsx');

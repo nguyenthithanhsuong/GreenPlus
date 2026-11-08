@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const apps = [
-  { name: "Client", folder: "web-client", port: 3000 },
-  { name: "Admin", folder: "web-admin", port: 3001 },
+  { name: "Admin", folder: "web-admin", port: 3000 },
+  { name: "Client", folder: "web-client", port: 3001 },
   { name: "Shipper", folder: "web-shipper", port: 3002 },
 ];
 

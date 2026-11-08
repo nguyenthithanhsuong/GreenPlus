@@ -83,8 +83,8 @@ jobs:
         with:
           name: shipper-e2e-diagnostics
           path: |
-            web-shipper/test-results/
-            web-shipper/playwright-report/
+            artifacts/playwright/web-shipper/test-results/
+            artifacts/playwright/web-shipper/report/
           if-no-files-found: ignore
           retention-days: 7
 
@@ -194,6 +194,19 @@ jobs:
           BETTER_STACK_URL: ${{ vars.BETTER_STACK_URL || secrets.BETTER_STACK_URL }}
           GITHUB_SHA: ${{ github.sha }}
         run: node scripts/ci/check-external.mjs
+      - name: Docker Gateway CI
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GREENPLUS_DOCKER_REMOTE_ENABLED == 'true'
+        env:
+          VERCEL: '1'
+          GREENPLUS_TENANCY_DEMO: 'true'
+          GREENPLUS_DOCKER_REMOTE_ENABLED: 'true'
+          GREENPLUS_DOCKER_GATEWAY_URL: ${{ vars.GREENPLUS_DOCKER_GATEWAY_URL }}
+          GREENPLUS_DOCKER_GATEWAY_HOST: ${{ vars.GREENPLUS_DOCKER_GATEWAY_HOST }}
+          GREENPLUS_DOCKER_GATEWAY_KEY: ${{ secrets.GREENPLUS_DOCKER_GATEWAY_KEY }}
+          GREENPLUS_DOCKER_ACCESS_CLIENT_ID: ${{ secrets.GREENPLUS_DOCKER_ACCESS_CLIENT_ID }}
+          GREENPLUS_DOCKER_ACCESS_CLIENT_SECRET: ${{ secrets.GREENPLUS_DOCKER_ACCESS_CLIENT_SECRET }}
+          GREENPLUS_DOCKER_REQUIRE_ALL_TIERS: 'true'
+        run: node scripts/ci/check-docker-tenants.mjs
 
   docker-build:
     name: Docker Build

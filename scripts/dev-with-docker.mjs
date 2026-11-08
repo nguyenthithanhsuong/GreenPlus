@@ -4,6 +4,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { connectLocalAdmin } from './three-tier-connect-admin.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const composeDir = resolve(projectRoot, 'docker/three-tier');
@@ -66,6 +67,18 @@ async function main() {
   try { await ensureDocker(); }
   catch (error) {
     console.error(`[GreenPlus] ${error.message}`);
+    process.exitCode = 1;
+    return;
+  }
+  // Root .env.local is not automatically loaded by the web-admin Next workspace.
+  // Sync credentials only after verifying both the gateway and its auth key.
+  // A remote/explicitly customized Admin target must never be overwritten.
+  try {
+    const linked = await connectLocalAdmin();
+    console.log(`[GreenPlus] Admin ↔ Docker Local: ${linked.changed ? 'đã cấu hình, khởi động Next.js để nhận biến mới' : 'sẵn sàng'}.`);
+  } catch (error) {
+    console.error(`[GreenPlus] Không thể kết nối Admin Docker: ${error.message}`);
+    console.error('[GreenPlus] Sử dụng npm run dev:web nếu chỉ cần các web app mà không bật Docker switch.');
     process.exitCode = 1;
     return;
   }

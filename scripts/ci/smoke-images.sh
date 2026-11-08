@@ -6,7 +6,7 @@ cleanup() {
 }
 trap cleanup EXIT
 for app in admin client shipper; do
-  case "$app" in admin) inner=3001; outer=13001;; client) inner=3000; outer=13000;; shipper) inner=3002; outer=13002;; esac
+  case "$app" in admin) inner=3000; outer=13000;; client) inner=3001; outer=13001;; shipper) inner=3002; outer=13002;; esac
   if docker image inspect --format '{{json .Config.Env}}' "greenplus/web-${app}:ci" \
       | grep -Eq 'SUPABASE_SERVICE_ROLE_KEY=|SENTRY_AUTH_TOKEN=|BETTER_STACK_SOURCE_TOKEN='; then
     echo "ERROR: ${app} image embeds a server-only credential variable; refusing to publish" >&2

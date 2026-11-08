@@ -42,30 +42,83 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+  # One-shot, idempotent, and safe on EXISTING volumes. All SQL runs inside the Docker lab.
+  # PostgREST no longer connects as the PostgreSQL superuser.
+  shared-rest-auth:
+    image: postgres:16-alpine
+    environment:
+      PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
+    volumes:
+      - ./sql/auth:/sql/auth:ro
+    depends_on:
+      shared-db: { condition: service_healthy }
+    entrypoint: ["/bin/sh", "-ec"]
+    # A single list element is required: /bin/sh -ec must receive the entire script as one -c argument.
+    command:
+      - >-
+        exec psql -q -h shared-db -U postgres -d greenplus_demo -X -v ON_ERROR_STOP=1
+        -v "rest_password=$${DEMO_POSTGREST_PASSWORD}"
+        -f /sql/auth/005_postgrest_authenticator.sql
+    restart: "no"
+  enterprise-a-rest-auth:
+    image: postgres:16-alpine
+    environment:
+      PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
+    volumes:
+      - ./sql/auth:/sql/auth:ro
+    depends_on:
+      enterprise-a-db: { condition: service_healthy }
+    entrypoint: ["/bin/sh", "-ec"]
+    # A single list element is required: /bin/sh -ec must receive the entire script as one -c argument.
+    command:
+      - >-
+        exec psql -q -h enterprise-a-db -U postgres -d enterprise_a -X -v ON_ERROR_STOP=1
+        -v "rest_password=$${DEMO_POSTGREST_PASSWORD}"
+        -f /sql/auth/005_postgrest_authenticator.sql
+    restart: "no"
+  enterprise-b-rest-auth:
+    image: postgres:16-alpine
+    environment:
+      PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
+    volumes:
+      - ./sql/auth:/sql/auth:ro
+    depends_on:
+      enterprise-b-db: { condition: service_healthy }
+    entrypoint: ["/bin/sh", "-ec"]
+    # A single list element is required: /bin/sh -ec must receive the entire script as one -c argument.
+    command:
+      - >-
+        exec psql -q -h enterprise-b-db -U postgres -d enterprise_b -X -v ON_ERROR_STOP=1
+        -v "rest_password=$${DEMO_POSTGREST_PASSWORD}"
+        -f /sql/auth/005_postgrest_authenticator.sql
+    restart: "no"
   shared-rest:
     image: postgrest/postgrest:v12.2.8
     environment:
-      PGRST_DB_URI: postgresql://postgres:${DEMO_POSTGRES_PASSWORD}@shared-db:5432/greenplus_demo
+      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@shared-db:5432/greenplus_demo
       PGRST_DB_SCHEMAS: public,pro_a,pro_b
       PGRST_DB_ANON_ROLE: web_anon
     depends_on:
-      shared-db: { condition: service_healthy }
+      shared-rest-auth: { condition: service_completed_successfully }
   enterprise-a-rest:
     image: postgrest/postgrest:v12.2.8
     environment:
-      PGRST_DB_URI: postgresql://postgres:${DEMO_POSTGRES_PASSWORD}@enterprise-a-db:5432/enterprise_a
+      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@enterprise-a-db:5432/enterprise_a
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: web_anon
     depends_on:
-      enterprise-a-db: { condition: service_healthy }
+      enterprise-a-rest-auth: { condition: service_completed_successfully }
   enterprise-b-rest:
     image: postgrest/postgrest:v12.2.8
     environment:
-      PGRST_DB_URI: postgresql://postgres:${DEMO_POSTGRES_PASSWORD}@enterprise-b-db:5432/enterprise_b
+      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@enterprise-b-db:5432/enterprise_b
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: web_anon
     depends_on:
-      enterprise-b-db: { condition: service_healthy }
+      enterprise-b-rest-auth: { condition: service_completed_successfully }
   gateway:
     build:
       context: ../..

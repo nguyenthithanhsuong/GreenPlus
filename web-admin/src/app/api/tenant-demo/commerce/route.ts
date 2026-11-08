@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { portalActor } from "../../../../../backend/core/manager-scope";
+import { fetchDockerGateway, DockerGatewayError } from "../../../../../backend/core/docker-gateway.mjs";
 
 export const runtime = "nodejs";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Deliberately read-only until per-user order/stock permissions are implemented.
+// Read-only commerce inspection; mutations are restricted to the separate sandbox actions.
 export async function GET(request: Request) {
   try {
     if (process.env.GREENPLUS_TENANCY_DEMO !== "true") return NextResponse.json({error:"Docker disabled"},{status:404});
@@ -19,17 +20,11 @@ export async function GET(request: Request) {
     const orderId = input.searchParams.get("orderId");
     if (!uuid.test(storeId) || !["inventory", "orders"].includes(kind) || (orderId && (!uuid.test(orderId) || kind !== "orders")))
       return NextResponse.json({error:"Invalid request"},{status:400});
-    const endpoint = process.env.GREENPLUS_DOCKER_GATEWAY_URL;
-    const key = process.env.GREENPLUS_DOCKER_GATEWAY_KEY;
-    if (!endpoint || !key || key.length < 32) return NextResponse.json({error:"Docker not configured"},{status:503});
-    const base = new URL(endpoint);
-    if (base.protocol !== "http:" || !["localhost","127.0.0.1"].includes(base.hostname) || base.username || base.password || base.search || base.hash)
-      return NextResponse.json({error:"Local Docker gateway required"},{status:503});
     const path = `/stores/${storeId}/${kind}${orderId ? `/${orderId}` : ""}`;
-    const response = await fetch(new URL(path, base), {headers:{"x-demo-gateway-key":key},signal:AbortSignal.timeout(10000),cache:"no-store"});
-    return NextResponse.json(await response.json(),{status:response.status,headers:{"Cache-Control":"no-store"}});
-  } catch {
-    return NextResponse.json({error:"Docker request failed"},{status:503});
+    const response = await fetchDockerGateway(path);
+    return NextResponse.json(response.data,{status:response.status,headers:{"Cache-Control":"no-store"}});
+  } catch (error) {
+    return NextResponse.json({error:error instanceof DockerGatewayError ? error.message : "Docker request failed"},{status:503});
   }
 }
 
@@ -57,12 +52,6 @@ export async function POST(request: Request) {
     if (["cancel","simulate-payment","assign-delivery","complete-delivery"].includes(action) && (typeof orderId !== "string" || !uuid.test(orderId)))
       return NextResponse.json({error:"Invalid order"},{status:400});
     if (action === "checkout" && (typeof orderId !== "string" || !uuid.test(orderId))) return NextResponse.json({error:"Invalid order"},{status:400});
-    const endpoint = process.env.GREENPLUS_DOCKER_GATEWAY_URL;
-    const key = process.env.GREENPLUS_DOCKER_GATEWAY_KEY;
-    if (!endpoint || !key || key.length < 32) return NextResponse.json({error:"Docker not configured"},{status:503});
-    const base = new URL(endpoint);
-    if (base.protocol !== "http:" || !["localhost","127.0.0.1"].includes(base.hostname) || base.username || base.password || base.search || base.hash)
-      return NextResponse.json({error:"Local gateway required"},{status:503});
     let path: string;
     let body: Record<string, unknown>;
     if (action === "restock") {
@@ -84,10 +73,9 @@ export async function POST(request: Request) {
       if (Object.keys(value).length !== 3) return NextResponse.json({error:"Invalid fields"},{status:400});
       path = `/stores/${storeId}/orders/${orderId}/${action}`;body={};
     }
-    const response = await fetch(new URL(path,base), {method:"POST",headers:{"x-demo-gateway-key":key,"Content-Type":"application/json"},
-      body:JSON.stringify(body),signal:AbortSignal.timeout(15000),cache:"no-store"});
-    return NextResponse.json(await response.json(),{status:response.status,headers:{"Cache-Control":"no-store"}});
-  } catch {
-    return NextResponse.json({error:"Docker request failed"},{status:503});
+    const response = await fetchDockerGateway(path, { method: "POST", body, timeoutMs: 15000 });
+    return NextResponse.json(response.data,{status:response.status,headers:{"Cache-Control":"no-store"}});
+  } catch (error) {
+    return NextResponse.json({error:error instanceof DockerGatewayError ? error.message : "Docker request failed"},{status:503});
   }
 }
