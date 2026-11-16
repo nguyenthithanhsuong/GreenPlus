@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../../../frontend/dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { signOutCustomerSession } from "@/lib/sign-out-customer";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import ConfirmActionDialog from "../../../../frontend/shared/ConfirmActionDialog";
 import {
@@ -187,14 +188,16 @@ export default function LockAccountPage() {
     setMessage(null);
 
     try {
+      await signOutCustomerSession();
       const supabase = getSupabaseClient();
-      await supabase.auth.signOut();
-    } finally {
+      await supabase.auth.signOut().catch(() => undefined);
       clearAuth();
-      await fetch("/api/auth/sync", { method: "DELETE" }).catch(
-        () => undefined,
-      );
       router.replace("/login");
+      router.refresh();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Đăng xuất thất bại.");
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -225,12 +228,10 @@ export default function LockAccountPage() {
         throw new Error(data?.error ?? "Không thể khóa tài khoản.");
       }
 
+      await signOutCustomerSession();
       const supabase = getSupabaseClient();
-      await supabase.auth.signOut();
+      await supabase.auth.signOut().catch(() => undefined);
       clearAuth();
-      await fetch("/api/auth/sync", { method: "DELETE" }).catch(
-        () => undefined,
-      );
       setMessage("Tài khoản đã được khóa và bạn đã được đăng xuất.");
       router.replace("/login");
     } catch (requestError) {

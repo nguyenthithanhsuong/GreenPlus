@@ -1,11 +1,9 @@
-"use client";
+import LazyScan from "../../frontend/scan/LazyScan";
+import { requireShipperPage } from "../../server/require-page-session";
 
-import dynamic from "next/dynamic";
+export const dynamic = "force-dynamic";
 
-const ScanScreen = dynamic(() => import("../../frontend/scan/Scan"), {
-  ssr: false,
-});
-
-export default function ScanPage() {
-  return <ScanScreen />;
+export default async function ScanPage() {
+  await requireShipperPage();
+  return <LazyScan />;
 }

@@ -118,11 +118,33 @@ enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
-# Uncomment to configure local storage buckets
-# [storage.buckets.images]
-# public = false
-# file_size_limit = "50MiB"
-# allowed_mime_types = ["image/png", "image/jpeg"]
+# Canonical GreenPlus local Storage bucket contract (used in the three apps).
+# supabase start/db reset creates these in the LOCAL stack. Hosted buckets are
+# checked READ-ONLY by CI and are NOT automatically created in production.
+[storage.buckets."Product-Image"]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+
+[storage.buckets."Category-Image"]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+
+[storage.buckets."User_Images"]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+
+[storage.buckets."Post-Attachment"]
+public = true
+file_size_limit = "50MiB"
+# GreenCreator/community upload supports both image and video.
+
+[storage.buckets."product-images"]
+public = false
+file_size_limit = "5MiB"
+# Legacy/debug signed-upload destination; verify necessity before production.
 # objects_path = "./images"
 
 # Allow connections via S3 compatible clients

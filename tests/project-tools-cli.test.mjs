@@ -10,12 +10,13 @@ const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const cli = resolve(root, 'scripts/project-tools.mjs');
 
 test('root command surface stays small without breaking CI aliases', () => {
-  assert.equal(Object.keys(pkg.scripts).length, 25);
+  assert.ok(Object.keys(pkg.scripts).length >= 25 && Object.keys(pkg.scripts).length <= 40,
+    'Root commands must remain bounded while adding explicit migration safety tools');
   assert.equal(pkg.scripts['dev:all'], 'turbo dev --ui=tui');
   assert.equal(pkg.scripts['dev:turbo'], 'turbo dev --ui=tui');
   assert.equal(pkg.scripts['dev:web'], 'npm run dev:all');
   assert.doesNotMatch(pkg.scripts['dev:all'], /concurrently|--ui=stream/);
-  for (const key of ['check-all','test:client','test:release:static','docker:three-tier:up','docker:three-tier:check','clean:zip','zip:source','maintain:restore']) {
+  for (const key of ['check-all','test:client','test:release:static','docker:three-tier:up','docker:three-tier:check','clean:zip','zip:source','maintain:restore','supabase:migrations:check','docker:three-tier:audit','docker:three-tier:stores']) {
     assert.equal(typeof pkg.scripts[key], 'string', `${key} must remain`);
   }
 });

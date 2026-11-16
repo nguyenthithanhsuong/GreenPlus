@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import OrderStats from "./OrderStats";
+import AiSupport from "../ai/AiSupport";
+import { MessageCircle, X } from "lucide-react";
 import OrderTable from "./OrderTable";
 import OrderDetailPanel from "./OrderDetailPanel";
 import DeliveryAssignDialog from "./DeliveryAssignDialog";
@@ -27,6 +29,7 @@ const toIsoDate = (date: Date): string => {
 const OrderManagement = () => {
   const router = useRouter();
   const [orders, setOrders] = useState<OrderListRow[]>([]);
+  const [chatOpen, setChatOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -317,6 +320,13 @@ const OrderManagement = () => {
         </button>
       }
     >
+      <button type="button" onClick={() => setChatOpen(true)} className="fixed bottom-6 right-6 z-30 inline-flex items-center gap-2 rounded-full bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-xl hover:bg-emerald-800" aria-label="Mở trò chuyện theo đơn"><MessageCircle size={20}/> Liên lạc theo đơn</button>
+      {chatOpen && <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setChatOpen(false); }}>
+        <aside role="dialog" aria-modal="true" aria-label="Trao đổi theo đơn" className="h-full w-full max-w-3xl overflow-y-auto bg-slate-50 p-4 shadow-2xl sm:p-6">
+          <div className="mb-4 flex justify-end"><button type="button" onClick={() => setChatOpen(false)} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm font-semibold"><X size={17}/> Đóng</button></div>
+          <AiSupport embedded />
+        </aside>
+      </div>}
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}

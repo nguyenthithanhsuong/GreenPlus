@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { signOutCustomerSession } from "@/lib/sign-out-customer";
 import {
   SCREEN_BACKGROUND_GRADIENT,
   SCREEN_CONTENT_PADDING_X,
@@ -135,6 +136,8 @@ export default function ProfileMenuPage() {
   const updateUser = useAuthStore((state) => state.updateUser);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [profile, setProfile] = useState<ProfileResult | null>(null);
+  const [logoutError, setLogoutError] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     if (!initialized || !isAuthenticated || !user?.user_id) {
@@ -185,14 +188,24 @@ export default function ProfileMenuPage() {
   const displayName = profile?.name ?? user?.name ?? "Người dùng";
   const displayAvatar = profile?.image_url ?? user?.image_url ?? "";
 
-  const handleMenuClick = (item: MenuItem) => {
-    if (item.destructive) {
-      clearAuth();
-      router.replace("/login");
+  const handleMenuClick = async (item: MenuItem) => {
+    if (!item.destructive) {
+      router.push(item.href);
       return;
     }
-
-    router.push(item.href);
+    if (signingOut) return;
+    setSigningOut(true);
+    setLogoutError("");
+    try {
+      await signOutCustomerSession();
+      clearAuth();
+      router.replace("/login");
+      router.refresh();
+    } catch (error) {
+      setLogoutError(error instanceof Error ? error.message : "Đăng xuất thất bại.");
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   return (
@@ -230,6 +243,7 @@ export default function ProfileMenuPage() {
             <p style={styles.heroText}>{displayName}</p>
           </section>
 
+          {logoutError ? <p role="alert" className="px-4 text-sm text-red-700">{logoutError}</p> : null}
           {menuItems.map((item) => (
             <button
               key={item.title}
@@ -238,7 +252,7 @@ export default function ProfileMenuPage() {
                 ...styles.menuCard,
                 ...(item.destructive ? styles.destructiveText : {}),
               }}
-              onClick={() => handleMenuClick(item)}
+              onClick={() => void handleMenuClick(item)}
             >
               <span>{item.title}</span>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">

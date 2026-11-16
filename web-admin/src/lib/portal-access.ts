@@ -14,23 +14,21 @@ export function asPortalRole(value: unknown): PortalRole | null {
 export const ROLE_PAGES: Record<PortalRole, readonly string[]> = {
   admin: [
     "/dashboard",
+    "/audit",
     "/users",
     "/roles",
     "/greencreators",
     "/settings",
     "/settings/stores",
+    "/system",
     "/settings/tenant-demo",
-    "/ai",
     "/ai/chat",
-    "/ai/alerts",
-    "/ai/complaints",
     "/ai/knowledge",
-    "/ai/promotions",
     "/ai/docker-preview",
-    "/ai/support",
   ],
   manager: [
     "/dashboard",
+    "/audit",
     "/users",
     "/suppliers",
     "/products",
@@ -86,7 +84,14 @@ export function canAccessApi(role: PortalRole, path: string, method: string) {
   const domain = "/" + path.replace(/^\/api\//, "").split("/")[0];
   if (domain === "/permissions" || domain === "/health") return true;
   if (domain === "/shipper") return false;
-  if (domain === "/ai" || domain === "/support") return true;
+  if (domain === "/ai") {
+    if (path === "/api/ai/health") return role === "admin";
+    return role !== "admin" || path.startsWith("/api/ai/chat") ||
+      path.startsWith("/api/ai/knowledge") || path.startsWith("/api/ai/docker-preview") || path === "/api/ai/health";
+  }
+  if (domain === "/support") return role !== "admin";
+  if (domain === "/activity") return method === "GET";
+  if (domain === "/audit") return (role === "admin" || role === "manager") && method === "GET";
   if (domain === "/tenant-demo") return role === "admin";
   if (domain === "/roles" || domain === "/stores")
     return role === "admin" || (method === "GET" && role === "manager");

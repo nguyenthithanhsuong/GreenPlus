@@ -69,7 +69,9 @@ export default function PlatformDashboard() {
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") void refresh(true);
     }, 30000);
-    return () => window.clearInterval(interval);
+    const manual = () => { void refresh(); };
+    window.addEventListener("greenplus:refresh-dashboard", manual);
+    return () => { window.clearInterval(interval); window.removeEventListener("greenplus:refresh-dashboard", manual); };
   }, [refresh]);
   if (loading && !stats)
     return (

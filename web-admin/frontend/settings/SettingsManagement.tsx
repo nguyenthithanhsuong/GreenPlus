@@ -1,8 +1,6 @@
-import StorageModeSetting from "./StorageModeSetting";
 import ProfileForm from "./ProfileForm";
 import SettingsNav from "./SettingsNav";
 import AdminShell from "../shared/AdminShell";
-import UserDebugPanel from "./UserDebugPanel";
 
 const SettingsManagement = () => {
   return (
@@ -11,12 +9,10 @@ const SettingsManagement = () => {
       description="Quản lý hồ sơ cá nhân, bảo mật và thông báo tài khoản."
       searchPlaceholder="Tìm kiếm nhanh..."
     >
-      {/* <UserDebugPanel /> */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        <SettingsNav />
+      <div className="mx-auto w-full max-w-4xl space-y-5">
         <ProfileForm />
+        <div className="rounded-2xl border border-slate-200 bg-white p-4"><SettingsNav /></div>
       </div>
-      <StorageModeSetting />
     </AdminShell>
   );
 };

@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import RefreshPageButton from "./RefreshPageButton";
 
 type AdminPageHeaderProps = {
   title: string;
@@ -19,9 +20,10 @@ export default function AdminPageHeader({
           <p className="text-gray-500 text-sm mt-1">{description}</p>
         ) : null}
       </div>
-      {actions ? (
-        <div className="flex items-center gap-3">{actions}</div>
-      ) : null}
+      <div className="flex items-center gap-3">
+        {actions}
+        <RefreshPageButton />
+      </div>
     </div>
   );
 }

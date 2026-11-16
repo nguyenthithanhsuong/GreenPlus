@@ -182,12 +182,12 @@ export async function getPermissionsForRole(roleRow: RoleRow | null) {
 
     if (!error && Array.isArray(data)) {
       for (const row of data ?? []) {
-        const permissions = row.permissions as { key?: string }[];
-
-        for (const permission of permissions ?? []) {
-          if (permission?.key) {
-            collected.add(permission.key);
-          }
+        // PostgREST embeds a many-to-one relationship as an object, not
+        // necessarily an array. Support both shapes for schema compatibility.
+        const relation = row.permissions as { key?: string } | { key?: string }[] | null;
+        const permissions = Array.isArray(relation) ? relation : relation ? [relation] : [];
+        for (const permission of permissions) {
+          if (permission?.key) collected.add(permission.key);
         }
       }
     }

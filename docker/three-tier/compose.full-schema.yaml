@@ -1,0 +1,70 @@
+# Additive PostgreSQL 17 application schema mirrors. These DO NOT replace the
+# existing PostgreSQL 16 sandbox volumes and have no published host ports.
+services:
+  full-shared-db:
+    image: postgres:17-alpine
+    profiles: [full-schema]
+    mem_limit: 768m
+    shm_size: 128m
+    stop_grace_period: 60s
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: greenplus_full_shared
+    volumes:
+      - full_shared_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d greenplus_full_shared"]
+      interval: 5s
+      timeout: 3s
+      retries: 18
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+  full-enterprise-a-db:
+    image: postgres:17-alpine
+    profiles: [full-schema]
+    mem_limit: 512m
+    shm_size: 128m
+    stop_grace_period: 60s
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: greenplus_full_enterprise_a
+    volumes:
+      - full_enterprise_a_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d greenplus_full_enterprise_a"]
+      interval: 5s
+      timeout: 3s
+      retries: 18
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+  full-enterprise-b-db:
+    image: postgres:17-alpine
+    profiles: [full-schema]
+    mem_limit: 512m
+    shm_size: 128m
+    stop_grace_period: 60s
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: greenplus_full_enterprise_b
+    volumes:
+      - full_enterprise_b_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d greenplus_full_enterprise_b"]
+      interval: 5s
+      timeout: 3s
+      retries: 18
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+volumes:
+  full_shared_data:
+    labels: { com.greenplus.tier: regular-and-pro, com.greenplus.data: postgres17-full-schema }
+  full_enterprise_a_data:
+    labels: { com.greenplus.tier: enterprise, com.greenplus.data: postgres17-full-schema }
+  full_enterprise_b_data:
+    labels: { com.greenplus.tier: enterprise, com.greenplus.data: postgres17-full-schema }

@@ -23,5 +23,6 @@ test('Admin settings UI uses a minimal accessible switch', () => {
   assert.match(ui, /Docker Local/);
   assert.match(ui, /role="switch"/);
   assert.doesNotMatch(ui, /Lưu ý:/);
-  assert.match(read('../web-admin/frontend/settings/SettingsManagement.tsx'), /<StorageModeSetting \/>/);
+  assert.match(read('../web-admin/src/app/system/page.tsx'), /<StorageModeSetting \/>/);
+  assert.doesNotMatch(read('../web-admin/frontend/settings/SettingsManagement.tsx'), /<StorageModeSetting \/>/);
 });

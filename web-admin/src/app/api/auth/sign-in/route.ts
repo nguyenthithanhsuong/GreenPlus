@@ -79,7 +79,7 @@ export const POST = withSentry(
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 ngày
+      maxAge: 60 * 60 * 8,
     });
 
     return response;

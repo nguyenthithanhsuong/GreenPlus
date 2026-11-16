@@ -7,6 +7,9 @@ import AdminShell from "../shared/AdminShell";
 import { usePermissions } from "@/lib/usePermissions";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import PriceStats from "./PriceStats";
+import AiOverview from "../ai/AiOverview";
+import AiPromotions from "../ai/AiPromotions";
+import CommerceTabs from "../shared/CommerceTabs";
 import PriceTable from "./PriceTable";
 import PriceDrawer, {
   BatchOption,
@@ -34,6 +37,7 @@ const emptyForm = (): PriceFormValues => ({
 
 const PriceManagement = () => {
   const { profile } = useCurrentUserProfile();
+  const [activeTab, setActiveTab] = useState("prices");
   const [items, setItems] = useState<PriceRow[]>([]);
   const [batchOptions, setBatchOptions] = useState<BatchOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -362,6 +366,16 @@ const PriceManagement = () => {
         </div>
       }
     >
+      <CommerceTabs current={activeTab} onChange={setActiveTab} tabs={[
+        { id: "prices", label: "Giá bán" },
+        ...((profile?.roleName ?? "").trim().toLowerCase() === "manager" ? [
+          { id: "forecast", label: "Dự báo & đề xuất AI" },
+          { id: "promotions", label: "Chương trình khuyến mãi" },
+        ] : []),
+      ]} />
+      {activeTab === "forecast" && (profile?.roleName ?? "").toLowerCase() === "manager" && <AiOverview embedded />}
+      {activeTab === "promotions" && (profile?.roleName ?? "").toLowerCase() === "manager" && <AiPromotions embedded />}
+      <div className={activeTab === "prices" ? "contents" : "hidden"}>
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -416,6 +430,7 @@ const PriceManagement = () => {
           void submitModeration();
         }}
       />
+    </div>
     </AdminShell>
   );
 };

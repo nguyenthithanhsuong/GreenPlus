@@ -5,6 +5,7 @@ import { Plus, RefreshCw, Search } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import RoleDrawer, { RoleFormValues } from "./RoleDrawer";
 import RoleGrid from "./RoleGrid";
+import PermissionMatrix from "./PermissionMatrix";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import type { RoleSummary } from "../../backend/modules/roles/role-management.types";
 import { roleSearchStrategy } from "../shared/searchStrategies";
@@ -246,6 +247,8 @@ const RoleManagement = () => {
             : "Chưa có role nào."
         }
       />
+
+      <PermissionMatrix />
 
       <ConfirmActionDialog
         open={Boolean(pendingDeleteRole)}

@@ -49,14 +49,30 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const isAuthenticated = useAuthStore((state) => Boolean(state.session));
   const initialized = useAuthStore((state) => state.initialized);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    if (initialized && isAuthenticated && isLogin) {
-      router.replace("/dashboard");
-    }
-  }, [initialized, isAuthenticated, isLogin, router]);
+    if (!initialized || !isAuthenticated || !isLogin) return;
+    const controller = new AbortController();
+    const check = async () => {
+      try {
+        const response = await fetch("/api/auth/session", {
+          cache: "no-store",
+          credentials: "same-origin",
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        if (response.ok) router.replace("/dashboard");
+        else if (response.status === 401 || response.status === 403) clearAuth();
+      } catch {
+        return;
+      }
+    };
+    void check();
+    return () => controller.abort();
+  }, [initialized, isAuthenticated, isLogin, router, clearAuth]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

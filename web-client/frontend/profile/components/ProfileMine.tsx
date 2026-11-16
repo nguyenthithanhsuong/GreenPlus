@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { signOutCustomerSession } from "@/lib/sign-out-customer";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   SCREEN_BACKGROUND_GRADIENT,
@@ -423,15 +424,16 @@ export default function ProfileMine() {
     setIsLoggingOut(true);
 
     try {
+      await signOutCustomerSession();
       const supabase = getSupabaseClient();
-      await supabase.auth.signOut();
-    } finally {
+      await supabase.auth.signOut().catch(() => undefined);
       clearAuth();
-      await fetch("/api/auth/sync", { method: "DELETE" }).catch(
-        () => undefined,
-      );
-      setIsLoggingOut(false);
       router.replace("/login");
+      router.refresh();
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : "Đăng xuất thất bại.");
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 

@@ -11,9 +11,11 @@ export function useAutoReload(
     };
     const timer = window.setInterval(run, interval);
     window.addEventListener("focus", run);
+    window.addEventListener("greenplus:data-updated", run);
     return () => {
       window.clearInterval(timer);
       window.removeEventListener("focus", run);
+      window.removeEventListener("greenplus:data-updated", run);
     };
   }, [reload, interval]);
 }

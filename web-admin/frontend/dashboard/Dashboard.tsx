@@ -8,6 +8,7 @@ import Charts from "./Charts";
 import StatCards from "./StatCards";
 import AdminShell from "../shared/AdminShell";
 import PlatformDashboard from "./PlatformDashboard";
+import StoreOverview from "./StoreOverview";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { asPortalRole } from "@/lib/portal-access";
 import { UserSummary } from "../../backend/modules/users/user-management.types";
@@ -35,6 +36,7 @@ const Dashboard = () => {
   const role = asPortalRole(
     useAuthStore((s) => s.user?.role_name ?? s.session?.role_name),
   );
+  const [adminView, setAdminView] = useState<"platform" | "store">("platform");
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [orders, setOrders] = useState<OrderListRow[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
@@ -118,7 +120,7 @@ const Dashboard = () => {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => void loadDashboardData()}
+            onClick={() => { if (role === "admin") window.dispatchEvent(new Event("greenplus:refresh-dashboard")); else void loadDashboardData(); }}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-60"
             disabled={loading}
           >
@@ -140,10 +142,16 @@ const Dashboard = () => {
         </div>
       ) : null}
 
-      {role ? <AiDashboardWidget role={role} /> : null}
+      {role && role !== "admin" ? <AiDashboardWidget role={role} /> : null}
 
       {role === "admin" ? (
-        <PlatformDashboard />
+        <div className="space-y-5">
+          <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3">
+            <button type="button" onClick={() => setAdminView("platform")} className={`rounded-xl px-4 py-2 text-sm font-semibold ${adminView === "platform" ? "bg-emerald-700 text-white" : "text-slate-600 hover:bg-emerald-50"}`}>Dashboard nền tảng</button>
+            <button type="button" onClick={() => setAdminView("store")} className={`rounded-xl px-4 py-2 text-sm font-semibold ${adminView === "store" ? "bg-emerald-700 text-white" : "text-slate-600 hover:bg-emerald-50"}`}>Dashboard từng cửa hàng</button>
+          </div>
+          {adminView === "platform" ? <PlatformDashboard /> : <StoreOverview />}
+        </div>
       ) : (
         <>
           <StatCards

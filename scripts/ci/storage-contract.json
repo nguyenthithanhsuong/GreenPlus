@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "policy": "read-only audit; bucket creation/deletion and data migration require manual approval",
+  "buckets": [
+    {
+      "name": "Product-Image",
+      "public": true,
+      "usedFor": [
+        "product image",
+        "promotion image"
+      ],
+      "required": true
+    },
+    {
+      "name": "Category-Image",
+      "public": true,
+      "usedFor": [
+        "category image"
+      ],
+      "required": true
+    },
+    {
+      "name": "User_Images",
+      "public": true,
+      "usedFor": [
+        "avatar/profile image"
+      ],
+      "required": true
+    },
+    {
+      "name": "Post-Attachment",
+      "public": true,
+      "usedFor": [
+        "GreenCreator/community content"
+      ],
+      "required": true
+    },
+    {
+      "name": "product-images",
+      "public": null,
+      "usedFor": [
+        "legacy signed uploads"
+      ],
+      "required": false
+    }
+  ],
+  "limits": {
+    "imageMaxBytes": 5242880,
+    "note": "Some routes validate MIME/size while legacy signed-upload route does not bind paths to store scope; audit before production."
+  },
+  "docker": {
+    "postgresVolumes": [
+      "shared_data",
+      "enterprise_a_data",
+      "enterprise_b_data"
+    ],
+    "objectStorageImplemented": false,
+    "explanation": "Docker 3-tier currently has no Supabase Storage-compatible API or object-storage backing; a postgres volume is not file storage."
+  }
+}

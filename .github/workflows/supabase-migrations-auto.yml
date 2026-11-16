@@ -1,0 +1,63 @@
+# Database-only deployment after successful, completed CI on the EXACT main commit.
+# Opt-in: GREENPLUS_SUPABASE_AUTODEPLOY=true and secrets in environment supabase-production.
+# Do not expose SUPABASE_ACCESS_TOKEN or DB credentials to PR workflows.
+name: Supabase Safe Migration Deploy
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: greenplus-supabase-production-db
+  cancel-in-progress: false
+jobs:
+  migrate:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository &&
+          vars.GREENPLUS_SUPABASE_AUTODEPLOY == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: supabase-production
+    env:
+      CI: 'true'
+      GITHUB_REF: refs/heads/main
+      GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
+      CI_VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+      GREENPLUS_SUPABASE_AUTODEPLOY: ${{ vars.GREENPLUS_SUPABASE_AUTODEPLOY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Refuse stale or changed main commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CI_VERIFIED_SHA" || { echo 'main advanced since CI: refusing migration'; exit 1; }
+          test -n "$SUPABASE_PROJECT_REF" && test -n "$SUPABASE_ACCESS_TOKEN" && test -n "$SUPABASE_DB_PASSWORD" || { echo 'Production Supabase secrets not configured'; exit 1; }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: supabase/setup-cli@v3
+        with:
+          version: v2.stable
+      - name: Verify immutable migrations and narrow auto-deploy SQL policy
+        run: node scripts/ci/supabase-migration-gate.mjs --static
+      - name: Read-only storage bucket inventory (no writes)
+        run: node scripts/ci/check-storage.mjs --live
+      - name: Link ONLY to configured production Supabase project
+        shell: bash
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+      - name: Verify remote migration prefix; dry-run and auto-push only safe pending SQL
+        run: node scripts/ci/supabase-migration-gate.mjs --apply

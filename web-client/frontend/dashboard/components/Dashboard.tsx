@@ -1,7 +1,7 @@
 "use client";
 
 import StoreSelector from "../../stores/StoreSelector";
-import { STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
+import { STORE_CHANGE_EVENT, selectedStoreId } from "@/lib/stores/store-selection";
 import { storeFetch } from "@/lib/stores/store-fetch";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
@@ -37,6 +37,16 @@ type ProductItem = {
   isAvailable: boolean;
   availableQuantity: number;
   canPurchase: boolean;
+};
+
+type ActivePromotion = {
+  id: string;
+  product_id: string;
+  product_name: string;
+  discount_type: string;
+  discount_value: number;
+  image_url: string | null;
+  end_at: string;
 };
 
 type ProductsResponse = {
@@ -411,6 +421,7 @@ const Dashboard = () => {
   const [brokenImageIds, setBrokenImageIds] = useState<Record<string, boolean>>(
     {},
   );
+  const [promotions, setPromotions] = useState<ActivePromotion[]>([]);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
@@ -448,6 +459,20 @@ const Dashboard = () => {
     window.addEventListener(STORE_CHANGE_EVENT, changed);
     return () => window.removeEventListener(STORE_CHANGE_EVENT, changed);
   }, []);
+  useEffect(() => {
+    const store = selectedStoreId();
+    if (!store) { setPromotions([]); return; }
+    const controller = new AbortController();
+    void fetch(`/api/promotions?storeId=${encodeURIComponent(store)}`, { cache: "no-store", signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error("Khuyến mãi chưa sẵn sàng");
+        return response.json() as Promise<{ items?: ActivePromotion[] }>;
+      })
+      .then(result => { if (!controller.signal.aborted) setPromotions(result.items ?? []); })
+      .catch(() => { if (!controller.signal.aborted) setPromotions([]); });
+    return () => controller.abort();
+  }, [storeRevision]);
+
   const handleAddToCart = async (productId: string) => {
     setCartActionMessage(null);
 
@@ -741,36 +766,21 @@ const Dashboard = () => {
 
           <section>
             <div style={styles.bannerScroller}>
-              <article style={styles.bannerCard}>
-                <div>
-                  <h2 style={styles.bannerTitle}>Rau quả tươi giảm giá sốc</h2>
-                  <span style={styles.bannerButton}>
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.5L21 8H6"
-                        stroke="#EAFBF0"
-                        strokeWidth="1.8"
-                      />
-                      <circle cx="10" cy="20" r="1.2" fill="#EAFBF0" />
-                      <circle cx="17" cy="20" r="1.2" fill="#EAFBF0" />
-                    </svg>
-                    Mua ngay
-                  </span>
-                </div>
-                <div style={styles.bannerImageWrap}>
-                  <img
-                    src="https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=400&q=80"
-                    alt="Khuyến mãi rau củ"
-                    style={styles.bannerImage}
-                  />
-                </div>
-              </article>
+              {promotions.length ? promotions.slice(0, 5).map(promotion => (
+                <Link href="/ai/promotions" key={promotion.id} style={{ ...styles.bannerCard, textDecoration: "none", minWidth: "100%" }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 12, color: "#EAFBF0", fontWeight: 700 }}>ƯU ĐÃI ĐANG ÁP DỤNG</p>
+                    <h2 style={styles.bannerTitle}>{promotion.product_name}</h2>
+                    <span style={styles.bannerButton}>{promotion.discount_type === "percentage" ? `Giảm ${promotion.discount_value}%` : `Giảm ${promotion.discount_value.toLocaleString("vi-VN")}đ`} · Xem ưu đãi</span>
+                  </div>
+                  {promotion.image_url && <div style={styles.bannerImageWrap}><img src={promotion.image_url} alt={`Khuyến mãi ${promotion.product_name}`} style={styles.bannerImage}/></div>}
+                </Link>
+              )) : (
+                <Link href="/ai/promotions" style={{ ...styles.bannerCard, textDecoration: "none", minWidth: "100%" }}>
+                  <div><h2 style={styles.bannerTitle}>Khám phá ưu đãi GreenPlus</h2><span style={styles.bannerButton}>Xem chương trình đang áp dụng</span></div>
+                  {products.find(item => item.imageUrl)?.imageUrl && <div style={styles.bannerImageWrap}><img src={products.find(item => item.imageUrl)!.imageUrl!} alt="Sản phẩm tại cửa hàng" style={styles.bannerImage}/></div>}
+                </Link>
+              )}
             </div>
             <div style={styles.sliderDots}>
               <span style={styles.dot} />

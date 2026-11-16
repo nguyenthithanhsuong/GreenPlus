@@ -22,6 +22,7 @@ export default function AdminShell({
   fullWidth = false,
 }: AdminShellProps) {
   return (
+    <PageGuard>
     <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
       <div className="hidden lg:block">
         <AdminSidebar />
@@ -47,10 +48,11 @@ export default function AdminShell({
               description={description}
               actions={pageActions}
             />
-            <PageGuard>{children}</PageGuard>
+            {children}
           </div>
         </main>
       </div>
     </div>
+    </PageGuard>
   );
 }

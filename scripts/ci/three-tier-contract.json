@@ -1,0 +1,57 @@
+{
+  "mode": "docker-3-tier-local-sandbox",
+  "productionCutoverAllowed": false,
+  "tiers": [
+    {
+      "tier": "regular",
+      "isolation": "shared PostgreSQL / public schema / store_id row scope",
+      "database": "greenplus_demo",
+      "service": "shared-db",
+      "schema": "public",
+      "slot": "shared",
+      "capacity": "unbounded demo; 2 seeded stores",
+      "seedStores": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "name": "Regular A"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "name": "Regular B"
+        }
+      ]
+    },
+    {
+      "tier": "pro",
+      "isolation": "dedicated schema within shared PostgreSQL",
+      "database": "greenplus_demo",
+      "service": "shared-db",
+      "schemas": [
+        "pro_a",
+        "pro_b"
+      ],
+      "capacity": 2,
+      "seedStores": []
+    },
+    {
+      "tier": "enterprise",
+      "isolation": "dedicated PostgreSQL database, separate volume",
+      "databases": [
+        {
+          "service": "enterprise-a-db",
+          "name": "enterprise_a",
+          "volume": "enterprise_a_data",
+          "slot": "enterprise_a"
+        },
+        {
+          "service": "enterprise-b-db",
+          "name": "enterprise_b",
+          "volume": "enterprise_b_data",
+          "slot": "enterprise_b"
+        }
+      ],
+      "capacity": 2,
+      "seedStores": []
+    }
+  ]
+}

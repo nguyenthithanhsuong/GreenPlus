@@ -35,10 +35,7 @@ export const POST = withSentry(async (request: Request) => {
     ? await new AuthService().verifySession(accessToken)
     : null;
 
-  if (
-    !verifiedUser ||
-    !["admin", "manager", "employee"].includes(verifiedUser.role)
-  ) {
+  if (!verifiedUser || verifiedUser.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -61,10 +58,17 @@ export const POST = withSentry(async (request: Request) => {
     );
   }
 
+  // Diagnostic endpoint uses service-role credentials, so it must never be
+  // available to store-scoped Manager/Employee sessions. These users have no
+  // validated store_id on this auth payload and could otherwise mint tokens
+  // for another store's object path.
   if (
     !ALLOWED_BUCKETS.has(bucket) ||
-    path.includes("..") ||
-    path.startsWith("/")
+    path.length > 240 ||
+    !/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(path) ||
+    path.split("/").some((segment) =>
+      !segment || segment === "." || segment === "..",
+    )
   ) {
     return NextResponse.json(
       { error: "Invalid upload destination" },

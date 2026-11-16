@@ -1,7 +1,17 @@
 name: greenplus-three-tier
+# Resource limits + bounded logs. Local sandbox only, NOT hardened production Supabase.
+x-greenplus-logging: &greenplus-logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
 services:
   shared-db:
     image: postgres:16-alpine
+    mem_limit: 768m
+    shm_size: 128m
+    stop_grace_period: 30s
+    logging: *greenplus-logging
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
@@ -16,6 +26,10 @@ services:
       retries: 12
   enterprise-a-db:
     image: postgres:16-alpine
+    mem_limit: 512m
+    shm_size: 128m
+    stop_grace_period: 30s
+    logging: *greenplus-logging
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
@@ -30,6 +44,10 @@ services:
       retries: 12
   enterprise-b-db:
     image: postgres:16-alpine
+    mem_limit: 512m
+    shm_size: 128m
+    stop_grace_period: 30s
+    logging: *greenplus-logging
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
@@ -46,6 +64,8 @@ services:
   # PostgREST no longer connects as the PostgreSQL superuser.
   shared-rest-auth:
     image: postgres:16-alpine
+    logging: *greenplus-logging
+    mem_limit: 256m
     environment:
       PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
       DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
@@ -63,6 +83,8 @@ services:
     restart: "no"
   enterprise-a-rest-auth:
     image: postgres:16-alpine
+    logging: *greenplus-logging
+    mem_limit: 256m
     environment:
       PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
       DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
@@ -80,6 +102,8 @@ services:
     restart: "no"
   enterprise-b-rest-auth:
     image: postgres:16-alpine
+    logging: *greenplus-logging
+    mem_limit: 256m
     environment:
       PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
       DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
@@ -97,6 +121,8 @@ services:
     restart: "no"
   shared-rest:
     image: postgrest/postgrest:v12.2.8
+    logging: *greenplus-logging
+    mem_limit: 256m
     environment:
       PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@shared-db:5432/greenplus_demo
       PGRST_DB_SCHEMAS: public,pro_a,pro_b
@@ -105,6 +131,8 @@ services:
       shared-rest-auth: { condition: service_completed_successfully }
   enterprise-a-rest:
     image: postgrest/postgrest:v12.2.8
+    logging: *greenplus-logging
+    mem_limit: 256m
     environment:
       PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@enterprise-a-db:5432/enterprise_a
       PGRST_DB_SCHEMAS: public
@@ -113,6 +141,8 @@ services:
       enterprise-a-rest-auth: { condition: service_completed_successfully }
   enterprise-b-rest:
     image: postgrest/postgrest:v12.2.8
+    logging: *greenplus-logging
+    mem_limit: 256m
     environment:
       PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@enterprise-b-db:5432/enterprise_b
       PGRST_DB_SCHEMAS: public
@@ -120,6 +150,8 @@ services:
     depends_on:
       enterprise-b-rest-auth: { condition: service_completed_successfully }
   gateway:
+    logging: *greenplus-logging
+    mem_limit: 256m
     build:
       context: ../..
       dockerfile: docker/three-tier/gateway/Dockerfile
@@ -143,5 +175,14 @@ services:
     restart: unless-stopped
 volumes:
   shared_data:
+    labels:
+      com.greenplus.tier: regular-and-pro
+      com.greenplus.data: postgres
   enterprise_a_data:
+    labels:
+      com.greenplus.tier: enterprise
+      com.greenplus.data: postgres
   enterprise_b_data:
+    labels:
+      com.greenplus.tier: enterprise
+      com.greenplus.data: postgres

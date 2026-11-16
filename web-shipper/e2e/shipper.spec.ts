@@ -71,3 +71,11 @@ test("sign-in rejects invalid fields without creating a session", async ({ reque
   expect(response.status()).toBe(400);
   expect(response.headers()["set-cookie"] ?? "").not.toContain("gp_shipper_session=");
 });
+
+test("unauthenticated shipper pages redirect on the server", async ({ request }) => {
+  for (const pathname of ["/", "/profile", "/scan", "/support", "/ai/chat"]) {
+    const response = await request.get(pathname, { maxRedirects: 0 });
+    expect([307, 308]).toContain(response.status());
+    expect(new URL(response.headers()["location"], "http://127.0.0.1:3002").pathname).toBe("/login");
+  }
+});

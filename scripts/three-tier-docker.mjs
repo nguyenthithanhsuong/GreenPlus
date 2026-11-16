@@ -120,6 +120,16 @@ try {
     });
     if (migration.error) throw new Error(`Commerce migration process failed: ${migration.error.message}`);
     if (migration.status !== 0) throw new Error('Commerce SQL migration/verification failed. See errors above; do not reset volumes.');
+    const parity = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), 'repair-three-tier-parity.mjs')], {
+      cwd: resolve(root, '../..'), encoding: 'utf8', stdio: 'inherit', timeout: 900000,
+    });
+    if (parity.error || parity.status !== 0) throw new Error('Docker RBAC/Audit/Promotions SQL 005 migration failed. Existing volumes were not removed.');
+    // Mirror the FULL canonical Supabase 0001–0019 application SQL into fresh PG17
+    // tier-specific volumes. This never upgrades or rewrites legacy PG16 data.
+    const canonical = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), 'three-tier-full-schema.mjs')], {
+      cwd: resolve(root, '../..'), encoding: 'utf8', stdio: 'inherit', timeout: 1500000,
+    });
+    if (canonical.error || canonical.status !== 0) throw new Error('Canonical PostgreSQL17 0001–0019 migration failed. Legacy volumes preserved; investigate before retrying.');
     verifyPostgrestRole();
     await smoke();
     // Prepare the NEXT workspace's actual env file; a root .env.local alone is
@@ -141,6 +151,14 @@ try {
       cwd: resolve(root, '../..'), encoding:'utf8', stdio:'inherit', timeout: 180000,
     });
     if (verification.error || verification.status !== 0) throw new Error('Commerce RPC verification failed. Run node scripts/repair-three-tier-commerce.mjs to repair without deleting volumes.');
+    const parity = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), 'repair-three-tier-parity.mjs'), '--check'], {
+      cwd: resolve(root, '../..'), encoding: 'utf8', stdio: 'inherit', timeout: 180000,
+    });
+    if (parity.error || parity.status !== 0) throw new Error('Docker RBAC/Audit/Promotions SQL 005 verification failed. Run npm run docker:three-tier:migrate after reviewing a backup.');
+    const canonical = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), 'three-tier-full-schema.mjs'), '--check'], {
+      cwd: resolve(root, '../..'), encoding: 'utf8', stdio: 'inherit', timeout: 300000,
+    });
+    if (canonical.error || canonical.status !== 0) throw new Error('Canonical PostgreSQL17 migration verification failed. Run npm run docker:three-tier:full-migrate.');
     verifyPostgrestRole();
     await smoke();
   }

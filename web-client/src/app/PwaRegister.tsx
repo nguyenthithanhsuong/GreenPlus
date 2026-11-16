@@ -48,6 +48,7 @@ export default function PwaRegister() {
   const online = useSyncExternalStore(subscribeOnline, getOnline, getServerOnline);
   const [updateReady, setUpdateReady] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [confirmInstall, setConfirmInstall] = useState(false);
 
   useEffect(() => {
     const handlePrompt = (event: Event) => {
@@ -58,6 +59,7 @@ export default function PwaRegister() {
     const handleInstalled = () => {
       installPrompt.current = null;
       setCanInstall(false);
+      setConfirmInstall(false);
       setInstalledByEvent(true);
     };
     const onControllerChange = () => {
@@ -163,11 +165,19 @@ export default function PwaRegister() {
   return (
     <div className="fixed bottom-20 right-3 z-[9999] flex max-w-[calc(100vw-1.5rem)] items-center gap-2 rounded-xl bg-white p-2 shadow-lg ring-1 ring-emerald-200">
       {canInstall ? (
-        <button type="button" onClick={() => void install()} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" aria-label="Cài GreenPlus thành ứng dụng">Cài GreenPlus</button>
+        <button type="button" onClick={() => setConfirmInstall(true)} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-700 to-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600" aria-label="Tải và cài GreenPlus thành ứng dụng"><span aria-hidden="true" className="text-lg leading-none">⬇</span> Cài GreenPlus</button>
       ) : (
         <a href="/install" className="rounded-lg px-2 py-2 text-sm font-semibold text-emerald-800">Hướng dẫn cài ứng dụng</a>
       )}
       <button type="button" onClick={() => setDismissed(true)} className="rounded-lg px-2 py-2 text-sm text-slate-500" aria-label="Ẩn lời nhắc cài ứng dụng">Đóng</button>
+      {confirmInstall && <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/45 p-4" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setConfirmInstall(false); }}>
+        <div role="dialog" aria-modal="true" aria-labelledby="greenplus-install-title" className="w-full max-w-sm rounded-3xl bg-white p-6 text-slate-900 shadow-2xl">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-2xl text-emerald-700" aria-hidden="true">⬇</div>
+          <h2 id="greenplus-install-title" className="text-xl font-bold">Cài GreenPlus?</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">Thêm GreenPlus vào thiết bị để truy cập nhanh như một ứng dụng. Việc cài đặt sẽ do trình duyệt xác nhận.</p>
+          <div className="mt-6 flex gap-3"><button type="button" onClick={() => setConfirmInstall(false)} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold">Để sau</button><button type="button" onClick={() => { setConfirmInstall(false); void install(); }} className="flex-1 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white">Xác nhận cài</button></div>
+        </div>
+      </div>}
     </div>
   );
 }

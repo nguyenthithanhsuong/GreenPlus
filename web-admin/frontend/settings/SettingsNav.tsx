@@ -1,38 +1,16 @@
 "use client";
 
 import React from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { Building2, Bell, LogOut, User } from "lucide-react";
+
+import { LogOut } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient";
 import { useAuthStore } from "../../src/lib/stores/authStore";
-import { asPortalRole } from "@/lib/portal-access";
-import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
+
 
 const SettingsNav = () => {
-  const router = useRouter();
-  const pathname = usePathname();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
-  const role = asPortalRole(
-    useAuthStore((s) => s.user?.role_name ?? s.session?.role_name),
-  );
-  const { profile } = useCurrentUserProfile();
-
-  const goTo = (href: string) => {
-    router.push(href);
-  };
-
-  const getItemClassName = (isActive: boolean) => {
-    return `flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors text-left ${
-      isActive
-        ? "bg-emerald-50 text-[#059669]"
-        : "text-gray-600 hover:bg-gray-100"
-    }`;
-  };
-
-  const isExactOrNestedPath = (basePath: string) => {
-    return pathname === basePath || pathname.startsWith(`${basePath}/`);
-  };
+  const [logoutError, setLogoutError] = React.useState("");
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -41,53 +19,27 @@ const SettingsNav = () => {
 
     setIsLoggingOut(true);
 
+    setLogoutError("");
     try {
-      await supabase.auth.signOut();
-    } finally {
+      const response = await fetch("/api/auth/sign-out", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Không thể kết thúc phiên đăng nhập.");
+      await supabase.auth.signOut().catch(() => undefined);
       clearAuth();
-      await fetch("/api/auth/sync?portal=1", { method: "DELETE" }).catch(
-        () => undefined,
-      );
-      setIsLoggingOut(false);
       window.location.replace("/login");
+    } catch (error) {
+      setLogoutError(error instanceof Error ? error.message : "Đăng xuất thất bại.");
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
   return (
-    <div className="w-full lg:w-64 shrink-0 flex flex-col gap-2">
-      <button
-        type="button"
-        onClick={() => goTo("/settings")}
-        className={getItemClassName(pathname === "/settings")}
-      >
-        <User className="w-4 h-4" />
-        Hồ sơ cá nhân
-      </button>
-
-      {role === "manager" && (
-        <button
-          type="button"
-          onClick={() => goTo("/settings/store")}
-          className={getItemClassName(isExactOrNestedPath("/settings/store"))}
-        >
-          <Building2 className="w-4 h-4" />
-          Cửa hàng của tôi
-        </button>
-      )}
-      {}
-      {/* {role === "admin" && (
-        <button
-          type="button"
-          onClick={() => goTo("/settings/stores")}
-          className={getItemClassName(isExactOrNestedPath("/settings/stores"))}
-        >
-          <Building2 className="w-4 h-4" />
-          Các cửa hàng
-        </button>
-      )} */}
-
-      <div className="my-2 border-t border-gray-200"></div>
-
+    <div className="w-full">
+      {logoutError ? <p role="alert" className="px-4 text-sm text-red-700">{logoutError}</p> : null}
       <button
         type="button"
         onClick={handleLogout}

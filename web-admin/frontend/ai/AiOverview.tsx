@@ -9,7 +9,7 @@ import { AiNotice,aiFetch,panel,primary,secondary,postJson } from "./ui";
 type Overview={forecasts:number;lowConfidence:number;alerts:number;alertTypes:{type:string;count:number}[];suggestions:number;pending:number;approved:number;complaints:number;knowledgeEntries:number;trend:{time:string;value:number}[];partial:boolean};
 type Suggestion={id:string;product_id:string;status:string;reason:string;suggested_discount_pct:number;expected_sell_through:number|null};
 type Forecast={id:string;product_id:string;batch_id:string|null;confidence:string;model_version:string;predicted_daily_units:number;available:number;predicted_stockout_date:string|null};
-export default function AiOverview() {
+export default function AiOverview({ embedded = false }: { embedded?: boolean }) {
   const role=useAuthStore((state)=>state.user?.role_name??state.session?.role_name)?.toLowerCase();
   const manager=role==="manager";
   const [storeId,setStoreId]=useState("");
@@ -41,7 +41,7 @@ export default function AiOverview() {
     finally{setBusy(false);}
   };
   const max=Math.max(1,...(overview?.alertTypes??[]).map((item)=>item.count));
-  return <AdminShell title="AI tồn kho & khuyến mãi" description="Dự báo có đánh giá độ tin cậy; mọi khuyến mãi phải do Manager duyệt." pageActions={<button className={secondary} onClick={()=>void reload()}><RefreshCcw size={16} className="mr-2 inline"/>Làm mới</button>}>
+  const content = <><button type="button" className={secondary} onClick={()=>void reload()}><RefreshCcw size={16} className="mr-2 inline"/>Làm mới</button>
     {role==="admin"?<div className={panel}><label htmlFor="ai-store" className="mb-2 block text-sm font-semibold">Cửa hàng cần xem</label><select id="ai-store" className="rounded-xl border p-2" value={storeId} onChange={e=>setStoreId(e.target.value)}><option value="">Chọn cửa hàng</option>{stores.map((item)=><option key={item.store_id} value={item.store_id}>{item.name}</option>)}</select></div>:null}
     {error?<AiNotice kind="error">{error}</AiNotice>:null}{notice?<AiNotice>{notice}</AiNotice>:null}
     {overview?<div className="grid gap-4 md:grid-cols-4">{[
@@ -60,5 +60,6 @@ export default function AiOverview() {
       </div></section>
     <section className={panel}><h2 className="mb-4 text-lg font-bold">Đề xuất khuyến mãi</h2><div className="space-y-3">{suggestions.length?suggestions.slice(0,12).map(item=><article key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 p-3"><div><p className="font-semibold">{item.suggested_discount_pct}% — {item.status}</p><p className="max-w-xl text-sm text-slate-600">{item.reason}</p><p className="text-xs text-slate-400">{item.product_id}</p></div>{manager&&item.status==="pending"?<div className="flex flex-wrap items-center gap-2"><label className="text-xs text-slate-500">Mức giảm duyệt (%)<input type="number" min={1} max={50} step={1} className="ml-2 w-20 rounded-lg border border-slate-200 p-2" value={customDiscount[item.id]??String(item.suggested_discount_pct)} onChange={event=>setCustomDiscount(current=>({...current,[item.id]:event.target.value}))}/></label><button disabled={busy||!Number(customDiscount[item.id]??item.suggested_discount_pct)} className={primary} onClick={()=>void action(`/api/ai/suggestions/${item.id}/decision`,{storeId:storeId||undefined,decision:"accepted",discount:Number(customDiscount[item.id]??item.suggested_discount_pct)})}>Duyệt</button><button disabled={busy} className={secondary} onClick={()=>void action(`/api/ai/suggestions/${item.id}/decision`,{storeId:storeId||undefined,decision:"rejected"})}>Từ chối</button></div>:null}</article>):<p className="text-sm text-slate-500">Chưa có đề xuất.</p>}</div></section>
     <section className={panel}><h2 className="mb-4 text-lg font-bold">Dự báo gần đây</h2><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b text-slate-500"><th className="p-2">Sản phẩm</th><th className="p-2">Tồn</th><th className="p-2">Nhu cầu/ngày</th><th className="p-2">Hết hàng dự kiến</th><th className="p-2">Độ tin cậy</th></tr></thead><tbody>{forecasts.slice(0,20).map((row)=><tr key={row.id} className="border-b border-slate-100"><td className="p-2">{row.product_id.slice(0,8)}</td><td className="p-2">{row.available}</td><td className="p-2">{Number(row.predicted_daily_units).toFixed(1)}</td><td className="p-2">{row.predicted_stockout_date??"Chưa đủ dữ liệu"}</td><td className="p-2">{row.confidence}</td></tr>)}</tbody></table></div></section>
-  </AdminShell>;
+  </>;
+  return embedded ? content : <AdminShell title="AI tồn kho & khuyến mãi" description="Dự báo có đánh giá độ tin cậy; mọi khuyến mãi phải do Manager duyệt.">{content}</AdminShell>;
 }

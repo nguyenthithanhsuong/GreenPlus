@@ -1,0 +1,81 @@
+{
+  "note": "Source migration checksums, reviewed for Docker PostgreSQL 17 DDL mirror only. Do not update automatically.",
+  "migrations": [
+    {
+      "name": "0001_baseline_greenplus.sql",
+      "sha256": "6aeb83366eb0858be64c4014c3c5e95e365952225ebcedd4a152c635db4ca618"
+    },
+    {
+      "name": "0002_rls_improved_greenplus.sql",
+      "sha256": "7378904ae9e55b33bf91b3d2ec0f75c0d8508982bdb4518423a776ba44d50522"
+    },
+    {
+      "name": "0003_align_runtime_status_constraints.sql",
+      "sha256": "505750ca4ca2dbaf132596b686ba2126f8f3941e6082571f4a3e8dde5a59baad"
+    },
+    {
+      "name": "0004_create_tenant_core.sql",
+      "sha256": "53dfd848a828bce1d324d2d86b8bf6e1b16ac7b20ddddfbe4e550dbb35ab0a6a"
+    },
+    {
+      "name": "0005_add_store_scope.sql",
+      "sha256": "d279ae424afec57a7360ac93d4668ce3f1d41622f9cb8db2e79d3156412f16ea"
+    },
+    {
+      "name": "0006_backfill_existing_store.sql",
+      "sha256": "1c37a90c64fdc131595c6ec1a2a046bc8d3342883b4228fa56acadca5849a3f7"
+    },
+    {
+      "name": "0007_add_nullable_store_fks.sql",
+      "sha256": "b7fd30c83d2d74c31385bfa1f193100fa703124f16565c1c14da92f4a725dce7"
+    },
+    {
+      "name": "0008_protect_new_tenant_tables.sql",
+      "sha256": "8103a349effc0739d478ed340c835948564fec90d5106f4281c7f24f51f5ec43"
+    },
+    {
+      "name": "0009_features_v2.sql",
+      "sha256": "eda7bca7f40f2cfefe8ba4fcb71cfaed2aa8c97f8de2c397eda8f0f1beb12ab9"
+    },
+    {
+      "name": "0010_transition_diagnostics.sql",
+      "sha256": "f475662ba4b456c4e9f819017b760c0e6d568a277e6c5068098d1d9365a60102"
+    },
+    {
+      "name": "0011_sync_manager_assignment.sql",
+      "sha256": "a1acce5c8cf223d026d351317792691a82b0901b811f3ceb71079446f0f723a7"
+    },
+    {
+      "name": "0012_verified_delivery_coordinates.sql",
+      "sha256": "931563c26ab007fc3320e8847a8dd9bd4659d39882fa04f5ee39eaa3e7f59481"
+    },
+    {
+      "name": "0013_checkout_cart_atomic.sql",
+      "sha256": "5e1739d4d0a0ae11e82132f7214926105039af1d229f204b8e17555a1f89ebfd"
+    },
+    {
+      "name": "0014_complete_order_on_delivery.sql",
+      "sha256": "ce32b03a8571d99eee7de0c8b724de303d2601fce451f1e5ed9eecb913aad3b2"
+    },
+    {
+      "name": "0015_tenant_storage_registry.sql",
+      "sha256": "7fdbb07b6f4835491578825a73f8576a9c463214b2b84a9a91e206e5a1a2c251"
+    },
+    {
+      "name": "0016_ai_assist_and_communications.sql",
+      "sha256": "62b6f0e82dcf17363aa19c5f34f2bae60509aba245227f736ce6f1acb6c5a879"
+    },
+    {
+      "name": "0017_checkout_approved_promotions.sql",
+      "sha256": "692223012c33746fc7a52c4b48c32dd80ebb2ac63b5b39b88aec5e0f248e7321"
+    },
+    {
+      "name": "0018_manual_promotions_audit.sql",
+      "sha256": "f26e7198c0597d5bae685269de7fff843cc9e5c84c41740e4874f41395490b66"
+    },
+    {
+      "name": "0019_rbac_audit_foundation.sql",
+      "sha256": "58f81dce58519aa18aef1c65ef463e484a9d39330696f5f9daf3646ac67646f3"
+    }
+  ]
+}

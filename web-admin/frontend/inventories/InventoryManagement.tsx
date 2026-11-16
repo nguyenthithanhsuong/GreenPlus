@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import InventoryStats from "./InventoryStats";
+import AiAlerts from "../ai/AiAlerts";
 import InventoryTable from "./InventoryTable";
 import InventoryTransactionTable from "./InventoryTransactionTable";
 import InventoryDrawer, {
@@ -37,7 +38,7 @@ const InventoryManagement = () => {
   const [drawerError, setDrawerError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<InventoryRow | null>(null);
-  const [viewMode, setViewMode] = useState<"inventory" | "transactions">(
+  const [viewMode, setViewMode] = useState<"inventory" | "transactions" | "alerts">(
     "inventory",
   );
 
@@ -316,6 +317,7 @@ const InventoryManagement = () => {
         </div>
       }
     >
+      {viewMode === "alerts" && <AiAlerts embedded />}
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -345,8 +347,12 @@ const InventoryManagement = () => {
         >
           Lịch sử giao dịch
         </button>
+        <button type="button" onClick={() => setViewMode("alerts")}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === "alerts" ? "bg-emerald-600 text-white" : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}>
+          Cảnh báo tồn kho
+        </button>
       </div>
-      <InventoryStats {...stats} />
+      {viewMode !== "alerts" && <InventoryStats {...stats} />}
       {viewMode === "inventory" ? (
         <InventoryTable
           items={filteredItems}
@@ -357,14 +363,14 @@ const InventoryManagement = () => {
           onUpdate={openEditDrawer}
           onDelete={openDeleteDrawer}
         />
-      ) : (
+      ) : viewMode === "transactions" ? (
         <InventoryTransactionTable
           items={filteredTransactions}
           loading={transactionsLoading}
           searchQuery={transactionSearchQuery}
           onSearchQueryChange={setTransactionSearchQuery}
         />
-      )}
+      ) : null}
 
       <InventoryDrawer
         isOpen={drawerOpen}

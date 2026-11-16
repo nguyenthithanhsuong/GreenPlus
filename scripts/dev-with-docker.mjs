@@ -1,5 +1,6 @@
-/** Start the local Docker sandbox once, then run the existing three-web dev workflow.
- * No database reset or automatic migration occurs when the sandbox is already ready.
+/** Local dev workflow: read-only Supabase checks, reconcile Docker sandbox, verify and launch 3 web apps.
+ * `npm run dev:all` & `npm run dev` use this flow; `npm run dev:web` bypasses Docker.
+ * No remote Supabase SQL push, PostgreSQL major upgrade, volume reset or production cutover.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
@@ -7,93 +8,66 @@ import { fileURLToPath } from 'node:url';
 import { connectLocalAdmin } from './three-tier-connect-admin.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const composeDir = resolve(projectRoot, 'docker/three-tier');
-const gateway = 'http://127.0.0.1:4100/ready';
 
-export function dockerStartStrategy({ ready, hasGatewayContainer }) {
-  if (ready && hasGatewayContainer) return 'reuse';
-  return hasGatewayContainer ? 'resume' : 'bootstrap';
+export function devAllSteps({ dockerUpdate = true, requireParity = false } = {}) {
+  return [
+    { script: 'scripts/ci/dev-supabase-compatibility.mjs', args: [] },
+    { script: 'scripts/three-tier-docker.mjs', args: [dockerUpdate ? 'up' : 'check'] },
+    ...(dockerUpdate ? [] : [{ script: 'scripts/three-tier-full-schema.mjs', args: ['--check'] }]),
+    ...(dockerUpdate ? [{ script: 'scripts/three-tier-docker.mjs', args: ['check'] }] : []),
+    { script: 'scripts/ci/three-tier-parity-audit.mjs', args: requireParity ? ['--require-full-parity'] : [] },
+    { script: 'scripts/ci/three-tier-store-inventory.mjs', args: [] },
+  ];
 }
 
-function docker(args, timeout = 120000) {
-  const result = spawnSync('docker', ['compose', '--project-directory', composeDir, ...args], {
-    cwd: composeDir, encoding: 'utf8', timeout, windowsHide: true,
+function runStep({ script, args }, index, total) {
+  console.log(`[GreenPlus] Preflight ${index + 1}/${total}: ${script} ${args.join(' ')}`);
+  if (script === 'scripts/three-tier-docker.mjs' || script === 'scripts/three-tier-full-schema.mjs') {
+    // Check before Docker bootstrap generates any local secrets or changes volumes.
+    const docker = spawnSync('docker', ['version'], { cwd: projectRoot, encoding: 'utf8', timeout: 30000, windowsHide: true });
+    if (docker.error || docker.status !== 0)
+      throw Error('Docker Desktop/CLI is not ready. Start Docker Desktop and retry; no Docker migration was attempted.');
+  }
+  const timeout = (script === 'scripts/three-tier-docker.mjs' && args[0] === 'up') || (script === 'scripts/three-tier-full-schema.mjs' && !args.includes('--check')) ? 1500000 : 240000;
+  const result = spawnSync(process.execPath, [resolve(projectRoot, script), ...args], {
+    cwd: projectRoot, stdio: 'inherit', timeout, windowsHide: true,
   });
-  if (result.error) {
-    const reason = result.error.code === 'ENOENT' ? 'Docker CLI không có trong PATH.'
-      : result.error.code === 'ETIMEDOUT' ? 'Docker Desktop phản hồi quá chậm.'
-      : result.error.message;
-    throw new Error(`${reason} Hãy mở Docker Desktop, hoặc chạy npm run dev:web nếu chỉ cần web.`);
-  }
-  if (result.status !== 0) {
-    throw new Error(`Docker Compose thất bại: ${(result.stderr || result.stdout || '').trim()}\nKiểm tra Docker Desktop hoặc chạy npm run docker:three-tier:up để sửa cấu hình.`);
-  }
-  return (result.stdout || '').trim();
-}
-
-async function gatewayReady() {
-  try {
-    const response = await fetch(gateway, { signal: AbortSignal.timeout(3500) });
-    const data = await response.json();
-    return response.ok && data.status === 'ready';
-  } catch { return false; }
-}
-
-async function ensureDocker() {
-  docker(['version'], 30000);
-  // Checking the port alone is insufficient: ensure the gateway belongs to our Compose project.
-  const existing = docker(['ps', '--all', '--services'], 30000).split(/\r?\n/);
-  const hasGatewayContainer = existing.includes('gateway');
-  const strategy = dockerStartStrategy({ ready: await gatewayReady(), hasGatewayContainer });
-  if (strategy === 'reuse') {
-    console.log('[GreenPlus] Docker gateway đã sẵn sàng; không rebuild/migrate lại.');
-    return;
-  }
-  if (strategy === 'resume') {
-    console.log('[GreenPlus] Đang khởi động các container Docker đã có (không rebuild)...');
-    docker(['up', '-d', '--no-build', '--wait', '--wait-timeout', '180'], 300000);
-  } else {
-    console.log('[GreenPlus] Chưa có Docker sandbox. Chạy bootstrap đầy đủ lần đầu...');
-    const start = spawnSync(process.execPath, [resolve(projectRoot, 'scripts/three-tier-docker.mjs'), 'up'], {
-      cwd: projectRoot, stdio: 'inherit', timeout: 1200000, windowsHide: true,
-    });
-    if (start.error || start.status !== 0) throw new Error(`Docker bootstrap thất bại: ${start.error?.message || `exit ${start.status}`}`);
-  }
-  if (!(await gatewayReady())) throw new Error('Docker đã khởi động nhưng gateway chưa Ready. Chạy npm run docker:three-tier:check để xem lỗi.');
-  console.log('[GreenPlus] Docker Ready. Khởi động Admin, Client, Shipper...');
+  if (result.error || result.status !== 0)
+    throw Error(`${script} ${args.join(' ')} failed: ${result.error?.message || `exit ${result.status}`}. No Docker volumes were removed.`);
 }
 
 async function main() {
-  try { await ensureDocker(); }
-  catch (error) {
-    console.error(`[GreenPlus] ${error.message}`);
-    process.exitCode = 1;
-    return;
-  }
-  // Root .env.local is not automatically loaded by the web-admin Next workspace.
-  // Sync credentials only after verifying both the gateway and its auth key.
-  // A remote/explicitly customized Admin target must never be overwritten.
-  try {
-    const linked = await connectLocalAdmin();
-    console.log(`[GreenPlus] Admin ↔ Docker Local: ${linked.changed ? 'đã cấu hình, khởi động Next.js để nhận biến mới' : 'sẵn sàng'}.`);
-  } catch (error) {
-    console.error(`[GreenPlus] Không thể kết nối Admin Docker: ${error.message}`);
-    console.error('[GreenPlus] Sử dụng npm run dev:web nếu chỉ cần các web app mà không bật Docker switch.');
-    process.exitCode = 1;
-    return;
-  }
-  const child = spawn('npm run dev:turbo', { cwd: projectRoot, stdio: 'inherit', shell: true, env: process.env });
+  if (process.env.CI === 'true' || process.env.NODE_ENV === 'production')
+    throw Error('dev:all is local-only; it must not run in CI or production.');
+  const steps = devAllSteps({
+    dockerUpdate: process.env.GREENPLUS_DEV_DOCKER_UPDATE !== 'false',
+    requireParity: process.env.GREENPLUS_DEV_REQUIRE_FULL_PARITY === 'true',
+  });
+  for (const [index, step] of steps.entries()) runStep(step, index, steps.length);
+  // The actual Next.js workspace env must be linked; never overwrite an explicit remote target.
+  const linked = await connectLocalAdmin();
+  console.log(`[GreenPlus] Admin ↔ Docker Local: ${linked.changed ? 'configured' : 'ready'}.`);
+  console.log('[GreenPlus] Docker sandbox up-to-date and verified. Supabase read-only audit above; full production parity is NOT assumed.');
+  console.log('[GreenPlus] Starting Admin, Client and Shipper through Turbo...');
+  const child = spawn('npm run dev:turbo', {
+    cwd: projectRoot, stdio: 'inherit', shell: true, env: process.env,
+  });
   let stopping = false;
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => {
       if (stopping) return;
       stopping = true;
-      // On Windows shell:true spawns cmd.exe; let the shell receive terminal Ctrl+C.
       if (process.platform !== 'win32') child.kill(signal);
     });
   }
-  child.on('error', error => { console.error(`[GreenPlus] Không thể chạy web: ${error.message}`); process.exitCode = 1; });
+  child.on('error', error => { console.error(`[GreenPlus] Cannot start web apps: ${error.message}`); process.exitCode = 1; });
   child.on('exit', (code, signal) => { process.exitCode = code ?? (signal ? 130 : 1); });
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch(error => {
+    console.error(`[GreenPlus] BLOCKED: ${error.message}`);
+    console.error('[GreenPlus] For web-only development: npm run dev:web (does not update/check Docker).');
+    process.exitCode = 1;
+  });
+}

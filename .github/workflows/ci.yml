@@ -41,6 +41,14 @@ jobs:
         run: node --test tests/ci-pipeline.test.mjs
       - name: Check required files and Dockerfile safety
         run: node scripts/ci/validate-ci.mjs
+      - name: Fail-closed Supabase migration policy and immutable baseline
+        run: node scripts/ci/supabase-migration-gate.mjs --static
+      - name: Supabase/Docker Storage contract (offline)
+        run: node scripts/ci/check-storage.mjs
+      - name: Docker 3-tier topology / canonical schema inventory (offline)
+        run: node scripts/ci/three-tier-parity-audit.mjs --static
+      - name: Test SQL classifier, remote-history gate and tier contract
+        run: node --test tests/ci-migration-safety.test.mjs
 
   frontend-ci:
     name: ${{ matrix.label }}
@@ -158,8 +166,12 @@ jobs:
         run: npm run docker:three-tier:up
       - name: Assert RPCs and API connectivity
         run: npm run docker:three-tier:check
+      - name: Enumerate real store-tier assignments and free slots
+        run: npm run docker:three-tier:stores
       - name: Docker catalog SQL contract (ROLLBACK)
         run: node scripts/test-three-tier-commerce.mjs
+      - name: Report REAL schema gaps for all 5 Docker storage scopes
+        run: node scripts/ci/three-tier-parity-audit.mjs
       - name: Inventory and checkout transactions (ROLLBACK)
         run: node scripts/test-three-tier-transactions.mjs
       - name: Payment/delivery lifecycle transactions (ROLLBACK)
