@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import ConfirmActionDialog from "../../../frontend/shared/ConfirmActionDialog";
 import { useAuthStore } from "@/lib/stores/authStore";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Leaf } from "lucide-react";
 import { logger } from "@/lib/logger";
 
 type AuthMode = "login" | "register";
@@ -25,21 +25,21 @@ function getAuthCopy(mode: AuthMode) {
         toggleLabel: "Tạo tài khoản",
         toggleHref: "/register",
         routeLabel: "Đăng nhập khách hàng",
-        panelHeadline: "Truy cập nhanh cho người dùng quay lại",
+        panelHeadline: "Tiếp tục mua sắm cùng GreenPlus",
         panelText:
-          "Dùng thông tin đăng nhập hiện có để quay lại bảng điều khiển, đơn hàng và công cụ tài khoản.",
+          "Đăng nhập để tiếp tục mua sắm và theo dõi đơn hàng của bạn.",
       }
     : {
         title: "Đăng ký",
         subtitle:
-          "Tạo tài khoản và chọn vai trò phù hợp với quy trình làm việc của bạn.",
+          "Tạo tài khoản để bắt đầu mua sắm và theo dõi đơn hàng của bạn.",
         submitLabel: "Đăng ký",
         toggleLabel: "Quay lại đăng nhập",
         toggleHref: "/login",
         routeLabel: "Đăng ký khách hàng",
-        panelHeadline: "Thiết lập tài khoản đúng ngay từ đầu",
+        panelHeadline: "Bắt đầu cùng GreenPlus",
         panelText:
-          "Nhập tên, email, mật khẩu và vai trò để phiên làm việc đầu tiên có đúng bối cảnh.",
+          "Tạo tài khoản để mua sắm và theo dõi đơn hàng của bạn.",
       };
 }
 
@@ -328,11 +328,11 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">
+    <main className="relative min-h-dvh overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_35%),linear-gradient(180deg,_#ecfdf5_0%,_#f8fafc_52%,_#f1f5f9_100%)] text-slate-900">
       <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.12)_1px,transparent_1px)] bg-[size:28px_28px] opacity-50" />
 
-      <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="relative mx-auto flex min-h-dvh max-w-6xl items-center px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+        <div className="mx-auto grid w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur xl:mx-0 xl:max-w-none xl:grid-cols-[1.05fr_0.95fr]">
           <section className="hidden flex-col justify-between bg-[linear-gradient(160deg,_#0f172a_0%,_#115e59_55%,_#10b981_100%)] p-10 text-white xl:flex">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-200">
@@ -346,8 +346,21 @@ export function AuthScreen({ mode }: AuthScreenProps) {
               </p>
             </div>
           </section>
-          <section className="p-6 sm:p-10 lg:p-12">
+          <section className="p-5 sm:p-10 lg:p-12">
             <div className="mx-auto max-w-xl">
+              <div className="mb-6 flex items-center gap-3 rounded-2xl bg-[linear-gradient(120deg,_#0f172a_0%,_#115e59_58%,_#10b981_100%)] px-4 py-3 text-white shadow-sm xl:hidden">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/15 text-emerald-100 ring-1 ring-white/20">
+                  <Leaf size={21} aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-100">
+                    GreenPlus
+                  </span>
+                  <span className="mt-0.5 block text-sm font-semibold leading-5 text-white">
+                    {copy.panelHeadline}
+                  </span>
+                </span>
+              </div>
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-700">
