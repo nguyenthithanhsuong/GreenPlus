@@ -53,7 +53,7 @@ test('Shipper CI builds before Playwright and uploads diagnostics on failure', (
   assert.match(frontend, /SHIPPER_SESSION_SECRET:\s*ci-only-/);
   assert.match(frontend, /actions\/upload-artifact@v4/);
   assert.match(frontend, /if:\s*failure\(\)\s*&&\s*matrix\.app\s*==\s*'shipper'/);
-  assert.match(ci, /needs:\s*\[pipeline-contracts, frontend-ci, backend-ci, docker-db-ci, supabase-db-ci, external-services-ci\]/);
+  assert.match(ci, /needs:\s*\[pipeline-contracts, frontend-ci, backend-ci, ai-service-ci, docker-db-ci, supabase-db-ci, external-services-ci\]/);
 });
 
 test('Local dev ports and full Docker host ports match the user-selected mapping', () => {

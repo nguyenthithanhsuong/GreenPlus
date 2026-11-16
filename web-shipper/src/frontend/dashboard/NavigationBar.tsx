@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, ScanLine, UserRound } from "lucide-react";
+import { ClipboardList, ScanLine, UserRound, BrainCircuit, MessageCircle } from "lucide-react";
 
 const items = [
   { href: "/", label: "Đơn giao", icon: ClipboardList },
   { href: "/scan", label: "Tra cứu", icon: ScanLine },
+  { href: "/ai/chat", label: "Trợ lý", icon: BrainCircuit },
+  { href: "/support", label: "Liên lạc", icon: MessageCircle },
   { href: "/profile", label: "Cá nhân", icon: UserRound },
 ];
 

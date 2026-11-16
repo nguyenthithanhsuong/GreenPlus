@@ -20,6 +20,14 @@ export const ROLE_PAGES: Record<PortalRole, readonly string[]> = {
     "/settings",
     "/settings/stores",
     "/settings/tenant-demo",
+    "/ai",
+    "/ai/chat",
+    "/ai/alerts",
+    "/ai/complaints",
+    "/ai/knowledge",
+    "/ai/promotions",
+    "/ai/docker-preview",
+    "/ai/support",
   ],
   manager: [
     "/dashboard",
@@ -38,6 +46,13 @@ export const ROLE_PAGES: Record<PortalRole, readonly string[]> = {
     "/reports",
     "/settings",
     "/settings/store",
+    "/ai",
+    "/ai/chat",
+    "/ai/alerts",
+    "/ai/complaints",
+    "/ai/knowledge",
+    "/ai/promotions",
+    "/ai/support",
   ],
   employee: [
     "/dashboard",
@@ -50,9 +65,13 @@ export const ROLE_PAGES: Record<PortalRole, readonly string[]> = {
     "/orders",
     "/complaints",
     "/settings",
+    "/ai/chat",
+    "/ai/support",
   ],
 };
 const parentFor = (path: string) => {
+  if (path.startsWith("/ai/")) return "/ai/" + path.split("/").filter(Boolean)[1];
+  if (path === "/ai") return "/ai";
   if (path.startsWith("/settings/tenant-demo")) return "/settings/tenant-demo";
   if (path.startsWith("/settings/stores")) return "/settings/stores";
   if (path.startsWith("/settings/store")) return "/settings/store";
@@ -67,6 +86,7 @@ export function canAccessApi(role: PortalRole, path: string, method: string) {
   const domain = "/" + path.replace(/^\/api\//, "").split("/")[0];
   if (domain === "/permissions" || domain === "/health") return true;
   if (domain === "/shipper") return false;
+  if (domain === "/ai" || domain === "/support") return true;
   if (domain === "/tenant-demo") return role === "admin";
   if (domain === "/roles" || domain === "/stores")
     return role === "admin" || (method === "GET" && role === "manager");

@@ -1,4 +1,5 @@
 import { withSentry } from "@/lib/with-sentry";
+import { classifyNewComplaint } from "../../../../backend/modules/ai-assist/complaint-classification";
 import { NextResponse } from "next/server";
 import { complaintFacade } from "../../../../backend/modules/complaints/facades/complaint.facade";
 import { ComplaintType } from "../../../../backend/modules/complaints/complaint.types";
@@ -65,7 +66,13 @@ export const POST = withSentry(async (request: Request) => {
     duration_ms: Date.now() - start,
   });
 
-  return NextResponse.json(result, { status: 201 });
+  let aiClassification:{status:string;requiresHumanReview?:boolean}={status:"unavailable"};
+  try{
+    aiClassification=await classifyNewComplaint(result.complaintId,orderId,userId,description);
+  }catch{
+    aiClassification={status:"unavailable"};
+  }
+  return NextResponse.json({...result,aiClassification}, { status: 201 });
 });
 
 export const GET = withSentry(async (request: Request) => {

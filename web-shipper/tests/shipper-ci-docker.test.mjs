@@ -16,7 +16,7 @@ test('Shipper matrix is independent, its tests run, all gates block Docker publi
  assert.match(workflow,/npm test -w web-shipper/);
  assert.match(workflow,/npm run test:e2e -w web-shipper/);
  assert.match(workflow,/npm run build -w web-\$\{\{ matrix\.app \}\}/);
- assert.match(workflow,/needs: \[pipeline-contracts, frontend-ci, backend-ci, docker-db-ci, supabase-db-ci, external-services-ci\]/);
+ assert.match(workflow,/needs: \[pipeline-contracts, frontend-ci, backend-ci, ai-service-ci, docker-db-ci, supabase-db-ci, external-services-ci\]/);
  assert.match(workflow,/Smoke all three images before any publish/);
  assert.match(read('../../scripts/ci/smoke-images.sh'),/api\/auth\/me/);
  assert.match(read('../../scripts/ci/smoke-images.sh'),/api\/shipper\/deliveries/);

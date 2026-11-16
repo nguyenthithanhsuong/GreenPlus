@@ -15,7 +15,7 @@ const env={
 };
 test('all required checks block docker publishing until passed',()=>{
  const y=read('.github/workflows/ci.yml');
- assert.match(y,/needs: \[pipeline-contracts, frontend-ci, backend-ci, docker-db-ci, supabase-db-ci, external-services-ci\]/);
+ assert.match(y,/needs: \[pipeline-contracts, frontend-ci, backend-ci, ai-service-ci, docker-db-ci, supabase-db-ci, external-services-ci\]/);
  assert.match(y,/node --experimental-strip-types --test tests\/\*\.test\.mjs/);
  assert.match(y,/npm run docker:three-tier:check/);
  assert.match(y,/node scripts\/test-three-tier-lifecycle\.mjs/);

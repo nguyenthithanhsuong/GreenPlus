@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Calendar, RefreshCw } from "lucide-react";
 import ActionTables from "./ActionTables";
+import AiDashboardWidget from "../ai/AiDashboardWidget";
 import Charts from "./Charts";
 import StatCards from "./StatCards";
 import AdminShell from "../shared/AdminShell";
@@ -138,6 +139,8 @@ const Dashboard = () => {
           {error}
         </div>
       ) : null}
+
+      {role ? <AiDashboardWidget role={role} /> : null}
 
       {role === "admin" ? (
         <PlatformDashboard />

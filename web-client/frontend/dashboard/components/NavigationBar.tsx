@@ -73,6 +73,7 @@ const styles: {
 };
 
 const navItems: NavItem[] = [
+  { label: "AI", href: "/ai/chat", icon: <span aria-hidden="true" style={{fontSize:22}}>✦</span> },
   {
     label: "Trang chủ",
     href: "/dashboard",

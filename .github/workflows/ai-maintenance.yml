@@ -1,0 +1,24 @@
+name: AI Maintenance
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  invoke:
+    runs-on: ubuntu-latest
+    environment: environment
+    timeout-minutes: 8
+    steps:
+      - name: Run authenticated store AI forecast and promotion proposal updates
+        env:
+          AI_CRON_URL: ${{ vars.GREENPLUS_AI_CRON_URL }}
+          AI_CRON_SECRET: ${{ secrets.GREENPLUS_AI_CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          test -n "$AI_CRON_URL" && test -n "$AI_CRON_SECRET"
+          case "$AI_CRON_URL" in https://*/*) ;; *) echo "HTTPS AI cron URL required"; exit 1;; esac
+          curl --fail-with-body --show-error --silent --max-time 360 --retry 2 --retry-delay 5 \
+            --request POST --header "Authorization: Bearer $AI_CRON_SECRET" \
+            --header 'Content-Type: application/json' "$AI_CRON_URL"

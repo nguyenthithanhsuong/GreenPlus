@@ -324,3 +324,8 @@ To archive obsolete Flutter prototypes as well, add `--legacy-flutter`. Details:
 `npm run check-all` is now non-mutating for source; use `npm run fix:local` only when formatting/ESLint modifications are intended.
 
 See [the consolidated developer command reference](docs/PROJECT_COMMANDS_20261108.md) for Docker/PWA subcommands and maintenance recovery.
+
+
+## AI Assist rollout
+
+For the isolated FastAPI AI service, five-role assistants, manager-governed promotions and Docker sandbox preview, see [AI Assist implementation and acceptance](docs/GREENPLUS_AI_ASSIST_IMPLEMENTATION_20261115.md). Apply migrations only after verifying existing Supabase migration history.

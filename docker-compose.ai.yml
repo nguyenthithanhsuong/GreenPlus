@@ -1,0 +1,25 @@
+services:
+  ai-assist:
+    build:
+      context: ./services/ai-assist
+    image: greenplus/ai-assist:local
+    restart: unless-stopped
+    environment:
+      AI_SERVICE_KEY: ${GREENPLUS_AI_SERVICE_KEY:?Set a private 32+ byte AI key}
+      AI_LLM_URL: ${AI_LLM_URL:-}
+      AI_LLM_KEY: ${AI_LLM_KEY:-}
+      AI_LLM_MODEL: ${AI_LLM_MODEL:-}
+    ports:
+      - "127.0.0.1:8100:8100"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8100/health',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -1,0 +1,11 @@
+"use client";
+import Link from "next/link";
+import { useCallback,useEffect,useState } from "react";
+import { Tag } from "lucide-react";
+import { selectedStoreId,STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
+type Promotion={id:string;scope:string;product_id:string;product_name:string;discount_type:string;discount_value:number;end_at:string};
+export default function ActivePromotions(){const [items,setItems]=useState<Promotion[]>([]);const [error,setError]=useState("");
+ const load=useCallback(async()=>{const store=selectedStoreId();if(!store){setError("Chọn cửa hàng để xem khuyến mãi");setItems([]);return;}try{const response=await fetch(`/api/promotions?storeId=${encodeURIComponent(store)}`,{cache:"no-store"});const result=await response.json();if(!response.ok)throw new Error(result.error??"Không đọc được khuyến mãi");setItems(result.items??[]);setError("");}catch(e){setError(e instanceof Error?e.message:"Không đọc được dữ liệu");}},[]);
+ useEffect(()=>{void load();window.addEventListener(STORE_CHANGE_EVENT,load);return()=>window.removeEventListener(STORE_CHANGE_EVENT,load);},[load]);
+ return <main className="mx-auto min-h-screen max-w-[520px] bg-white px-4 pb-28 pt-8"><Link href="/dashboard" className="text-sm text-emerald-700">← Trang chủ</Link><h1 className="mt-4 flex items-center gap-2 text-2xl font-bold"><Tag className="text-emerald-700"/>Khuyến mãi đang áp dụng</h1><p className="mt-2 text-sm text-slate-500">Chỉ hiển thị chương trình đã được Manager phê duyệt. Đơn giá chính thức tính theo lô hàng tại checkout.</p>{error?<p role="alert" className="mt-4 text-sm text-red-700">{error}</p>:null}<div className="mt-5 space-y-3">{items.map(item=><Link key={item.id} href={`/product-detail/${item.product_id}`} className="block rounded-2xl border border-emerald-100 bg-emerald-50 p-4"><p className="font-bold">{item.product_name}</p><p className="mt-1 text-sm text-emerald-800">{item.discount_type==="percentage"?`${item.discount_value}%`: `${item.discount_value} đ`} giảm · {item.scope==="batch"?"Chỉ một lô":"Toàn sản phẩm"}</p><p className="mt-2 text-xs text-slate-500">Hết hạn {new Date(item.end_at).toLocaleString("vi-VN")}</p></Link>)}{!items.length&&!error?<p className="text-sm text-slate-500">Chưa có khuyến mãi đang hoạt động.</p>:null}</div></main>;
+}

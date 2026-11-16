@@ -112,6 +112,39 @@ jobs:
           node --check scripts/test-three-tier-transactions.mjs
           node --check scripts/test-three-tier-lifecycle.mjs
 
+  ai-service-ci:
+    name: AI Assist CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: services/ai-assist/requirements.txt
+      - name: Install pinned Python AI dependencies
+        run: python -m pip install -r services/ai-assist/requirements.txt pytest
+      - name: Test FastAPI authentication, forecasts, grounded chat and suggestions
+        env:
+          PYTHONPATH: services/ai-assist
+          AI_SERVICE_KEY: ci-only-private-ai-key-2026-not-production
+        run: python -m pytest -q services/ai-assist/tests
+      - name: Build AI container with no production secrets
+        run: docker build -t greenplus/ai-assist:ci services/ai-assist
+      - name: Smoke private AI service
+        run: |
+          set -euo pipefail
+          docker run --rm -d --name greenplus-ai-ci -p 127.0.0.1:18100:8100 -e AI_SERVICE_KEY=ci-only-private-ai-key-2026-not-production greenplus/ai-assist:ci
+          trap 'docker rm -f greenplus-ai-ci >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18100/health >/dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:18100/health
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' --request POST --header 'Content-Type: application/json' --data '{}' http://127.0.0.1:18100/v1/chat)
+          test "$status" = 401
+
   docker-db-ci:
     name: Docker DB CI
     runs-on: ubuntu-latest
@@ -219,7 +252,7 @@ jobs:
   docker-build:
     name: Docker Build
     environment: environment
-    needs: [pipeline-contracts, frontend-ci, backend-ci, docker-db-ci, supabase-db-ci, external-services-ci]
+    needs: [pipeline-contracts, frontend-ci, backend-ci, ai-service-ci, docker-db-ci, supabase-db-ci, external-services-ci]
     runs-on: ubuntu-latest
     timeout-minutes: 50
     env:
@@ -263,6 +296,8 @@ jobs:
               --build-arg NEXT_PUBLIC_GITHUB_SHA="$GITHUB_SHA" \
               --tag "greenplus/web-${app}:ci" .
           done
+      - name: Build AI Assist image from tested Python source
+        run: docker build -t greenplus/ai-assist:ci services/ai-assist
       - name: Smoke all three images before any publish
         shell: bash
         run: bash scripts/ci/smoke-images.sh
@@ -281,4 +316,11 @@ jobs:
               docker push "${target}:${tag}"
             done
           done
-          echo "All three SHA-pinned images published; deployment is a separate operation."
+          ai_target="ghcr.io/${REPO_LC}/ai-assist"
+          docker tag greenplus/ai-assist:ci "${ai_target}:sha-${short_sha}"
+          docker push "${ai_target}:sha-${short_sha}"
+          for tag in main latest; do
+            docker tag greenplus/ai-assist:ci "${ai_target}:${tag}"
+            docker push "${ai_target}:${tag}"
+          done
+          echo "All three web images and the AI Assist SHA-pinned image published; deployment remains a separate, manual operation."

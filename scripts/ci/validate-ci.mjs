@@ -16,10 +16,10 @@ const requiredFiles=[
 ];
 for(const file of requiredFiles){if(!existsSync(resolve(root,file)))throw Error(`Required CI file missing: ${file}. Commit earlier Phase patches too.`);}
 const ci=read('.github/workflows/ci.yml');
-const checks=['pipeline-contracts:','frontend-ci:','backend-ci:','docker-db-ci:','supabase-db-ci:','external-services-ci:','docker-build:'];
+const checks=['pipeline-contracts:','frontend-ci:','backend-ci:','ai-service-ci:','docker-db-ci:','supabase-db-ci:','external-services-ci:','docker-build:'];
 for(const check of checks)if(!ci.includes(check))throw Error(`Missing CI gate ${check}`);
 for(const job of checks.slice(0,-1))if(!ci.includes(job.replace(/:$/,'')))throw Error(`Docker build depends on missing job: ${job}`);
-if(!ci.includes('needs: [pipeline-contracts, frontend-ci, backend-ci, docker-db-ci, supabase-db-ci, external-services-ci]'))throw Error('Docker build needs all six gates');
+if(!ci.includes('needs: [pipeline-contracts, frontend-ci, backend-ci, ai-service-ci, docker-db-ci, supabase-db-ci, external-services-ci]'))throw Error('Docker build needs all seven gates');
 if(!ci.includes("github.ref == 'refs/heads/main'"))throw Error('Image publication must be main-only');
 if(!ci.includes('secrets.NEXT_PUBLIC_SUPABASE_URL'))throw Error('Main image needs real public Supabase URL, not the CI placeholder');
 if(ci.includes('continue-on-error: true'))throw Error('Do not downgrade required gates to nonblocking');
@@ -35,4 +35,4 @@ for(const name of ['deploy-prod.yml','deploy-staging.yml']){
  if(/on:\s*\n\s*push:/m.test(y))throw Error(`Unsafe independent deploy trigger in ${name}`);
  if(/Deploying to (?:production|staging)\.\.\./.test(y))throw Error(`Fake deployment success in ${name}`);
 }
-console.log('PASS: six required gates, secret-free Dockerfiles and no independent push deploys.');
+console.log('PASS: seven required gates, secret-free Dockerfiles and no independent push deploys.');

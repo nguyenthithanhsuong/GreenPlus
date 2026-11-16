@@ -19,6 +19,10 @@ import {
   Warehouse,
   Wallet,
   Building2,
+  BrainCircuit,
+  MessageCircle,
+  BookOpen,
+  ShieldAlert,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { asPortalRole, canAccessPage } from "@/lib/portal-access";
@@ -47,6 +51,19 @@ const groups = [
       { href: "/reports", label: "Báo cáo tài chính", icon: FileText },
       { href: "/settings/stores", label: "Các cửa hàng", icon: Building2 },
       { href: "/settings/store", label: "Cửa hàng của tôi", icon: Building2 },
+    ],
+  },
+  {
+    label: "Trí tuệ nhân tạo & hỗ trợ",
+    items: [
+      { href: "/ai", label: "Dự báo & khuyến mãi AI", icon: BrainCircuit },
+      { href: "/ai/alerts", label: "Cảnh báo tồn kho", icon: AlertCircle },
+      { href: "/ai/promotions", label: "Chương trình khuyến mãi", icon: Tag },
+      { href: "/ai/complaints", label: "AI phân loại khiếu nại", icon: ShieldAlert },
+      { href: "/ai/knowledge", label: "Kho tri thức", icon: BookOpen },
+      { href: "/ai/chat", label: "Trợ lý GreenPlus", icon: BrainCircuit },
+      { href: "/ai/support", label: "Liên lạc theo đơn", icon: MessageCircle },
+      { href: "/ai/docker-preview", label: "AI Docker Sandbox", icon: Boxes },
     ],
   },
 ];
