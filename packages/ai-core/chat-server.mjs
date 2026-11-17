@@ -4,6 +4,12 @@ import { safeText, validUuid, hourlyLimit } from "./policy.mjs";
 export class ChatError extends Error {
   constructor(message, status = 400) { super(message); this.status = status; }
 }
+function audiencesForRole(role) {
+  if (role === 'admin') return ['customer','shipper','manager','admin'];
+  if (role === 'manager') return ['customer','shipper','manager'];
+  if (role === 'shipper') return ['customer','shipper'];
+  return ['customer'];
+}
 function result(result) {
   if (result.error) throw new ChatError("Không thể truy cập dữ liệu hội thoại", 503);
   return result.data;
@@ -16,19 +22,29 @@ export async function askStoreChat(db, actor, message, prior) {
     p_action:"chat", p_limit:hourlyLimit(actor.role) }));
   if (!quota) throw new ChatError("Đã hết lượt AI trong giờ",429);
   let conversationId = prior;
+  let history = [];
   if (conversationId) {
     const owned = result(await db.from("ai_conversations").select("id").eq("id",conversationId)
       .eq("actor_id",actor.userId).eq("store_id",actor.storeId).maybeSingle());
     if (!owned) throw new ChatError("Hội thoại không tồn tại",404);
+    const older = result(await db.from("ai_messages").select("question,answer")
+      .eq("store_id",actor.storeId).eq("conversation_id",conversationId)
+      .order("created_at",{ascending:false}).limit(4));
+    history = older.slice().reverse().flatMap(row=>[
+      {role:"user",content:safeText(row.question,1200)||""},
+      {role:"assistant",content:safeText(row.answer,1200)||""}
+    ]).filter(item=>item.content);
   } else {
     const conversation = result(await db.from("ai_conversations")
       .insert({ store_id:actor.storeId,actor_id:actor.userId,role:actor.role }).select("id").single());
     conversationId=conversation.id;
   }
   const knowledge = result(await db.from("ai_knowledge").select("id,question,answer")
-    .eq("store_id",actor.storeId).eq("enabled",true).limit(75));
+    .eq("store_id",actor.storeId).eq("enabled",true).eq("review_status","approved").is("deleted_at",null)
+    .in("audience",audiencesForRole(actor.role)).limit(75));
   const response = await callAiService("chat",{store_id:actor.storeId,role:actor.role,question,
-    knowledge:knowledge.map((entry)=>({id:entry.id,question:entry.question,answer:entry.answer}))});
+    knowledge:knowledge.map((entry)=>({id:entry.id,question:entry.question,answer:entry.answer})),history},
+    {timeoutMs:14000});
   const answer = safeText(response.answer,6000);
   if (!answer || !Array.isArray(response.sources)) throw new ChatError("AI trả dữ liệu không hợp lệ",503);
   const sources=response.sources.filter((id)=>typeof id==="string" && knowledge.some((entry)=>entry.id===id));

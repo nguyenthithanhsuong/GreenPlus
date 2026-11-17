@@ -21,10 +21,10 @@ test('Remote is NOT reported up-to-date when SQL 0019 is pending manual approval
   const state = inspectRemoteMigrations(rows, listing(18));
   assert.equal(state.applied, 18);
   assert.equal(state.upToDate, false);
-  assert.deepEqual(state.pending, ['0019_rbac_audit_foundation.sql']);
-  assert.equal(state.pendingManual.length, 1);
+  assert.deepEqual(state.pending, ['0019_rbac_audit_foundation.sql','0020_ai_knowledge_review_workflow.sql','0021_ai_knowledge_restore_archived.sql']);
+  assert.equal(state.pendingManual.length, 3);
   assert.throws(() => planRemoteMigrations(rows, listing(18)), /manual deployment/);
-  assert.equal(inspectRemoteMigrations(rows, listing(19)).upToDate, true);
+  assert.equal(inspectRemoteMigrations(rows, listing(21)).upToDate, true);
   assert.throws(() => inspectRemoteMigrations(rows, 'LOCAL | REMOTE\n0001 | 9999'), /diverges/);
 });
 test('Supabase CLI --report fixture stays read-only and --require-up-to-date blocks missing migration', () => {

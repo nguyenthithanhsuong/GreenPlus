@@ -29,11 +29,16 @@ class ChatSource(StrictModel):
     question: str = Field(min_length=1, max_length=300)
     answer: str = Field(min_length=1, max_length=6000)
 
+class ChatTurn(StrictModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=1800)
+
 class ChatRequest(StrictModel):
     store_id: UUID
     role: Literal["admin", "manager", "employee", "shipper", "customer"]
     question: str = Field(min_length=2, max_length=1500)
     knowledge: list[ChatSource] = Field(default_factory=list, max_length=75)
+    history: list[ChatTurn] = Field(default_factory=list, max_length=10)
 
 class RecipeRequest(StrictModel):
     store_id: UUID

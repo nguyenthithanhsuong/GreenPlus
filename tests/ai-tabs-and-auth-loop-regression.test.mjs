@@ -8,12 +8,17 @@ const read=(name)=>readFileSync(resolve(root,name),'utf8');
 test('Inventory still contains original management, transactions and alerts, plus AI forecast tab',()=>{
  const code=read('web-admin/frontend/inventories/InventoryManagement.tsx');
  for(const component of ['InventoryTable','InventoryTransactionTable','InventoryStats','InventoryDrawer','AiAlerts','AiOverview'])assert.match(code,new RegExp(component));
- for(const text of ['Tồn kho hiện tại','Lịch sử giao dịch','Cảnh báo tồn kho','Dự báo & đề xuất AI'])assert.ok(code.includes(text));
+ for(const text of ['Tồn kho hiện tại','Lịch sử giao dịch','Cảnh báo tồn kho','Dự báo tồn kho AI'])assert.ok(code.includes(text));
 });
-test('Pricing retains old prices module with separately accessible AI forecast and promotion tabs',()=>{
+test('Pricing retains old prices module and gives AI proposals a distinct pricing workspace',()=>{
  const code=read('web-admin/frontend/prices/PriceManagement.tsx');
- for(const text of ['PriceTable','PriceDrawer','AiOverview','AiPromotions','CommerceTabs'])assert.ok(code.includes(text));
+ for(const text of ['PriceTable','PriceDrawer','AiPricingIntelligence','AiPromotions','CommerceTabs'])assert.ok(code.includes(text));
  assert.match(code,/currentRole === "manager"/);
+ assert.match(code,/id: "suggestions", label: "Đề xuất khuyến mãi AI"/);
+ assert.doesNotMatch(code,/<AiOverview embedded \/>/);
+ const priceAI=read('web-admin/frontend/ai/AiPricingIntelligence.tsx');
+ assert.match(priceAI,/Duyệt/);assert.match(priceAI,/Từ chối/);
+ assert.doesNotMatch(priceAI,/Cơ cấu cảnh báo/);
 });
 test('Complaints retain operational UI and embed AI triage with real complaint choice',()=>{
  const code=read('web-admin/frontend/complaints/ComplaintManagement.tsx');
@@ -28,7 +33,7 @@ test('legacy AI route URLs redirect to canonical operational tabs',()=>{
 });
 test('Docker sandbox explicitly shows AI tabs but does not mix sandbox with Supabase AI data',()=>{
  const src=read('web-admin/frontend/settings/DockerCommerceWorkspace.tsx');
- assert.match(src,/Cảnh báo tồn kho AI/);assert.match(src,/Dự báo & đề xuất AI/);assert.match(src,/chưa có adapter AI hoàn chỉnh/);
+ assert.match(src,/Cảnh báo tồn kho AI/);assert.match(src,/Dự báo tồn kho AI/);assert.match(src,/chưa có adapter AI hoàn chỉnh/);
  assert.match(src,/AdminShell/);
 });
 test('admin health performs private service authentication and Supabase AI data checks',()=>{

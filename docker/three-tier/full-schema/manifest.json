@@ -76,6 +76,14 @@
     {
       "name": "0019_rbac_audit_foundation.sql",
       "sha256": "58f81dce58519aa18aef1c65ef463e484a9d39330696f5f9daf3646ac67646f3"
+    },
+    {
+      "name": "0020_ai_knowledge_review_workflow.sql",
+      "sha256": "24670f02a8fbb08ce3eb3be4681da1fc4d59626345efa84f64f82336d5dc6129"
+    },
+    {
+      "name": "0021_ai_knowledge_restore_archived.sql",
+      "sha256": "7e0c8c2ee22b478e991d8863fbfb6e5eaef43a8e8d4df3c1e63308650b23ff6d"
     }
   ]
 }

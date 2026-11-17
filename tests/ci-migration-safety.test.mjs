@@ -7,8 +7,8 @@ const root=resolve(import.meta.dirname,'..');
 const rows=inventoryMigrations();
 const fakeList = (appliedCount) => `LOCAL         | REMOTE        | TIME (UTC)\n${rows.map((r,i)=>`${r.version} | ${i<appliedCount?r.version:''} | unknown`).join('\n')}`;
 
-test('baseline source 0001-0019 is immutable by manifest, not by filenames alone',()=>{
- assert.equal(rows.length,19);
+test('baseline source 0001-0021 is immutable by manifest, not by filenames alone',()=>{
+ assert.equal(rows.length,21);
  assert.equal(verifyImmutableBaseline(rows),true);
  assert.throws(()=>verifyImmutableBaseline([{...rows[0],sha256:'f'.repeat(64)},...rows.slice(1)]),/Historical migration edited/);
  assert.throws(()=>verifyImmutableBaseline(rows.slice(1)),/Removed baseline/);
@@ -22,7 +22,8 @@ test('no remote history, divergent history, and missing old revisions are blocke
  assert.throws(()=>planRemoteMigrations(rows,fakeList(0)),/No remote baseline/);
  assert.throws(()=>planRemoteMigrations(rows,`LOCAL | REMOTE | UTC\n0001 | 0099 | date`),/diverges/);
  assert.throws(()=>planRemoteMigrations(rows,fakeList(18)),/manual deployment/);
- assert.deepEqual(planRemoteMigrations(rows,fakeList(19)),{applied:19,pending:[]});
+ assert.throws(()=>planRemoteMigrations(rows,fakeList(19)),/manual deployment/);
+ assert.deepEqual(planRemoteMigrations(rows,fakeList(21)),{applied:21,pending:[]});
 });
 test('auto-safe migrations allow only explicitly labeled nullable additive columns',()=>{
  const good='-- greenplus:autodeploy-safe\nBEGIN;\nALTER TABLE public.products ADD COLUMN IF NOT EXISTS extra_note text NULL;\nCOMMIT;';

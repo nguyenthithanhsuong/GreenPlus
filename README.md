@@ -80,7 +80,7 @@ GreenPlus/
 
 ### Safe local development / compatibility
 
-`npm run dev:all` checks local Supabase migration hashes and Storage configuration, then attempts a **read-only** remote Supabase migration report when a project has been linked and the Supabase CLI is available. It reconciles the Docker three-tier lab (legacy sandbox SQL 002–005 plus canonical SQL 0001–0019 in three separate PostgreSQL 17 containers), verifies database changes and tenant registry, reports schema parity, and starts all three web apps. It never runs `supabase db push`, resets Docker volumes or upgrades PostgreSQL major versions.
+`npm run dev:all` checks local Supabase migration hashes and Storage configuration, then attempts a **read-only** remote Supabase migration report when a project has been linked and the Supabase CLI is available. It reconciles the Docker three-tier lab (legacy sandbox SQL 002–005 plus canonical SQL 0001–0020 in three separate PostgreSQL 17 containers), verifies database changes and tenant registry, reports schema parity, and starts all three web apps. It never runs `supabase db push`, resets Docker volumes or upgrades PostgreSQL major versions.
 
 The remote check prints **NOT VERIFIED** if there is no local Supabase link/CLI. To require an up-to-date linked remote, set `GREENPLUS_DEV_SUPABASE_REMOTE_CHECK=required`. To run only local static checks, set it to `off`. To skip Docker rebuilding/migration and verify existing containers only, set `GREENPLUS_DEV_DOCKER_UPDATE=false`. Full parity is currently **NOT CERTIFIED**: the separate Docker PostgreSQL 17 schema mirrors canonical SQL while Auth, Storage, Realtime and app API routing remain distinct. The legacy demo still runs on PostgreSQL 16.
 
@@ -363,3 +363,7 @@ See [the Docker three-tier command reference](docker/three-tier/README.md) for D
 ## AI Assist rollout
 
 For the isolated FastAPI AI service, five-role assistants, manager-governed promotions and Docker sandbox preview, see [the AI service guide](services/ai-assist/README.md). Apply migrations only after verifying existing Supabase migration history.
+
+### Kho tri thức AI — review & bulk operations
+
+Xem `GREENPLUS_AI_KNOWLEDGE_BULK_PATCH_GUIDE_20261117.md` để biết cách dùng FAQ có `audience`, migration `0020`, duyệt/từ chối/xóa mềm theo lô và yêu cầu đồng bộ Supabase/Docker trước khi triển khai.

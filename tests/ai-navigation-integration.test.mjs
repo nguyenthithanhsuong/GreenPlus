@@ -37,7 +37,8 @@ test("assistant and knowledge share a tabbed navigation while keeping route perm
   assert.match(knowledge, /<AiAssistantTabs active="knowledge"\s*\/>/);
   assert.match(access, /"\/ai\/chat"/);
   assert.match(access, /"\/ai\/knowledge"/);
-  assert.match(knowledge, /role==="manager"/);
+  assert.match(knowledge, /const isManager = role === "manager"/);
+  assert.match(knowledge, /const canEdit = role === "manager" \|\| role === "admin"/);
 });
 
 

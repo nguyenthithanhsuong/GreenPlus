@@ -42,11 +42,11 @@ export default function DockerCommerceWorkspace({kind}:{kind:"inventory"|"orders
     { id:"commerce", label:"Tồn kho Docker" },
     ...(role === "manager" ? [
       { id:"alerts", label:"Cảnh báo tồn kho AI" },
-      { id:"forecast", label:"Dự báo & đề xuất AI" },
+      { id:"forecast", label:"Dự báo tồn kho AI" },
     ] : []),
   ]} />}
   {kind==="inventory" && role==="manager" && section!=="commerce" && <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-slate-800">
-    <h2 className="font-bold">{section==="alerts"?"Cảnh báo tồn kho AI":"Dự báo & đề xuất AI"}</h2>
+    <h2 className="font-bold">{section==="alerts"?"Cảnh báo tồn kho AI":"Dự báo tồn kho AI"}</h2>
     <p className="mt-2">Chức năng AI vẫn được giữ trong điều hướng. Nhưng dữ liệu của Docker sandbox chưa có adapter AI hoàn chỉnh: API AI hiện truy vấn Supabase, không truy vấn PostgreSQL 17 Docker. Hệ thống không tự ghép dữ liệu của hai cửa hàng khác nguồn.</p>
     <p className="mt-2">Để chạy AI trên dữ liệu thật hiện tại, chọn lại nguồn Supabase trong cấu hình và mở tab AI ở trang nghiệp vụ. Để dùng AI với Docker cần kết nối adapter theo tenant, Auth và Storage trước khi xác nhận full parity.</p>
   </section>}

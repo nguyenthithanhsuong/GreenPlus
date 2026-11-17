@@ -7,7 +7,7 @@ import AdminShell from "../shared/AdminShell";
 import { usePermissions } from "@/lib/usePermissions";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import PriceStats from "./PriceStats";
-import AiOverview from "../ai/AiOverview";
+import AiPricingIntelligence from "../ai/AiPricingIntelligence";
 import AiPromotions from "../ai/AiPromotions";
 import CommerceTabs from "../shared/CommerceTabs";
 import PriceTable from "./PriceTable";
@@ -43,7 +43,8 @@ const PriceManagement = () => {
   const [activeTab, setActiveTab] = useState("prices");
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get("tab");
-    if (["prices", "forecast", "promotions"].includes(tab || "")) setActiveTab(tab!);
+    if (tab === "forecast") setActiveTab("suggestions"); // Old URL remains valid.
+    else if (["prices", "suggestions", "promotions"].includes(tab || "")) setActiveTab(tab!);
   }, []);
 
   const [items, setItems] = useState<PriceRow[]>([]);
@@ -368,11 +369,11 @@ const PriceManagement = () => {
       <CommerceTabs current={activeTab} onChange={setActiveTab} tabs={[
         { id: "prices", label: "Giá bán" },
         ...(currentRole === "manager" ? [
-          { id: "forecast", label: "Dự báo & đề xuất AI" },
+          { id: "suggestions", label: "Đề xuất khuyến mãi AI" },
           { id: "promotions", label: "Chương trình khuyến mãi" },
         ] : []),
       ]} />
-      {activeTab === "forecast" && currentRole === "manager" && <AiOverview embedded />}
+      {activeTab === "suggestions" && currentRole === "manager" && <AiPricingIntelligence />}
       {activeTab === "promotions" && currentRole === "manager" && <AiPromotions embedded />}
       <div className={activeTab === "prices" ? "contents" : "hidden"}>
       {error && (

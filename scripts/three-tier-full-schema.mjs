@@ -40,8 +40,8 @@ function assertManifest() {
       throw Error(`Supabase migration history drift at ${m.name}: expected ${expected.name}/${expected.sha256}. Auto-apply blocked.`);
     }
   }
-  if (observed.length !== 19 || fileNames[0] !== '0001_baseline_greenplus.sql' || !fileNames.at(-1).startsWith('0019_')) {
-    throw Error('This release certifies only source migrations 0001–0019; review new migrations before proceeding.');
+  if (observed.length !== 21 || fileNames[0] !== '0001_baseline_greenplus.sql' || !fileNames.at(-1).startsWith('0021_')) {
+    throw Error('This release certifies only source migrations 0001–0021; review new migrations before proceeding.');
   }
 }
 
@@ -189,7 +189,7 @@ async function main() {
     verifyHistory(readHistory(t), t, true);
     verifyCanonicalObjects(t);
   }
-  console.log('Canonical 0001–0019 SQL migrations applied/verified in all five new PG17 scopes. Legacy PG16 volumes unchanged.');
+  console.log('Canonical 0001–0021 SQL migrations applied/verified in all five new PG17 scopes. Legacy PG16 volumes unchanged.');
   console.log('NOT FULL SERVICE PARITY: Supabase Auth, Realtime, Storage and application API routing remain separate. Do not cut over production.');
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

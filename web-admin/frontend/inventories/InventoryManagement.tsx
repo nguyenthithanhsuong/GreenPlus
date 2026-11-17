@@ -349,7 +349,7 @@ const InventoryManagement = () => {
           <button type="button" onClick={() => setViewMode("forecast")}
             aria-current={viewMode === "forecast" ? "page" : undefined}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === "forecast" ? "bg-emerald-600 text-white" : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}>
-            Dự báo & đề xuất AI
+            Dự báo tồn kho AI
           </button>
         )}
       </div>

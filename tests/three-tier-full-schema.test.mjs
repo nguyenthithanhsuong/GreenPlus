@@ -10,8 +10,8 @@ const read = p => readFileSync(resolve(root,p),'utf8');
 const manifest = JSON.parse(read('docker/three-tier/full-schema/manifest.json'));
 const hash = data => createHash('sha256').update(data).digest('hex');
 
-test('canonical Docker PG17 manifest pins all nineteen Supabase migration bytes', () => {
-  assert.equal(manifest.migrations.length,19);
+test('canonical Docker PG17 manifest pins all twenty-one Supabase migration bytes', () => {
+  assert.equal(manifest.migrations.length,21);
   assert.doesNotThrow(assertManifest);
   for(const m of manifest.migrations)assert.equal(hash(read(`supabase/migrations/${m.name}`)),m.sha256);
 });
@@ -68,6 +68,6 @@ test('runtime does not push Supabase, delete Docker volumes or claim services ar
 test('--plan completes without Docker and --check refuses missing Docker CLI',()=>{
   const plan=spawnSync(process.execPath,['scripts/three-tier-full-schema.mjs','--plan'],{cwd:root,encoding:'utf8'});
   assert.equal(plan.status,0,plan.stderr);
-  assert.match(plan.stdout,/19 migrations/);
+  assert.match(plan.stdout,/21 migrations/);
   assert.match(plan.stdout,/pro_a, pro_b/);
 });
