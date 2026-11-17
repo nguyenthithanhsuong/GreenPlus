@@ -2,7 +2,7 @@
 import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import { usePermissions } from "@/lib/usePermissions";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
@@ -19,6 +19,7 @@ import PriceDrawer, {
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 import type { BatchRow } from "../../backend/modules/batches/batch-management.types";
 import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
+import { useAuthStore } from "@/lib/stores/authStore";
 import { priceSearchStrategy } from "../shared/searchStrategies";
 
 const todayIso = () => {
@@ -37,7 +38,14 @@ const emptyForm = (): PriceFormValues => ({
 
 const PriceManagement = () => {
   const { profile } = useCurrentUserProfile();
+  const sessionRole = useAuthStore(s => s.user?.role_name ?? s.session?.role_name)?.trim().toLowerCase();
+  const currentRole = sessionRole || (profile?.roleName ?? "").trim().toLowerCase();
   const [activeTab, setActiveTab] = useState("prices");
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (["prices", "forecast", "promotions"].includes(tab || "")) setActiveTab(tab!);
+  }, []);
+
   const [items, setItems] = useState<PriceRow[]>([]);
   const [batchOptions, setBatchOptions] = useState<BatchOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -343,15 +351,6 @@ const PriceManagement = () => {
       description="Theo dõi biến động giá, cập nhật giá khuyến mãi và giá theo lô hàng."
       pageActions={
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void loadPrices()}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-            disabled={loading || saving}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Tải lại
-          </button>
           {!permLoading && hasPermission("prices.create") && (
             <button
               type="button"
@@ -368,13 +367,13 @@ const PriceManagement = () => {
     >
       <CommerceTabs current={activeTab} onChange={setActiveTab} tabs={[
         { id: "prices", label: "Giá bán" },
-        ...((profile?.roleName ?? "").trim().toLowerCase() === "manager" ? [
+        ...(currentRole === "manager" ? [
           { id: "forecast", label: "Dự báo & đề xuất AI" },
           { id: "promotions", label: "Chương trình khuyến mãi" },
         ] : []),
       ]} />
-      {activeTab === "forecast" && (profile?.roleName ?? "").toLowerCase() === "manager" && <AiOverview embedded />}
-      {activeTab === "promotions" && (profile?.roleName ?? "").toLowerCase() === "manager" && <AiPromotions embedded />}
+      {activeTab === "forecast" && currentRole === "manager" && <AiOverview embedded />}
+      {activeTab === "promotions" && currentRole === "manager" && <AiPromotions embedded />}
       <div className={activeTab === "prices" ? "contents" : "hidden"}>
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

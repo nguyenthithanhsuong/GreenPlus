@@ -95,7 +95,7 @@ export default function AiPromotions({ embedded = false }: { embedded?: boolean 
 
   const content = (
     <>
-      {storePicker}
+      {!embedded && storePicker}
       {error ? <AiNotice kind="error">{error}</AiNotice> : null}
       {role === "manager" ? (
         <section className={panel}>

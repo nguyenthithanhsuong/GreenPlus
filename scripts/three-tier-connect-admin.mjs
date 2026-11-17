@@ -1,6 +1,6 @@
 /**
  * Connect the local Web Admin workspace to the existing three-tier gateway.
- * This writes only the ignored web-admin/.env.local and does not modify Docker
+ * This writes only the ignored root .env.local shared by all three web apps, not Docker
  * volumes, remote databases, .env, or any production deployment.
  */
 import { readFileSync, existsSync, writeFileSync, renameSync, unlinkSync, statSync } from 'node:fs';
@@ -11,7 +11,7 @@ import { dockerGatewayConfiguration, dockerGatewayReadiness } from '../web-admin
 
 export const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DOCKER_ENV_PATH = 'docker/three-tier/.env';
-export const ADMIN_ENV_PATH = 'web-admin/.env.local';
+export const ADMIN_ENV_PATH = '.env.local';
 const GATEWAY_URL = 'http://127.0.0.1:4100';
 const OWNED_KEYS = ['GREENPLUS_TENANCY_DEMO', 'GREENPLUS_DOCKER_GATEWAY_URL', 'GREENPLUS_DOCKER_GATEWAY_KEY'];
 
@@ -32,7 +32,7 @@ export function localDockerSettings(dockerEnvText) {
   const source = parseEnv(dockerEnvText);
   const gatewayKey = source.DEMO_GATEWAY_KEY ?? '';
   if (!/^[A-Za-z0-9_+\-/=]{32,}$/.test(gatewayKey))
-    throw new Error('Docker gateway secret missing/invalid. Run npm run docker:three-tier:init; never paste secrets into the terminal log.');
+    throw new Error('Docker gateway secret missing/invalid. Run node scripts/three-tier-docker.mjs init; never paste secrets into the terminal log.');
   const config = {
     GREENPLUS_TENANCY_DEMO: 'true',
     GREENPLUS_DOCKER_GATEWAY_URL: GATEWAY_URL,
@@ -71,19 +71,19 @@ async function assertGatewayLive(settings, fetcher) {
 }
 
 /**
- * Connect: write workspace env once gateway is authenticated.
- * Check: check actual workspace env and gateway with zero writes.
+ * Connect: write the shared root .env.local once gateway is authenticated.
+ * Check: verify the shared root .env.local and gateway with zero writes.
  */
 export async function connectLocalAdmin({ root = projectRoot, checkOnly = false, forceLocal = false, fetcher = fetch } = {}) {
   const dockerFile = resolve(root, DOCKER_ENV_PATH);
   const adminFile = resolve(root, ADMIN_ENV_PATH);
-  if (!existsSync(dockerFile)) throw new Error('Missing local Docker .env. Run npm run docker:three-tier:init first.');
+  if (!existsSync(dockerFile)) throw new Error('Missing local Docker .env. Run node scripts/three-tier-docker.mjs init first.');
   const settings = localDockerSettings(readFileSync(dockerFile, 'utf8'));
   const existing = readIfPresent(adminFile);
   if (checkOnly) {
     const admin = parseEnv(existing);
     if (OWNED_KEYS.some(key => admin[key] !== settings[key]))
-      throw new Error('Admin local gateway settings are missing/outdated. Run npm run docker:three-tier:link-admin then restart Admin.');
+      throw new Error('Shared root .env.local gateway settings are missing/outdated. Run npm run docker -- link-admin then restart the web apps.');
   } else {
     // Check for remote configuration before any remote/local credential operation.
     mergeAdminEnv(existing, settings, { forceLocal });
@@ -117,7 +117,7 @@ if (invokedDirectly()) {
     try {
       const state = await connectLocalAdmin({ checkOnly: command === 'check', forceLocal: process.argv.includes('--force-local') });
       console.log(state.changed
-        ? 'PASS: Admin Docker Local settings synced to web-admin/.env.local. Restart Admin to load them; no credentials printed.'
+        ? 'PASS: local Docker gateway settings synced to root .env.local. Restart the web apps; no credentials printed.'
         : 'PASS: Admin Docker Local settings and authenticated gateway are ready.');
     } catch (error) {
       console.error(`FAIL Admin Docker connection: ${error instanceof Error ? error.message : 'Unknown error'}`);

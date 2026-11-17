@@ -7,9 +7,12 @@ import { SESSION_COOKIE } from "../lib/shipper-session";
 import {
   verifyPassword,
   hashPassword,
-  createShipperSession,
-  verifyShipperSession,
 } from "../lib/shipper-security.mjs";
+import {
+  sharedAuthSecret,
+  createSharedShipperToken,
+  verifySharedShipperToken,
+} from "../lib/shipper-shared-auth.mjs";
 
 export class ShipperError extends Error {
   constructor(
@@ -47,12 +50,12 @@ export async function signInShipper(
   email: string,
   password: string,
 ): Promise<{ user: ShipperUser; token: string }> {
-  if (
-    !process.env.SHIPPER_SESSION_SECRET ||
-    Buffer.byteLength(process.env.SHIPPER_SESSION_SECRET) < 32
-  ) {
+  let secret: string;
+  try {
+    secret = sharedAuthSecret();
+  } catch {
     throw new ShipperError(
-      "Chưa cấu hình SHIPPER_SESSION_SECRET cho Web Shipper",
+      "Chưa cấu hình khóa xác thực dùng chung GreenPlus",
       503,
       "SESSION_NOT_CONFIGURED",
     );
@@ -96,23 +99,23 @@ export async function signInShipper(
     status: user.status,
     image_url: user.image_url ?? null,
   };
-  const token = createShipperSession(
-    user.user_id,
-    process.env.SHIPPER_SESSION_SECRET ?? "",
-  );
+  const token = createSharedShipperToken(publicUser, secret);
   return { user: publicUser, token };
 }
 
 export async function requireShipper(): Promise<ShipperUser> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  const secret = process.env.SHIPPER_SESSION_SECRET;
-  if (!secret)
+  let secret: string;
+  try {
+    secret = sharedAuthSecret();
+  } catch {
     throw new ShipperError(
-      "Chưa cấu hình phiên đăng nhập Shipper",
+      "Chưa cấu hình khóa xác thực dùng chung GreenPlus",
       503,
       "SESSION_NOT_CONFIGURED",
     );
-  const userId = verifyShipperSession(token, secret);
+  }
+  const userId = verifySharedShipperToken(token, secret);
   if (!userId)
     throw new ShipperError(
       "Phiên đăng nhập đã hết hạn",

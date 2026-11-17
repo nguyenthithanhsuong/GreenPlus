@@ -16,7 +16,7 @@ for app in admin client shipper; do
     -e NEXT_PUBLIC_SUPABASE_URL=https://ci-placeholder.supabase.co \
     -e NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder-anon-key \
     -e SUPABASE_SERVICE_ROLE_KEY=ci-placeholder-only \
-    -e SHIPPER_SESSION_SECRET=ci-only-session-secret-longer-than-32-bytes \
+    -e AUTH_HANDOFF_SECRET=ci-only-shared-session-secret-longer-than-32-bytes \
     "greenplus/web-${app}:ci" >/dev/null
   ready=0
   for attempt in $(seq 1 60); do

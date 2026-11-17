@@ -50,7 +50,7 @@ Lưu 3 file `.dump` ở nơi an toàn; backup mới chỉ là bước đầu, c�
 ### 2) Áp dụng migration
 
 ```powershell
-npm run docker:three-tier:migrate
+node scripts/repair-three-tier-parity.mjs
 if ($LASTEXITCODE -ne 0) { throw "Migration Docker 005 thất bại — xem log, không xóa volume" }
 ```
 
@@ -59,11 +59,11 @@ Script tự chạy SQL `005` lần lượt trên **3 database** và xác minh **
 ### 3) Kiểm tra schema và transaction rollback
 
 ```powershell
-npm run docker:three-tier:verify-migrations
+node scripts/repair-three-tier-parity.mjs --check
 if ($LASTEXITCODE -ne 0) { throw "Kiểm tra SQL 005 thất bại" }
 
 # Tạo dữ liệu thử và tự ROLLBACK, không lưu thay đổi
-npm run docker:three-tier:test-migrations
+node scripts/test-three-tier-parity.mjs
 if ($LASTEXITCODE -ne 0) { throw "Thử trigger / FK SQL 005 thất bại" }
 
 # Kiểm tra luôn gateway và commerce RPC khi toàn bộ stack đang chạy

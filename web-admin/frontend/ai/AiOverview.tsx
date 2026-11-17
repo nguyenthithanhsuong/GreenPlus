@@ -41,7 +41,12 @@ export default function AiOverview({ embedded = false }: { embedded?: boolean })
     finally{setBusy(false);}
   };
   const max=Math.max(1,...(overview?.alertTypes??[]).map((item)=>item.count));
-  const content = <><button type="button" className={secondary} onClick={()=>void reload()}><RefreshCcw size={16} className="mr-2 inline"/>Làm mới</button>
+  useEffect(() => {
+    const onRefresh = () => { if (document.visibilityState === "visible") void reload(); };
+    window.addEventListener("greenplus:data-updated", onRefresh);
+    return () => window.removeEventListener("greenplus:data-updated", onRefresh);
+  }, [reload]);
+  const content = <>{!embedded && <button type="button" className={secondary} onClick={()=>void reload()}><RefreshCcw size={16} className="mr-2 inline"/>Làm mới</button>}
     {role==="admin"?<div className={panel}><label htmlFor="ai-store" className="mb-2 block text-sm font-semibold">Cửa hàng cần xem</label><select id="ai-store" className="rounded-xl border p-2" value={storeId} onChange={e=>setStoreId(e.target.value)}><option value="">Chọn cửa hàng</option>{stores.map((item)=><option key={item.store_id} value={item.store_id}>{item.name}</option>)}</select></div>:null}
     {error?<AiNotice kind="error">{error}</AiNotice>:null}{notice?<AiNotice>{notice}</AiNotice>:null}
     {overview?<div className="grid gap-4 md:grid-cols-4">{[
@@ -51,8 +56,8 @@ export default function AiOverview({ embedded = false }: { embedded?: boolean })
       {label:"FAQ đang hoạt động",value:overview.knowledgeEntries,icon:ShieldCheck},
     ].map(({label,value,icon:Icon})=><div className={panel} key={label}><Icon className="mb-3 text-emerald-600"/><p className="text-sm text-slate-500">{label}</p><p className="text-3xl font-bold text-slate-900">{value}</p></div>)}</div>:null}
     {overview?.partial?<AiNotice kind="error">Chỉ phân tích một phần dữ liệu do giới hạn số bản ghi. Không dùng làm kết luận toàn kho.</AiNotice>:null}
-    <div className="grid gap-5 xl:grid-cols-2"><section className={panel}><h2 className="mb-4 text-lg font-bold">Cơ cấu cảnh báo</h2>{(overview?.alertTypes??[]).map((item)=><div key={item.type} className="mb-4"><div className="mb-1 flex justify-between text-sm"><span>{item.type}</span><span>{item.count}</span></div><div className="h-3 overflow-hidden rounded-full bg-emerald-50"><div className="h-full rounded-full bg-emerald-600" style={{width:`${100*item.count/max}%`}}/></div></div>)}<Link className="text-emerald-700 underline" href="/ai/alerts">Xem cảnh báo chi tiết</Link></section>
-    <section className={panel}><h2 className="mb-2 text-lg font-bold">Chạy phân tích</h2><p className="mb-4 text-sm text-slate-600">Dữ liệu tồn kho và 90 ngày đơn hàng đã lọc store. Khi lịch sử quá ngắn, mô hình báo độ tin cậy thấp.</p><div className="flex flex-wrap gap-2">{manager?<><button className={primary} disabled={busy} onClick={()=>void action("/api/ai/forecast",{storeId:storeId||undefined})}>Cập nhật dự báo</button><button className={secondary} disabled={busy} onClick={()=>void action("/api/ai/suggestions",{storeId:storeId||undefined})}>Tạo đề xuất</button></>:<p className="text-sm text-slate-500">Admin chỉ xem dữ liệu phân tích, không duyệt khuyến mãi.</p>}</div></section></div>
+    <div className="grid gap-5 xl:grid-cols-2"><section className={panel}><h2 className="mb-4 text-lg font-bold">Cơ cấu cảnh báo</h2>{(overview?.alertTypes??[]).map((item)=><div key={item.type} className="mb-4"><div className="mb-1 flex justify-between text-sm"><span>{item.type}</span><span>{item.count}</span></div><div className="h-3 overflow-hidden rounded-full bg-emerald-50"><div className="h-full rounded-full bg-emerald-600" style={{width:`${100*item.count/max}%`}}/></div></div>)}<Link className="text-emerald-700 underline" href="/inventories?tab=alerts">Xem cảnh báo chi tiết trong Tồn kho</Link></section>
+    <section className={panel}><h2 className="mb-2 text-lg font-bold">Chạy phân tích</h2><p className="mb-4 text-sm text-slate-600">Dữ liệu tồn kho và 90 ngày đơn hàng đã lọc store. Khi lịch sử quá ngắn, mô hình báo độ tin cậy thấp.</p><div className="flex flex-wrap gap-2">{manager?<><button className={primary} disabled={busy} onClick={()=>void action("/api/ai/forecast",{storeId:storeId||undefined})}>Cập nhật dự báo</button><button className={secondary} disabled={busy} onClick={()=>void action("/api/ai/suggestions",{storeId:storeId||undefined})}>Tạo đề xuất</button></>:<p className="text-sm text-slate-500">Chỉ Manager được chạy dự báo, tạo đề xuất và duyệt khuyến mãi.</p>}</div></section></div>
     <section className={panel}><h2 className="mb-4 text-lg font-bold">Diễn biến nhu cầu dự báo</h2>
       <p className="mb-3 text-xs text-slate-500">Dữ liệu tổng hợp từ các lần chạy mô hình; không phải doanh số thực tế.</p>
       <div className="flex h-40 items-end gap-2 overflow-x-auto" role="img" aria-label="Biểu đồ nhu cầu dự báo qua các lần chạy">

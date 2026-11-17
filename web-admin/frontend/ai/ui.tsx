@@ -11,7 +11,13 @@ export function AiNotice({children,kind="info"}:{children:ReactNode;kind?:"info"
 export async function aiFetch<T>(path:string,init?:RequestInit):Promise<T> {
   const response=await fetch(path,{credentials:"same-origin",cache:"no-store",...init});
   const data=await response.json().catch(()=>({error:"Không đọc được phản hồi"}));
-  if (!response.ok) throw new Error(data.error??"Yêu cầu chưa hoàn tất");
+  if (!response.ok) {
+    const fallback = response.status === 401 ? "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại." :
+      response.status === 403 ? "Bạn không có quyền thực hiện thao tác này." :
+      response.status === 503 ? "Chưa thể truy cập dịch vụ hoặc dữ liệu AI. Hãy kiểm tra AI trong Hệ thống." :
+      "Yêu cầu chưa hoàn tất";
+    throw new Error(typeof data.error === "string" ? data.error : fallback);
+  }
   return data as T;
 }
 export const postJson=(body:unknown):RequestInit=>({method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});

@@ -25,10 +25,12 @@ Push-Location $Root
 try {
     if (-not $Apply) {
         Write-Host 'GreenPlus maintenance preview; no source files will be modified.'
-        Invoke-CheckedNpm -NpmArguments @('run', 'maintain:scan')
-        $previewArgs = @('run', 'maintain:clean', '--')
+        & node scripts/repo-maintenance.mjs scan
+        if ($LASTEXITCODE -ne 0) { throw 'Maintenance scan failed' }
+        $previewArgs = @('scripts/repo-maintenance.mjs', 'clean')
         if ($ArchiveFlutter) { $previewArgs += '--legacy-flutter' }
-        Invoke-CheckedNpm -NpmArguments $previewArgs
+        & node @previewArgs
+        if ($LASTEXITCODE -ne 0) { throw 'Maintenance dry run failed' }
         Write-Host 'To quarantine approved legacy files and run quality gates, rerun with -Apply.'
         return
     }
@@ -40,18 +42,19 @@ try {
         Invoke-CheckedNpm -NpmArguments @('ci')
     }
 
-    $maintenanceArgs = @('run', 'maintain:all', '--', '--apply', '--zip')
+    $maintenanceArgs = @('scripts/repo-maintenance.mjs', 'all', '--apply', '--zip')
     if ($ArchiveFlutter) { $maintenanceArgs += '--legacy-flutter' }
     if ($CleanGenerated) { $maintenanceArgs += '--generated' }
     if ($DockerChecks) { $maintenanceArgs += '--docker' }
     if ($SkipBuild) { $maintenanceArgs += '--no-build' }
 
-    Invoke-CheckedNpm -NpmArguments $maintenanceArgs
+    & node @maintenanceArgs
+    if ($LASTEXITCODE -ne 0) { throw 'Maintenance apply failed' }
     Write-Host 'Source cleanup and quality checks completed.'
     if (Get-Command git -ErrorAction SilentlyContinue) {
         & git status --short
     }
-    Write-Host 'Review the diff. Restore with npm run maintain:restore if needed.'
+    Write-Host 'Review the diff. Restore with node scripts/repo-maintenance.mjs restore if needed.'
 }
 finally {
     Pop-Location

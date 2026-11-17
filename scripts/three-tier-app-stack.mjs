@@ -21,7 +21,7 @@ function run(command, args, env, timeout = 900000) {
   if (result.status !== 0) throw new Error(`Docker command failed (exit ${result.status}); no volumes were removed.`);
 }
 function bridgeEnv() {
-  if (!existsSync(secretFile)) throw new Error('Missing Docker sandbox .env. Run npm run docker:three-tier:init.');
+  if (!existsSync(secretFile)) throw new Error('Missing Docker sandbox .env. Run node scripts/three-tier-docker.mjs init.');
   const settings = localDockerSettings(readFileSync(secretFile, 'utf8'));
   return { GREENPLUS_DOCKER_GATEWAY_KEY: settings.GREENPLUS_DOCKER_GATEWAY_KEY };
 }

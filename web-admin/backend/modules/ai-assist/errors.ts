@@ -3,7 +3,8 @@ export class AiError extends Error {
 }
 export function aiErrorResponse(error: unknown): Response {
   const status = error instanceof AiError ? error.status : (error instanceof Error && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : error instanceof Error && "status" in error && typeof error.status === "number" ? error.status : 503);
-  const message = status < 500 && error instanceof Error ? error.message : "Dịch vụ AI chưa khả dụng";
+  // Typed, server-authored errors are safe to present; raw DB/network errors are not.
+  const message = error instanceof AiError ? error.message : status < 500 && error instanceof Error ? error.message : "Dịch vụ AI hoặc dữ liệu chưa sẵn sàng. Kiểm tra trạng thái AI trong Hệ thống.";
   return Response.json({ error: message }, { status, headers: { "Cache-Control": "no-store" } });
 }
 export function checkOrigin(request: Request): void {

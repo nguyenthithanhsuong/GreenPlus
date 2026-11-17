@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AdminShell from "../shared/AdminShell";
 import AiAssistantTabs from "./AiAssistantTabs";
 import { AiNotice,aiFetch,field,panel,primary,postJson } from "./ui";
@@ -13,12 +13,17 @@ export default function AiChat() {
   const [question,setQuestion]=useState("");
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
+  const currentStore = useRef(storeId);
+  currentStore.current = storeId;
+  useEffect(()=>{setMessages([]);setConversationId("");setError("");},[storeId]);
   const send=async()=>{
     const text=question.trim();if(!text||busy)return;
+    const requestStore = storeId;
     setBusy(true);setError("");setQuestion("");
     try {const result=await aiFetch<{conversationId:string;answer:string;mode:string;confidence:number}>("/api/ai/chat",postJson({storeId:storeId||undefined,question:text,conversationId:conversationId||undefined}));
+      if (currentStore.current !== requestStore) return;
       setConversationId(result.conversationId);setMessages(old=>[...old,{role:"user",text},{role:"assistant",text:result.answer,mode:result.mode,confidence:result.confidence}]);}
-    catch(e){setError(e instanceof Error?e.message:"Không nhận được phản hồi");setQuestion(text);}
+    catch(e){if(currentStore.current === requestStore){setError(e instanceof Error?e.message:"Không nhận được phản hồi");setQuestion(text);}}
     finally{setBusy(false);}
   };
   return <AdminShell title="Trợ lý GreenPlus" description="Hỏi đáp dựa trên kho tri thức được phê duyệt của cửa hàng.">

@@ -1,19 +1,26 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BrainCircuit,MessageCircle,Send } from "lucide-react";
-import { selectedStoreId } from "@/lib/stores/store-selection";
+import { selectedStoreId, STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
 
 type ChatLine={role:"user"|"assistant";text:string;source?:string;confidence?:number};
 export default function CustomerAiChat(){
  const [question,setQuestion]=useState("");const [lines,setLines]=useState<ChatLine[]>([]);
  const [conversationId,setConversationId]=useState("");const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
- const send=async()=>{const text=question.trim();if(!text||loading)return;setLoading(true);setError("");
- try{const res=await fetch("/api/ai/chat",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:text,storeId:selectedStoreId()||undefined,conversationId:conversationId||undefined})});
+ const storeEpoch=useRef(0);
+ useEffect(()=>{const reset=()=>{storeEpoch.current++;setConversationId("");setLines([]);setError("");};window.addEventListener(STORE_CHANGE_EVENT,reset);return()=>window.removeEventListener(STORE_CHANGE_EVENT,reset);},[]);
+ const send=async()=>{const text=question.trim();if(!text||loading)return;
+ const requestStore=selectedStoreId();
+ if(!requestStore){setError("Vui lòng chọn cửa hàng trước khi hỏi AI.");return;}
+ const requestEpoch=storeEpoch.current;
+ setLoading(true);setError("");
+ try{const res=await fetch("/api/ai/chat",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:text,storeId:requestStore,conversationId:conversationId||undefined})});
  const result=await res.json();if(!res.ok)throw new Error(result.error??"Không gửi được câu hỏi");
+ if(storeEpoch.current!==requestEpoch||selectedStoreId()!==requestStore)return;
  setConversationId(result.conversationId);setLines(v=>[...v,{role:"user",text},{role:"assistant",text:result.answer,source:result.mode,confidence:result.confidence}]);setQuestion("");}
- catch(e){setError(e instanceof Error?e.message:"Trợ lý chưa sẵn sàng");}finally{setLoading(false);}};
+ catch(e){if(storeEpoch.current===requestEpoch){setError(e instanceof Error?e.message:"Trợ lý chưa sẵn sàng");}}finally{setLoading(false);}};
  return <div className="mx-auto min-h-screen max-w-[520px] bg-white px-4 pb-28 pt-8 text-slate-800">
  <Link className="text-sm font-semibold text-emerald-700" href="/dashboard">← Trang chủ</Link>
  <div className="mt-5 flex items-center gap-3"><BrainCircuit className="text-emerald-700"/><h1 className="text-2xl font-bold">Trợ lý GreenPlus</h1></div>

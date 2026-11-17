@@ -31,5 +31,5 @@ test('Shipper database uses server-side service role and explicit row ownership'
   assert.match(delivery, /\.from\((['"])store_members\1\)/);
   assert.match(delivery, /\.eq\((['"])status\1,\s*(['"])active\2\)/);
   assert.match(delivery, /\.eq\((['"])status\1,\s*currentStatus\)/);
-  assert.match(auth, /verifyShipperSession/);
+  assert.match(auth, /verifySharedShipperToken/);
 });

@@ -25,14 +25,15 @@ test('optional Docker update bypass performs verification but no writes', () => 
   assert.equal(files({ dockerUpdate: false }).filter(x => x.startsWith('scripts/three-tier-docker.mjs')).length, 1);
   assert.ok(files({dockerUpdate:false}).some(x=>x==='scripts/three-tier-full-schema.mjs --check'));
 });
-test('npm dev and dev:all converge; dev:web runs only web without recursion', () => {
+test('npm dev starts Docker checks and npm web starts only the apps, without duplicate alias', () => {
   const scripts = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).scripts;
   assert.equal(scripts.dev, 'node scripts/dev-with-docker.mjs');
-  assert.equal(scripts['dev:all'], 'node scripts/dev-with-docker.mjs');
-  assert.equal(scripts['dev:web'], 'npm run dev:turbo');
-  assert.equal(scripts['dev:turbo'], 'turbo dev --ui=tui');
+  assert.equal(scripts['dev:all'], undefined);
+  assert.equal(scripts.web, 'turbo dev --ui=tui');
+  assert.equal(scripts['dev:apps'], undefined);
+  assert.equal(scripts['dev:web'], undefined);
   const wrapper = readFileSync(resolve(root, 'scripts/dev-with-docker.mjs'), 'utf8');
-  assert.match(wrapper, /spawn\('npm run dev:turbo'/);
+  assert.match(wrapper, /spawn\('npm run web'/);
   assert.doesNotMatch(wrapper, /spawn\('npm run dev:all'/);
   assert.doesNotMatch(wrapper, /down.*(?:-v|--volumes)|supabase.*db.*push/);
   assert.match(wrapper, /connectLocalAdmin\(/);

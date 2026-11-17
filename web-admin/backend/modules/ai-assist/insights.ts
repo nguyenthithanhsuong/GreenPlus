@@ -9,8 +9,13 @@ export async function aiInsights(storeId:string) {
     db.from("ai_complaint_triage").select("complaint_id,priority,created_at").eq("store_id",storeId).limit(100),
     db.from("ai_knowledge").select("id").eq("store_id",storeId).eq("enabled",true).limit(100),
   ]);
-  const results=[forecast,alerts,suggestions,triage,knowledge].map((item)=>resultOrFail(item.data,item.error));
-  const [forecasts,activeAlerts,proposals,complaints,faqs]=results;
+  // Preserve each Supabase query's row type. Mapping heterogeneous results into
+  // one array erases per-table fields and makes TypeScript infer a broad union.
+  const forecasts = resultOrFail(forecast.data, forecast.error);
+  const activeAlerts = resultOrFail(alerts.data, alerts.error);
+  const proposals = resultOrFail(suggestions.data, suggestions.error);
+  const complaints = resultOrFail(triage.data, triage.error);
+  const faqs = resultOrFail(knowledge.data, knowledge.error);
   return {
     forecasts:forecasts.length,lowConfidence:forecasts.filter((row)=>row.confidence==="low").length,
     alerts:activeAlerts.length,alertTypes:["low_stock","near_expiry","overstock"].map((type)=>({type,count:activeAlerts.filter((row)=>row.type===type).length})),
@@ -18,6 +23,6 @@ export async function aiInsights(storeId:string) {
     approved:proposals.filter((row)=>row.status==="accepted").length,
     complaints:complaints.length,knowledgeEntries:faqs.length,
     trend:forecasts.slice(0,60).reverse().map((row)=>({time:row.created_at,value:row.predicted_daily_units})),
-    source:"supabase",partial:results.some((list,index)=>list.length===[150,100,100,100,100][index]),
+    source:"supabase",partial:forecasts.length===150 || activeAlerts.length===100 || proposals.length===100 || complaints.length===100 || faqs.length===100,
   };
 }

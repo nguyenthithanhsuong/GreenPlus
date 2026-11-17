@@ -2,6 +2,9 @@
 import {useEffect, useState} from "react";
 import Link from "next/link";
 import DockerCommerceInspector from "./DockerCommerceInspector";
+import AdminShell from "../shared/AdminShell";
+import CommerceTabs from "../shared/CommerceTabs";
+import { useAuthStore } from "@/lib/stores/authStore";
 
 type Store={store_id:string;name:string;tier:string};
 /** Main Admin Orders/Inventory pages switch to this separate Docker sandbox only. */
@@ -10,6 +13,16 @@ export default function DockerCommerceWorkspace({kind}:{kind:"inventory"|"orders
  const [storeId,setStoreId]=useState("");
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
+ const [section,setSection]=useState("commerce");
+ const role = useAuthStore(s => s.user?.role_name ?? s.session?.role_name)?.toLowerCase();
+ useEffect(() => {
+  if (kind !== "inventory") return;
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  if (tab === "alerts" || tab === "forecast") setSection(tab);
+ }, [kind]);
+ useEffect(() => {
+  if (role !== "manager" && section !== "commerce") setSection("commerce");
+ }, [role,section]);
  useEffect(()=>{
   const controller=new AbortController();
   fetch("/api/tenant-demo",{cache:"no-store",signal:controller.signal})
@@ -22,12 +35,26 @@ export default function DockerCommerceWorkspace({kind}:{kind:"inventory"|"orders
    .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
   return ()=>controller.abort();
  },[]);
- return <main className="mx-auto max-w-5xl space-y-5 p-6 text-slate-800">
-  <div className="flex flex-wrap items-center justify-between"><div><h1 className="text-2xl font-semibold">{kind==="inventory"?"Kho hàng":"Đơn hàng"}</h1><p className="text-sm text-emerald-700">Docker Local — Sandbox</p></div><Link href="/settings" className="text-sm text-emerald-700 underline">Nguồn dữ liệu</Link></div>
-  {loading&&<p>Đang tải cửa hàng Docker...</p>}
+ return <AdminShell title={kind==="inventory"?"Quản lý tồn kho":"Quản lý đơn hàng"}
+  description="Docker Local Sandbox · dữ liệu mô phỏng chưa thay thế Supabase nghiệp vụ"
+  pageActions={<Link href="/system" className="text-sm font-semibold text-emerald-700 underline">Cấu hình nguồn dữ liệu</Link>}>
+  {kind==="inventory" && <CommerceTabs current={section} onChange={setSection} tabs={[
+    { id:"commerce", label:"Tồn kho Docker" },
+    ...(role === "manager" ? [
+      { id:"alerts", label:"Cảnh báo tồn kho AI" },
+      { id:"forecast", label:"Dự báo & đề xuất AI" },
+    ] : []),
+  ]} />}
+  {kind==="inventory" && role==="manager" && section!=="commerce" && <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-slate-800">
+    <h2 className="font-bold">{section==="alerts"?"Cảnh báo tồn kho AI":"Dự báo & đề xuất AI"}</h2>
+    <p className="mt-2">Chức năng AI vẫn được giữ trong điều hướng. Nhưng dữ liệu của Docker sandbox chưa có adapter AI hoàn chỉnh: API AI hiện truy vấn Supabase, không truy vấn PostgreSQL 17 Docker. Hệ thống không tự ghép dữ liệu của hai cửa hàng khác nguồn.</p>
+    <p className="mt-2">Để chạy AI trên dữ liệu thật hiện tại, chọn lại nguồn Supabase trong cấu hình và mở tab AI ở trang nghiệp vụ. Để dùng AI với Docker cần kết nối adapter theo tenant, Auth và Storage trước khi xác nhận full parity.</p>
+  </section>}
+  {(kind!=="inventory" || section==="commerce" || role!=="manager") && <>{loading&&<p>Đang tải cửa hàng Docker...</p>}
   {error&&<p role="alert" className="text-red-700">{error}</p>}
   {!loading&&!error&&!stores.length&&<p>Chưa có tenant demo. <Link href="/settings/tenant-demo" className="underline">Tạo thử nghiệm</Link></p>}
   {stores.length>0&&<label className="block max-w-md text-sm">Cửa hàng Docker<select className="mt-1 w-full rounded border p-2" value={storeId} onChange={e=>setStoreId(e.target.value)}>{stores.map(row=><option key={row.store_id} value={row.store_id}>{row.name} ({row.tier})</option>)}</select></label>}
   {storeId&&<DockerCommerceInspector key={`${storeId}:${kind}`} storeId={storeId} initialTab={kind}/>}
- </main>;
+  </>}
+ </AdminShell>;
 }

@@ -425,12 +425,12 @@ function run(root, command, args) {
 }
 async function verify(root, { build = false, docker = false } = {}) {
   if (!existsSync(join(root, 'node_modules'))) throw Error('Run npm ci first (root node_modules missing)');
-  for (const script of ['lint', 'typecheck', 'test:release:static']) run(root, 'npm', ['run', script]);
+  for (const script of ['lint', 'typecheck', 'test']) run(root, 'npm', ['run', script]);
   if (build) run(root, 'npm', ['run', 'build']);
   if (docker) {
     // check is non-mutating; migrations, up and down are intentionally not launched.
     run(root, 'npm', ['run', 'docker:three-tier:check']);
-    for (const s of ['test:three-tier-commerce:docker', 'test:three-tier-transactions:docker', 'test:three-tier-lifecycle:docker']) run(root, 'npm', ['run', s]);
+    for (const script of ['test-three-tier-commerce.mjs', 'test-three-tier-transactions.mjs', 'test-three-tier-lifecycle.mjs']) run(root, 'node', [`scripts/${script}`]);
   }
   console.log('\nPASS: requested verification gates completed.');
 }
@@ -473,7 +473,7 @@ async function main() {
     if (!apply) { await report(root, await planCleanup(root, allowlist)); console.log('Use --apply to quarantine and verify.'); return; }
     try {
       await verify(root, { build: !flags.has('--no-build'), docker: flags.has('--docker') });
-      if (flags.has('--generated')) run(root,'npm',['run','clean:zip']);
+      if (flags.has('--generated')) run(root,'node',['scripts/clean-workspaces.mjs','--for-zip']);
       if (flags.has('--zip')) run(root,'npm',['run','zip:source']);
       console.log('Maintenance complete; inspect git diff and commit intentional removals only.');
     } catch (error) {

@@ -50,6 +50,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const initialized = useAuthStore((state) => state.initialized);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -64,10 +65,17 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const [bannedDialogOpen, setBannedDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (initialized && isAuthenticated && isLogin) {
-      router.replace("/dashboard");
-    }
-  }, [initialized, isAuthenticated, isLogin, router]);
+    if (!initialized || !isAuthenticated || !isLogin) return;
+    let active = true;
+    void fetch("/api/auth/customer-session", { cache: "no-store", credentials: "same-origin" })
+      .then(async response => {
+        if (!active) return;
+        if (response.ok) { router.replace("/dashboard"); return; }
+        if (response.status === 401 || response.status === 403) clearAuth();
+        // A temporary server/database error must not cause a login redirect loop.
+      }).catch(() => {});
+    return () => { active = false; };
+  }, [initialized, isAuthenticated, isLogin, router, clearAuth]);
 
   const applyLoginResponse = (data: unknown) => {
     if (typeof data !== "object" || data === null) {

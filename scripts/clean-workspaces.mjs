@@ -1,6 +1,6 @@
 /** GreenPlus local cleanup for source-only ZIPs. Does not touch the database, secrets,
  * Docker volumes, Git files, mobile signing keys or the root node_modules cache.
- * Usage: npm run clean:preview | npm run clean:workspaces | npm run clean:zip
+ * Optional direct invocation: node scripts/clean-workspaces.mjs --dry-run | --for-zip
  */
 import { lstat, mkdir, readdir, rename, rm, cp } from 'node:fs/promises';
 import { resolve, join, dirname } from 'node:path';

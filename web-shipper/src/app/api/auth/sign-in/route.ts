@@ -4,7 +4,7 @@ import {
   signInShipper,
   shipperApiError,
 } from "../../../../server/shipper-auth";
-import { SESSION_HOURS } from "../../../../lib/shipper-security.mjs";
+import { SESSION_HOURS } from "../../../../lib/shipper-shared-auth.mjs";
 
 export const runtime = "nodejs";
 

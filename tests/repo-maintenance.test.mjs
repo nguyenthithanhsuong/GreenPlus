@@ -94,9 +94,9 @@ test('apply quarantines original files and prunes empty folder; restore is lossl
 test('read-only CI gate and Client workspace tests are wired into root and Actions', async () => {
   const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   const ci = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  assert.match(pkg.scripts['test:release:static'], /npm run test:client/);
-  assert.match(pkg.scripts['check-all'], /^npm run check:ci$/);
-  assert.doesNotMatch(pkg.scripts['check:ci'], /lint-fix|prettier --write/);
+  assert.match(pkg.scripts.test, /web-client\/tests\/\*\.test\.mjs/);
+  assert.match(pkg.scripts['check-all'], /npm run lint && npm run typecheck && npm run test && npm run build/);
+  assert.doesNotMatch(pkg.scripts['check-all'], /lint-fix|prettier --write/);
   assert.match(ci, /Client checkout and multi-tenant tests/);
   assert.match(ci, /matrix\.app == 'client'/);
   assert.match(ci, /app: client, node: '22'/);

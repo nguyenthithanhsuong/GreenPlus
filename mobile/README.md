@@ -9,7 +9,7 @@ The two **production mobile frontends are the existing Next.js PWAs**, not Flutt
 
 **PWA** is an installed web application; **TWA** is a separately signed Android APK/AAB that displays the live HTTPS PWA after Android Digital Asset Links verification. App data and auth remain served by the web backend. The Android wrapper cannot run offline checkout/delivery or provide native background GPS by itself.
 
-The old `mobile/customer_app` and `mobile/shipper_app` directories are **obsolete Flutter prototypes** (if still present), excluded from the release. Do not run `flutter create` or ship them as the chosen Mobile implementation. Once no teammate depends on them, use `npm run maintain -- all --apply --legacy-flutter --zip` to quarantine these prototypes without touching the PWA/TWA workspaces. The command can restore the archives with `npm run maintain:restore`.
+The old `mobile/customer_app` and `mobile/shipper_app` directories are **obsolete Flutter prototypes** (if still present), excluded from the release. Do not run `flutter create` or ship them as the chosen Mobile implementation. Once no teammate depends on them, use `node scripts/repo-maintenance.mjs all --apply --legacy-flutter --zip` to quarantine these prototypes without touching the PWA/TWA workspaces. The command can restore the archives with `node scripts/repo-maintenance.mjs restore`.
 
 ## Mobile release workflow
 

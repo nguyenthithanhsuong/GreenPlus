@@ -73,7 +73,8 @@ test('source ZIP is created without env, backups, dependencies or generated arti
 
 test('ports are consistent between dev, start, prewarm, Docker, nginx and CI', () => {
   const root=JSON.parse(read('package.json'));
-  assert.equal(root.scripts['clean:zip'],'node scripts/clean-workspaces.mjs --for-zip');
+  assert.equal(root.scripts['clean:zip'], undefined, 'clean:zip is intentionally not a root command');
+  assert.ok(read('scripts/clean-workspaces.mjs').includes('--for-zip'), 'manual cleaner remains available without an npm alias');
   for (const [name,port] of [['admin',3000],['client',3001],['shipper',3002]]) {
     const config=JSON.parse(read(`web-${name}/package.json`));
     assert.match(config.scripts.dev,new RegExp(`-p ${port}$`));

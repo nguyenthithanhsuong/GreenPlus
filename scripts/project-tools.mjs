@@ -30,14 +30,14 @@ const docker = {
 function usage() {
   console.log(`GreenPlus project tools
 
-  npm run docker -- <${Object.keys(docker).join('|')}>
+  node scripts/project-tools.mjs docker <${Object.keys(docker).join('|')}>
   npm run mobile -- <client|shipper> <preflight|init|check|assetlinks|build|install> [args]
-  npm run maintain -- <scan|clean|apply|restore|verify|all> [args]
+  node scripts/project-tools.mjs maintain <scan|clean|apply|restore|verify|all> [args]
 
 Examples:
-  npm run docker -- check
+  node scripts/project-tools.mjs docker check
   npm run mobile -- client preflight https://client.example.com/
-  npm run maintain -- scan
+  npm run audit:unused
 
 Only the requested action is run; no default database or file mutation.`);
 }

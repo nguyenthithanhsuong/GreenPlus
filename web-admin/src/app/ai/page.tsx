@@ -1,2 +1,2 @@
-import AiOverview from "../../../frontend/ai/AiOverview";
-export default function Page() { return <AiOverview/>; }
+import { redirect } from "next/navigation";
+export default function Page() { redirect("/inventories?tab=forecast"); }

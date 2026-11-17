@@ -1,0 +1,181 @@
+name: greenplus-three-tier
+# Resource limits + bounded logs. Local sandbox only, NOT hardened production Supabase.
+x-greenplus-logging: &greenplus-logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+services:
+  shared-db:
+    image: postgres:16-alpine
+    mem_limit: 768m
+    shm_size: 128m
+    stop_grace_period: 30s
+    logging: *greenplus-logging
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: greenplus_demo
+    volumes:
+      - shared_data:/var/lib/postgresql/data
+      - ./sql/shared:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d greenplus_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  enterprise-a-db:
+    image: postgres:16-alpine
+    mem_limit: 512m
+    shm_size: 128m
+    stop_grace_period: 30s
+    logging: *greenplus-logging
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: enterprise_a
+    volumes:
+      - enterprise_a_data:/var/lib/postgresql/data
+      - ./sql/enterprise-a:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d enterprise_a"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  enterprise-b-db:
+    image: postgres:16-alpine
+    mem_limit: 512m
+    shm_size: 128m
+    stop_grace_period: 30s
+    logging: *greenplus-logging
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: enterprise_b
+    volumes:
+      - enterprise_b_data:/var/lib/postgresql/data
+      - ./sql/enterprise-b:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d enterprise_b"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  # One-shot, idempotent, and safe on EXISTING volumes. All SQL runs inside the Docker lab.
+  # PostgREST no longer connects as the PostgreSQL superuser.
+  shared-rest-auth:
+    image: postgres:16-alpine
+    logging: *greenplus-logging
+    mem_limit: 256m
+    environment:
+      PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
+    volumes:
+      - ./sql/auth:/sql/auth:ro
+    depends_on:
+      shared-db: { condition: service_healthy }
+    entrypoint: ["/bin/sh", "-ec"]
+    # A single list element is required: /bin/sh -ec must receive the entire script as one -c argument.
+    command:
+      - >-
+        exec psql -q -h shared-db -U postgres -d greenplus_demo -X -v ON_ERROR_STOP=1
+        -v "rest_password=$${DEMO_POSTGREST_PASSWORD}"
+        -f /sql/auth/005_postgrest_authenticator.sql
+    restart: "no"
+  enterprise-a-rest-auth:
+    image: postgres:16-alpine
+    logging: *greenplus-logging
+    mem_limit: 256m
+    environment:
+      PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
+    volumes:
+      - ./sql/auth:/sql/auth:ro
+    depends_on:
+      enterprise-a-db: { condition: service_healthy }
+    entrypoint: ["/bin/sh", "-ec"]
+    # A single list element is required: /bin/sh -ec must receive the entire script as one -c argument.
+    command:
+      - >-
+        exec psql -q -h enterprise-a-db -U postgres -d enterprise_a -X -v ON_ERROR_STOP=1
+        -v "rest_password=$${DEMO_POSTGREST_PASSWORD}"
+        -f /sql/auth/005_postgrest_authenticator.sql
+    restart: "no"
+  enterprise-b-rest-auth:
+    image: postgres:16-alpine
+    logging: *greenplus-logging
+    mem_limit: 256m
+    environment:
+      PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
+      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
+    volumes:
+      - ./sql/auth:/sql/auth:ro
+    depends_on:
+      enterprise-b-db: { condition: service_healthy }
+    entrypoint: ["/bin/sh", "-ec"]
+    # A single list element is required: /bin/sh -ec must receive the entire script as one -c argument.
+    command:
+      - >-
+        exec psql -q -h enterprise-b-db -U postgres -d enterprise_b -X -v ON_ERROR_STOP=1
+        -v "rest_password=$${DEMO_POSTGREST_PASSWORD}"
+        -f /sql/auth/005_postgrest_authenticator.sql
+    restart: "no"
+  shared-rest:
+    image: postgrest/postgrest:v12.2.8
+    logging: *greenplus-logging
+    mem_limit: 256m
+    environment:
+      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@shared-db:5432/greenplus_demo
+      PGRST_DB_SCHEMAS: public,pro_a,pro_b
+      PGRST_DB_ANON_ROLE: web_anon
+    depends_on:
+      shared-rest-auth: { condition: service_completed_successfully }
+  enterprise-a-rest:
+    image: postgrest/postgrest:v12.2.8
+    logging: *greenplus-logging
+    mem_limit: 256m
+    environment:
+      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@enterprise-a-db:5432/enterprise_a
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: web_anon
+    depends_on:
+      enterprise-a-rest-auth: { condition: service_completed_successfully }
+  enterprise-b-rest:
+    image: postgrest/postgrest:v12.2.8
+    logging: *greenplus-logging
+    mem_limit: 256m
+    environment:
+      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@enterprise-b-db:5432/enterprise_b
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: web_anon
+    depends_on:
+      enterprise-b-rest-auth: { condition: service_completed_successfully }
+  gateway:
+    logging: *greenplus-logging
+    mem_limit: 256m
+    build:
+      context: ../..
+      dockerfile: docker/three-tier/gateway/Dockerfile
+    environment:
+      DEMO_GATEWAY_KEY: ${DEMO_GATEWAY_KEY:?Set DEMO_GATEWAY_KEY in .env}
+      DEMO_SHARED_REST_URL: http://shared-rest:3000
+      DEMO_ENTERPRISE_A_REST_URL: http://enterprise-a-rest:3000
+      DEMO_ENTERPRISE_B_REST_URL: http://enterprise-b-rest:3000
+    ports:
+      - 127.0.0.1:4100:4100
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4100/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+      start_period: 15s
+    depends_on:
+      - shared-rest
+      - enterprise-a-rest
+      - enterprise-b-rest
+    restart: unless-stopped
+volumes:
+  # Preserve existing PG16 named volumes exactly as originally declared.
+  # Adding labels to existing volumes makes Docker Compose request a destructive recreate.
+  shared_data:
+  enterprise_a_data:
+  enterprise_b_data:

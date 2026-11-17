@@ -1,2 +1,2 @@
-import AiPromotions from "../../../../frontend/ai/AiPromotions";
-export default function Page() { return <AiPromotions/>; }
+import { redirect } from "next/navigation";
+export default function Page() { redirect("/prices?tab=promotions"); }

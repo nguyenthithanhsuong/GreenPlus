@@ -29,7 +29,7 @@ test('Shipper Docker is non-root and does not embed secrets',()=>{
  assert.match(docker,/CMD \["node", "server\.js"\]/);
  assert.match(docker,/USER greenplus/);
  assert.match(docker,/HEALTHCHECK/);
- assert.doesNotMatch(docker,/^(?:ARG|ENV)\s+(?:SUPABASE_SERVICE_ROLE_KEY|SHIPPER_SESSION_SECRET)\s*=/m);
+ assert.doesNotMatch(docker,/^(?:ARG|ENV)\s+(?:SUPABASE_SERVICE_ROLE_KEY|AUTH_HANDOFF_SECRET|AUTH_SESSION_SECRET)\s*=/m);
 });
 test('Shipper health stays unauthenticated and does not access DB',()=>{
  const route=read('../src/app/api/health/route.ts');

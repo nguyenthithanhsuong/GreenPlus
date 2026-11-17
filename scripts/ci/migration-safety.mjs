@@ -85,20 +85,33 @@ export function parseMigrationList(output) {
   if(!found.length)throw new Error('Unable to parse Supabase migration list; fail closed (do not guess remote state)');
   return found;
 }
-export function planRemoteMigrations(localRows,listOutput) {
-  const parsed=parseMigrationList(listOutput);
-  const localVersions=localRows.map(r=>r.version);
-  const applied=parsed.filter(x=>x.remote!==null).map(x=>x.remote);
-  if(!applied.length)throw new Error('No remote baseline history. Bootstrap/reconcile manually; no automatic first deployment.');
-  const seen=new Set();
+/** Read-only assessment: validates the version prefix while reporting pending manual SQL.
+ * This is NOT an assertion that live SQL bytes or Auth/Storage match the repository. */
+export function inspectRemoteMigrations(localRows, listOutput) {
+  const parsed = parseMigrationList(listOutput);
+  const localVersions = localRows.map(r => r.version);
+  const applied = parsed.filter(x => x.remote !== null).map(x => x.remote);
+  if (!applied.length) throw new Error('No remote baseline history. Bootstrap/reconcile manually; no automatic first deployment.');
+  const seen = new Set();
   for (const version of applied) {
-    if(seen.has(version))throw new Error(`Duplicate remote history version ${version}`);
+    if (seen.has(version)) throw new Error(`Duplicate remote history version ${version}`);
     seen.add(version);
   }
   // Historical prefix required. No orphan remote migration, no gaps.
-  if(applied.some((v,i)=>localVersions[i]!==v))throw new Error('Remote migration history diverges from repository prefix. Manual reconciliation required.');
-  const pending=localRows.slice(applied.length);
-  const unsafe=pending.filter(x=>!x.autoSafe);
-  if(unsafe.length)throw new Error(`Pending migrations require manual deployment: ${unsafe.map(x=>`${x.file}: ${x.reasons.join(', ')}`).join(' | ')}`);
-  return {applied:applied.length,pending:pending.map(x=>x.file)};
+  if (applied.some((v, i) => localVersions[i] !== v))
+    throw new Error('Remote migration history diverges from repository prefix. Manual reconciliation required.');
+  const pendingRows = localRows.slice(applied.length);
+  return {
+    applied: applied.length,
+    pending: pendingRows.map(x => x.file),
+    pendingManual: pendingRows.filter(x => !x.autoSafe).map(x => ({ file: x.file, reasons: x.reasons })),
+    upToDate: pendingRows.length === 0,
+  };
+}
+
+export function planRemoteMigrations(localRows, listOutput) {
+  const report = inspectRemoteMigrations(localRows, listOutput);
+  if (report.pendingManual.length)
+    throw new Error(`Pending migrations require manual deployment: ${report.pendingManual.map(x => `${x.file}: ${x.reasons.join(', ')}`).join(' | ')}`);
+  return { applied: report.applied, pending: report.pending };
 }

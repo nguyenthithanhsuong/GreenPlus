@@ -5,10 +5,10 @@ This is an **actual Docker/PostgreSQL data isolation experiment within the Green
 ## Local setup
 
 1. Install Docker Desktop, Node.js/npm and Git. Start Docker Desktop.
-2. Run `npm run docker:three-tier:init` from the repository root. This creates `docker/three-tier/.env` on a fresh sandbox or adds **only** `DEMO_POSTGREST_PASSWORD` to an existing .env; it does not rotate pre-existing DB/gateway keys. The gateway publishes _only_ on `127.0.0.1:4100`, and PostgREST/PostgreSQL are internal to Docker.
+2. Run `node scripts/three-tier-docker.mjs init` from the repository root. This creates `docker/three-tier/.env` on a fresh sandbox or adds **only** `DEMO_POSTGREST_PASSWORD` to an existing .env; it does not rotate pre-existing DB/gateway keys. The gateway publishes _only_ on `127.0.0.1:4100`, and PostgREST/PostgreSQL are internal to Docker.
 3. From the repository root, run `npm run docker:three-tier:up` followed by `npm run docker:three-tier:check`. The wrapper validates that Compose passes the full shell script as a **single** argument to each auth initializer before startup, then enforces low-privilege role checks and tenant smoke checks.
 4. Verify `curl http://127.0.0.1:4100/health` (PowerShell: `Invoke-RestMethod http://127.0.0.1:4100/health`).
-5. In the root of the actual GreenPlus checkout, configure **only the local Admin process**, e.g. `web-admin/.env.local`, with the values below. The existing root `.env` may still provide your regular Admin authentication; don't paste public/production Supabase keys into Docker files.
+5. In the root of the actual GreenPlus checkout, configure the shared **root `.env.local`** for all three Next.js apps with the values below. The existing root `.env` may still provide your regular authentication; don't paste public/production Supabase keys into Docker files.
 
 ```dotenv
 GREENPLUS_TENANCY_DEMO=true
@@ -69,21 +69,21 @@ docker compose exec -T enterprise-b-db psql -X -v ON_ERROR_STOP=1 -U postgres -d
 docker compose restart shared-rest enterprise-a-rest enterprise-b-rest
 ```
 
-From the repository root, use `npm run test:three-tier-commerce` for the **static contract** (no database) and `npm run test:three-tier-commerce:docker` for the **live disposable SQL probes**. The live probe runs one transaction per schema/database and ends it with `ROLLBACK`. It verifies scoped queries and that a product cannot reference another store's category; it does not certify database RLS or JWT-role isolation.
+From the repository root, use `node scripts/test-three-tier-commerce.mjs` for the **static contract** (no database) and `node scripts/test-three-tier-commerce.mjs` for the **live disposable SQL probes**. The live probe runs one transaction per schema/database and ends it with `ROLLBACK`. It verifies scoped queries and that a product cannot reference another store's category; it does not certify database RLS or JWT-role isolation.
 
 **Not a production cutover:** Docker PostgREST still runs behind the separate demonstration gateway with demo-only privileges, not tenant-authenticated PostgreSQL roles. Existing `0015` registry entries, production PostgREST authentication, row-level security, tenant-specific credential permissions, migration parity for orders/inventory, and live cross-tenant checks are prerequisites before setting `GREENPLUS_TENANT_DATA_READ_PRODUCTS=true`. Do **not** point the Admin adapter at the demo PostgREST services or expose those services publicly merely because SQL `002` exists.
 
 ## Docker SQL 005 — RBAC, Audit Log, ảnh khuyến mãi
 
-Docker sandbox có migration **005** tương đương một phần chức năng của Supabase **0019**, với quyền và trigger tương ứng các bảng thực sự có trong Docker. SQL chạy ở cả năm storage scopes nhưng **không** chuyển sản phẩm sang Docker production. Backup rồi áp dụng bằng `npm run docker:three-tier:migrate`; xác minh `npm run docker:three-tier:verify-migrations` và kiểm thử rollback `npm run docker:three-tier:test-migrations`. Khi dùng `npm run docker:three-tier:up`, SQL 005 cũng được áp dụng sau SQL 002–004 trên các volume cũ. Đọc [MIGRATION_005_RBAC_AUDIT_GUIDE.md](MIGRATION_005_RBAC_AUDIT_GUIDE.md) để có lệnh PowerShell backup ba database và ranh giới parity.
+Docker sandbox có migration **005** tương đương một phần chức năng của Supabase **0019**, với quyền và trigger tương ứng các bảng thực sự có trong Docker. SQL chạy ở cả năm storage scopes nhưng **không** chuyển sản phẩm sang Docker production. Backup rồi áp dụng bằng `node scripts/repair-three-tier-parity.mjs`; xác minh `node scripts/repair-three-tier-parity.mjs --check` và kiểm thử rollback `node scripts/test-three-tier-parity.mjs`. Khi dùng `npm run docker:three-tier:up`, SQL 005 cũng được áp dụng sau SQL 002–004 trên các volume cũ. Đọc [MIGRATION_005_RBAC_AUDIT_GUIDE.md](MIGRATION_005_RBAC_AUDIT_GUIDE.md) để có lệnh PowerShell backup ba database và ranh giới parity.
 
 ## CI / full parity status (17/11/2026)
 
-Use `npm run docker:three-tier:stores` to list **actual** tenants, their tier, slots, and database/schema destinations. Use `npm run docker:three-tier:audit` to compare the five Docker scopes against all 44 Supabase business tables. `npm run docker:three-tier:parity-required` intentionally blocks production cutover while Docker lacks Supabase-authenticated API, Storage, RLS, Realtime and all migration parity.
+Use `npm run docker:three-tier:stores` to list **actual** tenants, their tier, slots, and database/schema destinations. Use `npm run docker:three-tier:audit` to compare the five Docker scopes against all 44 Supabase business tables. `node scripts/ci/three-tier-parity-audit.mjs --require-full-parity` intentionally blocks production cutover while Docker lacks Supabase-authenticated API, Storage, RLS, Realtime and all migration parity.
 
-Database RAM/logging limits and volume ownership labels are declared in `compose.yaml`; the data volumes are not reset by this update. The canonical seed tier map is `scripts/ci/three-tier-contract.json`. For migration safety, Storage checks, GitHub CI and required steps towards full parity, read `GreenPlus_MIGRATION_CICD_DOCKER_PARITY_GUIDE_20261117.md` at the repository root.
+Database RAM/logging limits and volume ownership labels are declared in `compose.yaml`; the data volumes are not reset by this update. The canonical seed tier map is `scripts/ci/three-tier-contract.json`. For migration safety, Storage checks, GitHub CI and required steps towards full parity, see `README.md` at the repository root and the bundled Docker guides.
 
 
 ## Canonical migration mirror (0001–0019) on PG17
 
-To mirror **all** Supabase application SQL migrations without touching existing PG16 volumes, run `npm run docker:three-tier:full-plan`, then `npm run docker:three-tier:up`, then `npm run docker:three-tier:full-check`. The up command now provisions separate PostgreSQL 17 containers and applies 19 canonical source migrations to five tier scopes. See `DOCKER_FULL_MIGRATIONS_0001_0019_GUIDE.md` at repository root. This does not implement Auth, Storage, Realtime service or application API cutover.
+To mirror **all** Supabase application SQL migrations without touching existing PG16 volumes, run `npm run docker:three-tier:full-plan`, then `npm run docker:three-tier:up`, then `npm run docker:three-tier:full-check`. The up command now provisions separate PostgreSQL 17 containers and applies 19 canonical source migrations to five tier scopes. Use `npm run docker:three-tier:full-check` to verify all five PostgreSQL 17 scopes. This does not implement Auth, Storage, Realtime service or application API cutover.

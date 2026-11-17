@@ -74,7 +74,7 @@ jobs:
         run: npm run typecheck -w web-${{ matrix.app }}
       - name: Client checkout and multi-tenant tests
         if: matrix.app == 'client'
-        run: npm run test:client
+        run: node --experimental-strip-types --test web-client/tests/*.test.mjs
       - name: Shipper unit + integration tests
         if: matrix.app == 'shipper'
         run: npm test -w web-shipper
@@ -83,8 +83,8 @@ jobs:
       - name: Shipper browser E2E tests
         if: matrix.app == 'shipper'
         env:
-          # Ephemeral CI-only session signing key; never a production credential.
-          SHIPPER_SESSION_SECRET: ci-only-shipper-session-key-not-for-production-2026
+          # CI-only shared session key for Admin/Client/Shipper, never a production credential.
+          AUTH_HANDOFF_SECRET: ci-only-shared-session-key-not-for-production-2026
         run: |
           npx playwright install --with-deps chromium
           npm run test:e2e -w web-shipper
@@ -145,7 +145,7 @@ jobs:
           set -euo pipefail
           docker run --rm -d --name greenplus-ai-ci -p 127.0.0.1:18100:8100 -e AI_SERVICE_KEY=ci-only-private-ai-key-2026-not-production greenplus/ai-assist:ci
           trap 'docker rm -f greenplus-ai-ci >/dev/null 2>&1 || true' EXIT
-          for i in $(seq 1 30); do
+          for ((attempt = 1; attempt <= 30; attempt++)); do
             if curl --fail --silent http://127.0.0.1:18100/health >/dev/null; then break; fi
             sleep 2
           done

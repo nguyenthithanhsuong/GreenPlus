@@ -50,7 +50,7 @@ test('Shipper CI builds before Playwright and uploads diagnostics on failure', (
   assert.ok(frontend, 'frontend matrix must be present');
   for (const app of ['admin', 'client', 'shipper']) assert.match(frontend, new RegExp(`app:\\s*${app}\\b`));
   assert.ok(frontend.indexOf('name: Build') < frontend.indexOf('name: Shipper browser E2E tests'));
-  assert.match(frontend, /SHIPPER_SESSION_SECRET:\s*ci-only-/);
+  assert.match(frontend, /AUTH_HANDOFF_SECRET:\s*ci-only-/);
   assert.match(frontend, /actions\/upload-artifact@v4/);
   assert.match(frontend, /if:\s*failure\(\)\s*&&\s*matrix\.app\s*==\s*'shipper'/);
   assert.match(ci, /needs:\s*\[pipeline-contracts, frontend-ci, backend-ci, ai-service-ci, docker-db-ci, supabase-db-ci, external-services-ci\]/);

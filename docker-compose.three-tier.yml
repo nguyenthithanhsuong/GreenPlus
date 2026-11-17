@@ -1,6 +1,6 @@
 # Optional override: connect the containerized Admin to the existing three-tier
 # gateway over Docker's private network. NEVER publish DB/PostgREST ports.
-# Usage through: npm run docker:three-tier:apps:up
+# Usage through: node scripts/three-tier-app-stack.mjs up
 services:
   web-admin:
     networks:

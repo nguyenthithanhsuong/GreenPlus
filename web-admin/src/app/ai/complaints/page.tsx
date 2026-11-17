@@ -1,2 +1,2 @@
-import AiTriage from "../../../../frontend/ai/AiTriage";
-export default function Page() { return <AiTriage/>; }
+import { redirect } from "next/navigation";
+export default function Page() { redirect("/complaints?tab=ai"); }

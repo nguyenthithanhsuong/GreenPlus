@@ -2,11 +2,12 @@
 import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import ConfirmActionDialog from "../users/ConfirmActionDialog";
 import InventoryStats from "./InventoryStats";
 import AiAlerts from "../ai/AiAlerts";
+import AiOverview from "../ai/AiOverview";
+import { useAuthStore } from "@/lib/stores/authStore";
 import InventoryTable from "./InventoryTable";
 import InventoryTransactionTable from "./InventoryTransactionTable";
 import InventoryDrawer, {
@@ -38,9 +39,16 @@ const InventoryManagement = () => {
   const [drawerError, setDrawerError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<InventoryRow | null>(null);
-  const [viewMode, setViewMode] = useState<"inventory" | "transactions" | "alerts">(
-    "inventory",
-  );
+  const role = useAuthStore(s => s.user?.role_name ?? s.session?.role_name)?.toLowerCase();
+  const [viewMode, setViewMode] = useState<"inventory" | "transactions" | "alerts" | "forecast">("inventory");
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (tab === "transactions" || tab === "alerts" || tab === "forecast") setViewMode(tab);
+  }, []);
+
+  useEffect(() => {
+    if (role !== "manager" && (viewMode === "alerts" || viewMode === "forecast")) setViewMode("inventory");
+  }, [role, viewMode]);
 
   const [transactions, setTransactions] = useState<InventoryTransactionRow[]>(
     [],
@@ -303,21 +311,7 @@ const InventoryManagement = () => {
     <AdminShell
       title="Quản lý tồn kho"
       description="Cập nhật tồn kho theo lô, cảnh báo sắp hết hàng và điều phối nhập xuất."
-      pageActions={
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void refreshAll()}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-            disabled={loading || transactionsLoading || saving}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Tải lại
-          </button>
-        </div>
-      }
     >
-      {viewMode === "alerts" && <AiAlerts embedded />}
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -347,12 +341,21 @@ const InventoryManagement = () => {
         >
           Lịch sử giao dịch
         </button>
-        <button type="button" onClick={() => setViewMode("alerts")}
+        {role === "manager" && <button type="button" onClick={() => setViewMode("alerts")}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === "alerts" ? "bg-emerald-600 text-white" : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}>
           Cảnh báo tồn kho
-        </button>
+        </button>}
+        {role === "manager" && (
+          <button type="button" onClick={() => setViewMode("forecast")}
+            aria-current={viewMode === "forecast" ? "page" : undefined}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === "forecast" ? "bg-emerald-600 text-white" : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}>
+            Dự báo & đề xuất AI
+          </button>
+        )}
       </div>
-      {viewMode !== "alerts" && <InventoryStats {...stats} />}
+      {viewMode === "alerts" && role === "manager" && <AiAlerts embedded />}
+      {viewMode === "forecast" && role === "manager" && <AiOverview embedded />}
+      {(viewMode === "inventory" || viewMode === "transactions") && <InventoryStats {...stats} />}
       {viewMode === "inventory" ? (
         <InventoryTable
           items={filteredItems}

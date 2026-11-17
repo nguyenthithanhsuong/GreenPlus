@@ -2,9 +2,10 @@ import { resolve } from "node:path";
 import { config as loadEnv } from "dotenv";
 import type { NextConfig } from "next";
 
-// Use the same single root .env as web-admin and web-client.
-// npm workspace commands start Next.js with web-shipper as process.cwd().
-// Existing OS/container environment values take precedence over the file.
+// All three Next.js apps use the same ignored root environment files.
+// Local overrides come first; existing OS/Vercel/CI variables retain priority.
+// Do not create workspace .env.local files; Next.js auto-loads those separately.
+loadEnv({ path: resolve(process.cwd(), "../.env.local") });
 loadEnv({ path: resolve(process.cwd(), "../.env") });
 
 const nextConfig: NextConfig = {

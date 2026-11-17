@@ -20,7 +20,6 @@ const fakeReady = async (url, options = {}) => {
 const sandbox = () => {
   const root = mkdtempSync(resolve(tmpdir(), 'greenplus-bridge-'));
   mkdirSync(resolve(root, 'docker/three-tier'), { recursive: true });
-  mkdirSync(resolve(root, 'web-admin'), { recursive: true });
   writeFileSync(resolve(root, 'docker/three-tier/.env'), dockerText);
   return root;
 };
@@ -34,7 +33,7 @@ test('safe local settings derive key solely from Docker, not root or browser env
   assert.throws(() => localDockerSettings('DEMO_GATEWAY_KEY=short'), /gateway secret/);
 });
 
-test('Admin env merge preserves unrelated settings, overwrites stale local key, and is idempotent', () => {
+test('Shared env merge preserves unrelated settings, overwrites stale local key, and is idempotent', () => {
   const settings = localDockerSettings(dockerText);
   const previous = 'AUTH_HANDOFF_SECRET=KEEP_ME\r\nNEXT_PUBLIC_SUPABASE_URL=https://example.org\r\nGREENPLUS_TENANCY_DEMO=false\r\nGREENPLUS_DOCKER_GATEWAY_KEY=OLD_KEY\r\n';
   const once = mergeAdminEnv(previous, settings);
@@ -47,10 +46,10 @@ test('Admin env merge preserves unrelated settings, overwrites stale local key, 
   assert.equal(once.includes('\r\n'), true);
 });
 
-test('Connect & check work with real workspace files, do not touch Docker .env or unrelated config', async () => {
+test('Connect & check work with shared root env file, do not touch Docker .env or unrelated config', async () => {
   const root = sandbox();
   try {
-    const adminPath = resolve(root,'web-admin/.env.local');
+    const adminPath = resolve(root,'.env.local');
     writeFileSync(adminPath, 'AUTH_HANDOFF_SECRET=keep_me\n');
     const originalDocker = readFileSync(resolve(root,'docker/three-tier/.env'),'utf8');
     const linked = await connectLocalAdmin({ root, fetcher: fakeReady });
@@ -68,7 +67,7 @@ test('Connect & check work with real workspace files, do not touch Docker .env o
 test('Authentication 401 prevents env writes and preserves existing admin secrets', async () => {
   const root = sandbox();
   try {
-    const admin = resolve(root,'web-admin/.env.local');
+    const admin = resolve(root,'.env.local');
     writeFileSync(admin,'AUTH_HANDOFF_SECRET=UNCHANGED\n');
     await assert.rejects(connectLocalAdmin({root,fetcher: async url => new URL(url).pathname === '/ready'
       ? new Response(JSON.stringify({status:'ready'}))
@@ -80,7 +79,7 @@ test('Authentication 401 prevents env writes and preserves existing admin secret
 test('Existing remote gateway config is never silently overwritten with localhost', async () => {
   const root = sandbox();
   try {
-    const admin = resolve(root,'web-admin/.env.local');
+    const admin = resolve(root,'.env.local');
     const remote = 'GREENPLUS_DOCKER_GATEWAY_URL=https://staging.example.org\nAUTH_HANDOFF_SECRET=KEEP\n';
     writeFileSync(admin,remote);
     await assert.rejects(connectLocalAdmin({root,fetcher:fakeReady}), /refusing to overwrite/);

@@ -68,7 +68,7 @@ services:
     mem_limit: 256m
     environment:
       PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
-      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
+      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run node scripts/three-tier-docker.mjs init}
     volumes:
       - ./sql/auth:/sql/auth:ro
     depends_on:
@@ -87,7 +87,7 @@ services:
     mem_limit: 256m
     environment:
       PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
-      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
+      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run node scripts/three-tier-docker.mjs init}
     volumes:
       - ./sql/auth:/sql/auth:ro
     depends_on:
@@ -106,7 +106,7 @@ services:
     mem_limit: 256m
     environment:
       PGPASSWORD: ${DEMO_POSTGRES_PASSWORD:?Set DEMO_POSTGRES_PASSWORD in .env}
-      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}
+      DEMO_POSTGREST_PASSWORD: ${DEMO_POSTGREST_PASSWORD:?Run node scripts/three-tier-docker.mjs init}
     volumes:
       - ./sql/auth:/sql/auth:ro
     depends_on:
@@ -124,7 +124,7 @@ services:
     logging: *greenplus-logging
     mem_limit: 256m
     environment:
-      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@shared-db:5432/greenplus_demo
+      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run node scripts/three-tier-docker.mjs init}@shared-db:5432/greenplus_demo
       PGRST_DB_SCHEMAS: public,pro_a,pro_b
       PGRST_DB_ANON_ROLE: web_anon
     depends_on:
@@ -134,7 +134,7 @@ services:
     logging: *greenplus-logging
     mem_limit: 256m
     environment:
-      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@enterprise-a-db:5432/enterprise_a
+      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run node scripts/three-tier-docker.mjs init}@enterprise-a-db:5432/enterprise_a
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: web_anon
     depends_on:
@@ -144,7 +144,7 @@ services:
     logging: *greenplus-logging
     mem_limit: 256m
     environment:
-      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run npm run docker:three-tier:init}@enterprise-b-db:5432/enterprise_b
+      PGRST_DB_URI: postgresql://greenplus_postgrest:${DEMO_POSTGREST_PASSWORD:?Run node scripts/three-tier-docker.mjs init}@enterprise-b-db:5432/enterprise_b
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: web_anon
     depends_on:
@@ -174,15 +174,8 @@ services:
       - enterprise-b-rest
     restart: unless-stopped
 volumes:
+  # Preserve existing PG16 named volumes exactly as originally declared.
+  # Adding labels to existing volumes makes Docker Compose request a destructive recreate.
   shared_data:
-    labels:
-      com.greenplus.tier: regular-and-pro
-      com.greenplus.data: postgres
   enterprise_a_data:
-    labels:
-      com.greenplus.tier: enterprise
-      com.greenplus.data: postgres
   enterprise_b_data:
-    labels:
-      com.greenplus.tier: enterprise
-      com.greenplus.data: postgres

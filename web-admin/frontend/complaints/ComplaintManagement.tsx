@@ -2,9 +2,11 @@
 import { useAutoReload } from "@/lib/useAutoReload";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
 import AdminShell from "../shared/AdminShell";
 import ComplaintStats from "./ComplaintStats";
+import AiTriage from "../ai/AiTriage";
+import CommerceTabs from "../shared/CommerceTabs";
+import { useAuthStore } from "@/lib/stores/authStore";
 import ComplaintTable from "./ComplaintTable";
 import ComplaintDrawer from "./ComplaintDrawer";
 import RejectReasonDialog from "./RejectReasonDialog";
@@ -20,6 +22,11 @@ const normalizeText = (value: string | null | undefined) =>
   (value ?? "").trim().toLowerCase();
 
 const ComplaintManagement = () => {
+  const role = useAuthStore(s => s.user?.role_name ?? s.session?.role_name)?.toLowerCase();
+  const [activeSection, setActiveSection] = useState("complaints");
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "ai") setActiveSection("ai");
+  }, []);
   const [complaints, setComplaints] = useState<ComplaintRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingComplaintId, setSavingComplaintId] = useState<string | null>(
@@ -186,25 +193,19 @@ const ComplaintManagement = () => {
     setDrawerOpen(true);
   }, []);
 
-  const pageActions = (
-    <button
-      type="button"
-      onClick={() => void loadComplaints()}
-      className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-      disabled={loading || Boolean(savingComplaintId)}
-    >
-      <RefreshCw className="h-4 w-4" />
-      Tải lại
-    </button>
-  );
 
   return (
     <AdminShell
       title="Quản lý khiếu nại"
       description="Theo dõi và xử lý các khiếu nại của khách hàng theo đơn hàng, loại yêu cầu và trạng thái xử lý."
       searchPlaceholder="Tìm kiếm khiếu nại theo mã đơn, người gửi..."
-      pageActions={pageActions}
     >
+      <CommerceTabs current={activeSection} onChange={setActiveSection} tabs={[
+        { id: "complaints", label: "Danh sách khiếu nại" },
+        ...(role === "manager" ? [{ id: "ai", label: "Phân loại & ưu tiên AI" }] : []),
+      ]} />
+      {activeSection === "ai" && role === "manager" && <AiTriage embedded complaints={complaints} />}
+      <div className={activeSection === "complaints" ? "contents" : "hidden"}>
       {error ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -262,6 +263,7 @@ const ComplaintManagement = () => {
           void updateStatus(selectedComplaint, "rejected", reason);
         }}
       />
+      </div>
     </AdminShell>
   );
 };

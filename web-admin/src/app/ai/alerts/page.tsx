@@ -1,2 +1,2 @@
-import AiAlerts from "../../../../frontend/ai/AiAlerts";
-export default function Page() { return <AiAlerts/>; }
+import { redirect } from "next/navigation";
+export default function Page() { redirect("/inventories?tab=alerts"); }

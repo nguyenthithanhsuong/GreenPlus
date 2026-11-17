@@ -19,7 +19,7 @@ function run(args, {capture = false} = {}) {
   });
   if (r.error) {
     if (r.error.code === 'ETIMEDOUT') {
-      throw new Error(`docker compose ${args[0]} timed out after ${Math.round(timeout / 1000)}s. Containers may still be running; run npm run docker:three-tier:ps and npm run docker:three-tier:check before retrying.`);
+      throw new Error(`docker compose ${args[0]} timed out after ${Math.round(timeout / 1000)}s. Containers may still be running; run node scripts/three-tier-docker.mjs ps and npm run docker:three-tier:check before retrying.`);
     }
     if (r.error.code === 'ENOENT') throw new Error('Docker CLI not found. Install/start Docker Desktop and ensure docker is on PATH.');
     throw new Error(`docker compose ${args[0]} could not run: ${r.error.message}`);
@@ -132,16 +132,16 @@ try {
     if (canonical.error || canonical.status !== 0) throw new Error('Canonical PostgreSQL17 0001–0019 migration failed. Legacy volumes preserved; investigate before retrying.');
     verifyPostgrestRole();
     await smoke();
-    // Prepare the NEXT workspace's actual env file; a root .env.local alone is
-    // not read by web-admin. Never overwrite an intentionally configured remote.
+    // Keep the shared root .env.local in sync with the Docker gateway.
+    // Never overwrite an intentionally configured remote endpoint.
     try {
       const linked = await connectLocalAdmin();
       console.log(linked.changed
-        ? 'Admin Docker Local settings written safely to web-admin/.env.local. Restart Admin to load them.'
+        ? 'Shared root .env.local updated with local Docker settings. Restart web apps to load them.'
         : 'Admin Docker Local settings already match the authenticated gateway.');
     } catch (error) {
       console.warn(`Admin Docker switch is not linked: ${error.message}`);
-      console.warn('Run npm run docker:three-tier:link-admin after resolving this; the Docker database itself remains ready.');
+      console.warn('Run node scripts/three-tier-connect-admin.mjs connect after resolving this; the Docker database itself remains ready.');
     }
     console.log('Docker sandbox ready. Admin gateway: http://127.0.0.1:4100 (local only).');
   }
@@ -154,7 +154,7 @@ try {
     const parity = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), 'repair-three-tier-parity.mjs'), '--check'], {
       cwd: resolve(root, '../..'), encoding: 'utf8', stdio: 'inherit', timeout: 180000,
     });
-    if (parity.error || parity.status !== 0) throw new Error('Docker RBAC/Audit/Promotions SQL 005 verification failed. Run npm run docker:three-tier:migrate after reviewing a backup.');
+    if (parity.error || parity.status !== 0) throw new Error('Docker RBAC/Audit/Promotions SQL 005 verification failed. Run node scripts/repair-three-tier-parity.mjs after reviewing a backup.');
     const canonical = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), 'three-tier-full-schema.mjs'), '--check'], {
       cwd: resolve(root, '../..'), encoding: 'utf8', stdio: 'inherit', timeout: 300000,
     });

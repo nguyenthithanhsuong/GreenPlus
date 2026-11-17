@@ -2,8 +2,11 @@ import { resolve } from "node:path";
 import { config as loadEnv } from "dotenv";
 import type { NextConfig } from "next";
 
+// All three Next.js apps use the same ignored root environment files.
+// Local overrides come first; existing OS/Vercel/CI variables retain priority.
+// Do not create workspace .env.local files; Next.js auto-loads those separately.
+loadEnv({ path: resolve(process.cwd(), "../.env.local") });
 loadEnv({ path: resolve(process.cwd(), "../.env") });
-loadEnv({ path: resolve(process.cwd(), ".env.local"), override: true });
 
 const nextConfig: NextConfig = {
   reactCompiler: true,

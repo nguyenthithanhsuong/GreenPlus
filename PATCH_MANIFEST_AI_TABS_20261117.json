@@ -1,0 +1,45 @@
+{
+  "baseline": "GreenPlus_Source_2026-11-17(1).zip",
+  "modified_files": [
+    "tests/ci-nov17-regression.test.mjs",
+    "tests/dev-with-docker.test.mjs",
+    "tests/project-tools-cli.test.mjs",
+    "web-admin/backend/modules/ai-assist/db.ts",
+    "web-admin/backend/modules/ai-assist/errors.ts",
+    "web-admin/frontend/ai/AiAlerts.tsx",
+    "web-admin/frontend/ai/AiChat.tsx",
+    "web-admin/frontend/ai/AiDashboardWidget.tsx",
+    "web-admin/frontend/ai/AiKnowledge.tsx",
+    "web-admin/frontend/ai/AiOverview.tsx",
+    "web-admin/frontend/ai/AiPromotions.tsx",
+    "web-admin/frontend/ai/AiTriage.tsx",
+    "web-admin/frontend/ai/ui.tsx",
+    "web-admin/frontend/complaints/ComplaintManagement.tsx",
+    "web-admin/frontend/inventories/InventoryManagement.tsx",
+    "web-admin/frontend/prices/PriceManagement.tsx",
+    "web-admin/frontend/settings/AiServiceStatus.tsx",
+    "web-admin/frontend/settings/DockerCommerceWorkspace.tsx",
+    "web-admin/frontend/shared/PageGuard.tsx",
+    "web-admin/src/app/ai/alerts/page.tsx",
+    "web-admin/src/app/ai/complaints/page.tsx",
+    "web-admin/src/app/ai/page.tsx",
+    "web-admin/src/app/ai/promotions/page.tsx",
+    "web-admin/src/app/ai/suggestions/page.tsx",
+    "web-admin/src/app/api/ai/health/route.ts",
+    "web-client/frontend/ai/ActivePromotions.tsx",
+    "web-client/frontend/ai/AiChat.tsx",
+    "web-client/src/components/auth/auth-screen.tsx",
+    "web-shipper/src/frontend/ai/ShipperAiChat.tsx"
+  ],
+  "added_files": [
+    "AI_KNOWLEDGE_37_TOPICS_REVIEW_20261117.md",
+    "GREENPLUS_AI_TABS_AUTH_DIAGNOSTICS_GUIDE_20261117.md",
+    "scripts/ci/ai-local-health.mjs",
+    "tests/ai-tabs-and-auth-loop-regression.test.mjs",
+    "web-client/src/app/api/auth/customer-session/route.ts"
+  ],
+  "delete_manually": [
+    "scripts/setup-shipper-env.mjs"
+  ],
+  "notice": "Overlay-only patch. Do not overwrite .env.local or delete Docker volumes. No migrations changed."
+}

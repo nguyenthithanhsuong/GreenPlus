@@ -1,6 +1,6 @@
 /**
  * Live, rollback-only audit/RBAC/promotion probe on all five Docker storage scopes.
- * Requires successful `npm run docker:three-tier:migrate` first.
+ * Requires successful `node scripts/repair-three-tier-parity.mjs` first.
  * Does NOT mutate committed data, reset volumes, or connect to Supabase.
  */
 import { spawnSync } from 'node:child_process';

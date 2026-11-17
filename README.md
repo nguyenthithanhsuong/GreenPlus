@@ -41,10 +41,17 @@ npx supabase migration list # đối chiếu local và remote
 # Install dependencies
 npm install
 
-# Start all three web apps and the local three-tier Docker sandbox (interactive Turbo TUI)
-npm run dev
+# Update/verify local Docker (all 3 DB tiers), perform read-only Supabase checks,
+# then start Admin, Client and Shipper (interactive Turbo UI).
+npm run dev:all
+# npm run dev does exactly the same.
 
-# Or start only web apps with the interactive Turbo UI: npm run dev:all
+# Only web apps; no Docker reconciliation or database changes:
+npm run web
+# Read-only Supabase migration + Storage checks without starting Docker:
+node scripts/ci/dev-supabase-compatibility.mjs
+# Remote Supabase version status (requires linked project + Supabase CLI):
+npm run supabase:migrations:status
 # For optional HTTP route prewarming, use a second terminal: node scripts/prewarm-dev.mjs
 # Or start individual apps
 npm run dev:client   # Port 3001
@@ -71,6 +78,12 @@ GreenPlus/
 └── README.md
 ```
 
+### Safe local development / compatibility
+
+`npm run dev:all` checks local Supabase migration hashes and Storage configuration, then attempts a **read-only** remote Supabase migration report when a project has been linked and the Supabase CLI is available. It reconciles the Docker three-tier lab (legacy sandbox SQL 002–005 plus canonical SQL 0001–0019 in three separate PostgreSQL 17 containers), verifies database changes and tenant registry, reports schema parity, and starts all three web apps. It never runs `supabase db push`, resets Docker volumes or upgrades PostgreSQL major versions.
+
+The remote check prints **NOT VERIFIED** if there is no local Supabase link/CLI. To require an up-to-date linked remote, set `GREENPLUS_DEV_SUPABASE_REMOTE_CHECK=required`. To run only local static checks, set it to `off`. To skip Docker rebuilding/migration and verify existing containers only, set `GREENPLUS_DEV_DOCKER_UPDATE=false`. Full parity is currently **NOT CERTIFIED**: the separate Docker PostgreSQL 17 schema mirrors canonical SQL while Auth, Storage, Realtime and app API routing remain distinct. The legacy demo still runs on PostgreSQL 16.
+
 ### Docker Deployment
 
 ```bash
@@ -85,7 +98,28 @@ curl http://localhost:8080/admin
 
 ## Environment Variables
 
-Create `.env` in project root:
+**Local development uses a single shared `GreenPlus/.env.local` for Web Admin,
+Web Client, and Web Shipper.** Put machine-specific credentials and AI config there.
+The root `.env` is an optional fallback and is also used by Docker Compose;
+OS/Vercel/CI environment variables take precedence. Never add secrets with a
+`NEXT_PUBLIC_` prefix. Do not keep `web-admin/.env.local`, `web-client/.env.local`,
+or `web-shipper/.env.local`: Next.js would auto-load those workspace files.
+Merge any useful existing keys into the root file and back up/remove workspace
+files before starting any app. Keep `.env.local` out of Git (already ignored).
+
+Example (replace placeholders locally and **never commit** this file):
+
+```dotenv
+GREENPLUS_AI_SERVICE_URL=http://127.0.0.1:8100
+GREENPLUS_AI_SERVICE_KEY=REPLACE_WITH_RANDOM_32_BYTE_PLUS_SECRET
+```
+
+Restart `npm run web` after editing the shared file. Docker Compose and the
+AI service may still require the appropriate keys supplied in root `.env` or
+via host/container environment; this change affects Next.js app loading, not
+Docker Compose's separate dotenv handling.
+
+Create `.env` in project root (fallback and Docker configuration):
 
 ```bash
 # Required
@@ -93,7 +127,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=       # Admin app only — protected API routes
 SUPABASE_PASS=                   # DB direct connection / migrations
-AUTH_HANDOFF_SECRET=             # Cross-app auth between web-client and web-admin
+AUTH_HANDOFF_SECRET=             # Shared server-side signing key for Admin, Client and Shipper (32+ bytes)
 NEXT_PUBLIC_WEB_CLIENT_URL=http://localhost:3001
 NEXT_PUBLIC_WEB_ADMIN_URL=http://localhost:3000
 NEXT_PUBLIC_WEB_SHIPPER_URL=http://localhost:3002
@@ -302,7 +336,7 @@ docker-compose build --no-cache
 #### Mobile release verification (PWA/TWA is the chosen implementation)
 
 ```powershell
-npm run test:release:static
+npm run test
 # Replace each URL with the actual deployed production HTTPS origin
 npm run mobile -- client preflight https://YOUR-CLIENT-DOMAIN/
 npm run mobile -- shipper preflight https://YOUR-SHIPPER-DOMAIN/
@@ -311,21 +345,21 @@ npm run mobile -- client check https://YOUR-CLIENT-DOMAIN/
 npm run mobile -- shipper check https://YOUR-SHIPPER-DOMAIN/
 ```
 
-The PWA includes a safe offline shell and user-controlled worker updates. Shipper supports camera/QR-photo decoding and manual order lookup. **Only actual device testing** can confirm WebAPK installability, Android TWA Digital Asset Links, camera/GPS permissions and login. The current Docker data-source switch affects supported Admin sandbox routes, **not** the production Client/Shipper data stores. See `mobile/README.md` and `docs/GREENPLUS_MOBILE_RELEASE_AND_ARCH_REVIEW_20261107.md`.
+The PWA includes a safe offline shell and user-controlled worker updates. Shipper supports camera/QR-photo decoding and manual order lookup. **Only actual device testing** can confirm WebAPK installability, Android TWA Digital Asset Links, camera/GPS permissions and login. The current Docker data-source switch affects supported Admin sandbox routes, **not** the production Client/Shipper data stores. See `mobile/README.md` for current PWA/TWA instructions and acceptance limitations.
 
 - CI publishes GHCR images **after** all mandatory gates; it does not automatically deploy Coolify. `Production Verify` only verifies deployed images/Vercel state and should not be interpreted as a deployment action.
 
 
 ### Repository maintenance / legacy cleanup (Nov 2026)
 
-Use `npm run maintain -- scan` (read-only source audit) and `npm run maintain -- clean` (dry run) before quarantining known-unused source.
-`npm run maintain -- all --apply --zip` runs lint, typecheck, root/Client/Shipper tests and full build, with automatic source restore on verification failure.
-To archive obsolete Flutter prototypes as well, add `--legacy-flutter`. Details: `docs/REPO_MAINTENANCE_20261108.md`.
-`npm run check-all` is now non-mutating for source; use `npm run fix:local` only when formatting/ESLint modifications are intended.
+Use `npm run audit:unused` for a read-only whole-repository report (`artifacts/audits/unused-files.json`). It marks only review candidates: dynamic references and Next.js routes cannot be proven unused statically. The older checksum-allowlisted maintenance audit is still available as `node scripts/repo-maintenance.mjs scan` (read-only).
+If you deliberately need the legacy quarantine workflow, use `node scripts/repo-maintenance.mjs clean` to preview, or `node scripts/repo-maintenance.mjs all --apply --zip` after backups; restore via `node scripts/repo-maintenance.mjs restore`. This is optional, NOT part of `npm run audit:unused`.
+To archive obsolete Flutter prototypes as well, add `--legacy-flutter`. The scanner never deletes source and the legacy quarantine requires manual opt-in.
+`npm run check-all` and `npm run lint` inspect code without formatting or deleting source.
 
-See [the consolidated developer command reference](docs/PROJECT_COMMANDS_20261108.md) for Docker/PWA subcommands and maintenance recovery.
+See [the Docker three-tier command reference](docker/three-tier/README.md) for Docker/PWA subcommands and maintenance recovery.
 
 
 ## AI Assist rollout
 
-For the isolated FastAPI AI service, five-role assistants, manager-governed promotions and Docker sandbox preview, see [AI Assist implementation and acceptance](docs/GREENPLUS_AI_ASSIST_IMPLEMENTATION_20261115.md). Apply migrations only after verifying existing Supabase migration history.
+For the isolated FastAPI AI service, five-role assistants, manager-governed promotions and Docker sandbox preview, see [the AI service guide](services/ai-assist/README.md). Apply migrations only after verifying existing Supabase migration history.
