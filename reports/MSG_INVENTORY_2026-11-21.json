@@ -1,0 +1,1241 @@
+{
+  "description": "Static grep inventory only; not a complete semantic notification audit",
+  "files": 205,
+  "totals": {
+    "error": 984,
+    "notification": 170,
+    "console": 4
+  },
+  "items": [
+    {
+      "file": "web-admin/backend/core/docker-gateway.mjs",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/core/supabase.ts",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/core/tenant-list-pages.mjs",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/core/tenant-postgrest.mjs",
+      "error": 9,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/core/user-address.mjs",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/admin-auth/auth.repository.ts",
+      "error": 7,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/admin-auth/facades/auth.facade.ts",
+      "error": 0,
+      "notification": 4,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/admin-auth/observers/auth.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/actor.ts",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/alerts.ts",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/chat.ts",
+      "error": 6,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/cron.ts",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/db.ts",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/errors.ts",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/forecasts.ts",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/knowledge.ts",
+      "error": 26,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/promotions.ts",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/ai-assist/quota.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/auth/auth.service.ts",
+      "error": 9,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/batches/batch-management.repository.ts",
+      "error": 10,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/batches/facades/batch-management.facade.ts",
+      "error": 0,
+      "notification": 4,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/batches/observers/batch-management.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/categories/category-management.repository.ts",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/categories/facades/category-management.facade.ts",
+      "error": 0,
+      "notification": 3,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/categories/observers/category-management.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/complaints/complaint-management.repository.ts",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/delivery-tracking/delivery-tracking.repository.ts",
+      "error": 9,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/delivery-tracking/facades/delivery-tracking.facade.ts",
+      "error": 0,
+      "notification": 3,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/delivery-tracking/observers/delivery-tracking.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/greencreators/greencreator-content.repository.ts",
+      "error": 11,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/inventory/facades/inventory-management.facade.ts",
+      "error": 0,
+      "notification": 4,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/inventory/inventory-management.repository.ts",
+      "error": 9,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/inventory/observers/inventory-management.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/orders/facades/order-tracking.facade.ts",
+      "error": 0,
+      "notification": 2,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/orders/observers/order-tracking.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/orders/order-tracking.repository.ts",
+      "error": 8,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/payments/payment.service.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/prices/facades/price-management.facade.ts",
+      "error": 0,
+      "notification": 3,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/prices/observers/price-management.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/prices/price-management.repository.ts",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/products/facades/product-management.facade.ts",
+      "error": 0,
+      "notification": 4,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/products/observers/product-management.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/products/product-management.repository.ts",
+      "error": 9,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/roles/facades/role-management.facade.ts",
+      "error": 0,
+      "notification": 3,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/roles/observers/role-management.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/roles/role-management.repository.ts",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/stores/stores-management.repository.ts",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/suppliers/facades/supplier-management.facade.ts",
+      "error": 0,
+      "notification": 4,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/suppliers/observers/supplier-management.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/suppliers/supplier-management.repository.ts",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/traceability/traceability.repository.ts",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/users/facades/user-management.facade.ts",
+      "error": 0,
+      "notification": 4,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/users/observers/user-management.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/backend/modules/users/user-management.repository.ts",
+      "error": 8,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiAlerts.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiChat.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiDashboardWidget.tsx",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiDockerPreview.tsx",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiKnowledge.tsx",
+      "error": 1,
+      "notification": 11,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiOverview.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiPricingIntelligence.tsx",
+      "error": 7,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiPromotions.tsx",
+      "error": 7,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiSupport.tsx",
+      "error": 6,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/AiTriage.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/ai/ui.tsx",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/audit/AuditLogPage.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/backend/SupabaseCrudExplorer.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/batches/BatchManagement.tsx",
+      "error": 23,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/batches/BatchScannerDialog.tsx",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/categories/CategoryManagement.tsx",
+      "error": 13,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/complaints/ComplaintManagement.tsx",
+      "error": 6,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/customers/CustomerAnalysis.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/dashboard/Dashboard.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/dashboard/PlatformDashboard.tsx",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/dashboard/StoreOverview.tsx",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/greencreators/ContentModeration.tsx",
+      "error": 13,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/greencreators/CreatePostModal.tsx",
+      "error": 8,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/inventories/InventoryManagement.tsx",
+      "error": 11,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/orders/DeliveryAssignDialog.tsx",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/orders/OrderManagement.tsx",
+      "error": 10,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/prices/PriceManagement.tsx",
+      "error": 12,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/products/ProductManagement.tsx",
+      "error": 18,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/reports/FinancialReport.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/roles/PermissionMatrix.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/roles/RoleManagement.tsx",
+      "error": 9,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/CurrentStoreInfo.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/DockerCatalogManager.tsx",
+      "error": 13,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/DockerCatalogWorkspace.tsx",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/DockerCommerceActions.tsx",
+      "error": 6,
+      "notification": 2,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/DockerCommerceInspector.tsx",
+      "error": 8,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/DockerCommerceWorkspace.tsx",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/DockerTenantStoreManagement.tsx",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/ProfileForm.tsx",
+      "error": 3,
+      "notification": 5,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/SettingsNav.tsx",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/StorageModeSetting.tsx",
+      "error": 6,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/settings/StoreManagement.tsx",
+      "error": 16,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/shared/StoreSwitcher.tsx",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/shared/useCurrentUserProfile.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/shippers/ShipperManagement.tsx",
+      "error": 8,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/suppliers/SupplierManagement.tsx",
+      "error": 12,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/frontend/users/UserManagement.tsx",
+      "error": 22,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/src/app/api/ai/alerts/route.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/src/app/api/ai/docker-preview/route.ts",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/src/app/api/ai/promotions/image/route.ts",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/src/app/api/ai/promotions/route.ts",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/src/app/api/ai/triage/route.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/src/app/api/platform/dashboard/route.ts",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/src/app/api/platform/suppliers/[supplierId]/review/route.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/src/app/api/reports/financial/route.ts",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-admin/src/app/backend/storage/page.tsx",
+      "error": 7,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/core/request-auth.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/core/require-customer-page.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/core/supabase.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/ai-assist/complaint-classification.ts",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/blogs/blog.repository.ts",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/blogs/facades/blog.facade.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/blogs/observers/blog.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/cart/cart.repository.ts",
+      "error": 14,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/cart/cart.service.ts",
+      "error": 0,
+      "notification": 5,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/cart/observers/cart.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/categories/category.repository.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/categories/facades/category.facade.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/categories/observers/category.observer.ts",
+      "error": 0,
+      "notification": 2,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/community-posts/community-post-interaction.repository.ts",
+      "error": 7,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/community-posts/community-post.repository.ts",
+      "error": 10,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/community-posts/facades/community-post.facade.ts",
+      "error": 0,
+      "notification": 3,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/community-posts/observers/community-post.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/complaints/complaint.repository.ts",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/customer-auth/auth.repository.ts",
+      "error": 8,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/customer-auth/facades/auth.facade.ts",
+      "error": 0,
+      "notification": 6,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/customer-auth/observers/auth.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/group-purchases/facades/group-purchase.facade.ts",
+      "error": 0,
+      "notification": 2,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/group-purchases/group-purchase.repository.ts",
+      "error": 7,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/group-purchases/observers/group-purchase.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/loyalty/facades/loyalty.facade.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/loyalty/loyalty.repository.ts",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/loyalty/observers/loyalty.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/orders/facades/order.facade.ts",
+      "error": 0,
+      "notification": 4,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/orders/observers/order.observer.ts",
+      "error": 0,
+      "notification": 2,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/orders/order.repository.ts",
+      "error": 25,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/products/facades/product.facade.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/products/observers/product.observer.ts",
+      "error": 0,
+      "notification": 2,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/products/product.repository.ts",
+      "error": 7,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/reviews/observers/review.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/reviews/review.repository.ts",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/reviews/review.service.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/subscriptions/facades/subscription.facade.ts",
+      "error": 0,
+      "notification": 3,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/subscriptions/observers/subscription.observer.ts",
+      "error": 0,
+      "notification": 1,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/subscriptions/subscription.repository.ts",
+      "error": 6,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/testing/testing-options.repository.ts",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/modules/traceability/traceability.repository.ts",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/backend/page.tsx",
+      "error": 10,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/ai/ActivePromotions.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/ai/AiChat.tsx",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/ai/AiRecipeIngredients.tsx",
+      "error": 2,
+      "notification": 7,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/ai/AiRecipes.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/ai/CustomerSupport.tsx",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/category-products/components/CategoryProducts.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/category/components/Category.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/complaints/components/Complaints.tsx",
+      "error": 10,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/dashboard/components/Dashboard.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/green-creators/components/GreenCreator.tsx",
+      "error": 8,
+      "notification": 3,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/green-creators/components/GreenCreatorDetails.tsx",
+      "error": 12,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/green-upload/components/GreenUpload.tsx",
+      "error": 13,
+      "notification": 2,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/group-purchase/components/CreateGroupPurchasePage.tsx",
+      "error": 1,
+      "notification": 7,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/orders/components/OrderDetail.tsx",
+      "error": 7,
+      "notification": 6,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/orders/components/Orders.tsx",
+      "error": 20,
+      "notification": 6,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/payment/components/OrderPaymentPage.tsx",
+      "error": 6,
+      "notification": 4,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/product-detail/components/GroupPurchaseModal.tsx",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/product-detail/components/ProductDetail.tsx",
+      "error": 10,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/profile/components/ProfileChangePassword.tsx",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/profile/components/ProfileMine.tsx",
+      "error": 6,
+      "notification": 16,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/profile/components/ProfileScanBatchPage.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/stores/StoreSelector.tsx",
+      "error": 15,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/frontend/subscriptions/components/SubscriptionsManagementPage.tsx",
+      "error": 14,
+      "notification": 6,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/api/promotions/route.ts",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/orders/page.tsx",
+      "error": 15,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/blogs/page.tsx",
+      "error": 7,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/cart/page.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/categories/page.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/community/[postId]/page.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/community/page.tsx",
+      "error": 13,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/group-purchases/page.tsx",
+      "error": 12,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/loyalty/page.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/orders/page.tsx",
+      "error": 19,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/page.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/qr/page.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/reviews/page.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/products/subscriptions/page.tsx",
+      "error": 9,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/profile/page.tsx",
+      "error": 10,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/register/page.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/backend/signin/page.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/profile/lock-account/page.tsx",
+      "error": 5,
+      "notification": 3,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/profile/transaction-history/page.tsx",
+      "error": 4,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-client/src/app/PwaRegister.tsx",
+      "error": 0,
+      "notification": 0,
+      "console": 2
+    },
+    {
+      "file": "web-shipper/src/app/api/shipper/deliveries/[orderId]/demo-route/route.ts",
+      "error": 2,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-shipper/src/app/login/page.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-shipper/src/app/PwaRegister.tsx",
+      "error": 0,
+      "notification": 0,
+      "console": 2
+    },
+    {
+      "file": "web-shipper/src/frontend/ai/ShipperAiChat.tsx",
+      "error": 3,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-shipper/src/frontend/ai/ShipperSupport.tsx",
+      "error": 5,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-shipper/src/frontend/dashboard/Dashboard.tsx",
+      "error": 6,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-shipper/src/frontend/map/DeliveryMapPanel.tsx",
+      "error": 14,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-shipper/src/frontend/profile/Profile.tsx",
+      "error": 8,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-shipper/src/frontend/scan/Scan.tsx",
+      "error": 12,
+      "notification": 0,
+      "console": 0
+    },
+    {
+      "file": "web-shipper/src/server/shipper-db.ts",
+      "error": 1,
+      "notification": 0,
+      "console": 0
+    }
+  ]
+}

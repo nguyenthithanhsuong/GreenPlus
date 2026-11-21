@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
-import { checkProviders,missingConfig } from '../scripts/ci/check-external.mjs';
+import { checkProviders,missingConfig,probeProviders,renderExternalReport } from '../scripts/ci/check-external.mjs';
 import { verifyDeployments } from '../scripts/ci/check-vercel-deployments.mjs';
 const root=resolve(fileURLToPath(new URL('..',import.meta.url)));
 const read=p=>readFileSync(resolve(root,p),'utf8');
@@ -47,7 +47,7 @@ test('external probes require actual valid responses for every provider',async()
 });
 test('external failure must reject, never just warn',async()=>{
  const mock=async()=>({status:403,json:async()=>({})});
- await assert.rejects(checkProviders(env,mock,()=>{}),/HTTP 403/);
+ await assert.rejects(checkProviders(env,mock,()=>{}),/HTTP_403/);
 });
 test('provider tokens are not inserted into URL paths',async()=>{
  const urls=[];
@@ -56,7 +56,7 @@ test('provider tokens are not inserted into URL paths',async()=>{
   if(url.includes('/rest/v1/stores?'))return {status:200,json:async()=>([])};
   return {status:200,json:async()=>({id:'x',slug:'x'})};
  };
- await assert.rejects(checkProviders(env,mock,()=>{}),/expected 202/);
+ await assert.rejects(checkProviders(env,mock,()=>{}),/HTTP_200/);
  assert.ok(urls.every(u=>!u.includes('stoken') && !u.includes('vtoken') && !u.includes('btoken')));
 });
 
@@ -64,13 +64,13 @@ test('REST probe rejects public-key denial instead of treating 401/403 as succes
  const mock=async(url)=>url.includes('/rest/v1/stores?')
    ? {status:401,json:async()=>({code:'PGRST301'})}
    : {status:200,json:async()=>({ok:true})};
- await assert.rejects(checkProviders(env,mock,()=>{}),/HTTP 401/);
+ await assert.rejects(checkProviders(env,mock,()=>{}),/HTTP_401/);
 });
 test('REST probe rejects 200 with an invalid shape',async()=>{
  const mock=async(url)=>url.includes('/rest/v1/stores?')
    ? {status:200,json:async()=>({message:'not a result array'})}
    : {status:200,json:async()=>({ok:true})};
- await assert.rejects(checkProviders(env,mock,()=>{}),/invalid JSON array/);
+ await assert.rejects(checkProviders(env,mock,()=>{}),/INVALID_RESPONSE/);
 });
 test('REST probe uses a legacy JWT as bearer but never sends a publishable key as bearer',async()=>{
  const base=async(url)=>url.includes('/rest/v1/stores?')

@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../backend/core/errors";
+import { AppError } from "../../backend/core/errors";
 
 type Handler<TRequest extends Request, TContext> = (
   request: TRequest,
@@ -15,8 +15,6 @@ export function withSentry<
     try {
       return await handler(request, context);
     } catch (error) {
-      console.error("[Unhandled API error]:", error);
-
       Sentry.captureException(error);
 
       if (error instanceof AppError) {
@@ -27,7 +25,7 @@ export function withSentry<
       }
 
       return NextResponse.json(
-        { error: toErrorMessage(error) },
+        { error: "Lỗi máy chủ. Vui lòng thử lại sau." },
         { status: 500 },
       );
     }

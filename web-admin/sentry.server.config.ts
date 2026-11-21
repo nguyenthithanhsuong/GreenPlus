@@ -6,10 +6,16 @@ const dsn =
 if (dsn) {
   Sentry.init({
     dsn,
-    tracesSampleRate: 1.0,
+    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
+    sendDefaultPii: false,
+    beforeSend(event) {
+      delete event.request;
+      delete event.user;
+      delete event.breadcrumbs;
+      return event;
+    },
     debug: process.env.SENTRY_DEBUG === "true",
     enabled: true,
     serverName: "web-admin",
-    integrations: [Sentry.captureConsoleIntegration({ levels: ["error"] })],
   });
 }

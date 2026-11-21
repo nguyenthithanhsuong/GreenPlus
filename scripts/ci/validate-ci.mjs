@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 const root=resolve(import.meta.dirname,'../..');
 const read=p=>readFileSync(resolve(root,p),'utf8');
 const requiredFiles=[
-  'scripts/ci/check-external.mjs','scripts/ci/check-vercel-deployments.mjs','scripts/ci/smoke-images.sh','tests/ci-pipeline.test.mjs',
+  'scripts/ci/check-external.mjs','scripts/ci/ci-report.mjs','scripts/ci/github-actions-report.mjs','scripts/ci/check-vercel-deployments.mjs','scripts/ci/smoke-images.sh','tests/ci-pipeline.test.mjs',
   'scripts/test-three-tier-transactions.mjs','scripts/test-three-tier-lifecycle.mjs',
   'scripts/repair-three-tier-commerce.mjs','scripts/three-tier-docker.mjs',
   'docker/three-tier/sql/shared/003_inventory_orders.sql',
@@ -16,13 +16,16 @@ const requiredFiles=[
 ];
 for(const file of requiredFiles){if(!existsSync(resolve(root,file)))throw Error(`Required CI file missing: ${file}. Commit earlier Phase patches too.`);}
 const ci=read('.github/workflows/ci.yml');
-const checks=['pipeline-contracts:','frontend-ci:','backend-ci:','ai-service-ci:','docker-db-ci:','supabase-db-ci:','external-services-ci:','docker-build:'];
+const checks=['pipeline-contracts:','frontend-ci:','backend-ci:','ai-service-ci:','docker-db-ci:','supabase-db-ci:','external-services-ci:','docker-build:','ci-report:'];
 for(const check of checks)if(!ci.includes(check))throw Error(`Missing CI gate ${check}`);
-for(const job of checks.slice(0,-1))if(!ci.includes(job.replace(/:$/,'')))throw Error(`Docker build depends on missing job: ${job}`);
+for(const job of checks.slice(0,-2))if(!ci.includes(job.replace(/:$/,'')))throw Error(`Docker build depends on missing job: ${job}`);
 if(!ci.includes('needs: [pipeline-contracts, frontend-ci, backend-ci, ai-service-ci, docker-db-ci, supabase-db-ci, external-services-ci]'))throw Error('Docker build needs all seven gates');
 if(!ci.includes("github.ref == 'refs/heads/main'"))throw Error('Image publication must be main-only');
 if(!ci.includes('secrets.NEXT_PUBLIC_SUPABASE_URL'))throw Error('Main image needs real public Supabase URL, not the CI placeholder');
 if(ci.includes('continue-on-error: true'))throw Error('Do not downgrade required gates to nonblocking');
+if(!ci.includes('run: node scripts/ci/check-external.mjs --output'))throw Error('Missing advisory provider diagnostics');
+if(!ci.includes('if: always()\n    needs: [pipeline-contracts'))throw Error('CI report must run even when a required gate fails');
+if(!existsSync(resolve(root,'.github/workflows/ci-cd-reports.yml')))throw Error('Missing dedicated Actions CI/CD Reports dashboard');
 for(const app of ['web-admin','web-client']){
  const df=read(`${app}/Dockerfile`);
  for(const secret of ['SUPABASE_SERVICE_ROLE_KEY','SENTRY_AUTH_TOKEN','BETTER_STACK_SOURCE_TOKEN']){
@@ -35,4 +38,4 @@ for(const name of ['deploy-prod.yml','deploy-staging.yml']){
  if(/on:\s*\n\s*push:/m.test(y))throw Error(`Unsafe independent deploy trigger in ${name}`);
  if(/Deploying to (?:production|staging)\.\.\./.test(y))throw Error(`Fake deployment success in ${name}`);
 }
-console.log('PASS: seven required gates, secret-free Dockerfiles and no independent push deploys.');
+console.log('PASS: seven core gates, advisory provider reporting, CI/CD dashboard, secret-free Dockerfiles and guarded deployment.');

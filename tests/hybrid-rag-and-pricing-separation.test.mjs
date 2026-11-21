@@ -9,7 +9,7 @@ test('Customer and Shipper request only server-verified conversation history, ne
  assert.match(shared,/from\("ai_messages"\)\.select\("question,answer"\)/);
  assert.match(shared,/\.limit\(4\)/);
  assert.match(shared,/\.eq\("review_status","approved"\)/);
- assert.match(shared,/history}/);
+ assert.match(shared,/history,\.\.\.preferences}/);
  for(const url of ['web-client/src/app/api/ai/chat/route.ts','web-shipper/src/app/api/ai/chat/route.ts']){
   assert.match(read(url),/askStoreChat\(/);
   assert.doesNotMatch(read(url),/body\.history/);

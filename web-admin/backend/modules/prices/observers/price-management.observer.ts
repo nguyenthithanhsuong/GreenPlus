@@ -1,4 +1,5 @@
 import { PriceStatus } from "../price-management.types";
+import { logger } from "@/lib/logger";
 
 export type PriceManagementEvent =
   | {
@@ -39,20 +40,6 @@ export class PriceManagementSubject {
 
 export class PriceManagementAuditObserver implements PriceManagementObserver {
   async update(event: PriceManagementEvent): Promise<void> {
-    if (event.type === "price_created") {
-      console.log(
-        `[AUDIT] Created price ${event.priceId} with status ${event.status}`,
-      );
-    }
-
-    if (event.type === "price_updated") {
-      console.log(
-        `[AUDIT] Updated price ${event.priceId} to status ${event.status}`,
-      );
-    }
-
-    if (event.type === "price_deleted") {
-      console.log(`[AUDIT] Deleted price ${event.priceId}`);
-    }
+    logger.info("Price event", { kind: event.type });
   }
 }

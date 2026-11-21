@@ -564,7 +564,6 @@ export default function ProfileMine() {
   const handleAvatarChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    console.log("handleAvatarChange fired", event.target.files);
     const selectedFile = event.target.files?.[0] ?? null;
     event.target.value = "";
 

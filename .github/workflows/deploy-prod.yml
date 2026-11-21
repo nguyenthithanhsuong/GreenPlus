@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           repo="${GITHUB_REPOSITORY,,}"
-          tag="sha-${VERIFIED_SHA:0:7}"
+          tag="sha-${VERIFIED_SHA}"
           for app in admin client shipper; do
             docker manifest inspect "ghcr.io/${repo}/web-${app}:${tag}" >/dev/null
             echo "PASS web-${app}:${tag} exists"

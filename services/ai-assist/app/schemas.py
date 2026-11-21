@@ -37,6 +37,8 @@ class ChatRequest(StrictModel):
     store_id: UUID
     role: Literal["admin", "manager", "employee", "shipper", "customer"]
     question: str = Field(min_length=2, max_length=1500)
+    level: Literal["low", "medium", "high"] = "low"
+    locale: Literal["vi", "en"] = "vi"
     knowledge: list[ChatSource] = Field(default_factory=list, max_length=75)
     history: list[ChatTurn] = Field(default_factory=list, max_length=10)
 

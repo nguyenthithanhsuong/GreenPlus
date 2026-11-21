@@ -1,7 +1,6 @@
 from fastapi import Depends, FastAPI
 from .security import require_service_key
 from .schemas import ForecastRequest, PromotionInput, ChatRequest, RecipeRequest, ComplaintRequest
-from .forecast import forecast
 from .promotions import recommend
 from .knowledge import answer
 from .recipes import suggest
@@ -15,6 +14,8 @@ def health():
 
 @app.post("/v1/forecast", dependencies=[Depends(require_service_key)])
 def forecast_endpoint(body: ForecastRequest):
+    # Import numpy / sklearn only for forecasting, not for HTTP readiness.
+    from .forecast import forecast
     return forecast(body)
 
 @app.post("/v1/promotion", dependencies=[Depends(require_service_key)])

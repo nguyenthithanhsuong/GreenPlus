@@ -20,6 +20,7 @@ services:
       - /tmp
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8100/health',timeout=3)"]
-      interval: 30s
+      interval: 15s
       timeout: 5s
+      start_period: 20s
       retries: 3

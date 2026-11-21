@@ -12,6 +12,7 @@ import {
   SCREEN_SIDE_PADDING_PX,
 } from "../shared/screen.styles";
 import { selectedStoreId, STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
+import { chatMsg } from "../../../packages/ai-core/MSG.mjs";
 
 type ChatLine = {
   role: "user" | "assistant";
@@ -20,15 +21,19 @@ type ChatLine = {
   confidence?: number;
 };
 
-function answerSource(mode?: string) {
-  if (mode === "hybrid_rag_llm") return "FAQ đã duyệt + AI";
-  if (mode === "retrieval") return "FAQ đã duyệt";
-  if (mode === "smalltalk" || mode === "llm_general") return "Trợ lý GreenPlus";
-  return mode ? "Chưa có nguồn xác minh" : null;
+function answerSource(mode: string | undefined, locale: "vi" | "en") {
+  if (mode === "rag_local") return chatMsg(locale,"rag_local");
+  if (mode === "hybrid_rag_llm") return chatMsg(locale,"hybrid_rag_llm");
+  if (mode === "retrieval") return chatMsg(locale,"retrieval");
+  if (mode === "smalltalk" || mode === "llm_general") return chatMsg(locale,"smalltalk");
+  return mode ? chatMsg(locale,"notVerified") : null;
 }
 
 export default function CustomerAiChat() {
   const [question, setQuestion] = useState("");
+  const [level, setLevel] = useState<"low"|"medium"|"high">("low");
+  const [locale, setLocale] = useState<"vi"|"en">("vi");
+  const msg=(key:Parameters<typeof chatMsg>[1])=>chatMsg(locale,key);
   const [lines, setLines] = useState<ChatLine[]>([]);
   const [conversationId, setConversationId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -59,7 +64,7 @@ export default function CustomerAiChat() {
     if (!text || loading) return;
     const requestStore = selectedStoreId();
     if (!requestStore) {
-      setError("Vui lòng chọn cửa hàng trước khi hỏi AI.");
+      setError(msg("needStore"));
       return;
     }
     const requestEpoch = storeEpoch.current;
@@ -75,6 +80,7 @@ export default function CustomerAiChat() {
           question: text,
           storeId: requestStore,
           conversationId: conversationId || undefined,
+          level, locale,
         }),
       });
       const result = await res.json();
@@ -89,7 +95,7 @@ export default function CustomerAiChat() {
       setQuestion("");
     } catch (reason) {
       if (storeEpoch.current === requestEpoch) {
-        setError(reason instanceof Error ? reason.message : "Trợ lý chưa sẵn sàng");
+        setError(reason instanceof Error ? reason.message : msg("error"));
       }
     } finally {
       setLoading(false);
@@ -133,6 +139,21 @@ export default function CustomerAiChat() {
           <div className="mt-3 rounded-xl bg-emerald-50/70">
             <StoreSelector />
           </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <label>{msg("level")}
+              <select aria-label={msg("level")} value={level} disabled={loading}
+                onChange={e=>setLevel(e.target.value as typeof level)} className="mt-1 w-full rounded-lg border border-emerald-200 bg-white p-2 text-slate-800">
+                <option value="low">{msg("low")}</option><option value="medium">{msg("medium")}</option><option value="high">{msg("high")}</option>
+              </select>
+            </label>
+            <label>{msg("language")}
+              <select aria-label={msg("language")} value={locale} disabled={loading}
+                onChange={e=>setLocale(e.target.value as typeof locale)} className="mt-1 w-full rounded-lg border border-emerald-200 bg-white p-2 text-slate-800">
+                <option value="vi">Tiếng Việt</option><option value="en">English</option>
+              </select>
+            </label>
+          </div>
+          {level==="high"?<p className="mt-2 text-xs text-amber-800">{msg("privacy")} {msg("highUnverified")}</p>:null}
         </header>
 
         <div
@@ -151,7 +172,7 @@ export default function CustomerAiChat() {
               </div>
               <h2 className="mt-4 text-lg font-bold text-emerald-950">Xin chào! Mình có thể giúp gì?</h2>
               <p className="mt-2 max-w-[310px] text-sm leading-6 text-slate-600">
-                Hãy hỏi về sản phẩm, đơn hàng hoặc thông tin cửa hàng. Nội dung chính sách được đối chiếu với FAQ đã duyệt.
+                {msg("intro")}
               </p>
               <div className="mt-6 grid w-full grid-cols-2 gap-2 text-left text-sm font-semibold">
                 <Link href="/ai/recipes" className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-emerald-800 transition-colors hover:bg-emerald-100">
@@ -183,9 +204,9 @@ export default function CustomerAiChat() {
                     }`}
                   >
                     <p className="whitespace-pre-wrap break-words">{line.text}</p>
-                    {line.role === "assistant" && answerSource(line.source) ? (
+                    {line.role === "assistant" && answerSource(line.source,locale) ? (
                       <p className="mt-2 text-xs font-medium text-emerald-800/80">
-                        {answerSource(line.source)}
+                        {answerSource(line.source,locale)}
                       </p>
                     ) : null}
                   </div>
@@ -200,7 +221,7 @@ export default function CustomerAiChat() {
               ) : null}
               {loading ? (
                 <p role="status" className="w-fit rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                  Trợ lý đang trả lời...
+                  {msg("waiting")}
                 </p>
               ) : null}
             </div>
@@ -230,12 +251,12 @@ export default function CustomerAiChat() {
               onChange={(event) => setQuestion(event.target.value)}
               maxLength={1500}
               autoComplete="off"
-              placeholder="Nhập câu hỏi..."
+              placeholder={msg("placeholder")}
               className="min-h-12 min-w-0 flex-1 rounded-2xl border border-slate-300 bg-slate-50 px-4 text-base text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
             />
             <button
               type="submit"
-              aria-label="Gửi câu hỏi"
+              aria-label={msg("send")}
               disabled={loading || !question.trim()}
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-700 text-white transition-colors hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -243,7 +264,7 @@ export default function CustomerAiChat() {
             </button>
           </form>
           <p className="mt-2 text-center text-[11px] text-slate-500">
-            Câu trả lời về chính sách cần nguồn được xác minh.
+            {msg("notice")}
           </p>
         </div>
       </main>

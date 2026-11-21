@@ -1,4 +1,5 @@
 import { InventoryTransactionType } from "../inventory-management.types";
+import { logger } from "@/lib/logger";
 
 export type InventoryManagementEvent =
   | {
@@ -45,27 +46,7 @@ export class InventoryManagementSubject {
 
 export class InventoryManagementAuditObserver implements InventoryManagementObserver {
   async update(event: InventoryManagementEvent): Promise<void> {
-    switch (event.type) {
-      case "inventory_updated":
-        console.info(
-          `[Inventory Updated] inventoryId=${event.inventoryId} actor=${event.actor}`,
-        );
-        break;
-
-      case "inventory_deleted":
-        console.info(
-          `[Inventory Deleted] inventoryId=${event.inventoryId} actor=${event.actor}`,
-        );
-        break;
-
-      case "inventory_transaction_created":
-        console.info(
-          `[Inventory Transaction] inventoryId=${event.inventoryId} batchId=${event.batchId} type=${event.transactionType} quantity=${event.quantity} actor=${event.actor}${event.note ? ` note=${event.note}` : ""}`,
-        );
-        break;
-
-      default:
-        break;
-    }
+    // Keep free-text notes, identity and business identifiers out of log transport.
+    logger.info("Inventory event", { kind: event.type });
   }
 }

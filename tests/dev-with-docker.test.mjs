@@ -28,7 +28,7 @@ test('optional Docker update bypass performs verification but no writes', () => 
 test('npm dev starts Docker checks and npm web starts only the apps, without duplicate alias', () => {
   const scripts = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).scripts;
   assert.equal(scripts.dev, 'node scripts/dev-with-docker.mjs');
-  assert.equal(scripts['dev:all'], undefined);
+  assert.equal(scripts['dev:all'], 'node scripts/dev-with-docker.mjs');
   assert.equal(scripts.web, 'turbo dev --ui=tui');
   assert.equal(scripts['dev:apps'], undefined);
   assert.equal(scripts['dev:web'], undefined);

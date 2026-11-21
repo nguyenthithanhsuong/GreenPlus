@@ -26,6 +26,12 @@ export class BetterStackLogger {
   ) {}
   async send(payload: LogPayload): Promise<void> {
     if (typeof window !== "undefined" || !this.token || !this.url) return;
+    // Only emit telemetry to a configured HTTPS ingestion endpoint.
+    try {
+      const destination = new URL(this.url);
+      if (destination.protocol !== "https:" || destination.username || destination.password ||
+          destination.search || destination.hash) return;
+    } catch { return; }
     try {
       const response = await fetch(this.url, {
         method: "POST",
@@ -41,9 +47,11 @@ export class BetterStackLogger {
           context: sanitize(payload.context ?? {}),
         }),
       });
-      if (!response.ok) console.error("[BetterStack] HTTP", response.status);
+      // A telemetry transport failure must not spawn another telemetry event.
+      // Avoid printing the URL, token, message payload, or error details.
+      void response.ok;
     } catch {
-      console.error("[BetterStack] Delivery unavailable");
+      // Logging must be best-effort and never affect the customer request.
     }
   }
   info(message: string, context?: Record<string, unknown>) {

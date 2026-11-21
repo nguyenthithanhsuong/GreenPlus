@@ -24,11 +24,6 @@ export function withSentry<
       const scope = await resolveTenantScope(request);
       return await runTenantScope(scope, () => handler(request, context));
     } catch (error) {
-      console.error(
-        "[Unhandled API error]:",
-        error instanceof Error ? error.message : "Unknown error",
-      );
-
       Sentry.captureException(error);
 
       if (error instanceof AppError) {

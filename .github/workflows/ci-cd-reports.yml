@@ -1,0 +1,38 @@
+# Dedicated, read-only reporting view under the GitHub Actions sidebar.
+# It reports completed outcomes, never checks out or executes the untrusted run artifacts.
+name: CI/CD Reports
+on:
+  workflow_run:
+    workflows:
+      - CI
+      - Production Verify
+      - Staging Verify
+      - Supabase Safe Migration Deploy
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  report:
+    name: CI/CD Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Load trusted report tooling from default branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read completed job conclusions and render report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/ci/github-actions-report.mjs
+      - name: Archive report JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-cd-report
+          path: artifacts/ci/actions-report.json
+          if-no-files-found: error
+          retention-days: 30

@@ -7,7 +7,8 @@ COPY web-admin/package.json ./web-admin/package.json
 COPY web-client/package.json ./web-client/package.json
 COPY web-shipper/package.json ./web-shipper/package.json
 COPY packages/supabase-shared/package.json ./packages/supabase-shared/package.json
-RUN npm ci
+COPY packages/tenant-routing/package.json ./packages/tenant-routing/package.json
+RUN npm ci --no-audit --no-fund
 
 FROM node:22-alpine AS builder
 WORKDIR /app

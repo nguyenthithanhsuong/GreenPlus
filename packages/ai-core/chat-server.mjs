@@ -1,5 +1,6 @@
 import { callAiService } from "./ai-client.mjs";
 import { safeText, validUuid, hourlyLimit } from "./policy.mjs";
+import { chatPreferences } from "./chat-levels.mjs";
 
 export class ChatError extends Error {
   constructor(message, status = 400) { super(message); this.status = status; }
@@ -14,7 +15,8 @@ function result(result) {
   if (result.error) throw new ChatError("Không thể truy cập dữ liệu hội thoại", 503);
   return result.data;
 }
-export async function askStoreChat(db, actor, message, prior) {
+export async function askStoreChat(db, actor, message, prior, level = "low", locale = "vi") {
+  const preferences = chatPreferences(level, locale);
   const question = safeText(message, 1500, 2);
   if (!question) throw new ChatError("Câu hỏi không hợp lệ", 400);
   if (prior != null && !validUuid(prior)) throw new ChatError("Mã hội thoại không hợp lệ",400);
@@ -43,7 +45,7 @@ export async function askStoreChat(db, actor, message, prior) {
     .eq("store_id",actor.storeId).eq("enabled",true).eq("review_status","approved").is("deleted_at",null)
     .in("audience",audiencesForRole(actor.role)).limit(75));
   const response = await callAiService("chat",{store_id:actor.storeId,role:actor.role,question,
-    knowledge:knowledge.map((entry)=>({id:entry.id,question:entry.question,answer:entry.answer})),history},
+    knowledge:knowledge.map((entry)=>({id:entry.id,question:entry.question,answer:entry.answer})),history,...preferences},
     {timeoutMs:14000});
   const answer = safeText(response.answer,6000);
   if (!answer || !Array.isArray(response.sources)) throw new ChatError("AI trả dữ liệu không hợp lệ",503);
@@ -52,7 +54,7 @@ export async function askStoreChat(db, actor, message, prior) {
     actor_id:actor.userId,question,answer,answer_mode:String(response.mode??"retrieval").slice(0,50),
     confidence:Math.min(1,Math.max(0,Number(response.confidence)||0)),source_ids:sources,
     handoff:response.handoff===true}).select("id").single());
-  return {conversationId,answer,mode:response.mode,confidence:response.confidence,sources,handoff:response.handoff};
+  return {conversationId,answer,mode:response.mode,level:preferences.level,confidence:response.confidence,sources,handoff:response.handoff,degraded:response.degraded===true};
 }
 export async function readStoreChat(db,actor,id) {
   if (!validUuid(id)) throw new ChatError("Mã hội thoại không hợp lệ",400);

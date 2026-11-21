@@ -659,12 +659,6 @@ export default function ProductDetail({
 
     const readResponseText = async (response: Response) => {
       const text = await response.text();
-      console.debug("[ProductDetail] response", {
-        url: response.url,
-        status: response.status,
-        ok: response.ok,
-        body: text,
-      });
       return text;
     };
 
@@ -802,10 +796,6 @@ export default function ProductDetail({
           return;
         }
 
-        console.error("[ProductDetail] load failed", {
-          productId,
-          error: requestError,
-        });
         setError(
           requestError instanceof Error
             ? requestError.message

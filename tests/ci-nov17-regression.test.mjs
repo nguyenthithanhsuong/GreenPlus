@@ -8,7 +8,7 @@ test('minimal root command aliases stay consistent with dev runner',()=>{
  const scripts=JSON.parse(read('package.json')).scripts;
  assert.equal(scripts.web,'turbo dev --ui=tui');
  assert.equal(scripts.dev,'node scripts/dev-with-docker.mjs');
- assert.equal(scripts['dev:all'],undefined);
+ assert.equal(scripts['dev:all'],'node scripts/dev-with-docker.mjs');
  assert.ok(!('dev:apps' in scripts));
  assert.ok(!('dev:web' in scripts));
  assert.match(read('scripts/dev-with-docker.mjs'),/spawn\('npm run web'/);

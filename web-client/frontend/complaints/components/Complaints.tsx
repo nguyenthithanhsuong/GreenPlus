@@ -383,7 +383,6 @@ export default function Complaints() {
         setComplaints((data.items ?? []) as ComplaintResponse[]);
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
-        console.error("loadComplaints error", err);
       } finally {
         setLoadingComplaints(false);
       }

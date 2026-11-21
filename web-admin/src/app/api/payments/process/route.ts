@@ -11,11 +11,7 @@ export const POST = withSentry(async (request: Request) => {
 
   const { orderId, amount, method } = body;
 
-  logger.info("Handle order payment attempt", {
-    orderId,
-    amount,
-    method,
-  });
+  logger.info("Handle order payment attempt", { method });
 
   if (!orderId || typeof orderId !== "string") {
     logger.error("Handle order payment failed - invalid orderId");
@@ -24,9 +20,7 @@ export const POST = withSentry(async (request: Request) => {
   }
 
   if (typeof amount !== "number" || Number.isNaN(amount) || amount <= 0) {
-    logger.error("Handle order payment failed - invalid amount", {
-      orderId,
-    });
+    logger.error("Handle order payment failed - invalid amount");
 
     return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
   }
@@ -51,10 +45,9 @@ export const POST = withSentry(async (request: Request) => {
     method,
   });
 
-  logger.info("Handle order payment success", {
-    orderId,
-    duration_ms: Date.now() - start,
-  });
-
+  if (!result.success) {
+    logger.warn("Payment adapter unavailable", { method, duration_ms: Date.now() - start });
+    return NextResponse.json({ error: "Chức năng thanh toán chưa kết nối nhà cung cấp. Không có giao dịch nào được xác nhận.", code: "PAYMENT_NOT_IMPLEMENTED" }, { status: 501 });
+  }
   return NextResponse.json(result, { status: 200 });
 });

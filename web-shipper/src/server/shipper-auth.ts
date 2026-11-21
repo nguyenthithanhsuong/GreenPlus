@@ -160,10 +160,6 @@ export function shipperApiError(error: unknown): {
     code: "SHIPPER_INTERNAL_ERROR",
     type: error instanceof Error ? error.name : typeof error,
   });
-  console.error("[shipper/api]", {
-    code: "SHIPPER_INTERNAL_ERROR",
-    type: error instanceof Error ? error.name : typeof error,
-  });
   return {
     message: "Dịch vụ Shipper tạm thời gặp lỗi. Kiểm tra cấu hình server.",
     status: 503,

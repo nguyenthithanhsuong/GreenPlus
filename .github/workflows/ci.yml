@@ -58,7 +58,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { app: admin, node: '20', label: 'Admin CI' }
+          - { app: admin, node: '22', label: 'Admin CI' }
           - { app: client, node: '22', label: 'Client CI' }
           - { app: shipper, node: '22', label: 'Shipper CI' }
     steps:
@@ -69,8 +69,11 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Lint
+        id: lint
         run: npm run lint -w web-${{ matrix.app }}
-      - name: Typecheck
+      - name: Typecheck (also runs if lint failed; still fails the job)
+        id: typecheck
+        if: success() || steps.lint.outcome == 'failure'
         run: npm run typecheck -w web-${{ matrix.app }}
       - name: Client checkout and multi-tenant tests
         if: matrix.app == 'client'
@@ -79,6 +82,7 @@ jobs:
         if: matrix.app == 'shipper'
         run: npm test -w web-shipper
       - name: Build
+        id: build
         run: npm run build -w web-${{ matrix.app }}
       - name: Shipper browser E2E tests
         if: matrix.app == 'shipper'
@@ -98,6 +102,25 @@ jobs:
             artifacts/playwright/web-shipper/report/
           if-no-files-found: ignore
           retention-days: 7
+      - name: Workspace quality summary (visible even after failure)
+        if: always()
+        env:
+          APP: ${{ matrix.app }}
+          LINT_RESULT: ${{ steps.lint.outcome }}
+          TYPECHECK_RESULT: ${{ steps.typecheck.outcome }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+        shell: bash
+        run: |
+          {
+            echo "## Web ${APP} · quality report"
+            echo '| Check | Result |'
+            echo '|---|---|'
+            echo "| ESLint | ${LINT_RESULT:-not-run} |"
+            echo "| TypeScript typecheck | ${TYPECHECK_RESULT:-not-run} |"
+            echo "| Next.js build | ${BUILD_RESULT:-not-run} |"
+            echo ''
+            echo 'Failures stay blocking. Typecheck runs even if ESLint fails so both diagnostics appear in one run.'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   backend-ci:
     name: Backend CI
@@ -220,7 +243,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: environment
     timeout-minutes: 12
-    # PRs and feature branches run offline contract tests. MAIN must prove live connectivity.
+    # Live provider availability is advisory; offline contracts remain strict.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -228,7 +251,7 @@ jobs:
           node-version: '22'
       - name: Test service probes offline
         run: node --test tests/ci-pipeline.test.mjs
-      - name: Verify live service credentials and connections on main (fail closed)
+      - name: Probe external providers (warnings only; never suppress security gates)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -246,7 +269,7 @@ jobs:
           BETTER_STACK_SOURCE_TOKEN: ${{ secrets.BETTER_STACK_SOURCE_TOKEN }}
           BETTER_STACK_URL: ${{ vars.BETTER_STACK_URL || secrets.BETTER_STACK_URL }}
           GITHUB_SHA: ${{ github.sha }}
-        run: node scripts/ci/check-external.mjs
+        run: node scripts/ci/check-external.mjs --output artifacts/ci/external-services.json
       - name: Docker Gateway CI
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GREENPLUS_DOCKER_REMOTE_ENABLED == 'true'
         env:
@@ -260,6 +283,14 @@ jobs:
           GREENPLUS_DOCKER_ACCESS_CLIENT_SECRET: ${{ secrets.GREENPLUS_DOCKER_ACCESS_CLIENT_SECRET }}
           GREENPLUS_DOCKER_REQUIRE_ALL_TIERS: 'true'
         run: node scripts/ci/check-docker-tenants.mjs
+      - name: Upload service diagnostics (no credentials)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-service-diagnostics
+          path: artifacts/ci/external-services.json
+          if-no-files-found: ignore
+          retention-days: 14
 
   docker-build:
     name: Docker Build
@@ -318,21 +349,54 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          short_sha="${GITHUB_SHA:0:7}"
+          full_sha="${GITHUB_SHA}"
           for app in admin client shipper; do
             target="ghcr.io/${REPO_LC}/web-${app}"
-            docker tag "greenplus/web-${app}:ci" "${target}:sha-${short_sha}"
-            docker push "${target}:sha-${short_sha}"
+            docker tag "greenplus/web-${app}:ci" "${target}:sha-${full_sha}"
+            docker push "${target}:sha-${full_sha}"
             for tag in main latest; do
               docker tag "greenplus/web-${app}:ci" "${target}:${tag}"
               docker push "${target}:${tag}"
             done
           done
           ai_target="ghcr.io/${REPO_LC}/ai-assist"
-          docker tag greenplus/ai-assist:ci "${ai_target}:sha-${short_sha}"
-          docker push "${ai_target}:sha-${short_sha}"
+          docker tag greenplus/ai-assist:ci "${ai_target}:sha-${full_sha}"
+          docker push "${ai_target}:sha-${full_sha}"
           for tag in main latest; do
             docker tag greenplus/ai-assist:ci "${ai_target}:${tag}"
             docker push "${ai_target}:${tag}"
           done
           echo "All three web images and the AI Assist SHA-pinned image published; deployment remains a separate, manual operation."
+
+  ci-report:
+    name: CI/CD Report
+    if: always()
+    needs: [pipeline-contracts, frontend-ci, backend-ci, ai-service-ci, docker-db-ci, supabase-db-ci, external-services-ci, docker-build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download optional provider health results
+        if: needs.external-services-ci.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/download-artifact@v4
+        with:
+          name: external-service-diagnostics
+          path: artifacts/ci
+      - name: Write CI/CD summary in Actions
+        env:
+          CI_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: node scripts/ci/ci-report.mjs
+      - name: Upload CI gate report JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: greenplus-ci-cd-report
+          path: artifacts/ci/ci-report.json
+          if-no-files-found: warn
+          retention-days: 30

@@ -10,10 +10,11 @@ const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const cli = resolve(root, 'scripts/project-tools.mjs');
 
 test('root command surface stays small without breaking CI aliases', () => {
-  assert.ok(Object.keys(pkg.scripts).length >= 24 && Object.keys(pkg.scripts).length <= 29,
+  assert.ok(Object.keys(pkg.scripts).length >= 24 && Object.keys(pkg.scripts).length <= 33,
     'Root commands must remain bounded while adding explicit migration safety tools');
   assert.equal(pkg.scripts.dev, 'node scripts/dev-with-docker.mjs');
-  assert.equal(pkg.scripts['dev:all'], undefined);
+  assert.equal(pkg.scripts['dev:all'], 'node scripts/dev-with-docker.mjs');
+  assert.equal(pkg.scripts['dev:fast'], 'turbo dev --ui=stream');
   assert.equal(pkg.scripts.web, 'turbo dev --ui=tui');
   assert.ok(!('dev:apps' in pkg.scripts));
   for (const removed of ['clean:zip','test:client','test:release:static','maintain:restore']) assert.ok(!(removed in pkg.scripts));

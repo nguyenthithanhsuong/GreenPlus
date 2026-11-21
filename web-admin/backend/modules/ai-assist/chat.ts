@@ -1,8 +1,9 @@
 import { callAiService } from "../../../../packages/ai-core/ai-client.mjs";
 import { safeText, validUuid } from "../../../../packages/ai-core/policy.mjs";
+import { chatPreferences } from "../../../../packages/ai-core/chat-levels.mjs";
 import { aiDb, resultOrFail } from "./db";
 import { AiError } from "./errors";
-import { listKnowledge } from "./knowledge";
+import { knowledgeAudiencesForRole } from "./knowledge";
 import { consumeAiQuota } from "./quota";
 import type { AiActor } from "./types";
 
@@ -21,7 +22,8 @@ export async function readConversation(actor:AiActor,id:string) {
     .eq("conversation_id",id).eq("store_id",actor.storeId).order("created_at",{ascending:true}).limit(100);
   return resultOrFail(data,error);
 }
-export async function askAi(actor:AiActor,question:unknown,conversationId?:unknown) {
+export async function askAi(actor:AiActor,question:unknown,conversationId?:unknown,level:unknown="low",locale:unknown="vi") {
+  const preferences=chatPreferences(level,locale);
   const query=safeText(question,1500,2);
   if (!query) throw new AiError("Câu hỏi cần từ 2 đến 1500 ký tự",400);
   if (conversationId!=null && !validUuid(conversationId)) throw new AiError("Hội thoại không hợp lệ",400);
@@ -46,9 +48,14 @@ export async function askAi(actor:AiActor,question:unknown,conversationId?:unkno
       .insert({store_id:actor.storeId,actor_id:actor.id,role:actor.role}).select("id").single();
     id=resultOrFail(data,error).id;
   }
-  const knowledge=await listKnowledge(actor.storeId,true,actor.role);
+  // Chat needs only approved, audience-scoped FAQ fields, not 1,000 full review records.
+  const {data:approved,error:knowledgeError}=await aiDb().from("ai_knowledge")
+    .select("id,question,answer").eq("store_id",actor.storeId)
+    .eq("enabled",true).eq("review_status","approved").is("deleted_at",null)
+    .in("audience",knowledgeAudiencesForRole(actor.role)).limit(75);
+  const knowledge=resultOrFail(approved,knowledgeError);
   const response=await callAiService("chat",{store_id:actor.storeId,role:actor.role,question:query,
-    knowledge:knowledge.slice(0,75).map((row)=>({id:row.id,question:row.question,answer:row.answer})),history},
+    knowledge:knowledge.map((row)=>({id:row.id,question:row.question,answer:row.answer})),history,...preferences},
     {timeoutMs:14000});
   const answer=safeText(response.answer,6000);
   if (!answer || !Array.isArray(response.sources)) throw new AiError("Phản hồi AI không hợp lệ",503);
@@ -58,5 +65,5 @@ export async function askAi(actor:AiActor,question:unknown,conversationId?:unkno
     confidence:Math.max(0,Math.min(1,Number(response.confidence??0))),source_ids:sources,
     handoff:response.handoff===true}).select("id").single();
   resultOrFail(data,error);
-  return {conversationId:id,answer,mode:response.mode,confidence:response.confidence,sources,handoff:response.handoff};
+  return {conversationId:id,answer,mode:response.mode,level:preferences.level,confidence:response.confidence,sources,handoff:response.handoff,degraded:response.degraded===true};
 }

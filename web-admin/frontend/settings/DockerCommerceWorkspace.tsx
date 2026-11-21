@@ -1,5 +1,5 @@
 "use client";
-import {useEffect, useState} from "react";
+import {useEffect, useState, useSyncExternalStore} from "react";
 import Link from "next/link";
 import DockerCommerceInspector from "./DockerCommerceInspector";
 import AdminShell from "../shared/AdminShell";
@@ -7,22 +7,33 @@ import CommerceTabs from "../shared/CommerceTabs";
 import { useAuthStore } from "@/lib/stores/authStore";
 
 type Store={store_id:string;name:string;tier:string};
+type InventorySection = "commerce" | "alerts" | "forecast";
+
+// The URL is external state. Read it via useSyncExternalStore instead of
+// synchronously cascading setState calls from effects.
+function subscribeToUrlChanges(onChange: () => void) {
+ window.addEventListener("popstate", onChange);
+ return () => window.removeEventListener("popstate", onChange);
+}
+function getUrlSection(): InventorySection {
+ const tab = new URLSearchParams(window.location.search).get("tab");
+ return tab === "alerts" || tab === "forecast" ? tab : "commerce";
+}
+function getServerSection(): InventorySection { return "commerce"; }
 /** Main Admin Orders/Inventory pages switch to this separate Docker sandbox only. */
 export default function DockerCommerceWorkspace({kind}:{kind:"inventory"|"orders"}) {
  const [stores,setStores]=useState<Store[]>([]);
  const [storeId,setStoreId]=useState("");
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
- const [section,setSection]=useState("commerce");
+ const [selectedSection,setSelectedSection]=useState<InventorySection|null>(null);
  const role = useAuthStore(s => s.user?.role_name ?? s.session?.role_name)?.toLowerCase();
- useEffect(() => {
-  if (kind !== "inventory") return;
-  const tab = new URLSearchParams(window.location.search).get("tab");
-  if (tab === "alerts" || tab === "forecast") setSection(tab);
- }, [kind]);
- useEffect(() => {
-  if (role !== "manager" && section !== "commerce") setSection("commerce");
- }, [role,section]);
+ const urlSection = useSyncExternalStore(subscribeToUrlChanges, getUrlSection, getServerSection);
+ // Do not expose manager-only tabs when roles change: derive the permitted
+ // section instead of resetting it in a render-triggering effect.
+ const section: InventorySection = kind === "inventory" && role === "manager"
+  ? (selectedSection ?? urlSection)
+  : "commerce";
  useEffect(()=>{
   const controller=new AbortController();
   fetch("/api/tenant-demo",{cache:"no-store",signal:controller.signal})
@@ -38,7 +49,7 @@ export default function DockerCommerceWorkspace({kind}:{kind:"inventory"|"orders
  return <AdminShell title={kind==="inventory"?"Quản lý tồn kho":"Quản lý đơn hàng"}
   description="Docker Local Sandbox · dữ liệu mô phỏng chưa thay thế Supabase nghiệp vụ"
   pageActions={<Link href="/system" className="text-sm font-semibold text-emerald-700 underline">Cấu hình nguồn dữ liệu</Link>}>
-  {kind==="inventory" && <CommerceTabs current={section} onChange={setSection} tabs={[
+  {kind==="inventory" && <CommerceTabs current={section} onChange={id=>setSelectedSection(id as InventorySection)} tabs={[
     { id:"commerce", label:"Tồn kho Docker" },
     ...(role === "manager" ? [
       { id:"alerts", label:"Cảnh báo tồn kho AI" },

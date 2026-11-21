@@ -75,5 +75,6 @@ test('review actions require server role, tenant and SQL atomicity; chat is audi
  assert.match(sql,/INSERT INTO public.audit_logs/);
  assert.match(sql,/REVOKE ALL ON FUNCTION.*FROM PUBLIC,anon,authenticated/);
  assert.match(shared,/\.in\("audience",audiencesForRole\(actor.role\)\)/);
- assert.match(admin,/listKnowledge\(actor.storeId,true,actor.role\)/);
+ assert.match(admin,/knowledgeAudiencesForRole\(actor.role\)/);
+ assert.match(admin,/\.eq\("review_status","approved"\)/);
 });

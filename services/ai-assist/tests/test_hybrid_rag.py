@@ -6,9 +6,9 @@ from app.knowledge import answer, retrieval_question, ranked_sources
 from app.settings import Settings
 
 
-def make(question, knowledge=None, history=None, role="customer"):
+def make(question, knowledge=None, history=None, role="customer", level="high", locale="vi"):
     return ChatRequest(store_id=uuid4(), role=role, question=question,
-        knowledge=knowledge or [], history=history or [])
+        knowledge=knowledge or [], history=history or [], level=level, locale=locale)
 
 
 def faq(id, question, answer):
