@@ -8,7 +8,7 @@ export async function GET(request:Request) {
   } catch(error) { return aiErrorResponse(error); }
 }
 export async function POST(request:Request) {
-  try { checkOrigin(request); const value=await request.json() as {storeId?:string;question?:string;conversationId?:string;level?:string;locale?:string};
+  try { checkOrigin(request); const value=await readBoundedJson(request) as {storeId?:string;question?:string;conversationId?:string;level?:string;locale?:string};
     const actor=await requireAiActor(request,"chat",value.storeId);
     return Response.json(await askAi(actor,value.question,value.conversationId,value.level,value.locale),{headers:{"Cache-Control":"no-store"}});
   } catch(error) { return aiErrorResponse(error); }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
@@ -49,6 +49,7 @@ const money = (value: number) =>
 export default function Dashboard() {
   const router = useRouter();
   const [items, setItems] = useState<Delivery[]>([]);
+  const loadInFlight = useRef(false);
   const [name, setName] = useState("Shipper");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,6 +61,8 @@ export default function Dashboard() {
 
   const load = useCallback(
     async (silent = false) => {
+      if (loadInFlight.current) return;
+      loadInFlight.current = true;
       if (silent) setRefreshing(true);
       else setLoading(true);
       try {
@@ -82,6 +85,7 @@ export default function Dashboard() {
       } catch (e) {
         setError(e instanceof Error ? e.message : "Không tải được đơn hàng");
       } finally {
+        loadInFlight.current = false;
         setLoading(false);
         setRefreshing(false);
       }
@@ -94,7 +98,11 @@ export default function Dashboard() {
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void load(true);
     }, 20000);
-    return () => window.clearInterval(timer);
+    const onVisible=()=>{
+      if(document.visibilityState === "visible") void load(true);
+    };
+    document.addEventListener("visibilitychange",onVisible);
+    return () => {window.clearInterval(timer);document.removeEventListener("visibilitychange",onVisible);};
   }, [load]);
 
   async function advance(item: Delivery, confirmed = false) {
@@ -278,11 +286,11 @@ export default function Dashboard() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-5 2xl:grid-cols-3">
               {visible.map((item) => (
                 <article
                   key={item.delivery_id}
-                  className="gp-card flex min-w-0 flex-col p-4"
+                  className="gp-card flex min-w-0 flex-col p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-lg motion-reduce:transform-none"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>

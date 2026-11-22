@@ -2,21 +2,21 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
-import { CircleUserRound, Leaf } from "lucide-react";
+import { CircleUserRound, CircleHelp, Leaf, MessageCircleMore } from "lucide-react";
 import NavigationBar from "../dashboard/NavigationBar";
 
 /** Same mobile-width white canvas on a full-viewport green backdrop as Web Client. */
 export default function ShipperShell({
   title,
   description,
-  icon: Icon,
+  icon,
   action,
   children,
 }: {
   title: string;
   description: string;
-  icon: LucideIcon;
+  /** Serializable identifier so server pages never pass component functions across RSC. */
+  icon: "help" | "message";
   action?: ReactNode;
   children: ReactNode;
 }) {
@@ -37,19 +37,20 @@ export default function ShipperShell({
               <small>SHIPPER</small>
             </span>
           </Link>
+          <div className="flex items-center gap-2"><Link href="/help" className="gp-account-link" aria-label="Trợ giúp"><CircleHelp size={21}/></Link>
           <Link
             href="/profile"
             className="gp-account-link"
             aria-label="Hồ sơ cá nhân"
           >
             <CircleUserRound size={22} />
-          </Link>
+          </Link></div>
         </header>
         <main className="gp-content">
           <div className="gp-page-heading">
             <div className="gp-page-heading-main">
               <span className="gp-heading-icon">
-                <Icon size={20} />
+                {icon === "help" ? <CircleHelp size={20} /> : <MessageCircleMore size={20} />}
               </span>
               <div>
                 <h1>{title}</h1>

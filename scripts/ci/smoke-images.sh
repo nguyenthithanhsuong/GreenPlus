@@ -30,12 +30,14 @@ for app in admin client shipper; do
     exit 1
   fi
   echo "PASS web-${app} HTTP root status ${status}"
-  if [[ "$app" == shipper ]]; then
-    health="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${outer}/api/health")"
-    auth="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${outer}/api/auth/me")"
-    deliveries="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${outer}/api/shipper/deliveries")"
-    [[ "$health" == 200 && "$auth" == 401 && "$deliveries" == 401 ]] || { echo "ERROR: Shipper API boundary health=$health auth=$auth deliveries=$deliveries"; exit 1; }
-    echo 'PASS Shipper health and unauthenticated API guards'
-  fi
-  docker rm -f "greenplus-${app}-ci" >/dev/null
+  # Keep all three disposable containers alive; the unified, read-only smoke
+  # runner checks the actual network boundaries (including /api/auth/me and
+  # /api/shipper/deliveries) and emits a machine-readable report.
+
 done
+
+node scripts/testing/system-smoke.mjs \
+  --admin http://127.0.0.1:13000 \
+  --client http://127.0.0.1:13001 \
+  --shipper http://127.0.0.1:13002 \
+  --report artifacts/ci/docker-system-smoke.json

@@ -1,6 +1,6 @@
 import { requireShipperAi } from "../../../../server/ai-actor";
 import { shipperDb } from "../../../../server/shipper-db";
-import { apiFailure, requireJsonOrigin } from "../../../../../../packages/ai-core/response.mjs";
+import { apiFailure, requireJsonOrigin, readBoundedJson } from "../../../../../../packages/ai-core/response.mjs";
 import { listThreads, startThread } from "../../../../../../packages/ai-core/support-server.mjs";
 export const runtime="nodejs";
 async function actorFor(request:Request,storeId?:string|null) {
@@ -14,7 +14,7 @@ export async function GET(request:Request) {
   } catch(error) { return apiFailure(error); }
 }
 export async function POST(request:Request) {
-  try { requireJsonOrigin(request); const body=await request.json() as {storeId?:string;orderId:string};
+  try { requireJsonOrigin(request); const body=await readBoundedJson(request) as {storeId?:string;orderId:string};
     const actor=await actorFor(request,body.storeId);
     return Response.json(await startThread(shipperDb(),actor,body.orderId));
   } catch(error) { return apiFailure(error); }

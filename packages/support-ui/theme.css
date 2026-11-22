@@ -1,0 +1,45 @@
+/* Shared, accessible appearance preferences across Admin, Client and Shipper.
+   Components using fixed utility colours are progressively tokenized; this
+   layer deliberately scopes dark overrides to normal app surfaces and avoids
+   recolouring images, maps, video, QR codes or brand identity. */
+:root[data-gp-theme="light"] { color-scheme: light; --gp-canvas: #f4faf6; --gp-surface: #fff; --gp-on-surface: #16372b; --gp-outline: #d5e9dc; --gp-muted-text: #526b5b; }
+:root[data-gp-theme="dark"] { color-scheme: dark; --gp-canvas: #0e1e17; --gp-surface: #172e23; --gp-on-surface: #edf8ef; --gp-outline: #335543; --gp-muted-text: #c6d9cd; }
+.gp-theme-switcher { position: fixed; bottom: calc(82px + env(safe-area-inset-bottom, 0px)); right: max(14px, env(safe-area-inset-right, 0px)); z-index: 900; font-family: Arial, Helvetica, sans-serif; }
+.gp-theme-trigger { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--gp-outline); border-radius: 999px; background: var(--gp-surface); color: var(--gp-on-surface); min-height: 44px; padding: 9px 14px; font-size: 14px; font-weight: 700; box-shadow: 0 6px 22px #122c1e2a; }
+.gp-theme-options { position: absolute; bottom: calc(100% + 8px); right: 0; display: grid; width: 172px; border: 1px solid var(--gp-outline); border-radius: 14px; background: var(--gp-surface); box-shadow: 0 12px 36px #001b162f; padding: 5px; }
+.gp-theme-options button { display: block; border: 0; border-radius: 9px; padding: 12px; color: var(--gp-on-surface); background: transparent; text-align: left; font-size: 14px; cursor: pointer; }
+.gp-theme-options button:hover, .gp-theme-options button[aria-pressed="true"] { background: #13875e; color: #fff; }
+:root[data-gp-theme="dark"] body { background: var(--gp-canvas); color: var(--gp-on-surface); }
+:root[data-gp-theme="dark"] .gp-phone-frame,
+:root[data-gp-theme="dark"] .gp-topbar,
+:root[data-gp-theme="dark"] .gp-card,
+:root[data-gp-theme="dark"] .gp-modal,
+:root[data-gp-theme="dark"] .gp-mobile-navigation,
+:root[data-gp-theme="dark"] .gp-client-nav { background: var(--gp-surface) !important; color: var(--gp-on-surface); border-color: var(--gp-outline); }
+:root[data-gp-theme="dark"] .gp-content,
+:root[data-gp-theme="dark"] .gp-app { color: var(--gp-on-surface); }
+:root[data-gp-theme="dark"] .gp-page-heading h1,
+:root[data-gp-theme="dark"] .gp-brand strong,
+:root[data-gp-theme="dark"] .gp-modal-heading h2 { color: var(--gp-on-surface); }
+:root[data-gp-theme="dark"] .gp-input,
+:root[data-gp-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+:root[data-gp-theme="dark"] textarea,
+:root[data-gp-theme="dark"] select { background-color: #10241a; color: #f1f9f3; border-color: var(--gp-outline); }
+:root[data-gp-theme="dark"] .gp-muted,
+:root[data-gp-theme="dark"] .gp-page-heading p { color: var(--gp-muted-text); }
+@media (min-width: 1024px) { .gp-theme-switcher { bottom: auto; top: 96px; right: 20px; } }
+@media (prefers-reduced-motion: reduce) { .gp-theme-options, .gp-theme-trigger { transition: none; } }
+:root[data-gp-theme="light"] { --background: #fff; --foreground: #171717; }
+:root[data-gp-theme="dark"] { --background: #0e1e17; --foreground: #edf8ef; }
+
+
+
+
+
+/* Do not globally remap utility colours: QR backgrounds, payment barcodes,
+   maps, charts and photos must retain their rendering for safety and contrast. */
+:root[data-gp-theme="dark"] .gp-live-support { background:var(--gp-surface); color:var(--gp-on-surface); border-color:var(--gp-outline); }
+:root[data-gp-theme="dark"] .gp-live-support :is(.bg-white,.bg-slate-50) { background:#1d3a2b !important; }
+:root[data-gp-theme="dark"] .gp-live-support :is(.text-slate-900,.text-slate-800,.text-emerald-950) { color:#f0f9f2 !important; }
+:root[data-gp-theme="dark"] .gp-live-support :is(.text-slate-500,.text-slate-600) { color:#c7ddce !important; }
+:root[data-gp-theme="dark"] .gp-live-support :is(.border-slate-200,.border-emerald-100) { border-color:var(--gp-outline) !important; }

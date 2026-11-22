@@ -43,7 +43,7 @@ export const POST = withSentry(async (request) => {
 
   userId = verifiedUser.id;
 
-  logger.info("Change password verified session", { userId });
+  logger.info("Change password verified session");
 
   const result = await authFacade.changePassword({
     userId,
@@ -53,7 +53,6 @@ export const POST = withSentry(async (request) => {
   });
 
   logger.info("Change password success", {
-    userId,
     duration_ms: Date.now() - start,
   });
 

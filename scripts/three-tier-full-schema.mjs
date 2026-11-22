@@ -40,8 +40,8 @@ function assertManifest() {
       throw Error(`Supabase migration history drift at ${m.name}: expected ${expected.name}/${expected.sha256}. Auto-apply blocked.`);
     }
   }
-  if (observed.length !== 21 || fileNames[0] !== '0001_baseline_greenplus.sql' || !fileNames.at(-1).startsWith('0021_')) {
-    throw Error('This release certifies only source migrations 0001–0021; review new migrations before proceeding.');
+  if (observed.length !== 22 || fileNames[0] !== '0001_baseline_greenplus.sql' || !fileNames.at(-1).startsWith('0022_')) {
+    throw Error('This release mirrors only 0001–0022; review new migrations and test DB behavior before deploying.');
   }
 }
 

@@ -18,7 +18,7 @@ export const PUT = withSentry(async (request: Request) => {
 
   const userId = assertCustomerId(body.userId, identity.userId);
 
-  logger.info("Change password attempt", { userId });
+  logger.info("Change password attempt");
 
   const start = Date.now();
 
@@ -30,7 +30,6 @@ export const PUT = withSentry(async (request: Request) => {
   });
 
   logger.info("Change password success", {
-    userId,
     duration_ms: Date.now() - start,
   });
 

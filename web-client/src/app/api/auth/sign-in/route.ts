@@ -1,3 +1,4 @@
+import { readBoundedJson } from "../../../../../../packages/ai-core/response.mjs";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
@@ -6,14 +7,18 @@ import { AuthRepository } from "../../../../../backend/modules/customer-auth/aut
 import { logger } from "@/lib/logger";
 
 export const POST = withSentry(async (request: Request) => {
-  const body = (await request.json()) as {
+  const body = (await readBoundedJson(request,{maxBytes:8192}).catch(error=>{
+    throw new AppError(error instanceof Error?error.message:"Invalid JSON",Number(error?.status) || 400);
+  })) as {
     email?: string;
     password?: string;
   };
 
-  const email = body.email ?? "";
+  const email = typeof body.email === "string" ? body.email : "";
+  if (email.length > 254 || typeof body.password !== "string" || body.password.length > 1024)
+    throw new AppError("Email hoặc mật khẩu không hợp lệ",400);
 
-  logger.info("Login attempt", { email });
+  logger.info("Login attempt");
 
   const start = Date.now();
 
@@ -24,7 +29,6 @@ export const POST = withSentry(async (request: Request) => {
     });
 
     logger.info("Login success", {
-      email,
       duration_ms: Date.now() - start,
     });
 
@@ -63,23 +67,16 @@ export const POST = withSentry(async (request: Request) => {
           errorResponse.status = user.status;
 
           if (user.status === "banned") {
-            logger.warn("Login blocked: account banned", {
-              email,
-            });
+            logger.warn("Login blocked: account banned");
           } else {
             logger.warn("Login blocked: account inactive/suspended", {
-              email,
               status: user.status,
             });
           }
         }
       } catch {}
     } else {
-      logger.error("Login failed", {
-        email,
-        message: error.message,
-        status: error.statusCode,
-      });
+      logger.warn("Login failed", { status: error.statusCode });
     }
 
     return NextResponse.json(errorResponse, { status: error.statusCode });

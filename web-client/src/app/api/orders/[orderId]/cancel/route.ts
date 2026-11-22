@@ -92,6 +92,6 @@ export async function PUT(request: Request, context: Context) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }

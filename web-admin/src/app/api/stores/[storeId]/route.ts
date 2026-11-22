@@ -105,7 +105,7 @@ export async function PUT(request: Request, context: Context) {
       storeId,
       error: toErrorMessage(error),
     });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }
 
@@ -162,7 +162,7 @@ export async function PATCH(request: Request, context: Context) {
       storeId,
       error: toErrorMessage(error),
     });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }
 
@@ -197,6 +197,6 @@ export async function DELETE(request: Request, context: Context) {
       storeId,
       error: toErrorMessage(error),
     });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }

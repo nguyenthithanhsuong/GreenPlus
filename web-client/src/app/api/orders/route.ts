@@ -13,6 +13,7 @@ import {
 } from "../../../../backend/core/request-auth";
 import { logger } from "@/lib/logger";
 import { resolveStoreContext } from "../../../../backend/core/store-context";
+import { shippingQuote } from "../../../../backend/modules/shipping/shipping.service";
 
 type CreateOrderBody = {
   userId?: string;
@@ -135,7 +136,9 @@ export const POST = withSentry(async (request: Request) => {
         { status: error instanceof LocationError ? error.status : 422 },
       );
     }
-    const deliveryFee = Number(body.deliveryFee ?? body.delivery_fee ?? 0);
+    // NEVER trust deliveryFee from the browser: it could be forged to zero.
+    const shipping = await shippingQuote(store.storeId, { latitude: location.latitude, longitude: location.longitude });
+    const deliveryFee = shipping.fee;
 
     const note = body.note ?? "";
 

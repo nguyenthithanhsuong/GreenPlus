@@ -57,6 +57,8 @@
     "@supabase/supabase-js": "^2.102.1"
   },
   "overrides": {
-    "next": "16.4.6"
+    "next": "16.4.6",
+    "follow-redirects": "1.16.3",
+    "source-map-js": "1.2.2"
   }
 }

@@ -1,17 +1,13 @@
 /** Minimal common CRUD contract for a gradual Product/Category migration. */
+import { TENANT_TABLES, TENANT_SELECTS, validateTenantWrite } from './tenant-schema.mjs';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const TABLES = Object.freeze({
-  products: Object.freeze({
-    id: "product_id",
-    select: "product_id,store_id,category_id,name,description,unit,image_url,status,created_at,nutrition,categories(name)",
-    order: "created_at.desc",
-  }),
-  categories: Object.freeze({
-    id: "category_id",
-    select: "category_id,store_id,name,description,image_url,created_at",
-    order: "name.asc",
-  }),
-});
+const TABLES = Object.freeze(Object.fromEntries(
+  Object.entries(TENANT_TABLES).map(([table,meta])=>[table,{
+    id:meta.id,
+    select:TENANT_SELECTS[table]??'*',
+    order:`${meta.sort}.${meta.descending?'desc':'asc'}`,
+  }])
+));
 
 export class TenantDataError extends Error {
   constructor(message) {
@@ -27,14 +23,9 @@ function tableConfig(table) {
 function assertId(id) {
   if (typeof id !== "string" || !UUID.test(id)) throw new TenantDataError("Invalid record identifier");
 }
-function payloadRow(record, storeId, inserting) {
-  if (!record || typeof record !== "object" || Array.isArray(record))
-    throw new TenantDataError("Invalid tenant write payload");
-  if (Object.hasOwn(record, "store_id") && (record.store_id !== storeId || !inserting))
-    throw new TenantDataError("Tenant ownership cannot be changed");
-  if (!inserting && Object.keys(record).length === 0)
-    throw new TenantDataError("Empty tenant update");
-  return inserting ? { ...record, store_id: storeId } : { ...record };
+function payloadRow(table,record,storeId,inserting) {
+  try {return validateTenantWrite(table,record,storeId,inserting);}
+  catch(error){throw new TenantDataError(error.message);}
 }
 
 /**
@@ -113,15 +104,16 @@ export function createTenantPostgrestAdapter({ route, headers, fetchImpl = fetch
     },
     async insert(table, record) {
       const config = tableConfig(table);
-      const rows = await execute(table, "POST", { select: config.select }, payloadRow(record, route.storeId, true));
+      const rows = await execute(table, "POST", { select: config.select }, payloadRow(table, record, route.storeId, true));
       if (rows.length !== 1) throw new TenantDataError("Unexpected tenant insert response");
       return rows[0];
     },
     async update(table, id, record) {
-      const rows = await execute(table, "PATCH", idQuery(table, id), payloadRow(record, route.storeId, false));
+      const rows = await execute(table, "PATCH", idQuery(table, id), payloadRow(table, record, route.storeId, false));
       return rows[0] ?? null;
     },
     async delete(table, id) {
+      if (!Object.hasOwn(TENANT_SELECTS,table))throw new TenantDataError('Writes require a dedicated validated domain service');
       const rows = await execute(table, "DELETE", idQuery(table, id));
       return rows.length !== 0;
     },

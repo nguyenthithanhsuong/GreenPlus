@@ -40,7 +40,7 @@ async function handleGET(_: Request, context: Context) {
       orderId,
       error: toErrorMessage(error),
     });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }
 
@@ -91,7 +91,7 @@ async function handlePATCH(request: Request, context: Context) {
       orderId,
       error: toErrorMessage(error),
     });
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }
 

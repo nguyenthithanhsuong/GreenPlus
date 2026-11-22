@@ -1,7 +1,7 @@
 import { requireCustomerAi } from "../../../../../backend/modules/ai-assist/actor";
 import { getSupabaseServer } from "../../../../../backend/core/supabase";
 import { callAiService } from "../../../../../../packages/ai-core/ai-client.mjs";
-import { apiFailure, requireJsonOrigin } from "../../../../../../packages/ai-core/response.mjs";
+import { apiFailure, requireJsonOrigin, readBoundedJson } from "../../../../../../packages/ai-core/response.mjs";
 import { safeText } from "../../../../../../packages/ai-core/policy.mjs";
 
 export const runtime = "nodejs";
@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     requireJsonOrigin(request);
-    const input = (await request.json()) as {
+    const input = (await readBoundedJson(request)) as {
       storeId?: string;
       ingredients?: string[];
       servings?: number;

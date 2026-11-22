@@ -22,7 +22,7 @@ type ChatLine = {
 };
 
 function answerSource(mode: string | undefined, locale: "vi" | "en") {
-  if (mode === "rag_local") return chatMsg(locale,"rag_local");
+  if (mode === "rag_serverless" || mode === "rag_local") return chatMsg(locale,"rag_local");
   if (mode === "hybrid_rag_llm") return chatMsg(locale,"hybrid_rag_llm");
   if (mode === "retrieval") return chatMsg(locale,"retrieval");
   if (mode === "smalltalk" || mode === "llm_general") return chatMsg(locale,"smalltalk");

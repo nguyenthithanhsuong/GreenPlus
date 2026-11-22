@@ -1,14 +1,15 @@
 "use client";
 import Link from "next/link";
 import { selectedStoreId } from "@/lib/stores/store-selection";
-import { useCallback,useEffect,useState } from "react";
+import { useCallback,useEffect,useRef,useState } from "react";
 type Thread={id:string;order_id:string;status:string};
 type Line={id:string;sender_role:string;body:string;created_at:string};
 async function api<T>(path:string,init?:RequestInit):Promise<T>{const response=await fetch(path,{cache:"no-store",credentials:"same-origin",...init});const data=await response.json();if(!response.ok)throw new Error(data.error??"Không truy cập được hội thoại");return data as T;}
 export default function CustomerSupport(){
  const [items,setItems]=useState<Thread[]>([]);const [id,setId]=useState("");const [order,setOrder]=useState("");const [text,setText]=useState("");const [lines,setLines]=useState<Line[]>([]);const [error,setError]=useState("");const [busy,setBusy]=useState(false);
  const load=useCallback(async()=>{try{setItems((await api<{items:Thread[]}>(`/api/support/threads?storeId=${encodeURIComponent(selectedStoreId()||"")}`)).items);}catch(e){setError(e instanceof Error?e.message:"Không tải được");}},[]);
- const messages=useCallback(async()=>{if(!id)return;try{setLines((await api<{items:Line[]}>(`/api/support/threads/${id}/messages?storeId=${encodeURIComponent(selectedStoreId()||"")}`)).items);}catch(e){setError(e instanceof Error?e.message:"Không tải được tin nhắn");}},[id]);
+ const messagesBusy=useRef(false);
+ const messages=useCallback(async()=>{if(!id||messagesBusy.current)return;messagesBusy.current=true;try{setLines((await api<{items:Line[]}>(`/api/support/threads/${id}/messages?storeId=${encodeURIComponent(selectedStoreId()||"")}`)).items);}catch(e){setError(e instanceof Error?e.message:"Không tải được tin nhắn");}finally{messagesBusy.current=false;}},[id]);
  useEffect(()=>{void load();},[load]);useEffect(()=>{void messages();},[messages]);useEffect(()=>{if(!id)return;const tick=window.setInterval(()=>{if(document.visibilityState==="visible")void messages();},10000);return()=>window.clearInterval(tick);},[id,messages]);
  const act=async(path:string,body:Record<string, unknown>)=>{setBusy(true);setError("");try{const result=await api<Thread>(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...body,storeId:selectedStoreId()||undefined})});if(path==="/api/support/threads"){setId(result.id);setOrder("");await load();}else{setText("");await messages();}}catch(e){setError(e instanceof Error?e.message:"Không thể gửi");}finally{setBusy(false);}};
  return <main className="mx-auto min-h-screen max-w-[520px] bg-white px-4 pb-28 pt-8"><Link className="text-sm font-semibold text-emerald-700" href="/dashboard">← Trang chủ</Link><h1 className="mt-4 text-2xl font-bold">Liên lạc cửa hàng</h1><p className="mt-2 text-sm text-slate-500">Chỉ trao đổi về những đơn hàng bạn đã đặt. Không chia sẻ thông tin ngoài đơn hàng.</p>{error?<p role="alert" className="my-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>:null}

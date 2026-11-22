@@ -1,4 +1,5 @@
 import { callAiService } from "./ai-client.mjs";
+import { readAuthorizedOrderStatus } from "./order-insights.mjs";
 import { safeText, validUuid, hourlyLimit } from "./policy.mjs";
 import { chatPreferences } from "./chat-levels.mjs";
 
@@ -41,10 +42,12 @@ export async function askStoreChat(db, actor, message, prior, level = "low", loc
       .insert({ store_id:actor.storeId,actor_id:actor.userId,role:actor.role }).select("id").single());
     conversationId=conversation.id;
   }
-  const knowledge = result(await db.from("ai_knowledge").select("id,question,answer")
+  const orderInsight = preferences.level==="high" ? await readAuthorizedOrderStatus(db,actor,question,preferences.locale) : null;
+  const knowledge = orderInsight ? [] : result(await db.from("ai_knowledge").select("id,question,answer")
     .eq("store_id",actor.storeId).eq("enabled",true).eq("review_status","approved").is("deleted_at",null)
     .in("audience",audiencesForRole(actor.role)).limit(75));
-  const response = await callAiService("chat",{store_id:actor.storeId,role:actor.role,question,
+  // Never send protected order data to an external LLM. Only authorized status is returned locally.
+  const response = orderInsight ?? await callAiService("chat",{store_id:actor.storeId,role:actor.role,question,
     knowledge:knowledge.map((entry)=>({id:entry.id,question:entry.question,answer:entry.answer})),history,...preferences},
     {timeoutMs:14000});
   const answer = safeText(response.answer,6000);

@@ -673,8 +673,9 @@ const Dashboard = () => {
     () => displayCategories.slice(0, categoryColumns * 2),
     [displayCategories, categoryColumns],
   );
-  const freshProducts = useMemo(() => products.slice(0, 2), [products]);
-  const dealProducts = useMemo(() => products.slice(2, 4), [products]);
+  const productRowSplit = Math.min(4, Math.ceil(products.length / 2));
+  const freshProducts = useMemo(() => products.slice(0, productRowSplit), [products, productRowSplit]);
+  const dealProducts = useMemo(() => products.slice(productRowSplit, 8), [products, productRowSplit]);
   const allProductsHref = `/category-products/all?${new URLSearchParams({
     name: "Tất cả",
     backTo: "/dashboard",
@@ -813,6 +814,7 @@ const Dashboard = () => {
               !categoryError &&
               twoRowCategories.length > 0 && (
                 <div
+                  className="gp-desktop-category-grid"
                   style={{
                     ...styles.categoryGrid,
                     gridTemplateColumns: `repeat(${categoryColumns}, minmax(0, 1fr))`,
@@ -871,7 +873,7 @@ const Dashboard = () => {
             {!loadingProducts && productsError && (
               <p style={styles.errorText}>{productsError}</p>
             )}
-            <div style={styles.productRow}>
+            <div className="gp-desktop-product-grid" style={styles.productRow}>
               {freshProducts.map((product) => (
                 <div
                   key={product.productId}
@@ -963,7 +965,7 @@ const Dashboard = () => {
               dealProducts.length === 0 && (
                 <p style={styles.infoText}>Không có sản phẩm ưu đãi.</p>
               )}
-            <div style={styles.productRow}>
+            <div className="gp-desktop-product-grid" style={styles.productRow}>
               {dealProducts.map((product) => (
                 <div
                   key={product.productId}

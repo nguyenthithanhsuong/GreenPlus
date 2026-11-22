@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }
 
@@ -197,7 +197,7 @@ export async function GET(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }
 
@@ -282,7 +282,7 @@ export async function PUT(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }
 
@@ -349,6 +349,6 @@ export async function DELETE(request: Request) {
       error: toErrorMessage(error),
     });
 
-    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống, vui lòng thử lại sau" }, { status: 500 });
   }
 }

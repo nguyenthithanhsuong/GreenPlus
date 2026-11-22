@@ -72,7 +72,7 @@ export async function listMessages(db,actor,threadId) {
   await getThread(db,actor,threadId);
   return requireData(await db.from("support_messages").select("id,sender_id,sender_role,body,created_at")
     .eq("store_id",actor.storeIds[0]).eq("thread_id",threadId)
-    .order("created_at",{ascending:true}).limit(150));
+    .order("created_at",{ascending:false}).limit(150))?.reverse()??[];
 }
 
 export async function sendMessage(db,actor,threadId,raw) {
@@ -80,6 +80,13 @@ export async function sendMessage(db,actor,threadId,raw) {
   if (thread.status!=="open") throw new SupportError("Hội thoại đã kết thúc",409);
   const body=safeText(raw,2000);
   if (!body) throw new SupportError("Nội dung tin nhắn không hợp lệ",400);
+  // Shared PostgreSQL quota (atomic across Vercel instances), not a memory counter.
+  // Requires reviewed migration 0022 to be applied before deploying these routes.
+  const { data: allowed, error: quotaError } = await db.rpc("gp_consume_submission_quota", {
+    p_store:actor.storeIds[0],p_actor:actor.userId,p_action:"support.order-message",p_limit:100,
+  });
+  if (quotaError) throw new SupportError("Bộ giới hạn gửi tin chưa sẵn sàng",503);
+  if (allowed !== true) throw new SupportError("Đã gửi quá nhiều tin nhắn",429);
   const response=await db.from("support_messages").insert({store_id:actor.storeIds[0],
     thread_id:threadId,sender_id:actor.userId,sender_role:actor.role,body})
     .select("id,sender_role,body,created_at").single();

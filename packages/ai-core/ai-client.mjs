@@ -1,3 +1,4 @@
+import { callServerlessAi } from "./serverless-ai.mjs";
 const PATHS = new Set(["forecast", "promotion", "chat", "recipes", "complaints"]);
 
 export class AiUnavailableError extends Error {
@@ -21,8 +22,17 @@ export function aiServiceEndpoint() {
   return { base: parsed, secret };
 }
 
+export function isServerlessAiRuntime() {
+  return process.env.GREENPLUS_AI_RUNTIME === "serverless" ||
+    (Boolean(process.env.VERCEL) && !process.env.GREENPLUS_AI_SERVICE_URL);
+}
+
 export async function callAiService(operation, payload, options = {}) {
   if (!PATHS.has(operation)) throw new TypeError("Unknown AI operation");
+  // Serverless mode runs inside the already-authorized Next.js server route.
+  // In Vercel the no-Docker mode is the default unless explicitly overridden.
+  if (isServerlessAiRuntime())
+    return callServerlessAi(operation, payload, options);
   const { base, secret } = aiServiceEndpoint();
   let response;
   try {

@@ -1,5 +1,5 @@
 "use client";
-import { useCallback,useEffect,useState } from "react";
+import { useCallback,useEffect,useRef,useState } from "react";
 import AdminShell from "../shared/AdminShell";
 import { AiNotice,aiFetch,field,panel,primary,secondary,postJson } from "./ui";
 import { useAiScope } from "./use-ai-scope";
@@ -13,7 +13,8 @@ export default function AiSupport({ embedded = false }: { embedded?: boolean }){
  const [lines,setLines]=useState<Message[]>([]);const [text,setText]=useState("");
  const [error,setError]=useState("");const [busy,setBusy]=useState(false);
  const load=useCallback(async()=>{if(!ready)return;try{const result=await aiFetch<{items:Thread[]}>(`/api/support/threads${storeQuery}`);setItems(result.items);setError("");}catch(e){setError(e instanceof Error?e.message:"Không thể tải hội thoại");}},[ready,storeQuery]);
- const loadMessages=useCallback(async(id:string)=>{if(!id)return;try{const value=await aiFetch<{items:Message[]}>(`/api/support/threads/${id}/messages${storeQuery}`);setLines(value.items);}catch(e){setError(e instanceof Error?e.message:"Không tải được tin nhắn");}},[storeQuery]);
+ const messagesBusy=useRef(false);
+ const loadMessages=useCallback(async(id:string)=>{if(!id||messagesBusy.current)return;messagesBusy.current=true;try{const value=await aiFetch<{items:Message[]}>(`/api/support/threads/${id}/messages${storeQuery}`);setLines(value.items);}catch(e){setError(e instanceof Error?e.message:"Không tải được tin nhắn");}finally{messagesBusy.current=false;}},[storeQuery]);
  useEffect(()=>{void load();},[load]);useEffect(()=>{void loadMessages(selected);},[loadMessages,selected]);useEffect(()=>{if(!selected)return;const tick=window.setInterval(()=>{if(document.visibilityState==="visible")void loadMessages(selected);},10000);return()=>window.clearInterval(tick);},[selected,loadMessages]);
  const create=async()=>{setBusy(true);try{const value=await aiFetch<Thread>("/api/support/threads",postJson({orderId,storeId:storeId||undefined}));setSelected(value.id);setOrderId("");await load();}catch(e){setError(e instanceof Error?e.message:"Không tạo được hội thoại");}finally{setBusy(false);}};
  const send=async()=>{if(!selected||!text.trim())return;setBusy(true);try{await aiFetch(`/api/support/threads/${selected}/messages`,postJson({body:text,storeId:storeId||undefined}));setText("");await loadMessages(selected);}catch(e){setError(e instanceof Error?e.message:"Không gửi được tin nhắn");}finally{setBusy(false);}};

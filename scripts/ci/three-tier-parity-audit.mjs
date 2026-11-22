@@ -40,7 +40,7 @@ function audit(t,full){return t.flatMap(target=>target.schemas.map(schema=>{
  return scope;
 }));}
 try {
- if(expected.length!==44||sqlfiles.length!==21)throw Error('Source baseline changed; reapprove expected table/migration counts.');
+ if(expected.length!==46||sqlfiles.length!==22)throw Error('Source baseline changed; reapprove expected table/migration counts.');
  console.log(`Supabase canonical: ${sqlfiles.length} migrations, ${expected.length} public tables, configured PostgreSQL ${supabaseMajor}`);
  console.log('Tier mapping:',JSON.stringify(topology.tiers.map(t=>({tier:t.tier,service:t.service||t.databases.map(d=>d.service),slots:t.schemas||t.slot||t.databases.map(d=>d.slot)}))));
  if(process.argv.includes('--static')) {
@@ -55,7 +55,7 @@ try {
   if(process.argv.includes('--json'))console.log(JSON.stringify(report,null,2));
   if(!schemaComplete)throw Error('Canonical PostgreSQL17 scopes are missing Supabase tables. Run npm run docker:three-tier:full-migrate after backup.');
   const verified=spawnSync(process.execPath,[resolve(root,'scripts/three-tier-full-schema.mjs'),'--check'],{encoding:'utf8',timeout:240000});
-  if(verified.error||verified.status!==0)throw Error(`Canonical 0001–0021 checksums/RLS/RPC not verified: ${(verified.stderr||'').slice(-850)}`);
+  if(verified.error||verified.status!==0)throw Error(`Canonical 0001–0022 checksums/RLS/RPC not verified: ${(verified.stderr||'').slice(-850)}`);
   console.log('PASS: canonical PostgreSQL17 migration history and selected RLS/RPC checks (five scopes).');
  }
  if(process.argv.includes('--require-full-parity'))throw Error('DATABASE-SCHEMA parity is not API/service parity. Supabase Auth, Realtime, Storage, request-JWT RLS and application routing have not been certified; production cutover BLOCKED.');

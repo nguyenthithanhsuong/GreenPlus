@@ -1,0 +1,9 @@
+import Link from 'next/link';
+const items=[
+  {title:'Mua hàng và theo dõi',text:'Chọn cửa hàng, thêm sản phẩm vào giỏ và kiểm tra địa chỉ, phí vận chuyển trước khi xác nhận đơn.',href:'/orders',label:'Đơn hàng'},
+  {title:'Tra cứu nguồn gốc',text:'Dùng QR trên bao bì để tra cứu lô hàng và thời hạn sử dụng. Không nên mua sản phẩm có thông tin bất thường.',href:'/profile/scan-batch',label:'Quét QR'},
+  {title:'Hỏi trợ lý AI',text:'Trợ lý tìm câu trả lời từ tài liệu cửa hàng đã duyệt. Nếu thiếu thông tin, hãy hỏi nhân viên trực tiếp.',href:'/ai/chat',label:'Mở chatbot'},
+  {title:'Nhắn trực tiếp cho cửa hàng',text:'Nhắn trực tiếp với nhân viên mà không cần có đơn hàng; hội thoại chỉ hiện trong cửa hàng bạn chọn.',href:'/support/live',label:'Nhắn nhân viên'},
+  {title:'Khiếu nại và phản hồi',text:'Gửi phản hồi có mô tả rõ ràng, kèm bằng chứng và đơn hàng liên quan.',href:'/complaints',label:'Khiếu nại'},
+];
+export default function HelpPage(){return <main className="min-h-dvh bg-emerald-50 px-4 py-8 text-slate-800 md:px-10"><div className="mx-auto max-w-6xl"><Link href="/dashboard" className="text-base font-bold text-emerald-700">← Trang chủ</Link><h1 className="mt-4 text-3xl font-black tracking-tight md:text-5xl">GreenPlus · Trợ giúp</h1><p className="mt-3 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">Hướng dẫn mua hàng, tra cứu và liên hệ người hỗ trợ. Chatbot không tự truy cập hoặc thay đổi đơn hàng.</p><div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{items.map(item=><article key={item.title} className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm"><h2 className="text-xl font-bold text-emerald-950">{item.title}</h2><p className="mt-3 min-h-24 text-base leading-7 text-slate-600">{item.text}</p><Link className="mt-5 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white transition hover:bg-emerald-800" href={item.href}>{item.label}</Link></article>)}</div></div></main>}

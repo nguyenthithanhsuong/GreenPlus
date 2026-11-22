@@ -1,4 +1,5 @@
 import { callAiService } from "../../../../packages/ai-core/ai-client.mjs";
+import { readAuthorizedOrderStatus } from "../../../../packages/ai-core/order-insights.mjs";
 import { safeText, validUuid } from "../../../../packages/ai-core/policy.mjs";
 import { chatPreferences } from "../../../../packages/ai-core/chat-levels.mjs";
 import { aiDb, resultOrFail } from "./db";
@@ -48,13 +49,15 @@ export async function askAi(actor:AiActor,question:unknown,conversationId?:unkno
       .insert({store_id:actor.storeId,actor_id:actor.id,role:actor.role}).select("id").single();
     id=resultOrFail(data,error).id;
   }
-  // Chat needs only approved, audience-scoped FAQ fields, not 1,000 full review records.
-  const {data:approved,error:knowledgeError}=await aiDb().from("ai_knowledge")
+  const db=aiDb();
+  const orderInsight=preferences.level==="high" ? await readAuthorizedOrderStatus(db,{userId:actor.id,storeId:actor.storeId,role:actor.role},query,preferences.locale) : null;
+  // No private order data is forwarded to external LLM providers.
+  const {data:approved,error:knowledgeError}=orderInsight?{data:[],error:null}:await db.from("ai_knowledge")
     .select("id,question,answer").eq("store_id",actor.storeId)
     .eq("enabled",true).eq("review_status","approved").is("deleted_at",null)
     .in("audience",knowledgeAudiencesForRole(actor.role)).limit(75);
   const knowledge=resultOrFail(approved,knowledgeError);
-  const response=await callAiService("chat",{store_id:actor.storeId,role:actor.role,question:query,
+  const response=orderInsight??await callAiService("chat",{store_id:actor.storeId,role:actor.role,question:query,
     knowledge:knowledge.map((row)=>({id:row.id,question:row.question,answer:row.answer})),history,...preferences},
     {timeoutMs:14000});
   const answer=safeText(response.answer,6000);

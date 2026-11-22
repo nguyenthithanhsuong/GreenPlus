@@ -178,7 +178,7 @@ const NavigationBar = () => {
   const pathname = usePathname();
 
   return (
-    <nav style={styles.navBar}>
+    <nav className="gp-client-nav" aria-label="Điều hướng chính" style={styles.navBar}>
       <div style={styles.navList}>
         {navItems.map((item) => {
           const isActive = pathname === item.href;

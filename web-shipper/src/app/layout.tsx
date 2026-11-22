@@ -2,6 +2,8 @@ import PwaRegister from "./PwaRegister";
 import type { Metadata } from "next";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
+import "../../../packages/support-ui/theme.css";
+import ThemePreferences from "../../../packages/support-ui/ThemePreferences";
 
 export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
@@ -26,6 +28,7 @@ export default function RootLayout({
       <body>
         <PwaRegister />
         {children}
+        <ThemePreferences />
       </body>
     </html>
   );

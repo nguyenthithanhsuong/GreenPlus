@@ -2,6 +2,8 @@ import PwaRegister from "./PwaRegister";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "../../../packages/support-ui/theme.css";
+import ThemePreferences from "../../../packages/support-ui/ThemePreferences";
 import { AppProviders } from "./providers";
 
 const geistSans = Geist({
@@ -39,6 +41,7 @@ export default function RootLayout({
       >
         <PwaRegister />
         <AppProviders>{children}</AppProviders>
+        <ThemePreferences />
       </body>
     </html>
   );

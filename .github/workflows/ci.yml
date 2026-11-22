@@ -102,6 +102,24 @@ jobs:
             artifacts/playwright/web-shipper/report/
           if-no-files-found: ignore
           retention-days: 7
+      - name: Cross-app browser E2E (Admin / Client; Shipper has its own detailed E2E)
+        if: success() && matrix.app != 'shipper' 
+        env:
+          GREENPLUS_E2E_APP: ${{ matrix.app }}
+          AUTH_HANDOFF_SECRET: ci-only-shared-session-key-not-for-production-2026
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test --config=playwright.ci.config.mts
+      - name: Upload cross-app E2E diagnostics
+        if: failure() && matrix.app != 'shipper' 
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-${{ matrix.app }}-e2e-diagnostics
+          path: |
+            artifacts/playwright/${{ matrix.app }}/test-results/
+            artifacts/playwright/${{ matrix.app }}/report/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Workspace quality summary (visible even after failure)
         if: always()
         env:
@@ -147,6 +165,8 @@ jobs:
           retention-days: 14
       - name: All root Node tests (including tenant, gateway, security, PWA, regression)
         run: node --experimental-strip-types --test tests/*.test.mjs
+      - name: HTTP integration tests (real local server + AI adapter contract)
+        run: node --experimental-strip-types --test tests/integration/*.test.mjs
       - name: Check gateway and migration launcher syntax
         run: |
           node --check docker/three-tier/gateway/server.mjs
@@ -364,6 +384,14 @@ jobs:
       - name: Smoke all three images before any publish
         shell: bash
         run: bash scripts/ci/smoke-images.sh
+      - name: Upload Docker system smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-system-smoke
+          path: artifacts/ci/docker-system-smoke.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Publish SHA-pinned images after every gate passed
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash

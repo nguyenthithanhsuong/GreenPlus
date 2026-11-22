@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import { Truck } from "lucide-react";
 
 import { LogOut } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient";
@@ -39,6 +41,8 @@ const SettingsNav = () => {
 
   return (
     <div className="w-full">
+      <Link href="/help" className="mb-3 flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-emerald-800 transition hover:bg-emerald-50">? Trung tâm trợ giúp</Link>
+      <Link href="/settings/shipping" className="mb-3 flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-emerald-800 transition hover:bg-emerald-50"><Truck size={18}/> Cấu hình phí vận chuyển</Link>
       {logoutError ? <p role="alert" className="px-4 text-sm text-red-700">{logoutError}</p> : null}
       <button
         type="button"

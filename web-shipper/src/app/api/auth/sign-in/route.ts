@@ -1,3 +1,4 @@
+import { readBoundedJson } from "../../../../../../packages/ai-core/response.mjs";
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE } from "../../../../lib/shipper-session";
 import {
@@ -17,7 +18,13 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
-  const body = await request.json().catch(() => null);
+  let body: Record<string,unknown> | null;
+  try {
+    body = await readBoundedJson(request,{maxBytes:8192});
+  } catch (error) {
+    return NextResponse.json({error: "Dữ liệu đăng nhập không hợp lệ"},
+      {status: error && typeof error === "object" && "status" in error && typeof error.status === "number" ? error.status : 400});
+  }
   if (
     typeof body?.email !== "string" ||
     typeof body?.password !== "string" ||

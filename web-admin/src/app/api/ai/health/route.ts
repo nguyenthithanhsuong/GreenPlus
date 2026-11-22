@@ -1,5 +1,5 @@
 import { portalActor } from "../../../../../backend/core/manager-scope";
-import { aiServiceEndpoint } from "../../../../../../packages/ai-core/ai-client.mjs";
+import { aiServiceEndpoint, callAiService, isServerlessAiRuntime } from "../../../../../../packages/ai-core/ai-client.mjs";
 import { aiDb } from "../../../../../backend/modules/ai-assist/db";
 
 export const runtime = "nodejs";
@@ -14,18 +14,28 @@ export async function GET(request: Request) {
     if (actor.role !== "admin") return reply("forbidden", "Không có quyền", 403);
   } catch { return reply("unauthorized", "Chưa đăng nhập", 401); }
 
-  let endpoint: ReturnType<typeof aiServiceEndpoint>;
-  try { endpoint = aiServiceEndpoint(); }
+  const serverless = isServerlessAiRuntime();
+  if (serverless) {
+    try {
+      const tested = await callAiService("complaints", {
+        store_id: "00000000-0000-4000-8000-000000000000",
+        text: "Kiểm thử môi trường serverless AI GreenPlus",
+      });
+      if (!tested || typeof tested.category !== 'string') return reply('inference_error','Serverless AI không trả kết quả hợp lệ.');
+    } catch { return reply('inference_error','Không khởi tạo được serverless AI runtime.'); }
+  }
+  let endpoint: ReturnType<typeof aiServiceEndpoint> | undefined;
+  if (!serverless) try { endpoint = aiServiceEndpoint(); }
   catch { return reply("unconfigured", "Chưa có URL hoặc khóa AI server-to-server hợp lệ trong môi trường Web Admin."); }
-  try {
-    const health = await fetch(new URL("/health", endpoint.base), {
+  if (!serverless) try {
+    const health = await fetch(new URL("/health", endpoint!.base), {
       cache: "no-store", redirect: "error", signal: AbortSignal.timeout(4000),
     });
     if (!health.ok) return reply("service_error", "AI container phản hồi lỗi health. Kiểm tra docker compose logs ai-assist.");
     // /health is public. Check a read-only inference call to verify the key is accepted.
-    const authorized = await fetch(new URL("/v1/complaints", endpoint.base), {
+    const authorized = await fetch(new URL("/v1/complaints", endpoint!.base), {
       method: "POST", redirect: "error", cache: "no-store",
-      headers: { "Content-Type": "application/json", "X-AI-Service-Key": endpoint.secret },
+      headers: { "Content-Type": "application/json", "X-AI-Service-Key": endpoint!.secret },
       body: JSON.stringify({ store_id: "00000000-0000-4000-8000-000000000000", text: "Kiểm tra kết nối AI Assist" }),
       signal: AbortSignal.timeout(6000),
     });
@@ -42,5 +52,5 @@ export async function GET(request: Request) {
   } catch {
     return reply("database_error", "AI service hoạt động, nhưng kết nối dữ liệu AI trong Supabase chưa sẵn sàng.");
   }
-  return reply("ready", "AI container, khóa server-to-server và dữ liệu AI trong Supabase đều sẵn sàng.", 200);
+  return reply("ready", serverless ? "AI serverless hoạt động và Supabase AI đã sẵn sàng. Mức Cao cần provider LLM hợp lệ." : "AI container, khóa server-to-server và dữ liệu AI trong Supabase đều sẵn sàng.", 200);
 }

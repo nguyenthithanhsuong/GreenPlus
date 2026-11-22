@@ -116,7 +116,7 @@ type OrderCardActions = {
 
 type TabValue = "all" | OrderStatus;
 
-const DELIVERY_FEE = 15000;
+const DEFAULT_DELIVERY_FEE = 15000; // Display fallback only; server computes final fee.
 
 const ORDER_STATUS_SEQUENCE: OrderStatus[] = [
   "delivering",
@@ -771,6 +771,34 @@ export default function Orders() {
 
   const [cartItems, setCartItems] = useState<CartItemView[]>([]);
   const [cartTotal, setCartTotal] = useState(0);
+  // Quote is keyed to the active store/address: stale responses cannot be used for checkout.
+  // Do not synchronously set state inside an effect (React 19 lint rule).
+  const shippingQuoteKey = JSON.stringify([storeId, (user?.address ?? '').trim(), isAuthenticated]);
+  const [shippingState, setShippingState] = useState<{
+    key:string;
+    quote:{fee:number;distanceKind:string}|null;
+    error:string|null;
+  }>({key:'',quote:null,error:null});
+  const shippingQuote = shippingState.key === shippingQuoteKey ? shippingState.quote : null;
+  const shippingQuoteError = shippingState.key === shippingQuoteKey ? shippingState.error : null;
+  const deliveryFee = shippingQuote?.fee ?? DEFAULT_DELIVERY_FEE;
+  useEffect(() => {
+    const address = (user?.address ?? '').trim();
+    if (!storeId || !address || !isAuthenticated) return;
+    const controller = new AbortController();
+    storeFetch('/api/shipping/quote', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({storeId,deliveryAddress:address}), signal:controller.signal,
+    }).then(async response => {
+      const result = await response.json() as {fee?:number;distanceKind?:string;error?:string};
+      if (!response.ok || typeof result.fee !== 'number' || !Number.isFinite(result.fee) || result.fee < 0)
+        throw new Error(result.error || 'Không thể lấy phí vận chuyển');
+      return {fee:result.fee,distanceKind:result.distanceKind??'flat_fallback'};
+    }).then(quote => {if(!controller.signal.aborted)setShippingState({key:shippingQuoteKey,quote,error:null});})
+      .catch(error => {if(!controller.signal.aborted)setShippingState({key:shippingQuoteKey,quote:null,error:error instanceof Error?error.message:'Không thể tính phí vận chuyển'});});
+    return () => controller.abort();
+  }, [storeId, user?.address, isAuthenticated, shippingQuoteKey]);
+
   const [cartId, setCartId] = useState<string>("");
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
@@ -1181,6 +1209,7 @@ export default function Orders() {
 
   const handleCheckout = async () => {
     if (checkoutInFlight.current) return;
+    if (!shippingQuote) {setError(shippingQuoteError || "Đang xác nhận phí giao hàng. Hãy thử lại sau.");return;}
     if (!user?.user_id || !cartId || cartItems.length === 0) {
       setError("Giỏ hàng trống hoặc thông tin không đầy đủ.");
       return;
@@ -1206,7 +1235,7 @@ export default function Orders() {
         note: noteDrafts[item.cart_item_id] ?? item.note,
       })),
       deliveryAddress,
-      deliveryFee: DELIVERY_FEE,
+      deliveryFee: deliveryFee,
       paymentMethod: "cod",
     };
     const idempotencyKey = getCheckoutIdempotencyKey(checkoutContext);
@@ -1229,7 +1258,7 @@ export default function Orders() {
           deliveryAddress,
           cartId,
           idempotencyKey,
-          deliveryFee: DELIVERY_FEE,
+          deliveryFee: deliveryFee,
         }),
       });
 
@@ -1548,7 +1577,7 @@ export default function Orders() {
             >
               <span style={{ color: "#6B7280" }}>Phí giao hàng:</span>
               <span style={{ fontWeight: 600, color: "#111827" }}>
-                {formatPrice(DELIVERY_FEE)}
+                {shippingQuote ? formatPrice(deliveryFee) : "Đang tính..."}
               </span>
             </div>
             <div
@@ -1563,10 +1592,12 @@ export default function Orders() {
             >
               <span>Tổng cộng:</span>
               <span style={{ color: "#4EA96A" }}>
-                {formatPrice(cartTotal + DELIVERY_FEE)}
+                {shippingQuote ? formatPrice(cartTotal + deliveryFee) : "Đang tính..."}
               </span>
             </div>
 
+            {shippingQuoteError && <p role="alert" style={{color:"#b91c1c",fontSize:"13px"}}>{shippingQuoteError}</p>}
+            {shippingQuote?.distanceKind === "straight_line_estimate" && <p style={{fontSize:"12px",color:"#64748b"}}>Phí tính theo khoảng cách ước tính, không phải lộ trình lái xe chính xác.</p>}
             <button
               type="button"
               style={{
@@ -1577,9 +1608,9 @@ export default function Orders() {
                 fontWeight: 700,
               }}
               onClick={handleCheckout}
-              disabled={saving}
+              disabled={saving || !shippingQuote}
             >
-              {saving ? "Đang xử lý..." : "Đặt hàng!"}
+              {saving ? "Đang xử lý..." : !shippingQuote ? "Chờ tính phí giao hàng" : "Đặt hàng!"}
             </button>
           </div>
         </div>

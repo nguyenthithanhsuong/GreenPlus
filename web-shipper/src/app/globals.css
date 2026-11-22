@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../../packages/support-ui";
 
 :root {
   --gp-green: #11a94d;
@@ -188,3 +189,23 @@ a { text-decoration: none; }
   .gp-login-form { margin-top: 14px; gap: 12px; }
   .gp-login-footnote { margin-top: 12px; }
 }
+
+/* Desktop operator workspace: navigation becomes a side panel, content is fluid. */
+@media (min-width: 1024px) {
+  :root { --gp-max-width: 1280px; --gp-side-gap: 24px; }
+  body { background: linear-gradient(180deg,#eaf8ef,#f5faf6) fixed; }
+  .gp-app { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 245px minmax(0,1fr); gap: 22px; padding: 24px; align-items: start; }
+  .gp-phone-frame { grid-column: 2; grid-row: 1; max-width: none; width:100%; min-height:calc(100dvh - 48px); border: 1px solid #d6ebdc; border-radius: 24px; box-shadow: 0 10px 32px #16512b16; overflow: hidden; }
+  .gp-mobile-navigation { position: sticky; top:24px; left:auto; bottom:auto; grid-column:1; grid-row:1; transform:none; width:245px; max-width:none; min-height:calc(100dvh - 48px); border:1px solid #d6ebdc; border-radius:24px; box-shadow: 0 10px 32px #16512b16; padding:20px 10px; background:#fff; }
+  .gp-nav-mobile { display:flex; flex-direction:column; gap:12px; padding: 10px; }
+  .gp-nav-mobile .gp-nav-link { flex-direction:row; align-items:center; justify-content:flex-start; min-height:54px; padding:12px 16px; gap:12px; font-size:15px; text-align:left; }
+  .gp-nav-mobile .gp-nav-link:hover { background:#eaf8ef; }
+  .gp-nav-mobile .gp-nav-link-active { background:#e1f6e8; }
+  .gp-content { padding: 30px clamp(24px,3.5vw,52px) 65px; }
+  .gp-page-heading h1 { font-size:30px; }
+  .gp-page-heading p { font-size:14px; }
+  .gp-topbar { height:76px; padding-inline:35px; }
+  .gp-card { border-radius:24px; }
+  .gp-modal-wide { width:min(95%,850px); }
+}
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }

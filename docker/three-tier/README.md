@@ -79,7 +79,7 @@ Docker sandbox có migration **005** tương đương một phần chức năng 
 
 ## CI / full parity status (17/11/2026)
 
-Use `npm run docker:three-tier:stores` to list **actual** tenants, their tier, slots, and database/schema destinations. Use `npm run docker:three-tier:audit` to compare the five Docker scopes against all 44 Supabase business tables. `node scripts/ci/three-tier-parity-audit.mjs --require-full-parity` intentionally blocks production cutover while Docker lacks Supabase-authenticated API, Storage, RLS, Realtime and all migration parity.
+Use `npm run docker:three-tier:stores` to list **actual** tenants, their tier, slots, and database/schema destinations. Use `npm run docker:three-tier:audit` to compare the five Docker scopes against all 46 Supabase public tables (including new general-support tables). `node scripts/ci/three-tier-parity-audit.mjs --require-full-parity` intentionally blocks production cutover while Docker lacks Supabase-authenticated API, Storage, RLS, Realtime and all migration parity.
 
 Database RAM/logging limits and volume ownership labels are declared in `compose.yaml`; the data volumes are not reset by this update. The canonical seed tier map is `scripts/ci/three-tier-contract.json`. For migration safety, Storage checks, GitHub CI and required steps towards full parity, see `README.md` at the repository root and the bundled Docker guides.
 

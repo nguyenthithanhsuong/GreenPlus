@@ -1,3 +1,4 @@
+import { readBoundedJson } from "../../../../../../packages/ai-core/response.mjs";
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError } from "../../../../../backend/core/errors";
@@ -10,13 +11,15 @@ const ALLOWED_ROLES = new Set(["admin", "manager", "employee"]);
 export const POST = withSentry(
   async (request) => {
     const start = Date.now();
-    const body = await request.json();
+    const body = await readBoundedJson(request,{maxBytes:8192}).catch(error=>{
+      throw new AppError(error instanceof Error?error.message:"Invalid JSON",Number(error?.status) || 400);
+    });
     const email = typeof body?.email === "string" ? body.email : "";
     const password = typeof body?.password === "string" ? body.password : "";
 
-    logger.info("Admin sign-in attempt", { email });
+    logger.info("Admin sign-in attempt");
 
-    if (!email || !password) {
+    if (!email || !password || email.length > 254 || password.length > 1024) {
       logger.error("Admin sign-in failed - missing credentials");
       throw new AppError("Email and password are required", 400);
     }
@@ -38,11 +41,9 @@ export const POST = withSentry(
           const user = await repo.findUserByEmail(email.trim().toLowerCase());
           if (user) errorResponse.status = user.status;
         } catch {
-          logger.error("Failed to fetch status for inactive account", {
-            email,
-          });
+          logger.error("Failed to fetch status for inactive account");
         }
-        logger.warn("Admin sign-in failed", { email, message: error.message });
+        logger.warn("Admin sign-in failed", { status: error.statusCode });
         return NextResponse.json(errorResponse, { status: error.statusCode });
       }
       throw error;
@@ -53,7 +54,6 @@ export const POST = withSentry(
 
     if (!roleName || !ALLOWED_ROLES.has(roleName)) {
       logger.warn("Admin sign-in blocked - unauthorized role", {
-        email,
         roleName,
       });
       throw new AppError(
@@ -63,7 +63,6 @@ export const POST = withSentry(
     }
 
     logger.info("Admin sign-in success", {
-      email,
       roleName,
       duration_ms: Date.now() - start,
     });
