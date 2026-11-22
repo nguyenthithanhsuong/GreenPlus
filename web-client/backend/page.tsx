@@ -268,7 +268,7 @@ export default function Home() {
 
   const cleanInsertPayload = (payload: Record<string, unknown>) => {
     return Object.fromEntries(
-      Object.entries(payload).filter(([_, value]) => {
+      Object.entries(payload).filter(([, value]) => {
         if (value === null || value === undefined) return false;
         if (typeof value === "string") {
           const normalized = value.trim().toLowerCase();

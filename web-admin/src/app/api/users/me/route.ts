@@ -1,6 +1,5 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError } from "../../../../../backend/core/errors";
 import { AuthService } from "../../../../../backend/modules/auth/auth.service";
 import { userManagementFacade } from "../../../../../backend/modules/users/facades/user-management.facade";
 import { logger } from "@/lib/logger";

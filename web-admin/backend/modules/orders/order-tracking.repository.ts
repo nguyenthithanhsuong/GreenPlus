@@ -1,13 +1,5 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import {
-  OrderDetailRow,
-  OrderFilterInput,
-  OrderItemRow,
-  OrderListRow,
-  OrderStatus,
-  PaymentMethod,
-  PaymentStatus,
-} from "./order-tracking.types";
+import {OrderDetailRow, OrderItemRow, OrderListRow, OrderStatus, PaymentMethod, PaymentStatus} from "./order-tracking.types";
 
 type UserJoin = {
   name?: string | null;

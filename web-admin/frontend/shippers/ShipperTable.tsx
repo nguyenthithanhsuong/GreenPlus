@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, Eye, Search, Truck, XCircle } from "lucide-react";
+import {Eye, Search} from "lucide-react";
 import type {
   DeliveryStatus,
   DeliveryTrackingRow,

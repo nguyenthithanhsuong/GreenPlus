@@ -270,7 +270,6 @@ function formatPrice(value: number | null): string {
 export default function GroupPurchaseModal({
   isOpen,
   productId,
-  productName,
   regularPrice,
   onClose,
   onSubmit,

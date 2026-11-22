@@ -621,10 +621,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-function formatPrice(value: number): string {
-  return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
-}
-
 function formatDateTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {

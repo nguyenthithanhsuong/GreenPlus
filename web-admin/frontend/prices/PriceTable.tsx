@@ -1,16 +1,6 @@
 import React from "react";
 import { usePermissions } from "@/lib/usePermissions";
-import {
-  CheckCircle2,
-  Edit2,
-  Package,
-  Plus,
-  Search,
-  XCircle,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import {CheckCircle2, Edit2, Package, Search, XCircle, Trash2, ChevronLeft, ChevronRight} from "lucide-react";
 import type { PriceRow } from "../../backend/modules/prices/price-management.types";
 
 type PriceTableProps = {
@@ -117,14 +107,12 @@ const PriceTable = ({
   canForceManagePrice,
   searchQuery,
   onSearchQueryChange,
-  onCreate,
   onUpdate,
   onDelete,
   onQuickApprove,
   onQuickReject,
 }: PriceTableProps) => {
   const { hasPermission } = usePermissions();
-  const canCreateGlobal = hasPermission("prices.create");
   const canUpdateGlobal = hasPermission("prices.update");
   const canDeleteGlobal = hasPermission("prices.delete");
 

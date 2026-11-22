@@ -1,6 +1,6 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../backend/core/errors";
+import {AppError} from "../../../../backend/core/errors";
 import { subscriptionFacade } from "../../../../backend/modules/subscriptions/facades/subscription.facade";
 import { logger } from "@/lib/logger";
 import {

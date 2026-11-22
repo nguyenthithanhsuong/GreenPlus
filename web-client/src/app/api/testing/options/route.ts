@@ -1,6 +1,6 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
+import {AppError} from "../../../../../backend/core/errors";
 import { testingOptionsFacade } from "../../../../../backend/modules/testing/facades/testing-options.facade";
 
 export const GET = withSentry(async () => {

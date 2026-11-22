@@ -88,7 +88,6 @@ function getStatusStyles(status: ProductStatus) {
 
 const ProductTable = ({
   products,
-  loading,
   saving,
   onEdit,
   onDelete,

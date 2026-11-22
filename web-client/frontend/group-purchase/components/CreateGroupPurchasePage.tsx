@@ -287,7 +287,6 @@ export default function CreateGroupPurchasePage() {
       setMessage({ type: "success", text: "✓ Tạo nhóm mua chung thành công!" });
 
       setTimeout(() => {
-        const groupId = data.group_id ?? productId;
         router.push(`/product-detail/${productId}`);
       }, 1500);
     } catch (err) {

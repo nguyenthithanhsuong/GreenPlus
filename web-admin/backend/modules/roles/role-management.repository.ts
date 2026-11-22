@@ -4,7 +4,6 @@ import {
   RoleRow,
   UpdateRoleInput,
 } from "./role-management.types";
-import { isSystemRoleRow } from "./states/role-state";
 
 type RoleDbRow = {
   role_id: string;

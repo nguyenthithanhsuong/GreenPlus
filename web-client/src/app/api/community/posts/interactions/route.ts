@@ -1,4 +1,3 @@
-import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import {
   AppError,

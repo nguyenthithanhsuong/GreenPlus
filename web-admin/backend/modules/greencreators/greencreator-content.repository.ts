@@ -1,11 +1,5 @@
 import { createServiceRoleSupabaseClient } from "../../core/supabase";
-import {
-  GreenCreatorInteractionRow,
-  GreenCreatorMediaRow,
-  GreenCreatorPostRow,
-  GreenCreatorPostStatus,
-  GreenCreatorPostType,
-} from "./greencreator-content.types";
+import {GreenCreatorInteractionRow, GreenCreatorPostRow, GreenCreatorPostStatus, GreenCreatorPostType} from "./greencreator-content.types";
 
 type UserJoin =
   | {

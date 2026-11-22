@@ -1045,12 +1045,6 @@ const GreenCreator = () => {
       activeMediaIndexByPostId[post.postId] ?? 0,
       mediaItems.length - 1,
     );
-    const normalizedMediaUrl = mediaItems[activeIndex].toLowerCase();
-    const isVideo =
-      post.mediaType === "MP4" ||
-      normalizedMediaUrl.endsWith(".mp4") ||
-      normalizedMediaUrl.includes(".mp4?");
-
     const goToPreviousMedia = (event: React.MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
       if (mediaItems.length <= 1) {

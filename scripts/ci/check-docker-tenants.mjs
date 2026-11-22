@@ -1,5 +1,6 @@
 /** Non-mutating multi-tier gateway probe. Safe on an existing Docker volume. */
 import { pathToFileURL } from 'node:url';
+import { mkdir, writeFile, appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fetchDockerGateway, dockerGatewayReadiness } from '../../web-admin/backend/core/docker-gateway.mjs';
 import { validateTenant } from '../../packages/tenant-routing/index.mjs';
@@ -32,12 +33,34 @@ export async function verifyDockerTenants({env = process.env, fetcher = fetch, r
   return { tenants: tenants.length, checks, tiers: [...new Set(tenants.map((item) => item.tier))] };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+/** Remote unavailability is advisory; a verified tenant-isolation violation is not. */
+export function classifyRemoteGatewayError(error) {
+  const reason=error instanceof Error?error.message:String(error);
+  const breach=/^(CROSS-TENANT DATA LEAK|Duplicate Docker tenant identifiers)/.test(reason);
+  return {status:breach?'blocked':'warning',code:breach?'TENANT_ISOLATION_VIOLATION':'REMOTE_GATEWAY_UNAVAILABLE'};
+}
+
+export async function runGatewayProbe({verify=verifyDockerTenants,advisory=false,output='artifacts/ci/docker-gateway.json'}={}){
+  let report;
   try {
-    const summary = await verifyDockerTenants({requireAllTiers: process.env.GREENPLUS_DOCKER_REQUIRE_ALL_TIERS === 'true'});
-    console.log(`PASS: ${summary.tenants} tenant(s), ${summary.checks} scoped reads; tiers: ${summary.tiers.join(', ')}`);
-  } catch (error) {
-    console.error(`FAIL Docker tenancy: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    process.exitCode = 1;
+    const data=await verify({requireAllTiers:process.env.GREENPLUS_DOCKER_REQUIRE_ALL_TIERS==='true'});
+    report={status:'pass',code:'OK',tenants:data.tenants,checks:data.checks};
+  } catch(error) {
+    report=classifyRemoteGatewayError(error);
+    if(!advisory && report.status==='warning') report={...report,status:'blocked'};
   }
+  await mkdir(resolve(output,'..'),{recursive:true});
+  await writeFile(output,JSON.stringify(report,null,2)+'\n',{mode:0o600});
+  const detail=report.status==='pass'?`${report.tenants} tenants, ${report.checks} scoped reads`:report.code;
+  const text=`### Remote Docker Gateway: ${report.status.toUpperCase()} · ${detail}\n\n`;
+  if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,text);
+  return {report,ok:report.status!=='blocked'};
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  const advisory=process.argv.includes('--advisory');
+  const {report,ok}=await runGatewayProbe({advisory});
+  if(report.status==='warning')console.log(`::warning title=Remote Docker Gateway::${report.code}`);
+  console.log(`${report.status.toUpperCase()}: Docker tenancy · ${report.code}`);
+  if(!ok)process.exitCode=1;
 }

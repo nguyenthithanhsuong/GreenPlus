@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useCurrentUserProfile } from "./useCurrentUserProfile";
 import StoreSwitcher from "./StoreSwitcher";
 import ActivityNotifications from "./ActivityNotifications";
@@ -24,7 +25,7 @@ export default function AdminHeader() {
           className="flex items-center gap-3 border-l border-gray-100 pl-6 text-left transition-opacity hover:opacity-80"
           aria-label="Đi đến cài đặt"
         >
-          <img
+          <Image unoptimized width={36} height={36}
             src={
               profile?.imageUrl ??
               "https://i.pravatar.cc/150?u=greenplus-default-user"

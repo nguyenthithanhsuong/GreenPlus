@@ -1,6 +1,6 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError, toErrorMessage } from "../../../../backend/core/errors";
+import {AppError} from "../../../../backend/core/errors";
 import { reviewFacade } from "../../../../backend/modules/reviews/facades/review.facade";
 import {
   assertCustomerId,

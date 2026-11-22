@@ -5,9 +5,7 @@ import { logger } from "@/lib/logger";
 export const runtime = "nodejs";
 
 export const GET = withSentry(
-  async (request: Request) => {
-    logger.info("Health check attempt");
-
+  async () => {
     try {
       const timestamp = new Date().toISOString();
 
@@ -32,7 +30,7 @@ export const GET = withSentry(
           status: "error",
           service: "web-admin",
           timestamp: new Date().toISOString(),
-          message: error instanceof Error ? error.message : "Unknown error",
+          message: "Health check failed",
         },
         { status: 500 },
       );

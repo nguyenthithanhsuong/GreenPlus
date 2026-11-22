@@ -3,7 +3,6 @@ import {
   LocationError,
 } from "../../../../../../packages/location/index.mjs";
 import { portalActor } from "../../../../../backend/core/manager-scope";
-import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
 import { AppError, toErrorMessage } from "../../../../../backend/core/errors";
 import { storesManagementFacade } from "../../../../../backend/modules/stores/facades/stores-management.facade";

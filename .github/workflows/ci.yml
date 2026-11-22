@@ -133,6 +133,18 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Offline patched Next.js version gate (cannot be bypassed by registry outage)
+        run: node scripts/ci/dependency-version-gate.mjs
+      - name: Runtime dependency audit (confirmed high/critical block; registry outages warn)
+        run: node scripts/ci/dependency-audit.mjs
+      - name: Upload dependency audit summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit
+          path: artifacts/ci/dependency-audit.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: All root Node tests (including tenant, gateway, security, PWA, regression)
         run: node --experimental-strip-types --test tests/*.test.mjs
       - name: Check gateway and migration launcher syntax
@@ -282,7 +294,15 @@ jobs:
           GREENPLUS_DOCKER_ACCESS_CLIENT_ID: ${{ secrets.GREENPLUS_DOCKER_ACCESS_CLIENT_ID }}
           GREENPLUS_DOCKER_ACCESS_CLIENT_SECRET: ${{ secrets.GREENPLUS_DOCKER_ACCESS_CLIENT_SECRET }}
           GREENPLUS_DOCKER_REQUIRE_ALL_TIERS: 'true'
-        run: node scripts/ci/check-docker-tenants.mjs
+        run: node scripts/ci/check-docker-tenants.mjs --advisory
+      - name: Upload remote gateway diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-docker-gateway-diagnostics
+          path: artifacts/ci/docker-gateway.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Upload service diagnostics (no credentials)
         if: always()
         uses: actions/upload-artifact@v4

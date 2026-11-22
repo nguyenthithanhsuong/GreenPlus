@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Camera, Eye, EyeOff, Home, Save } from "lucide-react";
+import {Camera, Eye, EyeOff, Save} from "lucide-react";
 import { useCurrentUserProfile } from "../shared/useCurrentUserProfile";
 import { useAuthStore } from "../../src/lib/stores/authStore";
 

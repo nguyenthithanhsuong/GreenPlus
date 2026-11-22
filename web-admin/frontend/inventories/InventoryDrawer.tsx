@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ClipboardList, Hash, Trash2, X } from "lucide-react";
+import {ClipboardList, Hash, X} from "lucide-react";
 import type { InventoryRow } from "../../backend/modules/inventory/inventory-management.types";
 
 export type InventoryFormValues = {

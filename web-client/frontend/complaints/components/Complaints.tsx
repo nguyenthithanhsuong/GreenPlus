@@ -455,7 +455,7 @@ export default function Complaints() {
           const d = await resp.json();
           setComplaints((d.items ?? []) as ComplaintResponse[]);
         }
-      } catch (e) {}
+      } catch {}
     } catch (requestError) {
       setError(
         requestError instanceof Error

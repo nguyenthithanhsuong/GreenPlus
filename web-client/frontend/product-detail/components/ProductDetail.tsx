@@ -4,6 +4,7 @@ import { storeFetch } from "@/lib/stores/store-fetch";
 import { STORE_CHANGE_EVENT } from "@/lib/stores/store-selection";
 import StoreSelector from "../../stores/StoreSelector";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import NavigationBar from "../../dashboard/components/NavigationBar";
 import PurchaseModeSelector from "./PurchaseModeSelector";
@@ -86,19 +87,7 @@ type ReviewsResponse = {
   items: ReviewItem[];
 };
 
-type ProductReview = {
-  id: number;
-  name: string;
-  date: string;
-  rating: number;
-  comment: string;
-};
 
-type DebugStep = {
-  label: string;
-  status: "idle" | "loading" | "ok" | "error";
-  detail?: string;
-};
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -569,6 +558,7 @@ export default function ProductDetail({
   productId,
   backHref,
 }: ProductDetailProps) {
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const routerUser = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -594,18 +584,6 @@ export default function ProductDetail({
   >("cart");
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showGroupPurchaseModal, setShowGroupPurchaseModal] = useState(false);
-  const [debugSteps, setDebugSteps] = useState<DebugStep[]>([
-    {
-      label: "route params",
-      status: productId ? "ok" : "error",
-      detail: productId
-        ? `productId=${productId}`
-        : "Missing productId route param",
-    },
-    { label: "product detail fetch", status: "idle" },
-    { label: "related products fetch", status: "idle" },
-    { label: "reviews fetch", status: "idle" },
-  ]);
   const [expanded, setExpanded] = useState<Record<DetailSection, boolean>>({
     detail: false,
     nutrition: false,
@@ -649,14 +627,6 @@ export default function ProductDetail({
 
     const controller = new AbortController();
 
-    const updateStep = (label: string, nextStep: Partial<DebugStep>) => {
-      setDebugSteps((previous) =>
-        previous.map((step) =>
-          step.label === label ? { ...step, ...nextStep } : step,
-        ),
-      );
-    };
-
     const readResponseText = async (response: Response) => {
       const text = await response.text();
       return text;
@@ -671,16 +641,7 @@ export default function ProductDetail({
       setQuantity(1);
       setLoading(true);
       setError(null);
-      updateStep("product detail fetch", {
-        status: "loading",
-        detail: `GET /api/products/${productId}`,
-      });
-      updateStep("related products fetch", {
-        status: "idle",
-        detail: undefined,
-      });
-      updateStep("reviews fetch", { status: "idle", detail: undefined });
-
+                  
       try {
         const detailResponse = await storeFetch(
           `/api/products/${encodeURIComponent(productId)}`,
@@ -698,26 +659,14 @@ export default function ProductDetail({
             "error" in detailData
               ? String(detailData.error ?? "")
               : "";
-          updateStep("product detail fetch", {
-            status: "error",
-            detail: `${detailResponse.status} ${message || detailBodyText || "Unknown detail fetch error"}`,
-          });
-          throw new Error(message || "Không thể tải chi tiết sản phẩm.");
+                    throw new Error(message || "Không thể tải chi tiết sản phẩm.");
         }
 
         const resolvedDetail = detailData as ProductDetailData;
         setProduct(resolvedDetail);
-        updateStep("product detail fetch", {
-          status: "ok",
-          detail: `${resolvedDetail.name} | category=${resolvedDetail.category.id ?? "none"} | price=${resolvedDetail.availablePrice ?? "null"}`,
-        });
-
+        
         if (resolvedDetail.category.id) {
-          updateStep("related products fetch", {
-            status: "loading",
-            detail: `GET /api/products?categoryId=${resolvedDetail.category.id}&limit=6`,
-          });
-          const relatedResponse = await storeFetch(
+                    const relatedResponse = await storeFetch(
             `/api/products?categoryId=${encodeURIComponent(resolvedDetail.category.id)}&sort=newest&limit=6`,
             { signal: controller.signal },
           );
@@ -733,11 +682,7 @@ export default function ProductDetail({
               "error" in relatedData
                 ? String(relatedData.error ?? "")
                 : "";
-            updateStep("related products fetch", {
-              status: "error",
-              detail: `${relatedResponse.status} ${message || relatedBodyText || "Unknown related-products error"}`,
-            });
-            throw new Error(message || "Không thể tải sản phẩm tương tự.");
+                        throw new Error(message || "Không thể tải sản phẩm tương tự.");
           }
 
           setRelatedProducts(
@@ -745,23 +690,11 @@ export default function ProductDetail({
               (item) => item.productId !== resolvedDetail.productId,
             ),
           );
-          updateStep("related products fetch", {
-            status: "ok",
-            detail: `loaded ${(relatedData as ProductsResponse).items.length} products`,
-          });
-        } else {
+                  } else {
           setRelatedProducts([]);
-          updateStep("related products fetch", {
-            status: "error",
-            detail: "Missing category.id from product detail backend response",
-          });
-        }
+                  }
 
-        updateStep("reviews fetch", {
-          status: "loading",
-          detail: `GET /api/reviews?productId=${resolvedDetail.productId}&limit=10`,
-        });
-        const reviewsResponse = await fetch(
+                const reviewsResponse = await fetch(
           `/api/reviews?productId=${encodeURIComponent(resolvedDetail.productId)}&limit=10`,
           {
             signal: controller.signal,
@@ -779,19 +712,11 @@ export default function ProductDetail({
             "error" in reviewsData
               ? String(reviewsData.error ?? "")
               : "";
-          updateStep("reviews fetch", {
-            status: "error",
-            detail: `${reviewsResponse.status} ${message || reviewsBodyText || "Unknown reviews error"}`,
-          });
-          throw new Error(message || "Không thể tải đánh giá sản phẩm.");
+                    throw new Error(message || "Không thể tải đánh giá sản phẩm.");
         }
 
         setReviews((reviewsData as ReviewsResponse).items ?? []);
-        updateStep("reviews fetch", {
-          status: "ok",
-          detail: `loaded ${(reviewsData as ReviewsResponse).items?.length ?? 0} reviews`,
-        });
-      } catch (requestError) {
+              } catch (requestError) {
         if ((requestError as Error).name === "AbortError") {
           return;
         }
@@ -879,17 +804,9 @@ export default function ProductDetail({
     return { isExpired, canPurchase, warning };
   }, [product]);
 
-  const resolvedStatus = product
-    ? effectiveAvailability.isExpired
-      ? "Hết hạn"
-      : product.inventory.hasSellableBatch
-        ? "Sẵn hàng"
-        : "Tạm hết"
-    : null;
-  const resolvedCategoryName = product?.category.name ?? null;
+    const resolvedCategoryName = product?.category.name ?? null;
   const ratingText = averageRating === null ? "0.0" : averageRating.toFixed(1);
-  const debugVisible = true;
-
+  
   const postCartItem = async (itemQuantity: number) => {
     if (!productId) {
       throw new Error("Không xác định được sản phẩm để thêm vào giỏ hàng.");
@@ -1050,7 +967,7 @@ export default function ProductDetail({
     setShowGroupPurchaseModal(false);
     setCartActionMessage("Đang chuyển sang trang tạo nhóm mua chung...");
     setTimeout(() => {
-      window.location.href = "/group-purchase/create";
+      router.push("/group-purchase/create");
     }, 500);
   };
   if (!productId) {
@@ -1186,17 +1103,7 @@ export default function ProductDetail({
             </p>
           )}
 
-          {/* {debugVisible && (
-            <section style={styles.debugPanel}>
-              <p style={styles.debugTitle}>Debug product detail</p>
-              {debugSteps.map((step) => (
-                <p key={step.label} style={styles.debugItem}>
-                  <span style={styles.debugStatus}>[{step.status}]</span> {step.label}
-                  {step.detail ? ` - ${step.detail}` : ""}
-                </p>
-              ))}
-            </section>
-          )} */}
+
 
           <section style={styles.detailCard}>
             <div style={styles.detailHeader}>

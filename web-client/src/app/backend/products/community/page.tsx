@@ -29,9 +29,6 @@ export default function CommunityPostTestPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const selectedPost =
-    myPosts.find((post) => post.post_id === selectedPostId) ?? null;
-
   useEffect(() => {
     const saved =
       window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";

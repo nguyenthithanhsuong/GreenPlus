@@ -199,7 +199,6 @@ const disabledSubmitButtonStyle: React.CSSProperties = {
 
 export default function SubscriptionModal({
   isOpen,
-  productId,
   productName,
   price,
   onClose,

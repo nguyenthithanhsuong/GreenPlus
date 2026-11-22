@@ -20,6 +20,7 @@
     "start": "turbo start",
     "build": "npm run build -w web-admin && npm run build -w web-client && npm run build -w web-shipper",
     "ci:quality-report": "node scripts/ci/quality-report.mjs",
+    "security:next:apply": "node scripts/ci/upgrade-next-security.mjs --apply",
     "ci:post-apply": "node scripts/ci/post-apply.mjs",
     "lint": "npm run lint -w web-admin && npm run lint -w web-client && npm run lint -w web-shipper",
     "typecheck": "npm run typecheck -w web-admin && npm run typecheck -w web-client && npm run typecheck -w web-shipper",
@@ -56,6 +57,6 @@
     "@supabase/supabase-js": "^2.102.1"
   },
   "overrides": {
-    "next": "16.3.8"
+    "next": "16.4.6"
   }
 }

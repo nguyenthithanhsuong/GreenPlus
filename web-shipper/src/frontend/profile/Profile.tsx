@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   AlertCircle,
   BadgeCheck,
@@ -282,7 +283,7 @@ export default function ProfileScreen() {
         <div className="px-4 pb-5">
           <div className="-mt-9 flex items-end justify-between gap-2">
             {user?.image_url?.trim() && !imageFailed ? (
-              <img
+              <Image unoptimized width={74} height={74}
                 src={user.image_url}
                 alt={`Ảnh đại diện của ${user.name}`}
                 onError={() => setImageFailed(true)}

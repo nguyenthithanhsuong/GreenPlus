@@ -25,7 +25,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/authStore";
-import { asPortalRole, canAccessPage, type PortalRole } from "@/lib/portal-access";
+import {asPortalRole, canAccessPage} from "@/lib/portal-access";
 
 type MenuLink = {
   href: string;

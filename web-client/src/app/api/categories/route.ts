@@ -1,6 +1,5 @@
 import { withSentry } from "@/lib/with-sentry";
 import { NextResponse } from "next/server";
-import { AppError } from "../../../../backend/core/errors";
 import { categoryFacade } from "../../../../backend/modules/categories/facades/category.facade";
 import { CategorySort } from "../../../../backend/modules/categories/category.types";
 import { logger } from "@/lib/logger";

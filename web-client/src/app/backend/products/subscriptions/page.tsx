@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type SubscriptionResult = {
   subscriptionId: string;
@@ -42,6 +42,33 @@ export default function ProductSubscriptionTestPage() {
   const [subscriptions, setSubscriptions] = useState<SubscriptionResult[]>([]);
   const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
 
+  const loadSubscriptions = useCallback(async (resolvedUserId: string) => {
+    setListLoading(true);
+
+    try {
+      const response = await fetch(
+        `/api/subscriptions?userId=${encodeURIComponent(resolvedUserId)}`,
+      );
+      const data = (await response.json()) as
+        SubscriptionListResponse | { error: string };
+
+      if (!response.ok) {
+        throw new Error(
+          "error" in data ? data.error : "Failed to load subscriptions",
+        );
+      }
+
+      setSubscriptions((data as SubscriptionListResponse).subscriptions ?? []);
+    } catch (listError) {
+      setSubscriptions([]);
+      setError(
+        listError instanceof Error ? listError.message : "Unexpected error",
+      );
+    } finally {
+      setListLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const saved =
       window.localStorage.getItem(BACKEND_TEST_USER_STORAGE_KEY)?.trim() ?? "";
@@ -76,7 +103,7 @@ export default function ProductSubscriptionTestPage() {
     }
 
     void loadSubscriptions(activeUserId);
-  }, [activeUserId]);
+  }, [activeUserId, loadSubscriptions]);
 
   const requireLoggedInUserId = (): string => {
     if (!activeUserId) {
@@ -119,33 +146,6 @@ export default function ProductSubscriptionTestPage() {
     }
   };
 
-  const loadSubscriptions = async (userId?: string) => {
-    const resolvedUserId = userId ?? requireLoggedInUserId();
-    setListLoading(true);
-
-    try {
-      const response = await fetch(
-        `/api/subscriptions?userId=${encodeURIComponent(resolvedUserId)}`,
-      );
-      const data = (await response.json()) as
-        SubscriptionListResponse | { error: string };
-
-      if (!response.ok) {
-        throw new Error(
-          "error" in data ? data.error : "Failed to load subscriptions",
-        );
-      }
-
-      setSubscriptions((data as SubscriptionListResponse).subscriptions ?? []);
-    } catch (listError) {
-      setSubscriptions([]);
-      setError(
-        listError instanceof Error ? listError.message : "Unexpected error",
-      );
-    } finally {
-      setListLoading(false);
-    }
-  };
 
   const unsubscribe = async (subscriptionId: string) => {
     setError(null);
@@ -230,7 +230,7 @@ export default function ProductSubscriptionTestPage() {
               Các đăng ký hiện tại
             </h2>
             <button
-              onClick={() => void loadSubscriptions()}
+              onClick={() => void loadSubscriptions(activeUserId)}
               disabled={listLoading || !activeUserId}
               className="rounded border border-slate-300 px-3 py-1 text-xs text-slate-700 disabled:opacity-60"
             >

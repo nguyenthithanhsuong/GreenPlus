@@ -1,15 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  CalendarDays,
-  CheckCircle2,
-  ClipboardList,
-  MapPin,
-  Phone,
-  Truck,
-  X,
-} from "lucide-react";
+import {CalendarDays, CheckCircle2, ClipboardList, MapPin, Phone, X} from "lucide-react";
 import type {
   DeliveryShipperOption,
   DeliveryStatus,

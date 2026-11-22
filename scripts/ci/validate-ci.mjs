@@ -23,6 +23,9 @@ if(!ci.includes('needs: [pipeline-contracts, frontend-ci, backend-ci, ai-service
 if(!ci.includes("github.ref == 'refs/heads/main'"))throw Error('Image publication must be main-only');
 if(!ci.includes('secrets.NEXT_PUBLIC_SUPABASE_URL'))throw Error('Main image needs real public Supabase URL, not the CI placeholder');
 if(ci.includes('continue-on-error: true'))throw Error('Do not downgrade required gates to nonblocking');
+if(!ci.includes('node scripts/ci/dependency-version-gate.mjs'))throw Error('Missing offline patched-Next gate');
+if(!ci.includes('node scripts/ci/dependency-audit.mjs'))throw Error('Missing high/critical runtime audit');
+if(!ci.includes('run: node scripts/ci/check-docker-tenants.mjs --advisory'))throw Error('Remote gateway must treat downtime as advisory without silencing tenant leaks');
 if(!ci.includes('run: node scripts/ci/check-external.mjs --output'))throw Error('Missing advisory provider diagnostics');
 if(!ci.includes('if: always()\n    needs: [pipeline-contracts'))throw Error('CI report must run even when a required gate fails');
 if(!existsSync(resolve(root,'.github/workflows/ci-cd-reports.yml')))throw Error('Missing dedicated Actions CI/CD Reports dashboard');

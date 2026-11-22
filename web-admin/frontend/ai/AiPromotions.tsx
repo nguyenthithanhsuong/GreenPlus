@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import AdminShell from "../shared/AdminShell";
 import { AiNotice, aiFetch, panel, primary, field, postJson } from "./ui";
 import { useAiScope } from "./use-ai-scope";
@@ -142,7 +143,7 @@ export default function AiPromotions({ embedded = false }: { embedded?: boolean 
             <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading || busy} className="mt-2 block w-full rounded-xl border border-slate-200 p-3 text-sm" onChange={event=>{const file=event.target.files?.[0];if(file)void uploadImage(file);}} />
           </label>
           {uploading && <p className="mt-2 text-sm text-slate-500">Đang tải ảnh...</p>}
-          {imageUrl && <div className="mt-2 flex items-center gap-3"><img src={imageUrl} alt="Ảnh xem trước chương trình" className="h-24 w-32 rounded-xl object-cover"/><button type="button" className="text-sm font-semibold text-red-700" onClick={()=>setImageUrl("")}>Bỏ ảnh</button></div>}
+          {imageUrl && <div className="mt-2 flex items-center gap-3"><Image unoptimized src={imageUrl} width={128} height={96} alt="Ảnh xem trước chương trình" className="h-24 w-32 rounded-xl object-cover"/><button type="button" className="text-sm font-semibold text-red-700" onClick={()=>setImageUrl("")}>Bỏ ảnh</button></div>}
           {options.partial ? <AiNotice kind="error">Danh sách sản phẩm/lô vượt giới hạn tải. Hãy xử lý trực tiếp trong danh mục trước khi tạo khuyến mãi.</AiNotice> : null}
           <button className={`${primary} mt-3`} disabled={busy || uploading || options.partial || !productId || !startAt || !endAt || discount < 1 || discount > 50 || new Date(endAt) <= new Date(startAt)} onClick={() => void create()}>
             Tạo chương trình
@@ -153,7 +154,7 @@ export default function AiPromotions({ embedded = false }: { embedded?: boolean 
         <div className="space-y-3">
           {items.map((item) => (
             <article key={item.id} className="rounded-xl border border-slate-100 p-4">
-              {item.image_url && <img src={item.image_url} alt="Ảnh khuyến mãi" className="mb-3 h-28 w-full rounded-xl object-cover" />}
+              {item.image_url && <Image unoptimized src={item.image_url} width={640} height={112} alt="Ảnh khuyến mãi" className="mb-3 h-28 w-full rounded-xl object-cover" />}
               <p className="font-semibold">{item.discount_value}% · {item.status} · {item.scope}</p>
               <p className="text-sm text-slate-500">Sản phẩm {item.product_id.slice(0, 8)} · {item.source}</p>
               <p className="mt-1 text-xs text-slate-400">

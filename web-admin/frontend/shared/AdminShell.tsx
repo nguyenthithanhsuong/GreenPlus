@@ -17,7 +17,6 @@ export default function AdminShell({
   title,
   description,
   pageActions,
-  searchPlaceholder: _searchPlaceholder,
   children,
   fullWidth = false,
 }: AdminShellProps) {

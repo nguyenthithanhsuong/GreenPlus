@@ -36,14 +36,14 @@ class DeliveringOrderState implements OrderStatusState {
 
 class CompletedOrderState implements OrderStatusState {
   readonly name = "completed" as const;
-  canTransitionTo(_next: OrderStatus): boolean {
+  canTransitionTo(): boolean {
     return false;
   }
 }
 
 class CancelledOrderState implements OrderStatusState {
   readonly name = "cancelled" as const;
-  canTransitionTo(_next: OrderStatus): boolean {
+  canTransitionTo(): boolean {
     return false;
   }
 }
