@@ -29,10 +29,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/ci/github-actions-report.mjs
-      - name: Archive report JSON
+      - name: Archive detailed flow report (Markdown + structured JSON)
         uses: actions/upload-artifact@v4
         with:
           name: ci-cd-report
-          path: artifacts/ci/actions-report.json
+          path: |
+            artifacts/ci/actions-report.json
+            artifacts/ci/actions-report.md
           if-no-files-found: error
           retention-days: 30

@@ -440,11 +440,13 @@ jobs:
         env:
           CI_NEEDS_JSON: ${{ toJSON(needs) }}
         run: node scripts/ci/ci-report.mjs
-      - name: Upload CI gate report JSON
+      - name: Upload CI gate overview (Markdown + JSON)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: greenplus-ci-cd-report
-          path: artifacts/ci/ci-report.json
+          path: |
+            artifacts/ci/ci-report.json
+            artifacts/ci/ci-report.md
           if-no-files-found: warn
           retention-days: 30

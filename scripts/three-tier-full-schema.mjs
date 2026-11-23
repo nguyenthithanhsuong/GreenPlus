@@ -7,7 +7,7 @@
  * Intentional boundaries: application SQL DDL, constraints, SQL RPC, RLS/policies.
  * Supabase Auth / Storage / Realtime *services* are not implemented here.
  */
-import { createHash } from 'node:crypto';
+import { pinnedMigrationSha256 } from './ci/pinned-migration-hash.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,23 +26,33 @@ const targets = Object.freeze([
 ]);
 const escaped = s => `'${s.replaceAll("'", "''")}'`;
 const quote = s => '"' + s.replaceAll('"', '""') + '"';
-const sha = data => createHash('sha256').update(data).digest('hex');
 const fileNames = readdirSync(migrationsDir).filter(f => /^\d{4}_[\w-]+\.sql$/.test(f)).sort();
 const observed = fileNames.map(name => ({name, source: readFileSync(resolve(migrationsDir, name),'utf8')}));
-const expectedTables = [...new Set(observed.flatMap(m => [...m.source.matchAll(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:"public"\.|public\.)(?:"([a-z_][a-z_0-9]*)"|([a-z_][a-z_0-9]*))/gi)].map(x=>x[1]||x[2])))].sort();
+export const canonicalTableNames = Object.freeze([...new Set(observed.flatMap(m => [...m.source.matchAll(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:"public"\.|public\.)(?:"([a-z_][a-z_0-9]*)"|([a-z_][a-z_0-9]*))/gi)].map(x=>x[1]||x[2])))].sort());
+// 0001–0021 create 44 application tables; reviewed migration 0022 adds two
+// tenant-scoped support tables. The checksum-pinned migration manifest remains
+// the authority; this explicit inventory guard catches an unreviewed change
+// BEFORE any Docker schema writes.
+const requiredSupportTables = Object.freeze(['support_inquiries', 'support_inquiry_messages']);
+function assertCanonicalTableInventory() {
+  if (canonicalTableNames.length !== 46 || requiredSupportTables.some(t => !canonicalTableNames.includes(t))) {
+    throw Error('Expected canonical table inventory changed (46 tables incl. 0022 support); update verifier deliberately.');
+  }
+}
 const mode = process.argv.includes('--check') ? 'check' : process.argv.includes('--plan') ? 'plan' : 'apply';
 
 function assertManifest() {
   if (observed.length !== manifest.migrations.length) throw Error('New/deleted Supabase migration files: manual review and manifest regeneration are required. Auto-apply blocked.');
   for (const [i, m] of observed.entries()) {
     const expected = manifest.migrations[i];
-    if (m.name !== expected.name || sha(m.source) !== expected.sha256) {
+    if (m.name !== expected.name || pinnedMigrationSha256(m.name,m.source) !== expected.sha256) {
       throw Error(`Supabase migration history drift at ${m.name}: expected ${expected.name}/${expected.sha256}. Auto-apply blocked.`);
     }
   }
-  if (observed.length !== 22 || fileNames[0] !== '0001_baseline_greenplus.sql' || !fileNames.at(-1).startsWith('0022_')) {
-    throw Error('This release mirrors only 0001–0022; review new migrations and test DB behavior before deploying.');
+  if (observed.length !== 23 || fileNames[0] !== '0001_baseline_greenplus.sql' || !fileNames.at(-1).startsWith('0023_')) {
+    throw Error('This release mirrors only 0001–0023; review new migrations and test DB behavior before deploying.');
   }
+  assertCanonicalTableInventory();
 }
 
 // EXACTLY four Supabase-managed extensions appear in 0001. They are excluded
@@ -119,30 +129,79 @@ function verifyHistory(history, t, requireComplete) {
     throw Error(`${t.service}: only ${history.length}/${allowed.size} migrations applied. Run npm run docker:three-tier:full-migrate.`);
   }
 }
-function verifyCanonicalObjects(t) {
-  if (expectedTables.length !== 44) throw Error('Expected table inventory changed; update verifier deliberately.');
-  for (const schema of t.schemas) {
-    const expectedList=expectedTables.map(name=>escaped(name)).join(',');
-    const sql = `SELECT CASE WHEN
+// Pure SQL builder is also exercised by offline regression tests: a previously
+// stale hardcoded 44-table check passed the unit suite but blocked Docker after
+// migration 0022 had already committed.
+export function buildCanonicalVerificationSql(schema) {
+  if (!['public','pro_a','pro_b'].includes(schema)) throw Error('Invalid target schema');
+  const expectedList = canonicalTableNames.map(name => escaped(name)).join(',');
+  return `SELECT CASE WHEN
       NOT EXISTS (SELECT 1 FROM unnest(ARRAY[${expectedList}]::text[]) t(name) WHERE to_regclass(${escaped(schema)} || '.' || t.name) IS NULL)
-      AND (SELECT count(*) FROM information_schema.tables WHERE table_schema=${escaped(schema)} AND table_type='BASE TABLE') >= 44
+      AND (SELECT count(*) FROM information_schema.tables WHERE table_schema=${escaped(schema)} AND table_type='BASE TABLE') >= ${canonicalTableNames.length}
       AND to_regclass(${escaped(`${schema}.users`)}) IS NOT NULL
       AND to_regclass(${escaped(`${schema}.orders`)}) IS NOT NULL
       AND to_regclass(${escaped(`${schema}.tenant_storage_registry`)}) IS NOT NULL
       AND to_regclass(${escaped(`${schema}.role_permissions`)}) IS NOT NULL
       AND to_regprocedure(${escaped(`${schema}.checkout_cart(uuid,uuid,text,text,numeric,text,text)`)}) IS NOT NULL
-      AND EXISTS (SELECT 1 FROM pg_class WHERE oid=${escaped(`${schema}.users`)}::regclass AND relrowsecurity)
+      AND to_regprocedure(${escaped(`${schema}.gp_consume_submission_quota(uuid,uuid,text,integer)`)}) IS NOT NULL
+      AND EXISTS (SELECT 1 FROM pg_class WHERE oid=to_regclass(${escaped(`${schema}.users`)}) AND relrowsecurity)
+      AND EXISTS (SELECT 1 FROM pg_class WHERE oid=to_regclass(${escaped(`${schema}.support_inquiries`)}) AND relrowsecurity)
+      AND EXISTS (SELECT 1 FROM pg_class WHERE oid=to_regclass(${escaped(`${schema}.support_inquiry_messages`)}) AND relrowsecurity)
       THEN 'PASS' ELSE 'FAIL' END;`;
-    const result = psql(t, sql, true);
-    if (!/PASS/.test(result)) throw Error(`${t.service}/${schema}: canonical table/RLS/RPC verification failed.`);
-    console.log(`PASS ${t.service}/${schema}: canonical SQL tables, RLS flag and checkout RPC`);
+}
+// psql -q only silences command tags: plain SELECT output still contains a
+// formatted column header, dashed separator and row-count footer. COPY TO
+// STDOUT returns exactly the scalar PASS/FAIL, just like readScalar() above.
+// Never compare the formatted output of psql SELECT with a bare string.
+export function buildCanonicalVerificationCopySql(schema) {
+  const selectSql = buildCanonicalVerificationSql(schema).replace(/;\s*$/, '');
+  return `COPY (${selectSql}) TO STDOUT;`;
+}
+
+// Read-only, store-independent failure diagnosis. Keep each check explicit so
+// the next schema drift can be identified without deleting any Docker volume or
+// editing a previously applied migration.
+export function buildCanonicalFailureDiagnosticsCopySql(schema) {
+  if (!['public', 'pro_a', 'pro_b'].includes(schema)) throw Error('Invalid target schema');
+  const expectedList = canonicalTableNames.map(name => escaped(name)).join(',');
+  const rlsTables = ['users', 'support_inquiries', 'support_inquiry_messages'];
+  const rlsFailures = rlsTables.map(name =>
+    `SELECT ${escaped('RLS disabled or table missing: ' + name)} AS reason WHERE NOT EXISTS (SELECT 1 FROM pg_class WHERE oid=to_regclass(${escaped(schema + '.' + name)}) AND relrowsecurity)`
+  );
+  const functions = [
+    'checkout_cart(uuid,uuid,text,text,numeric,text,text)',
+    'gp_consume_submission_quota(uuid,uuid,text,integer)',
+  ];
+  const rpcFailures = functions.map(name =>
+    `SELECT ${escaped('RPC missing: ' + name)} AS reason WHERE to_regprocedure(${escaped(schema + '.' + name)}) IS NULL`
+  );
+  return `COPY (
+    SELECT reason FROM (
+      SELECT 'table missing: ' || t.name AS reason FROM unnest(ARRAY[${expectedList}]::text[]) t(name)
+        WHERE to_regclass(${escaped(schema)} || '.' || t.name) IS NULL
+      UNION ALL
+      SELECT 'canonical table count below ${canonicalTableNames.length}' AS reason
+        WHERE (SELECT count(*) FROM information_schema.tables WHERE table_schema=${escaped(schema)} AND table_type='BASE TABLE') < ${canonicalTableNames.length}
+      UNION ALL ${[...rlsFailures, ...rpcFailures].join('\n      UNION ALL ')}
+    ) failures ORDER BY reason
+  ) TO STDOUT;`;
+}
+function verifyCanonicalObjects(t) {
+  for (const schema of t.schemas) {
+    const result = psql(t, buildCanonicalVerificationCopySql(schema), true);
+    if (result !== 'PASS') {
+      const details = psql(t, buildCanonicalFailureDiagnosticsCopySql(schema), true)
+        .split(/\r?\n/).filter(Boolean);
+      throw Error(`${t.service}/${schema}: canonical table/RLS/RPC verification failed. ${details.length ? details.join('; ') : 'No failing predicate found; check scalar verdict and Docker output (' + JSON.stringify(result.slice(0, 100)) + ').'}`);
+    }
+    console.log(`PASS ${t.service}/${schema}: 46 canonical SQL tables, support RLS, checkout and submission-quota RPCs`);
   }
 }
 
 async function main() {
   assertManifest();
   if (mode === 'plan') {
-    console.log(`Canonical Supabase source: ${observed.length} migrations, immutable SHA-256 manifest verified.`);
+    console.log(`Canonical Supabase source: ${observed.length} migrations, ${canonicalTableNames.length} tables, immutable SHA-256 manifest verified.`);
     for(const t of targets)console.log(`${t.service}/${t.database}: ${t.schemas.join(', ')} × ${observed.length} migrations`);
     console.log('DDL-only compatibility: pgcrypto/vault/uuid-ossp/pg_stat_statements extension statements omitted; auth.uid() is deny-by-default; realtime broadcasts are NO-OP; Storage API not provided.');
     return;
@@ -176,7 +235,7 @@ async function main() {
       for(const m of observed) {
         const key=`${schema}|${m.name}`;
         if(applied.has(key))continue;
-        const sourceHash = sha(m.source);
+        const sourceHash = manifest.migrations.find(row => row.name === m.name).sha256;
         const sql = transformSupabaseSql(m.source,schema);
         // Each migration + ledger write is one transaction, without replaying
         // previously applied SQL. If anything fails, this migration rolls back.
@@ -189,7 +248,7 @@ async function main() {
     verifyHistory(readHistory(t), t, true);
     verifyCanonicalObjects(t);
   }
-  console.log('Canonical 0001–0021 SQL migrations applied/verified in all five new PG17 scopes. Legacy PG16 volumes unchanged.');
+  console.log('Canonical 0001–0023 SQL migrations applied/verified in all five new PG17 scopes. Legacy PG16 volumes unchanged.');
   console.log('NOT FULL SERVICE PARITY: Supabase Auth, Realtime, Storage and application API routing remain separate. Do not cut over production.');
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

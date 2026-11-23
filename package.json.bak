@@ -1,0 +1,64 @@
+{
+  "name": "greenplus",
+  "private": true,
+  "packageManager": "npm@10.5.0",
+  "workspaces": [
+    "web-admin",
+    "web-client",
+    "web-shipper",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev-with-docker.mjs",
+    "dev:all": "node scripts/dev-with-docker.mjs",
+    "dev:fast": "turbo dev --ui=stream",
+    "dev:ai": "docker compose --env-file .env.local -f docker-compose.ai.yml up -d --build",
+    "web": "turbo dev --ui=tui",
+    "dev:admin": "turbo dev --filter=web-admin --ui=tui",
+    "dev:client": "turbo dev --filter=web-client --ui=tui",
+    "dev:shipper": "turbo dev --filter=web-shipper --ui=tui",
+    "start": "turbo start",
+    "build": "npm run build -w web-admin && npm run build -w web-client && npm run build -w web-shipper",
+    "ci:quality-report": "node scripts/ci/quality-report.mjs",
+    "security:next:apply": "node scripts/ci/upgrade-next-security.mjs --apply",
+    "ci:post-apply": "node scripts/ci/post-apply.mjs",
+    "lint": "npm run lint -w web-admin && npm run lint -w web-client && npm run lint -w web-shipper",
+    "typecheck": "npm run typecheck -w web-admin && npm run typecheck -w web-client && npm run typecheck -w web-shipper",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs && node --experimental-strip-types --test web-client/tests/*.test.mjs && npm test -w web-shipper && node scripts/ci/validate-ci.mjs",
+    "fix": "npm run lint-fix -w web-admin && npm run lint-fix -w web-client && npm run lint-fix -w web-shipper && npm run typecheck",
+    "check": "npm run test && npm run build",
+    "check-all": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "audit:unused": "node scripts/audit-unused.mjs",
+    "audit:messages": "node scripts/ci/audit-message-inventory.mjs",
+    "docker:three-tier:up": "node scripts/three-tier-docker.mjs up",
+    "docker:three-tier:check": "node scripts/three-tier-docker.mjs check",
+    "mobile": "node scripts/project-tools.mjs mobile",
+    "zip:source": "node scripts/package-source.mjs",
+    "supabase:migrations:check": "node scripts/ci/supabase-migration-gate.mjs --static",
+    "supabase:migrations:status": "node scripts/ci/supabase-migration-gate.mjs --report",
+    "supabase:storage:check": "node scripts/ci/check-storage.mjs",
+    "docker:three-tier:audit": "node scripts/ci/three-tier-parity-audit.mjs",
+    "docker:three-tier:stores": "node scripts/ci/three-tier-store-inventory.mjs",
+    "docker:three-tier:full-plan": "node scripts/three-tier-full-schema.mjs --plan",
+    "docker:three-tier:full-migrate": "node scripts/three-tier-full-schema.mjs",
+    "docker:three-tier:full-check": "node scripts/three-tier-full-schema.mjs --check"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "concurrently": "^10.0.6",
+    "dotenv": "^16.6.1",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.11.7"
+  },
+  "dependencies": {
+    "@logtail/next": "^0.3.1",
+    "@logtail/node": "^0.5.8",
+    "@supabase/supabase-js": "^2.102.1"
+  },
+  "overrides": {
+    "next": "16.4.6",
+    "follow-redirects": "1.16.3",
+    "source-map-js": "1.2.2"
+  }
+}

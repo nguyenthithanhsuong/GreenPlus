@@ -52,6 +52,11 @@ test('every high-risk support/AI submission endpoint uses bounded reader',()=>{
       const path=`${app}/src/app/api/${segment}`;
       const text=readFileSync(resolve(root,path),'utf8');
       assert.match(text,/readBoundedJson\(request\)/,path);
+      // A previous Admin route called readBoundedJson without importing it:
+      // that passed source-only contract tests but failed TypeScript/Next builds.
+      const imports=[...text.matchAll(/import\s*\{[^}]+\}\s*from\s*["'][^"']+["'];?/gs)].map(m=>m[0]);
+      assert.ok(imports.some(statement=>/\breadBoundedJson\b/.test(statement)
+        && /packages\/ai-core\/response\.mjs/.test(statement)),`${path}: missing bounded reader import`);
       assert.doesNotMatch(text,/request\.json\(\)/,path);
       paths.push(path);
     }

@@ -3,7 +3,7 @@
 create extension if not exists pgtap with schema extensions;
 begin;
 set local search_path = extensions, public, pg_catalog;
-select plan(5);
+select plan(12);
 with tenant_tables(name) as (
  values ('suppliers'),('categories'),('products'),('batches'),('inventory'),
  ('inventory_transactions'),('prices'),('carts'),('cart_items'),('orders'),
@@ -36,5 +36,19 @@ select ok(not has_function_privilege('anon','public.ai_consume_quota(uuid,uuid,t
  'Guests cannot consume AI quota using the privileged RPC');
 select ok(has_function_privilege('service_role','public.ai_consume_quota(uuid,uuid,text,integer)','EXECUTE'),
  'Quota RPC remains available to trusted server role');
+select ok(not has_function_privilege('authenticated','public.ai_consume_quota(uuid,uuid,text,integer)','EXECUTE'),
+ 'Authenticated users cannot execute the service-only AI quota RPC');
+select ok(not has_function_privilege('anon','public.ai_decide_promotion(uuid,uuid,uuid,text,numeric)','EXECUTE'),
+ 'Guests cannot execute the privileged promotion decision RPC');
+select ok(not has_function_privilege('authenticated','public.ai_decide_promotion(uuid,uuid,uuid,text,numeric)','EXECUTE'),
+ 'Authenticated users cannot execute the privileged promotion decision RPC');
+select ok(not has_function_privilege('anon','public.ai_create_manual_promotion(uuid,uuid,uuid,uuid,numeric,timestamptz,timestamptz)','EXECUTE'),
+ 'Guests cannot create manual promotions via the service-only RPC');
+select ok(not has_function_privilege('authenticated','public.ai_create_manual_promotion(uuid,uuid,uuid,uuid,numeric,timestamptz,timestamptz)','EXECUTE'),
+ 'Authenticated users cannot create manual promotions via the service-only RPC');
+select ok(has_function_privilege('service_role','public.ai_decide_promotion(uuid,uuid,uuid,text,numeric)','EXECUTE'),
+ 'Server retains its promotion approval RPC');
+select ok(has_function_privilege('service_role','public.ai_create_manual_promotion(uuid,uuid,uuid,uuid,numeric,timestamptz,timestamptz)','EXECUTE'),
+ 'Server retains its manual promotion RPC');
 select * from finish();
 rollback;

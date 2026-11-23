@@ -214,7 +214,7 @@ export default function ScanScreen() {
     <ShipperShell
       title="Tra cứu mã đơn"
       description="Quét QR hoặc nhập mã của đơn hàng được phân công"
-      icon={ScanLine}
+      icon="scan"
     >
       <div className="space-y-4">
         <section

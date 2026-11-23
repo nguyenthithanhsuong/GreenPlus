@@ -36,7 +36,19 @@ export function renderCiSummary(report, {sha='',url=''}={}) {
     rows.push('','### Provider status','','| Provider | Status | Detail |','|---|---|---|');
     for(const entry of report.external.results)rows.push(`| ${clean(entry.provider)} | ${entry.status==='pass'?'✅ PASS':'⚠️ WARNING'} | ${clean(entry.reason||'OK')} |`);
   } else rows.push('','Provider details: see the **Services CI** job summary; on PRs and feature branches live probes are not run.');
-  rows.push('','**Policy:** Lint, typecheck, unit/integration, database isolation, immutable migrations, Docker smoke/build and publication remain fail-closed. Outside provider outages or absent optional credentials are warnings. This report is informational; it never turns a failed gate green.','');
+  rows.push('','## CI execution and release decision','',
+    '1. **Policy preflight:** CI rules, immutable migration baseline, SQL and Docker topology contracts.',
+    '2. **Parallel validation:** Admin/Client/Shipper lint, typecheck and build; backend regressions; AI service; disposable Docker/Supabase databases.',
+    '3. **Release candidate:** Docker image build, smoke and image publication run only after upstream gates succeed.',
+    '4. **Advisory providers:** Remote service availability is reported independently and does not convert code failures into PASS.',
+    '',
+    `**Blocking gates not passed:** ${report.required.filter(j=>j.result!=='success').length}.`,
+    '');
+  for(const failed of report.required.filter(j=>j.result!=='success')){
+    rows.push(`- **${clean(failed.label)}**: ${resultLabel(failed.result)}. ${failed.result==='skipped'?'Not executed: check upstream required gate failures.':'Open this job in GitHub Actions to see the first failed step and stderr.'}`);
+  }
+  rows.push('','**Detailed downloadable flow:** The separate **CI/CD Reports** workflow (triggered after this run completes) archives `actions-report.md` and `actions-report.json` with individual steps, durations, failed-step index and links to original GitHub logs. This in-run overview has job outcomes only; it cannot infer the underlying error messages.');
+  rows.push('','**Policy:** ESLint remains executed; designated legacy React Compiler findings are advisory warnings. Other lint errors, typecheck, unit/integration, database isolation, immutable migrations and Docker build/smoke still block. Provider outages are advisory. This report never turns a failed gate green.','');
   return rows.join('\n');
 }
 
@@ -45,6 +57,7 @@ export async function writeCiReport({needs, externalReport, sha, runUrl, output=
   await mkdir(dirname(output),{recursive:true});
   await writeFile(output,JSON.stringify(report,null,2)+'\n');
   const markdown=renderCiSummary(report,{sha,url:runUrl});
+  await writeFile(output.replace(/\.json$/i,'.md'),markdown);
   if(summaryPath)await appendFile(summaryPath,markdown);
   return {report,markdown};
 }

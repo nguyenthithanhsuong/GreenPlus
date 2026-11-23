@@ -1,6 +1,7 @@
 import { requireAiActor } from "../../../../../backend/modules/ai-assist/actor";
 import { aiErrorResponse, checkOrigin } from "../../../../../backend/modules/ai-assist/errors";
 import { askAi, listConversations } from "../../../../../backend/modules/ai-assist/chat";
+import { readBoundedJson } from "../../../../../../packages/ai-core/response.mjs";
 export const runtime="nodejs";
 export async function GET(request:Request) {
   try { const actor=await requireAiActor(request,"chat",new URL(request.url).searchParams.get("storeId"));

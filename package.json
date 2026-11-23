@@ -35,7 +35,7 @@
     "mobile": "node scripts/project-tools.mjs mobile",
     "zip:source": "node scripts/package-source.mjs",
     "supabase:migrations:check": "node scripts/ci/supabase-migration-gate.mjs --static",
-    "supabase:migrations:status": "node scripts/ci/supabase-migration-gate.mjs --report",
+    "supabase:migrations:status": "npm exec --yes --package=supabase@3.2.0 -- node scripts/ci/supabase-migration-gate.mjs --report",
     "supabase:storage:check": "node scripts/ci/check-storage.mjs",
     "docker:three-tier:audit": "node scripts/ci/three-tier-parity-audit.mjs",
     "docker:three-tier:stores": "node scripts/ci/three-tier-store-inventory.mjs",

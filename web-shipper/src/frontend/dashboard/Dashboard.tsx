@@ -159,7 +159,7 @@ export default function Dashboard() {
     <ShipperShell
       title="Đơn giao của tôi"
       description="Theo dõi và xử lý các đơn hàng được phân công"
-      icon={ClipboardList}
+      icon="orders"
       action={
         <button
           type="button"

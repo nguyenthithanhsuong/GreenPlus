@@ -247,7 +247,7 @@ export default function ProfileScreen() {
     <ShipperShell
       title="Cá nhân"
       description="Hồ sơ và hoạt động giao hàng"
-      icon={UserRound}
+      icon="profile"
       action={
         <button
           type="button"

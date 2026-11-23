@@ -45,7 +45,7 @@ export function assertDevAllFiles() {
   if (existsSync(manifest)) {
     try {
       const migrations = JSON.parse(readFileSync(manifest, 'utf8')).migrations;
-      if (!Array.isArray(migrations) || migrations.length !== 22) throw Error('expected 22 reviewed migration entries');
+      if (!Array.isArray(migrations) || migrations.length !== 23) throw Error('expected 23 reviewed migration entries');
       for (const item of migrations) {
         if (typeof item.name !== 'string' || !/^\d{4}_[\w-]+\.sql$/.test(item.name)) throw Error('invalid migration file name');
         const filename = `supabase/migrations/${item.name}`;
@@ -58,7 +58,7 @@ export function assertDevAllFiles() {
   if (missing.length) {
     throw Error(`Incomplete GreenPlus migration patch; missing ${missing.length} required file(s):\n - ${missing.join('\n - ')}\nApply the consolidated DevAll recovery patch in the project root before retrying.`);
   }
-  return requiredDevAllFiles.length + 22;
+  return requiredDevAllFiles.length + 23;
 }
 
 export function devAllSteps({ dockerUpdate = true, requireParity = false } = {}) {

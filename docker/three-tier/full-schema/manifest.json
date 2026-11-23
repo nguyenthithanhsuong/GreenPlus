@@ -88,6 +88,10 @@
     {
       "name": "0022_support_inquiries_and_throttling.sql",
       "sha256": "c5bc524c230139e503c6424f4617b1cd9150d4f217160c17da13e9bfdeb23e79"
+    },
+    {
+      "name": "0023_restrict_privileged_ai_rpcs.sql",
+      "sha256": "9f3c402adb11edd7ad75dfd3738f2825fa42a036d3395bea4d1ce06ea1fdab76"
     }
   ]
 }

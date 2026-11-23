@@ -19,7 +19,7 @@ function run(name,program,args,{cwd=root,timeout=180000,available=true,env={}}={
  // Report bounded, redacted classification only; raw stdout/stderr stays in local terminal.
  const detail=result.error?.code==='ETIMEDOUT'?'timeout':result.error?.code??`exit ${result.status}`;
  console.log(`${status.padEnd(7)} ${name} (${Date.now()-start}ms)`);
- if(status==='FAIL')console.error(`${name}: ${detail}. Run the command in docs/testing/TEST_PLAN.md for diagnostics.`);
+ if(status==='FAIL')console.error(`${name}: ${detail}. Rerun the failed command directly to inspect its diagnostic output.`);
  return {name,status,durationMs:Date.now()-start,...(status==='FAIL'?{detail}:{})};
 }
 export function createPlan(options){
@@ -36,7 +36,7 @@ export function createPlan(options){
  return core;
 }
 function prettyMarkdown(report){
- return `# GreenPlus · Acceptance Report\n\n- Generated: ${report.generatedAt}\n- Mode: ${report.mode}\n- AI runtime: ${report.aiRuntime} (NOT_APPLICABLE is not a test PASS)\n- Result: **${report.failed?'FAIL':report.skipped?'INCOMPLETE':'PASS'}** (${report.passed} pass / ${report.failed} fail / ${report.skipped} skipped)\n- This is **not** a production E2E certification. External providers and device APK require separate staging verification.\n\n| Check | Result | Duration (ms) |\n|---|---|---:|\n${report.steps.map(s=>`| ${s.name} | ${s.status} | ${s.durationMs} |`).join('\n')}\n\nNo migrations or production mutations were performed. See docs/testing/TEST_PLAN.md for setup and manual checks.\n`;
+ return `# GreenPlus · Acceptance Report\n\n- Generated: ${report.generatedAt}\n- Mode: ${report.mode}\n- AI runtime: ${report.aiRuntime} (NOT_APPLICABLE is not a test PASS)\n- Result: **${report.failed?'FAIL':report.skipped?'INCOMPLETE':'PASS'}** (${report.passed} pass / ${report.failed} fail / ${report.skipped} skipped)\n- This is **not** a production E2E certification. External providers and device APK require separate staging verification.\n\n| Check | Result | Duration (ms) |\n|---|---|---:|\n${report.steps.map(s=>`| ${s.name} | ${s.status} | ${s.durationMs} |`).join('\n')}\n\nNo migrations or production mutations were performed. Use scripts/testing/verify-seven-areas.mjs to run grouped checks.\n`;
 }
 export function saveReport(report){
  const dir=resolve(root,'artifacts/testing');mkdirSync(dir,{recursive:true});

@@ -2,8 +2,19 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { CircleUserRound, CircleHelp, Leaf, MessageCircleMore } from "lucide-react";
+import { BrainCircuit, CircleUserRound, CircleHelp, ClipboardList, Leaf, MessageCircleMore, MessageSquareText, ScanLine, UserRound } from "lucide-react";
 import NavigationBar from "../dashboard/NavigationBar";
+
+/** Icons are resolved inside this Client Component, so server pages only pass strings. */
+const headingIcons = {
+  help: CircleHelp,
+  message: MessageCircleMore,
+  ai: BrainCircuit,
+  support: MessageSquareText,
+  orders: ClipboardList,
+  profile: UserRound,
+  scan: ScanLine,
+} as const;
 
 /** Same mobile-width white canvas on a full-viewport green backdrop as Web Client. */
 export default function ShipperShell({
@@ -16,10 +27,11 @@ export default function ShipperShell({
   title: string;
   description: string;
   /** Serializable identifier so server pages never pass component functions across RSC. */
-  icon: "help" | "message";
+  icon: keyof typeof headingIcons;
   action?: ReactNode;
   children: ReactNode;
 }) {
+  const HeaderIcon = headingIcons[icon];
   return (
     <div className="gp-app">
       <div className="gp-phone-frame">
@@ -50,7 +62,7 @@ export default function ShipperShell({
           <div className="gp-page-heading">
             <div className="gp-page-heading-main">
               <span className="gp-heading-icon">
-                {icon === "help" ? <CircleHelp size={20} /> : <MessageCircleMore size={20} />}
+                <HeaderIcon size={20} />
               </span>
               <div>
                 <h1>{title}</h1>

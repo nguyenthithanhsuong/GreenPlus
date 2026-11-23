@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { BrainCircuit } from "lucide-react";
 import ShipperShell from "../shared/ShipperShell";
 import { chatMsg } from "../../../../packages/ai-core/MSG.mjs";
 
@@ -30,7 +29,7 @@ export default function ShipperAiChat() {
     } catch(e) {setError(e instanceof Error?e.message:msg("error"));}
     finally {setBusy(false);}
   };
-  return <ShipperShell title="Trợ lý GreenPlus" description="Chính sách giao vận theo cửa hàng" icon={BrainCircuit}>
+  return <ShipperShell title="Trợ lý GreenPlus" description="Chính sách giao vận theo cửa hàng" icon="ai">
     <div className="mb-4 flex flex-wrap gap-3">
       <label className="text-xs">{msg("level")}
         <select aria-label={msg("level")} className="gp-input mt-1" disabled={busy} value={level}

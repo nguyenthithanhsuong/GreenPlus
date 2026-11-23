@@ -3,7 +3,7 @@
  * This is a narrow allowlist for AUTO-deploy; non-allowlisted SQL still runs in
  * disposable DB CI but requires manual remote deployment.
  */
-import { createHash } from 'node:crypto';
+import { pinnedMigrationSha256 } from './pinned-migration-hash.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, basename } from 'node:path';
 
@@ -58,7 +58,7 @@ export function inventoryMigrations(dir=MIGRATION_DIR) {
     if(versions.has(m[1])) throw new Error(`Duplicate migration version: ${m[1]}`);
     versions.add(m[1]);
     const content=readFileSync(resolve(dir,file),'utf8');
-    return {file,version:m[1],sha256:createHash('sha256').update(content).digest('hex'),...classifySQL(content)};
+    return {file,version:m[1],sha256:pinnedMigrationSha256(file,content),...classifySQL(content)};
   });
   for(let i=1;i<rows.length;i++) if(rows[i-1].version>=rows[i].version) throw new Error('Migration versions are not ascending');
   return rows;
@@ -72,15 +72,30 @@ export function verifyImmutableBaseline(rows=inventoryMigrations(),lock=JSON.par
   return true;
 }
 
+// Supabase CLI v3 may render version cells as `0023`, unlike the unquoted
+// cells from older CLI versions. Do not remove other punctuation or coerce
+// arbitrary text into a migration version: only bare or balanced backticks.
+function migrationVersionCell(cell) {
+  const text = cell.trim().replace(/\x1b\[[0-9;]*m/g, '');
+  const match = /^(?:([0-9]{4,14})|`([0-9]{4,14})`)$/.exec(text);
+  return match ? (match[1] ?? match[2]) : null;
+}
+
 export function parseMigrationList(output) {
   const found=[];
   for(const line of output.split(/\r?\n/)) {
     if(!/[│|]/.test(line)) continue;
-    const parts=line.split(/[│|]/).map(p=>p.trim());
+    const parts=line.split(/[│|]/);
     if(parts.length<2)continue;
-    const local=/^\d{4,14}$/.test(parts[0])?parts[0]:null;
-    const remote=/^\d{4,14}$/.test(parts[1])?parts[1]:null;
-    if(local||remote)found.push({local,remote});
+    const local=migrationVersionCell(parts[0]);
+    const remote=migrationVersionCell(parts[1]);
+    if(local||remote) {
+      // Do not silently treat an unrecognized, populated version cell as an
+      // empty one: that could otherwise misrepresent a mismatched remote.
+      if(!local && parts[0].trim())throw new Error('Unrecognized local migration version cell; fail closed');
+      if(!remote && parts[1].trim())throw new Error('Unrecognized remote migration version cell; fail closed');
+      found.push({local,remote});
+    }
   }
   if(!found.length)throw new Error('Unable to parse Supabase migration list; fail closed (do not guess remote state)');
   return found;

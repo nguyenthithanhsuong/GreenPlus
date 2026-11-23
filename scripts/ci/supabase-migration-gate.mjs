@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Read-only by default. --apply is only allowed on the matching main SHA after successful CI.
-import { spawnSync } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { inventoryMigrations,verifyImmutableBaseline,planRemoteMigrations,inspectRemoteMigrations } from './migration-safety.mjs';
+import { invokeSupabaseCli } from './supabase-cli-process.mjs';
 const args=process.argv.slice(2);
 const apply=args.includes('--apply');
 const reportOnly=args.includes('--report');
@@ -12,12 +12,13 @@ if (apply && (reportOnly || requireUpToDate)) throw Error('Report and apply mode
 const i=args.indexOf('--list-file');
 if(i>=0 && !args[i+1]) throw Error('Missing --list-file path');
 function cli(argv){
- const local=resolve('node_modules/.bin',process.platform==='win32'?'supabase.cmd':'supabase');
- const executable=existsSync(local)?local:'supabase';
- const r=spawnSync(executable,argv,{encoding:'utf8',timeout:180000,windowsHide:true,
-   shell:process.platform==='win32'&&executable.endsWith('.cmd')});
- if(r.error||r.status!==0)throw Error(`Supabase CLI command ${argv.slice(0,2).join(' ')} failed (check CI logs; credentials redacted)`);
- return r.stdout+'\n'+r.stderr;}
+ const r=invokeSupabaseCli(argv);
+ if(r.error||r.status!==0){
+   const code=r.error?.code?`spawn ${r.error.code}`:`exit ${r.status??'unknown'}`;
+   throw Error(`Supabase CLI command ${argv.slice(0,2).join(' ')} failed (${code}; check CLI connectivity; credentials redacted)`);
+ }
+ return r.stdout+'\n'+r.stderr;
+}
 try {
  const rows=inventoryMigrations();verifyImmutableBaseline(rows);
  console.log(`PASS: ${rows.length} migrations present; immutable baseline verified.`);

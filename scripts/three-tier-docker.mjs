@@ -124,12 +124,12 @@ try {
       cwd: resolve(root, '../..'), encoding: 'utf8', stdio: 'inherit', timeout: 900000,
     });
     if (parity.error || parity.status !== 0) throw new Error('Docker RBAC/Audit/Promotions SQL 005 migration failed. Existing volumes were not removed.');
-    // Mirror the FULL canonical Supabase 0001–0021 application SQL into fresh PG17
+    // Mirror the FULL canonical Supabase 0001–0022 application SQL into fresh PG17
     // tier-specific volumes. This never upgrades or rewrites legacy PG16 data.
     const canonical = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), 'three-tier-full-schema.mjs')], {
       cwd: resolve(root, '../..'), encoding: 'utf8', stdio: 'inherit', timeout: 1500000,
     });
-    if (canonical.error || canonical.status !== 0) throw new Error('Canonical PostgreSQL17 0001–0021 migration failed. Legacy volumes preserved; investigate before retrying.');
+    if (canonical.error || canonical.status !== 0) throw new Error('Canonical PostgreSQL17 0001–0022 migration failed. Legacy volumes preserved; investigate before retrying.');
     verifyPostgrestRole();
     await smoke();
     // Keep the shared root .env.local in sync with the Docker gateway.

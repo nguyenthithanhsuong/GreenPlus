@@ -21,10 +21,13 @@ test('system performance tooling cannot accidentally target remote HTTP or flood
  assert.throws(()=>parsePerformanceArguments(['--samples','9','--allow-remote','--admin','https://external.example']),/limited/);
 });
 test('CI includes browser, HTTP integration, SQL metadata, Docker smoke and advisory vendor policy',()=>{
+ const acceptance=read('../scripts/testing/acceptance-runner.mjs');
+ assert.doesNotMatch(acceptance,/docs\/testing\//,'runner must not point to deleted documentation');
  const ci=read('../.github/workflows/ci.yml');
  for(const expected of ['tests/integration/*.test.mjs','playwright.ci.config.mts','smoke-images.sh','supabase test db','check-external.mjs','--advisory','docker-system-smoke.json'])
   assert.ok(ci.includes(expected),expected);
- for(const file of ['../docs/testing/TEST_PLAN.md','../docs/testing/TEST_CASES.md','../tests/e2e/public-and-security.spec.ts',
+ // Documentation is optional and may be removed by cleanup; CI only requires executable assets.
+ for(const file of ['../tests/e2e/public-and-security.spec.ts',
  '../supabase/tests/database/002_tenant_security_contract.test.sql','../scripts/testing/performance-smoke.mjs'])
   assert.equal(existsSync(new URL(file,import.meta.url)),true,file);
 });

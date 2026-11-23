@@ -13,17 +13,18 @@ export default function BackendStoragePage() {
   const [bucket, setBucket] = useState("product-images");
   const [folder, setFolder] = useState("products");
   const [file, setFile] = useState<File | null>(null);
+  const [fileSelectedAt, setFileSelectedAt] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
 
   const generatedPath = useMemo(() => {
     if (!file) return "";
-    const timestamp = Date.now();
+    const timestamp = fileSelectedAt;
     const cleanFolder = folder.trim().replace(/^\/+|\/+$/g, "");
     const fileName = `${timestamp}-${file.name.replace(/\s+/g, "-")}`;
     return cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
-  }, [file, folder]);
+  }, [file, folder, fileSelectedAt]);
 
   const uploadFile = async () => {
     setError(null);
@@ -132,7 +133,7 @@ export default function BackendStoragePage() {
             <span className="mb-1 block font-medium">Tệp</span>
             <input
               type="file"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => { setFile(e.target.files?.[0] ?? null); setFileSelectedAt(Date.now()); }}
               className="w-full rounded border border-slate-300 px-3 py-2"
             />
           </label>
